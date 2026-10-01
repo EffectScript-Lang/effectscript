@@ -1,0 +1,8 @@
+declare const a: Effect.Effect<number>
+declare const b: Effect.Effect<string>
+
+effect both() {
+  const [n, s] = await [a, b]
+  const { x, y } = await { x: a, y: b }
+  return `${n}${s}${x}${y}`
+}

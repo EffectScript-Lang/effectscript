@@ -1,0 +1,8 @@
+declare const task: Effect.Effect<number>
+
+/** Doubles the task result. */
+export effect /* inline */ doubled(): number {
+  // leading comment
+  const n = await /* why */ task
+  return n * 2 // trailing
+}

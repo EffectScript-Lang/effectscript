@@ -1,0 +1,15 @@
+import { Data } from "effect"
+
+class Invalid extends Data.TaggedError("Invalid")<{}> {}
+
+effect check(n: number): number throws Invalid | string {
+  if (n < 0) throw new Invalid()
+  if (n === 0) {
+    throw "zero"
+  }
+  const parse = (s: string) => {
+    if (s === "") throw new Error("plain JS throw")
+    return Number(s)
+  }
+  return parse(String(n))
+}

@@ -1,0 +1,15 @@
+declare const a: Effect.Effect<number>
+declare const b: Effect.Effect<boolean>
+declare const s: Effect.Effect<{ readonly length: number }>
+declare const maybe: number | undefined
+
+effect precedence() {
+  const sum = await a + 1
+  const not = !await b
+  const cast = await a as number
+  const member = (await s).length
+  const call = String(await a)
+  const nullish = maybe ?? await a
+  const cond = await b ? 1 : 2
+  return [sum, not, cast, member, call, nullish, cond]
+}
