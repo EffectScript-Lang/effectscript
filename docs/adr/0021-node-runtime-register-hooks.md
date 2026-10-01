@@ -1,6 +1,6 @@
 # ADR-0021: Run `.efx` on Node with `module.registerHooks` and transform-mode type stripping
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by ADR-0024
 - **Date:** 2026-10-02
 - **Deciders:** agent ruling for Plan 3, from review R09 and a spike
 - **Related:** review R09; spec §7.2

@@ -15,6 +15,7 @@
     "./package.json": "./package.json",
     ".": "./src/index.ts",
     "./compiler": "./src/compiler/index.ts",
+    "./register": "./src/register.ts",
     "./*": "./src/*.ts",
     "./index": null
   },
@@ -31,6 +32,7 @@
       "./package.json": "./package.json",
       ".": "./dist/index.js",
       "./compiler": "./dist/compiler/index.js",
+      "./register": "./dist/register.js",
       "./*": "./dist/*.js",
       "./index": null
     }

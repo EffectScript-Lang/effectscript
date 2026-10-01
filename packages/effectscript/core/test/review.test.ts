@@ -190,7 +190,9 @@ describe("Plan 2 final review", () => {
   })
 
   it("F3: a parenthesized inner pipeline keeps its parentheses", () => {
-    const code = compile("declare const g: (n: number) => number\ndeclare const n: number\nexport const v = (n |> g(%)) |> g(%)\n")
+    const code = compile(
+      "declare const g: (n: number) => number\ndeclare const n: number\nexport const v = (n |> g(%)) |> g(%)\n"
+    )
     expect(syntaxErrors(code)).toEqual([])
     expect(code).toContain("export const v = g((g(n)))")
   })

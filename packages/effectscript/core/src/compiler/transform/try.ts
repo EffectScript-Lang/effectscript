@@ -39,7 +39,13 @@ export const containsAtLevel = (node: Node, predicate: (node: Node) => boolean):
  */
 export const isEffectful = (node: Node): boolean => effectfulNode(node) !== undefined
 
-const effectfulTypes = new Set(["AwaitExpression", "ThrowStatement", "ThrowExpression", "DeferStatement", "TryStatement"])
+const effectfulTypes = new Set([
+  "AwaitExpression",
+  "ThrowStatement",
+  "ThrowExpression",
+  "DeferStatement",
+  "TryStatement"
+])
 
 /**
  * The first node at this `effect` level that lowers to `yield*` (`await`, `throw`, `defer`, `try`,

@@ -7,12 +7,12 @@
 import { children, type Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
-import { effectfulNode } from "./try.ts"
 import { ref, unused } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
 import { preludeModules } from "../prelude/tables.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
+import { effectfulNode } from "./try.ts"
 
 interface Step {
   readonly op: { readonly start: number; readonly end: number }
