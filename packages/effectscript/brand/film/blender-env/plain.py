@@ -273,7 +273,7 @@ def flat_material(t_node_frames):
     # pools: mirror water; elsewhere a film of water over dark mud
     pool = b.add(b.mul(b.noise(co, 0.3, 6.0, 0.62), 0.6), b.mul(b.noise(co, 0.04, 3.0), 0.4))
     # more open water towards the monolith, more mud towards the lens
-    pool = b.add(pool, b.mr(y, -100.0, -25.0, -0.07, 0.03))
+    pool = b.add(pool, b.mr(y, -95.0, -45.0, -0.06, 0.07))
     pool = b.mr(pool, 0.44, 0.56, 0.0, 1.0, interp="SMOOTHSTEP")
     water_tone = b.mixf(pool, b.mr(b.noise(co, 0.8, 5.0), 0.3, 0.7, 0.012, 0.035), 0.008)
     base = b.mixf(dry, water_tone, salt_tone)

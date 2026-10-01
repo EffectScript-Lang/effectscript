@@ -26,7 +26,13 @@ const parsers: Record<Mode, typeof acorn.Parser> = {
   tsx: acorn.Parser.extend(tsPlugin({ jsx: true }) as any, efxPlugin)
 }
 
-const looksLikeJsx = (source: string): boolean => source.includes("</") || source.includes("/>")
+/**
+ * A cheap hint that `source` contains JSX (it then parses in JSX mode first).
+ *
+ * @since 4.0.0
+ * @category parsing
+ */
+export const looksLikeJsx = (source: string): boolean => source.includes("</") || source.includes("/>")
 
 const parseWith = (mode: Mode, source: string): Node =>
   parsers[mode].parse(source, {

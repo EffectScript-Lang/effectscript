@@ -22,6 +22,13 @@ describe("ADR-0020: recovery", () => {
     expect(result.recovered).toBe(false)
   })
 
+  it("keeps TSX mode when the neutralized line holds the only JSX (review I8)", () => {
+    const source = "export const x = 1\nexport const view = (name: string) => <b>{name.}</b>\n"
+    const result = toTypeScript(source, { recover: true })
+    expect(result.recovered).toBe(true)
+    expect(result.mode).toBe("tsx")
+  })
+
   it("does not recover unless asked", () => {
     expect(toTypeScript("effect f() {\n  const x = .\n}\n").code).toBe("")
   })

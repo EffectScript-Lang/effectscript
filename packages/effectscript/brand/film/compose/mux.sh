@@ -7,9 +7,16 @@
 set -eu
 cd "$(dirname "$0")/../build"
 mkdir -p deliver
-ffmpeg -y -loglevel error -i score.wav -i sfx.wav \
-  -filter_complex "[0:a]volume=1.0[m];[1:a]volume=0.9[f];[m][f]amix=inputs=2:normalize=0:duration=first,alimiter=limit=0.891:level=false" \
-  -c:a pcm_s24le mix.wav
+if [ -f vo.wav ] && [ -f duck.wav ]; then
+  # music dips under the narrator; Foley and voice sit on top
+  ffmpeg -y -loglevel error -i score.wav -i duck.wav -i sfx.wav -i vo.wav \
+    -filter_complex "[0:a][1:a]amultiply[m];[2:a]volume=0.8[f];[3:a]volume=1.0[v];[m][f][v]amix=inputs=3:normalize=0:duration=first,alimiter=limit=0.891:level=false" \
+    -c:a pcm_s24le mix.wav
+else
+  ffmpeg -y -loglevel error -i score.wav -i sfx.wav \
+    -filter_complex "[0:a]volume=1.0[m];[1:a]volume=0.9[f];[m][f]amix=inputs=2:normalize=0:duration=first,alimiter=limit=0.891:level=false" \
+    -c:a pcm_s24le mix.wav
+fi
 name=introducing-effectscript
 ffmpeg -y -loglevel error -i picture-hdr.mp4 -i mix.wav -map 0:v -map 1:a -c:v copy -tag:v hvc1 \
   -c:a aac -b:a 320k -movflags +faststart -shortest "deliver/$name-4k-hdr10.mp4"

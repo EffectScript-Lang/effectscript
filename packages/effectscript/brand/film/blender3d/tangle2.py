@@ -57,14 +57,14 @@ def knots(rng):
     ks = []
     y = -0.5
     while y < 24.0:
-        r = rng.uniform(0.55, 2.6)
+        r = rng.uniform(1.6, 2.8) if y < 10.0 else rng.uniform(0.55, 2.6)
         a = rng.uniform(0, 2 * math.pi)
         ks.append((r * math.cos(a), y, 0.7 * r * math.sin(a), rng.uniform(0.18, 0.5)))
         y += rng.uniform(0.7, 1.5)
     return np.array(ks)
 
 
-def walk(rng, n, steps, tight, home, clear, K, born_late):
+def walk(rng, n, steps, tight, home, clear, K, calm):
     """Vectorised curvature random walk steered through knot chains."""
     kc, kr = K[:, :3], K[:, 3]
     # each strand visits 2-4 knots close to its home
@@ -95,6 +95,13 @@ def walk(rng, n, steps, tight, home, clear, K, born_late):
         radial = p * (1, 0, 1)
         rr = np.linalg.norm(radial, axis=1, keepdims=True) + 1e-6
         push = np.where(rr < clear[:, None], radial / rr * (clear[:, None] - rr) * 6.0, 0.0)
+        # text pocket: strands visible during frames 60-175 keep out of a wide
+        # flat ellipse round the lens axis (x 1.6 m, z 0.75 m) for y 0-9.5 m
+        ex, ez = p[:, 0] / 1.6, p[:, 2] / 0.75
+        er = np.sqrt(ex * ex + ez * ez) + 1e-6
+        iny = np.clip(np.minimum(p[:, 1] + 0.5, 10.0 - p[:, 1]), 0, 1)
+        inside = (calm * iny * np.clip(1.0 - er, 0, 1))[:, None]
+        push = push + np.column_stack([ex / er / 1.6, np.zeros(n), ez / er / 0.75]) * inside * 14.0
         v = v + (pull * 0.9 + hold + push) * STEP * 3.0
         v /= np.linalg.norm(v, axis=1, keepdims=True)
         p = p + v * STEP
@@ -133,7 +140,7 @@ def family(name, rng, K):
     in_pocket = (hy > py0) & (hy < py1) & (birth < POCKET[1] + 30)
     clear = np.where(late, 0.2, np.where(in_pocket, 1.15, 0.4))
     tight = np.clip(rng.lognormal(math.log(curv), 0.6, n), 0.2, 6.0)
-    pts, cinch = walk(rng, n, steps, tight, home, clear, K, late)
+    pts, cinch = walk(rng, n, steps, tight, home, clear, K, (birth < POCKET[1] + 25).astype(float))
     rad = np.clip(rng.lognormal(math.log(rmed), rsig, n), rlo, rhi)
     ul = np.repeat((np.arange(steps) * STEP)[None, :], n, 0)
     curve_attrs = {
@@ -272,7 +279,7 @@ def braid_material():
     nrm = s.bump(h, 0.65, 0.0004)
     co = s.node("ShaderNodeTexCoord").outputs["Object"]
     dirt = s.noise(co, 8.0, 3.0, 0.6)
-    b = s.principled(base=s.gray(s.mrange(dirt, 0.3, 0.7, 0.42, 0.62)), metal=1.0,
+    b = s.principled(base=s.gray(s.mrange(dirt, 0.3, 0.7, 0.28, 0.45)), metal=1.0,
                      rough=s.mrange(dirt, 0.3, 0.7, 0.22, 0.36), aniso=0.7, tangent=s.vattr("tg"), normal=nrm)
     # cavities between carriers go dark
     ao = s.mrange(h, 0.0, 0.5, 0.25, 1.0)
@@ -292,7 +299,7 @@ def copper_material():
     co = s.node("ShaderNodeTexCoord").outputs["Object"]
     tar = s.noise(co, 14.0, 4.0, 0.6)
     rough = s.math("ADD", s.mrange(tar, 0.25, 0.75, 0.22, 0.38), s.math("MULTIPLY", lay, 0.12))
-    b = s.principled(base=s.gray(s.mrange(tar, 0.3, 0.7, 0.55, 0.8)), metal=1.0, rough=rough)
+    b = s.principled(base=s.gray(s.mrange(tar, 0.3, 0.7, 0.35, 0.55)), metal=1.0, rough=rough)
     return s.output(b.outputs[0])
 
 

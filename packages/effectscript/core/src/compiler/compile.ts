@@ -14,7 +14,7 @@ import {
   resolveOptions,
   type SourceMapV3
 } from "./options.ts"
-import { parse } from "./parser/parse.ts"
+import { looksLikeJsx, type Mode, parse } from "./parser/parse.ts"
 import { handlers } from "./transform/registry.ts"
 import { walk } from "./walk.ts"
 
@@ -52,7 +52,9 @@ const recover = (source: string, resolved: ResolvedOptions, parseError: Diagnost
     if (end <= start) continue
     const original = source.slice(start, end)
     const blank = original.replace(/[^\n]/g, " ")
-    const result = compileOnce(source.slice(0, start) + blank + source.slice(end), resolved)
+    // keep the file's mode when the neutralized region holds its only JSX (review I8)
+    const mode: Mode | undefined = looksLikeJsx(original) ? "tsx" : undefined
+    const result = compileOnce(source.slice(0, start) + blank + source.slice(end), resolved, mode)
     if (result.diagnostics.some((d) => d.code === "EFX1001" || d.code === "EFX1000")) continue
     const mapping = result.mappings.find((m) =>
       m.generatedLengths === undefined && m.sourceOffsets[0]! <= start && start < m.sourceOffsets[0]! + m.lengths[0]!
@@ -79,8 +81,8 @@ const recover = (source: string, resolved: ResolvedOptions, parseError: Diagnost
   }
 }
 
-const compileOnce = (source: string, resolved: ResolvedOptions): CompileResult => {
-  const parsed = parse(source)
+const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): CompileResult => {
+  const parsed = parse(source, { mode })
   if (parsed._tag === "Failure") {
     return { code: "", mode: "ts", map: undefined, mappings: [], diagnostics: parsed.diagnostics }
   }
