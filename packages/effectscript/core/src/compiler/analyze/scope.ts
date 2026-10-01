@@ -262,6 +262,13 @@ export const analyze = (program: Node): ScopeAnalysis => {
         scope.types.add(node.id.name)
         return visitChildren(node, scope)
       }
+      case "GroupDeclaration":
+      case "ApiDeclaration": {
+        scope.values.add(node.id.name)
+        scope.types.add(node.id.name)
+        bindings.add(node.id)
+        return
+      }
       case "AtomDeclaration":
       case "LayerDeclaration": {
         scope.values.add(node.id.name)

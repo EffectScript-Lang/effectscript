@@ -1,0 +1,25 @@
+export schema User {
+  id: string
+  name: string
+}
+
+export schema NewUser {
+  name: string
+}
+
+export error UserNotFound { id: string }
+
+export error Forbidden {}
+
+export group UsersApi {
+  get list "/" (query: { search?: string }): User[]
+  get getById "/:id" (params: { id: string }): User throws UserNotFound | Forbidden
+  post create "/" (payload: NewUser): User
+  del remove "/:id" (params: { id: string })
+}
+
+export group SystemApi "system" {
+  get health "/health": string
+}
+
+export api Api { UsersApi, SystemApi }

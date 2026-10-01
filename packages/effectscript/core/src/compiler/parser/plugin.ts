@@ -166,6 +166,8 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsClassLikeStart()) return this.efxParseClassLike(this.value)
       if (this.efxIsBindingDeclarationStart("layer")) return this.efxParseBindingDeclaration("LayerDeclaration")
       if (this.efxIsBindingDeclarationStart("atom")) return this.efxParseBindingDeclaration("AtomDeclaration")
+      if (this.efxIsHttpApiStart("group")) return this.efxParseGroup()
+      if (this.efxIsHttpApiStart("api")) return this.efxParseApi()
       if (this.efxIsDescribeStart()) return this.efxParseDescribe()
       if (this.efxIsTestStart()) return this.efxParseTest()
       return super.parseStatement(context, topLevel, exports)
@@ -174,6 +176,7 @@ export const efxPlugin = (Base: any): any =>
     shouldParseExportStatement(): any {
       return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() ||
         this.efxIsBindingDeclarationStart("layer") || this.efxIsBindingDeclarationStart("atom") ||
+        this.efxIsHttpApiStart("group") || this.efxIsHttpApiStart("api") ||
         super.shouldParseExportStatement()
     }
 
@@ -493,6 +496,76 @@ export const efxPlugin = (Base: any): any =>
         node.efxServiceKey = this.parseExprAtom(null, false, false)
       }
       return super.parseClassSuper(node)
+    }
+
+    /** `group Name ["id"] { … }` / `api Name ["id"] { … }` (§4.14). */
+    efxIsHttpApiStart(keyword: string): boolean {
+      if (!this.efxIsWord(keyword) || !this.efxNextIsNameSameLine()) return false
+      const name = this.lookahead()
+      const after = skipSpace(this.input, name.end)
+      return this.input[after] === "{" || this.input[after] === "\"" || this.input[after] === "'"
+    }
+
+    efxParseHttpApiHead(node: any): void {
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.id = this.parseIdent()
+      node.identifier = this.type === tt.string ? this.parseExprAtom(null, false, false) : null
+      this.expect(tt.braceL)
+    }
+
+    efxParseGroup(): any {
+      const node = this.startNode()
+      this.efxParseHttpApiHead(node)
+      node.endpoints = []
+      node.middlewares = []
+      while (!this.eat(tt.braceR)) {
+        if (this.efxIsWord("middleware")) {
+          this.next()
+          node.middlewares.push(this.parseExprSubscripts(null, false))
+          this.eat(tt.semi)
+          continue
+        }
+        const line = this.startNode()
+        if (this.type !== tt.name || !/^(get|post|put|patch|del|head|options)$/.test(this.value)) {
+          this.unexpected()
+        }
+        line.method = this.value
+        this.next()
+        line.name = this.parseIdent()
+        line.path = this.parseExprAtom(null, false, false)
+        line.sections = []
+        if (this.eat(tt.parenL)) {
+          while (!this.eat(tt.parenR)) {
+            const section = this.startNode()
+            section.key = this.parseIdent()
+            this.expect(tt.colon)
+            section.annotation = this.tsInType(() => this.tsParseType())
+            line.sections.push(this.finishNode(section, "EndpointSection"))
+            if (this.type !== tt.parenR) this.expect(tt.comma)
+          }
+        }
+        line.success = this.eat(tt.colon) ? this.tsInType(() => this.tsParseType()) : null
+        line.error = null
+        if (this.efxIsWord("throws")) {
+          this.next()
+          line.error = this.tsInType(() => this.tsParseType())
+        }
+        node.endpoints.push(this.finishNode(line, "EndpointLine"))
+        this.eat(tt.semi)
+      }
+      return this.finishNode(node, "GroupDeclaration")
+    }
+
+    efxParseApi(): any {
+      const node = this.startNode()
+      this.efxParseHttpApiHead(node)
+      node.groups = []
+      while (!this.eat(tt.braceR)) {
+        node.groups.push(this.parseExprSubscripts(null, false))
+        if (this.type !== tt.braceR) this.expect(tt.comma)
+      }
+      return this.finishNode(node, "ApiDeclaration")
     }
 
     /** `describe "name" [with layer] { … }` (§4.14). */
