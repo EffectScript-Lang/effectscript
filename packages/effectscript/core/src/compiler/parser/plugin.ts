@@ -54,6 +54,19 @@ export const efxPlugin = (Base: any): any =>
       return super.readToken_pipe_amp(code)
     }
 
+    // --- acorn-typescript gaps (found by test/superset.test.ts) ----------------------------------
+
+    // `const` type parameters in signatures and function types: `<const A>(a: A) => A`
+    tsTryParseTypeParameters(parseModifiers: unknown): any {
+      return super.tsTryParseTypeParameters(parseModifiers ?? this.tsParseConstModifier)
+    }
+
+    // `import type { X }` must not bind a value, so `const X = …` in the same module is legal.
+    declareName(name: string, bindingType: number, pos: number): any {
+      if (this.importOrExportOuterKind === "type") return
+      return super.declareName(name, bindingType, pos)
+    }
+
     // --- pipeline --------------------------------------------------------------------------------
 
     parseExprOp(left: any, leftStartPos: number, leftStartLoc: any, minPrec: number, forInit: boolean): any {

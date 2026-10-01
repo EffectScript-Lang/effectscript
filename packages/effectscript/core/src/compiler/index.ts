@@ -3,9 +3,23 @@
  *
  * @since 0.1.0
  */
-
-/**
- * @since 0.1.0
- * @category compiler
- */
-export const toTypeScript = (source: string): { readonly code: string } => ({ code: source })
+export { type Node } from "./ast.ts"
+export { toTypeScript } from "./compile.ts"
+export {
+  type Diagnostic,
+  diagnosticError,
+  diagnosticWarning,
+  formatDiagnostic,
+  lineColumn,
+  type Severity
+} from "./diagnostics.ts"
+export {
+  type CodeInformation,
+  type CodeMapping,
+  type CompileOptions,
+  type CompileResult,
+  type ResolvedOptions,
+  type Runtime,
+  type SourceMapV3
+} from "./options.ts"
+export { type Mode, parse, type ParseResult } from "./parser/parse.ts"
