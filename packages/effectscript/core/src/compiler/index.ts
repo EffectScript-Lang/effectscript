@@ -23,3 +23,4 @@ export {
   type SourceMapV3
 } from "./options.ts"
 export { type Mode, parse, type ParseResult } from "./parser/parse.ts"
+export { type ConvertNote, type ConvertResult, toEffectScript } from "./reverse/index.ts"
