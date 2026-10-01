@@ -13,7 +13,9 @@ describe("ADR-0014: service keys", () => {
     ["/w/app/src/users/users.efx", "app/users/Users"],
     ["/w/app/src/users/index.efx", "app/users/Users"],
     ["/w/app/src/users/live.efx", "app/users/live/Users"],
-    ["/w/app/lib/Users.efx", "app/lib/Users"]
+    ["/w/app/lib/Users.efx", "app/lib/Users"],
+    ["/w/app/src/users/Users.live.efx", "app/users/Users.live/Users"],
+    ["/w/app/src/users/Users.test.efx", "app/users/Users.test/Users"]
   ])("%s → %s", (filename, expected) => {
     expect(key(filename, "Users", "/w/app")).toBe(expected)
   })

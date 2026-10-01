@@ -7,6 +7,7 @@
 import { children, type Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
+import { effectfulNode } from "./try.ts"
 import { ref, unused } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
 import { preludeModules } from "../prelude/tables.ts"
@@ -24,6 +25,8 @@ interface Current {
   readonly end: number
   readonly pipeable: boolean
   readonly node: Node | undefined
+  /** The head was moved to `start` by an inlined step, so text opening at `start` goes on its left. */
+  readonly openLeft?: boolean
 }
 
 /**
@@ -105,12 +108,15 @@ const outer = (ctx: Ctx, node: Node): Range => {
   return { start, end }
 }
 
-const flatten = (node: Node): { readonly head: Node; readonly steps: Array<Step> } => {
+const flatten = (ctx: Ctx, node: Node): { readonly head: Node; readonly steps: Array<Step> } => {
   const steps: Array<Step> = []
   let current = node
   while (current.type === "PipelineExpression") {
     steps.unshift({ op: current.op, rhs: current.right, topics: topicsOf(current.right) })
-    current = current.left
+    const left: Node = current.left
+    current = left
+    // a parenthesized inner pipeline is the head, not more steps
+    if (left.type === "PipelineExpression" && outer(ctx, left).start !== left.start) break
   }
   return { head: current, steps }
 }
@@ -166,17 +172,6 @@ const pureBefore = (ctx: Ctx, rhs: Node, topic: Node): boolean => {
     const next = path[i + 1] ?? topic
     return children(node).every((child) => child.end > next.start || isPure(ctx, child))
   })
-}
-
-/** An `await` at this function level (a step that becomes `($) => …` can't contain one). */
-const findAwait = (node: Node): Node | undefined => {
-  if (node.type === "AwaitExpression") return node
-  if (/Function|Class|EffectBlock/.test(node.type) || node.efx !== undefined) return undefined
-  for (const child of children(node)) {
-    const found = findAwait(child)
-    if (found !== undefined) return found
-  }
-  return undefined
 }
 
 /** Nodes from `root` down to `target` (exclusive of target). */
@@ -247,6 +242,8 @@ const applyGroup = (ctx: Ctx, current: Current, group: ReadonlyArray<Step>): voi
       ctx.s.appendRight(current.start, "(")
       ctx.s.prependLeft(current.end, ")")
     }
+  } else if (current.openLeft === true) {
+    ctx.s.appendLeft(current.start, `${ref(ctx, "effect", "pipe")}(`)
   } else {
     ctx.s.appendRight(current.start, `${ref(ctx, "effect", "pipe")}(`)
   }
@@ -255,15 +252,15 @@ const applyGroup = (ctx: Ctx, current: Current, group: ReadonlyArray<Step>): voi
     const rhs = outer(ctx, step.rhs)
     if (step.topics.length > 0) {
       if (ctx.effect !== undefined) {
-        const awaited = findAwait(step.rhs)
-        if (awaited !== undefined) {
+        const effectful = effectfulNode(step.rhs)
+        if (effectful !== undefined) {
           ctx.diagnostics.push(
             diagnosticError(
               "EFX5002",
-              "`await` cannot be used in this pipeline step",
-              awaited.start,
-              awaited.start + 5,
-              "assign the awaited value to a variable first"
+              "This pipeline step runs an effect (`await`, `throw`, …), so it can't become a function",
+              effectful.start,
+              Math.min(effectful.end, effectful.start + 5),
+              "assign the value to a variable first"
             )
           )
         }
@@ -290,7 +287,7 @@ const inline = (ctx: Ctx, current: Current, step: Step): void => {
 }
 
 const pipeline: Handler = (node, _parent, ctx) => {
-  const { head, steps } = flatten(node)
+  const { head, steps } = flatten(ctx, node)
   const headRange = outer(ctx, head)
   let current: Current = { ...headRange, pipeable: knownPipeable(ctx, head), node: head }
   let i = 0
@@ -298,7 +295,9 @@ const pipeline: Handler = (node, _parent, ctx) => {
     // Inline only directly into the head: later steps would re-move ranges an earlier move split.
     if (i === 0 && inlinable(ctx, steps[0]!)) {
       inline(ctx, current, steps[0]!)
-      current = { ...outer(ctx, steps[0]!.rhs), pipeable: false, node: steps[0]!.rhs }
+      const range = outer(ctx, steps[0]!.rhs)
+      const openLeft = steps[0]!.topics[0]!.start === range.start
+      current = { ...range, pipeable: false, node: steps[0]!.rhs, openLeft }
       i++
       continue
     }

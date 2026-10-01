@@ -170,3 +170,56 @@ describe("D02: catch clauses are visited once", () => {
     expect(code).not.toContain("Effect.Effect.")
   })
 })
+
+describe("Plan 2 final review", () => {
+  it("F1: EFX5002 also covers throw expressions and effectful do in a function stage", () => {
+    const codes = (source: string) => toTypeScript(source).diagnostics.map((d) => d.code)
+    expect(codes(
+      "declare const obj: { m(n: number): number | undefined }\nerror E {}\neffect f(n: number) {\n  return n |> obj.m(%) ?? throw new E()\n}\n"
+    )).toEqual(["EFX5002"])
+  })
+
+  it.each([
+    ["declare const n: number\nexport const a = n |> % + 1 |> String(%)\n", "pipe(n + 1"],
+    ["export const b = [1, 2] |> %.length |> String(%)\n", "pipe([1, 2].length"],
+    ["export const c = \"x\" |> %.toUpperCase() |> %.length\n", "pipe(\"x\".toUpperCase()"]
+  ])("F2: an inlined step that starts with the topic can be wrapped: %s", (source, expected) => {
+    const code = compile(source)
+    expect(code).toContain(expected)
+    expect(syntaxErrors(code)).toEqual([])
+  })
+
+  it("F3: a parenthesized inner pipeline keeps its parentheses", () => {
+    const code = compile("declare const g: (n: number) => number\ndeclare const n: number\nexport const v = (n |> g(%)) |> g(%)\n")
+    expect(syntaxErrors(code)).toEqual([])
+    expect(code).toContain("export const v = g((g(n)))")
+  })
+
+  it("F4: user identifiers inside rewritten syntax keep navigation", () => {
+    const source =
+      "error E { id: string }\nexport effect find(id: string) {\n  try {\n    throw new E({ id })\n  } catch (err: E) {\n    return err.id\n  }\n}\n" +
+      "schema S =\n  | Circle { radius: number }\nexport const area = (s: S) => match (s) {\n  when Circle({ radius }): radius\n}\n"
+    const { mappings } = toTypeScript(source)
+    const covering = (offset: number) =>
+      mappings.find((m) => m.sourceOffsets[0]! <= offset && offset < m.sourceOffsets[0]! + m.lengths[0]!)
+    for (const needle of ["find(", "err: E", "{ radius }): "]) {
+      const offset = source.indexOf(needle) + (needle.startsWith("{") ? 2 : 0)
+      expect(covering(offset)?.data.navigation, needle).toBe(true)
+    }
+  })
+
+  it("F4: a one-character identifier followed by a closer keeps navigation", () => {
+    const source = "export effect f(e: unknown) {\n  throw e\n}\n"
+    const { mappings } = toTypeScript(source)
+    const offset = source.indexOf("throw e") + 6
+    const mapping = mappings.find((m) => m.sourceOffsets[0]! <= offset && offset < m.sourceOffsets[0]! + m.lengths[0]!)
+    expect(mapping?.data.navigation).toBe(true)
+  })
+
+  it("F8: a nested try that returns on every path is not EFX2020", () => {
+    const result = toTypeScript(
+      "effect f(x: Effect.Effect<number>) {\n  try {\n    try {\n      return await x\n    } catch {\n      return 1\n    }\n  } catch {\n    return 2\n  }\n}\n"
+    )
+    expect(result.diagnostics).toEqual([])
+  })
+})

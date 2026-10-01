@@ -86,8 +86,29 @@ export const toCodeMappings = (s: MagicString, source: string, code: string): Ar
       const generatedLength = (next === undefined ? code.length : next[0]) - generated
       const sourceLength = next !== undefined && next[1] > original ? next[1] - original : generatedLength
       // A chunk whose text is unchanged is user code; anything else was edited or generated.
+      const sourceText = source.slice(original, original + sourceLength)
       const verbatim = generatedLength === sourceLength &&
-        source.slice(original, original + sourceLength) === code.slice(generated, generated + generatedLength)
+        sourceText === code.slice(generated, generated + generatedLength)
+      let common = 0
+      while (
+        !verbatim && common < sourceLength && common < generatedLength &&
+        source[original + common] === code[generated + common]
+      ) common++
+      if (common > 0 && !verbatim) {
+        // user text followed by inserted text (`e` → `e)`): the user text keeps full features
+        mappings.push({ sourceOffsets: [original], generatedOffsets: [generated], lengths: [common], data: fullFeatures })
+        if (sourceLength > common) {
+          mappings.push({
+            sourceOffsets: [original + common],
+            generatedOffsets: [generated + common],
+            lengths: [sourceLength - common],
+            generatedLengths: [generatedLength - common],
+            data: generatedFeatures
+          })
+        }
+        i = j + 1
+        continue
+      }
       const data = verbatim ? fullFeatures : generatedFeatures
       mappings.push(
         generatedLength === sourceLength

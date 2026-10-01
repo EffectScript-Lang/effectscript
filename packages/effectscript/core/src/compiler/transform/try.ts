@@ -37,13 +37,26 @@ export const containsAtLevel = (node: Node, predicate: (node: Node) => boolean):
  * @since 0.1.0
  * @category utils
  */
-export const isEffectful = (node: Node): boolean =>
-  containsAtLevel(
-    node,
-    (n) =>
-      n.type === "AwaitExpression" || n.type === "ThrowStatement" || n.type === "ThrowExpression" ||
-      n.type === "DeferStatement" || n.type === "TryStatement" || (n.type === "ForOfStatement" && n.await === true)
-  )
+export const isEffectful = (node: Node): boolean => effectfulNode(node) !== undefined
+
+const effectfulTypes = new Set(["AwaitExpression", "ThrowStatement", "ThrowExpression", "DeferStatement", "TryStatement"])
+
+/**
+ * The first node at this `effect` level that lowers to `yield*` (`await`, `throw`, `defer`, `try`,
+ * `for await`), without crossing into nested functions/effects.
+ *
+ * @since 0.1.0
+ * @category utils
+ */
+export const effectfulNode = (node: Node): Node | undefined => {
+  if (effectfulTypes.has(node.type) || (node.type === "ForOfStatement" && node.await === true)) return node
+  if (boundaryTypes.has(node.type) || node.efx !== undefined) return undefined
+  for (const child of children(node)) {
+    const found = effectfulNode(child)
+    if (found !== undefined) return found
+  }
+  return undefined
+}
 
 /**
  * @since 0.1.0
@@ -61,6 +74,11 @@ export const alwaysExits = (node: Node | null | undefined): boolean => {
       return node.body.length > 0 && alwaysExits(node.body[node.body.length - 1])
     case "IfStatement":
       return alwaysExits(node.consequent) && alwaysExits(node.alternate)
+    case "TryStatement": {
+      const clauses: Array<Node> = node.handlers ?? (node.handler ? [node.handler] : [])
+      return alwaysExits(node.finalizer) ||
+        (alwaysExits(node.block) && clauses.every((clause) => alwaysExits(clause.body)))
+    }
     default:
       return false
   }
@@ -222,27 +240,24 @@ const tryStatement: Handler = (node, _parent, ctx) => {
   const untyped = clauses.length > 0 && tags[clauses.length - 1] === undefined
   const catchesDefects = untyped || tags.some((t) => t?.includes("UnknownError") === true)
   const grouped = typedCount > 1 && tags.every((t) => t === undefined || t.length === 1)
-  const handler = (clause: Node, typed: boolean) => `(${paramText(ctx, clause, typed)}) => ${gen}`
   const key = (tag: string) => (isIdentifierName(tag) ? tag : JSON.stringify(tag))
   const tagArgument = (list: Array<string>) =>
     list.length === 1 ? JSON.stringify(list[0]) : `[${list.map((t) => JSON.stringify(t)).join(", ")}]`
   const error = typedCount > 1 && !grouped ? unused(ctx, "error") : ""
 
-  // Text that replaces `catch (…) ` before each clause body, then the closing text.
-  const openers: Array<string> = clauses.map((clause, i) => {
+  // Text that replaces `catch ` before each clause's handler `(param) => …`, then the closing text.
+  const prefixes: Array<string> = clauses.map((_clause, i) => {
     const list = tags[i]
     if (list === undefined) {
-      if (typedCount === 0) return `${E}.catch(${handler(clause, false)}`
-      return `${grouped ? ") }" : ")"}, ${handler(clause, false)}`
+      if (typedCount === 0) return `${E}.catch(`
+      return `${grouped ? ") }" : ")"}, `
     }
     if (i === 0) {
-      return grouped
-        ? `${E}.catchTags({ ${key(list[0]!)}: ${handler(clause, true)}`
-        : `${E}.catchTag(${tagArgument(list)}, ${handler(clause, true)}`
+      return grouped ? `${E}.catchTags({ ${key(list[0]!)}: ` : `${E}.catchTag(${tagArgument(list)}, `
     }
     return grouped
-      ? `), ${key(list[0]!)}: ${handler(clause, true)}`
-      : `), (${error}) => ${E}.catchTag(${E}.fail(${error}), ${tagArgument(list)}, ${handler(clause, true)}`
+      ? `), ${key(list[0]!)}: `
+      : `), (${error}) => ${E}.catchTag(${E}.fail(${error}), ${tagArgument(list)}, `
   })
   const closing = typedCount === 0
     ? "))"
@@ -258,7 +273,18 @@ const tryStatement: Handler = (node, _parent, ctx) => {
   }
   let previousEnd: number = node.block.end
   clauses.forEach((clause, i) => {
-    ctx.s.update(previousEnd, clause.body.start, `${i === 0 ? pipeOpen : ""}${openers[i]}`)
+    const prefix = `${i === 0 ? pipeOpen : ""}${prefixes[i]}`
+    const typed = tags[i] !== undefined
+    const param: Node | null = clause.param
+    if (param?.type === "Identifier") {
+      // the parameter name stays user text, so editor navigation and rename keep working on it
+      const nameEnd = param.start + (param.name as string).length
+      ctx.s.update(previousEnd, param.start, `${prefix}(`)
+      if (typed && nameEnd < param.end) ctx.s.remove(nameEnd, param.end)
+      ctx.s.update(param.end, clause.body.start, `) => ${gen}`)
+    } else {
+      ctx.s.update(previousEnd, clause.body.start, `${prefix}(${paramText(ctx, clause, typed)}) => ${gen}`)
+    }
     previousEnd = clause.body.end
   })
   if (node.finalizer !== null) {

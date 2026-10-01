@@ -29,7 +29,7 @@ export const serviceKey = (options: ResolvedOptions, name: string): string => {
   const slash = file.lastIndexOf("/")
   const dir = slash === -1 ? "" : file.slice(0, slash)
   const base = file.slice(slash + 1)
-  const stem = base.includes(".") ? base.slice(0, base.indexOf(".")) : base
+  const stem = base.includes(".") ? base.slice(0, base.lastIndexOf(".")) : base
   const module = stem.toLowerCase() === name.toLowerCase() || stem === "index" ? "" : stem
   return [options.packageName, dir, module, name].filter((part) => part !== "").join("/")
 }

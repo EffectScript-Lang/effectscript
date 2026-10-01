@@ -90,7 +90,9 @@ const effectDeclaration: Handler = (node, parent, ctx) => {
   const head = `const ${name} = ${E}.fn(${JSON.stringify(spanName(ctx, name))})(function*`
   const start = exportDefault ? parent!.start : keyword.start
   if (/^\s*$/.test(ctx.source.slice(keyword.end, node.id.start))) {
-    ctx.s.update(start, node.id.end, head)
+    // the name stays user text, so editor navigation and rename keep working on it
+    ctx.s.update(start, node.id.start, "const ")
+    ctx.s.appendLeft(node.id.end, ` = ${E}.fn(${JSON.stringify(spanName(ctx, name))})(function*`)
   } else {
     ctx.s.update(start, keyword.end, head)
     ctx.s.remove(node.id.start, node.id.end)

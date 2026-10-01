@@ -787,3 +787,28 @@ After Task 10, run a whole-branch review from the Plan 2 base commit on the most
 with this plan, the ADRs and the review document as context. Fix Critical/Important findings in
 one pass (each with a failing test first). Record minors as deferred. Record any decision a fix
 makes as an ADR.
+
+## Final review outcome (2026-10-02)
+
+A fresh reviewer (Opus) found five Important and four Minor issues. The fix pass covered:
+
+- **F1:** EFX5002 now covers every step that lowers to `yield*` (`throw`, effectful `do`/`match`, …).
+- **F2:** an inlined step that starts with the topic can be wrapped by a later group.
+- **F3:** a parenthesized inner pipeline stays the head.
+- **F4:** declaration names, match bindings and catch parameters stay user text. A user-text prefix
+  of an edited chunk keeps full editor features.
+- **F5:** multi-dot module names (`Users.live.efx`) keep their full stem in service keys.
+- **F8:** a nested `try` that returns on every path is no longer EFX2020. The reviewer rated this
+  Minor; it was raised to Important because it blocks valid code.
+
+Each fix has a test in `test/review.test.ts` or `test/serviceKey.test.ts`.
+
+Deferred minors:
+
+- `packageRoot` set to `/`, `""` or a bare drive root, `file://` filenames, and drive-letter case
+  mismatches can still leak or drop directories in service keys.
+- An inlined Hack step reads identifiers before a head that assigns them
+  (`(x = 5) |> x + %`). This is an ADR-0012 gap; a fix needs a follow-up ADR.
+- Unsupported forms emit invalid TS without an EFX diagnostic: `var` inside a `try` in `effect` code
+  (hoisting crosses the generated generator), `defer await e`, and `for await` with a non-block
+  body. `tsc` still reports each of them.

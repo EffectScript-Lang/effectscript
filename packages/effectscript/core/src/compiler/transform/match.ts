@@ -13,11 +13,6 @@ import { isEffectful } from "./try.ts"
 
 const tagName = (tag: Node): string => (tag.type === "MemberExpression" ? tag.property.name : tag.name)
 
-const bindingText = (ctx: Ctx, pattern: Node | null): string =>
-  pattern?.type === "TagPattern" && pattern.binding !== null
-    ? ctx.source.slice(pattern.binding.start, pattern.binding.end)
-    : ""
-
 const sameLine = (ctx: Ctx, from: number, to: number): boolean => !ctx.source.slice(from, to).includes("\n")
 
 const matchExpression: Handler = (node, _parent, ctx) => {
@@ -42,22 +37,27 @@ const matchExpression: Handler = (node, _parent, ctx) => {
   // Closers appended at an arm's end must follow anything the arm body itself appends there.
   const closers: Array<() => void> = []
   arms.forEach((arm, i) => {
-    const binding = bindingText(ctx, arm.pattern)
-    const [open, close] = generator
-      ? [`(${binding}) => ${E}.gen(function*() { return `, " })"]
-      : [`(${binding}) => `, ""]
     const pattern: Node | null = arm.pattern
-    const head = tagsOnly
-      ? `${tagName(pattern!.tag)}: ${open}`
+    const prefix = tagsOnly
+      ? `${tagName(pattern!.tag)}: `
       : pattern === null
-      ? `${M}.orElse(${open}`
+      ? `${M}.orElse(`
       : pattern.type === "TagPattern"
-      ? `${M}.tag(${JSON.stringify(tagName(pattern.tag))}, ${open}`
-      : `${M}.when(${ctx.source.slice(pattern.value.start, pattern.value.end)}, ${open}`
+      ? `${M}.tag(${JSON.stringify(tagName(pattern.tag))}, `
+      : `${M}.when(${ctx.source.slice(pattern.value.start, pattern.value.end)}, `
+    const arrow = generator ? `) => ${E}.gen(function*() { return ` : ") => "
+    const close = generator ? " })" : ""
     const tail = tagsOnly ? close : `${close})`
     const last = i === arms.length - 1
     const separator = last ? (!tagsOnly && !hasDefault ? `, ${M}.exhaustive` : "") : ","
-    ctx.s.update(arm.start, arm.body.start, head)
+    const binding: Node | null = pattern?.type === "TagPattern" ? pattern.binding : null
+    if (binding !== null) {
+      // the binding stays user text, so editor navigation and rename keep working on it
+      ctx.s.update(arm.start, binding.start, `${prefix}(`)
+      ctx.s.update(binding.end, arm.body.start, arrow)
+    } else {
+      ctx.s.update(arm.start, arm.body.start, `${prefix}(${arrow}`)
+    }
     if (arm.end > arm.body.end) ctx.s.update(arm.body.end, arm.end, `${tail}${separator}`)
     else closers[i] = () => ctx.s.appendLeft(arm.body.end, `${tail}${separator}`)
   })
