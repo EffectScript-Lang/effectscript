@@ -157,3 +157,16 @@ describe("I6: comments survive alias and ADT schemas", () => {
     expect(code).toContain("// horizontal")
   })
 })
+
+describe("D02: catch clauses are visited once", () => {
+  it("builtins inside a single catch are qualified once (effect code)", () => {
+    const code = compile("effect f() {\n  try { return await succeed(1) } catch { return await succeed(2) }\n}\n")
+    expect(code).not.toContain("Effect.Effect.")
+  })
+
+  it("builtins inside a plain top-level catch are qualified once", () => {
+    const code = compile("try { x() } catch { log(\"x\") }\n")
+    expect(code).toContain("Effect.log(\"x\")")
+    expect(code).not.toContain("Effect.Effect.")
+  })
+})

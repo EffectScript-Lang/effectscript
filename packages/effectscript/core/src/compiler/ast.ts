@@ -32,15 +32,21 @@ const skipKeys = new Set(["type", "start", "end", "loc", "range", "raw", "efx"])
  * @category utils
  */
 export const children = (node: Node): Array<Node> => {
+  // A node can be reachable through two keys (the parser stores the first catch clause in both
+  // `handler` and `handlers[0]`); each child is returned once.
+  const seen = new Set<Node>()
   const result: Array<Node> = []
+  const add = (value: unknown) => {
+    if (isNode(value) && !seen.has(value)) {
+      seen.add(value)
+      result.push(value)
+    }
+  }
   for (const key in node) {
     if (skipKeys.has(key)) continue
     const value = node[key]
-    if (Array.isArray(value)) {
-      for (const item of value) if (isNode(item)) result.push(item)
-    } else if (isNode(value)) {
-      result.push(value)
-    }
+    if (Array.isArray(value)) { for (const item of value) add(item) }
+    else add(value)
   }
   return result.sort((a, b) => a.start - b.start)
 }
