@@ -29,20 +29,35 @@ interface Compiled {
   readonly code: string
   readonly source: string
   readonly mappings: ReadonlyArray<CodeMapping>
+  edits?: ReadonlyArray<readonly [number, number]>
 }
 
 const stagedName = (file: string, mode: Mode) => file.replace(/\.efx$/, mode === "tsx" ? ".tsx" : ".ts")
 
-/** Rewrites relative `.efx` specifiers (imports, re-exports, literal dynamic imports) to staged files. */
+interface Rewritten {
+  readonly code: string
+  /** Specifier edits, as (offset in the input, length change), so positions can be mapped back. */
+  readonly edits: ReadonlyArray<readonly [number, number]>
+  /** Relatively imported files that are not compiled (JSON, …), to copy into staging. */
+  readonly assets: ReadonlyArray<string>
+}
+
+/**
+ * Rewrites relative `.efx` specifiers (imports, re-exports, literal dynamic imports) to staged
+ * files, and collects other relative imports that must be copied (review I3, I4).
+ */
 const rewriteSpecifiers = (
   code: string,
   mode: Mode,
   file: string,
   modeOf: (file: string) => Mode | undefined,
+  isProjectFile: (file: string) => boolean,
   errors: Array<string>
-): string => {
+): Rewritten => {
+  const edits: Array<readonly [number, number]> = []
+  const assets: Array<string> = []
   const parsed = parse(code, { mode })
-  if (parsed._tag === "Failure") return code
+  if (parsed._tag === "Failure") return { code, edits, assets }
   const s = new MagicString(code)
   const visit = (node: Node): void => {
     const source: Node | null | undefined = node.type === "ImportDeclaration" || node.type === "ExportAllDeclaration" ||
@@ -54,14 +69,32 @@ const rewriteSpecifiers = (
       if (value.startsWith(".") && value.endsWith(".efx")) {
         const target = path.resolve(path.dirname(file), value)
         const targetMode = modeOf(target)
-        if (targetMode === undefined) errors.push(`${file}: cannot find module '${value}' in the project`)
-        else s.update(source.end - 5, source.end - 1, targetMode === "tsx" ? ".tsx" : ".ts")
+        if (targetMode === undefined) {
+          errors.push(`${file}: cannot find module '${value}' in the project`)
+        } else {
+          const extension = targetMode === "tsx" ? ".tsx" : ".ts"
+          s.update(source.end - 5, source.end - 1, extension)
+          edits.push([source.end - 5, extension.length - 4])
+        }
+      } else if (value.startsWith(".")) {
+        const target = path.resolve(path.dirname(file), value)
+        if (!isProjectFile(target) && fs.existsSync(target) && fs.statSync(target).isFile()) assets.push(target)
       }
     }
     for (const child of children(node)) visit(child)
   }
   visit(parsed.program)
-  return s.toString()
+  return { code: s.toString(), edits, assets }
+}
+
+/** A staged offset back to the offset before the specifier rewrite. */
+const beforeRewrite = (edits: ReadonlyArray<readonly [number, number]>, offset: number): number => {
+  let shift = 0
+  for (const [at, delta] of edits) {
+    if (at + shift >= offset) break
+    shift += delta
+  }
+  return offset - shift
 }
 
 /** The source offset of a generated offset, through the compiler's mappings. */
@@ -128,20 +161,46 @@ export const build = (
   fs.rmSync(stagingDir, { recursive: true, force: true })
   const modeOf = (file: string) => compiled.get(file)?.mode
   const staged = new Map<string, string>() // staged file → original file
+  const projectFiles = new Set(parsedConfig.fileNames)
+  const isProjectFile = (file: string) => projectFiles.has(file)
+  const assets = new Set<string>()
+  const write = (target: string, text: string) => {
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.writeFileSync(target, text)
+  }
   for (const file of parsedConfig.fileNames) {
     const unit = compiled.get(file)
     const target = path.join(
       stagingDir,
       path.relative(rootDir, unit === undefined ? file : stagedName(file, unit.mode))
     )
-    const text = unit !== undefined
-      ? rewriteSpecifiers(unit.code, unit.mode, file, modeOf, errors)
-      : file.endsWith(".d.ts")
-      ? fs.readFileSync(file, "utf8")
-      : rewriteSpecifiers(fs.readFileSync(file, "utf8"), file.endsWith("x") ? "tsx" : "ts", file, modeOf, errors)
-    fs.mkdirSync(path.dirname(target), { recursive: true })
-    fs.writeFileSync(target, text)
+    if (unit === undefined && file.endsWith(".d.ts")) {
+      write(target, fs.readFileSync(file, "utf8"))
+    } else {
+      const rewritten = unit !== undefined
+        ? rewriteSpecifiers(unit.code, unit.mode, file, modeOf, isProjectFile, errors)
+        : rewriteSpecifiers(
+          fs.readFileSync(file, "utf8"),
+          file.endsWith("x") ? "tsx" : "ts",
+          file,
+          modeOf,
+          isProjectFile,
+          errors
+        )
+      if (unit !== undefined) unit.edits = rewritten.edits
+      for (const asset of rewritten.assets) assets.add(asset)
+      write(target, rewritten.code)
+    }
     staged.set(target, file)
+  }
+  for (const asset of assets) {
+    const relativeAsset = path.relative(rootDir, asset)
+    if (relativeAsset.startsWith("..")) {
+      errors.push(`${relative(asset)}: imported files must live under the project's rootDir`)
+      continue
+    }
+    fs.mkdirSync(path.dirname(path.join(stagingDir, relativeAsset)), { recursive: true })
+    fs.copyFileSync(asset, path.join(stagingDir, relativeAsset))
   }
   if (errors.length > 0) return { ok: false, errors, stagingDir }
 
@@ -166,7 +225,9 @@ export const build = (
     }
     const original = staged.get(d.file.fileName) ?? d.file.fileName
     const unit = compiled.get(original)
-    const offset = unit === undefined ? d.start ?? 0 : toSourceOffset(unit.mappings, d.start ?? 0)
+    const offset = unit === undefined
+      ? d.start ?? 0
+      : toSourceOffset(unit.mappings, beforeRewrite(unit.edits ?? [], d.start ?? 0))
     const text = unit?.source ?? d.file.text
     const before = text.slice(0, offset).split("\n")
     errors.push(

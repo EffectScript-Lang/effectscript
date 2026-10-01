@@ -1,0 +1,69 @@
+[softly, thoughtful] Every great idea...
+
+[softly, thoughtful] starts as one line.
+
+[quietly, warm] One line. [pause] One intention.
+
+[warm, a little in awe] You found Effect.
+
+[growing excitement] Typed errors.
+
+[growing excitement] Retries.
+
+[growing excitement] Resources that never leak.
+
+[growing excitement] Concurrency... that just works.
+
+[proud, with a quiet smile] It felt like a superpower.
+
+[slower, hesitant] ...Then you wrote it down.
+
+[dry, increasingly tired, speeding up] Generators. Pipes. Layers. Tags. Wrappers... around wrappers.
+
+[weary] You wanted reliability.
+
+[flat, heavy] You got ceremony.
+
+[barely above a whisper, wondering, as if the idea just arrived] What if the language...
+
+[barely above a whisper, wondering] just understood?
+
+[calm, confident] Introducing...
+
+[warm, proud] EffectScript.
+
+[clear, simple] TypeScript... with Effect built into the language.
+
+[bright, confident, conversational] An effect is just a function. And await... is yield star.
+
+[bright, confident] Errors live in the signature. Throw means fail.
+
+[bright, confident] Catch by type. Whatever you don't handle... stays in the type.
+
+[bright, confident] Behaviour reads left to right.
+
+[lightly amused] Services and layers... without the incantation.
+
+[crisp] Cleanup you can't forget.
+
+[crisp] Schemas. Pattern matching. Built in.
+
+[satisfied, confident] And it all compiles to plain, idiomatic Effect.
+
+[hushed, intimate, late at night] Three-oh-seven A.M.
+
+[hushed, intimate] The database blinks.
+
+[softly, reassuring] Your code already knew what to do.
+
+[warm, tender, with a small smile] You slept through it.
+
+[slow, sincere] Because you wrote... what you meant.
+
+[resolute, quietly powerful] All of Effect.
+
+[warm, certain] None of the ceremony.
+
+[warm, inviting] EffectScript.
+
+[softly] Built on Effect.

@@ -387,7 +387,7 @@ def volumes(scene, t_frames):
         tval.outputs[0].keyframe_insert("default_value", frame=f)
     drift = b.combine(b.mul(tval.outputs[0], 1.6), b.mul(tval.outputs[0], 0.3), 0.0)
     pco = b.v("ADD", b.v("MULTIPLY", co, (1.0, 1.0, 3.2)), drift)
-    wisp = b.noise(pco, 0.045, 3.0, 0.6)
+    wisp = b.noise(pco, 0.045, float(os.environ.get("MISTD", "3")), 0.6)
     wisp = b.mr(wisp, 0.38, 0.72, 0.05, 1.0)
     fall = b.m("EXPONENT", b.mul(z, -1.0 / 1.5))
     depth = b.mr(y, -40.0, 20.0, 0.04, 1.0, interp="SMOOTHSTEP")
@@ -446,7 +446,17 @@ def build():
         bpy.data.objects.remove(air)
     if "nomist" in dbg:
         bpy.data.objects.remove(mist)
-    cloud_cookie(scene)
+    if "biased" in dbg:
+        scene.cycles.volume_biased = True
+        scene.cycles.volume_step_rate = float(os.environ.get("STEP", "4"))
+    if "nocookie" not in dbg:
+        cloud_cookie(scene)
+    if "flatworld" in dbg:
+        scene.world.node_tree.nodes.clear()
+        o = scene.world.node_tree.nodes.new("ShaderNodeOutputWorld")
+        bgn = scene.world.node_tree.nodes.new("ShaderNodeBackground")
+        bgn.inputs[0].default_value = (0.2, 0.2, 0.2, 1)
+        scene.world.node_tree.links.new(bgn.outputs[0], o.inputs[0])
 
     sd = bpy.data.lights.new("Sun", "SUN")
     sd.energy = 7.0

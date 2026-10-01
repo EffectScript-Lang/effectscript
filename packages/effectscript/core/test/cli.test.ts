@@ -33,6 +33,7 @@ const files: Record<string, string> = {
       jsx: "react",
       jsxFactory: "h",
       declaration: true,
+      resolveJsonModule: true,
       sourceMap: true,
       rootDir: "src",
       outDir: "dist",
@@ -97,6 +98,31 @@ describe("efx build / run (ADR-0022)", () => {
     expect(built.status).toBe(1)
     expect(built.stderr).toContain("efx build needs TypeScript 6")
   }, 120_000)
+
+  it("maps type errors in .efx after rewritten imports to their exact position (review I3)", () => {
+    fs.writeFileSync(
+      path.join(dir, "src/typed.efx"),
+      "import { view } from \"./view.efx\"\nimport { greet } from \"./users.efx\"\n\nexport effect bad(): string {\n  const n: number = \"x\"\n  return String(n) + view + greet\n}\n"
+    )
+    const result = spawnSync(process.execPath, [efx, "build", "-p", "tsconfig.json"], { cwd: dir, encoding: "utf8" })
+    fs.rmSync(path.join(dir, "src/typed.efx"))
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain("src/typed.efx:5:9 - error TS2322")
+  }, 180_000)
+
+  it("copies relatively imported files it doesn't compile, such as JSON (review I4)", () => {
+    fs.writeFileSync(path.join(dir, "src/data.json"), JSON.stringify({ greeting: "hello" }))
+    fs.writeFileSync(
+      path.join(dir, "src/json.ts"),
+      "import data from \"./data.json\" with { type: \"json\" }\n\nconsole.log(data.greeting)\n"
+    )
+    const result = spawnSync(process.execPath, [efx, "build", "-p", "tsconfig.json"], { cwd: dir, encoding: "utf8" })
+    expect(result.stderr).toBe("")
+    expect(result.status).toBe(0)
+    expect(spawnSync(process.execPath, ["dist/json.js"], { cwd: dir, encoding: "utf8" }).stdout.trim()).toBe("hello")
+    fs.rmSync(path.join(dir, "src/json.ts"))
+    fs.rmSync(path.join(dir, "src/data.json"))
+  }, 180_000)
 
   it("build reports compile errors with .efx positions and fails", () => {
     fs.writeFileSync(path.join(dir, "src/broken.efx"), "effect f() {\n  const x = .\n}\n")
