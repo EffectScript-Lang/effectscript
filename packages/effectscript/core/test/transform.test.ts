@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest"
 
 export const ts = (source: string, options: CompileOptions = {}): string => {
   const result = toTypeScript(source, options)
-  if (result.diagnostics.length > 0) throw new Error(result.diagnostics.map((d) => `${d.code} ${d.message}`).join("\n"))
+  const errors = result.diagnostics.filter((d) => d.severity === "error")
+  if (errors.length > 0) throw new Error(errors.map((d) => `${d.code} ${d.message}`).join("\n"))
   return result.code
 }
 

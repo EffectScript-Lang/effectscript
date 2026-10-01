@@ -103,5 +103,6 @@ export interface CompileResult {
   readonly mode: Mode
   readonly map: SourceMapV3 | undefined
   readonly mappings: ReadonlyArray<CodeMapping>
+  /** The compile succeeded when no diagnostic has severity `"error"` (ADR-0017). */
   readonly diagnostics: ReadonlyArray<Diagnostic>
 }

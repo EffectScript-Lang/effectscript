@@ -8,9 +8,8 @@ let counter = 0
 /** Compiles EffectScript and imports the result through vitest's TS pipeline. */
 export const runCompiled = async (source: string, options: CompileOptions = {}): Promise<any> => {
   const result = toTypeScript(source, options)
-  if (result.diagnostics.length > 0) {
-    throw new Error(result.diagnostics.map((d) => `${d.code} ${d.message}`).join("\n"))
-  }
+  const errors = result.diagnostics.filter((d) => d.severity === "error")
+  if (errors.length > 0) throw new Error(errors.map((d) => `${d.code} ${d.message}`).join("\n"))
   await fs.mkdir(dir, { recursive: true })
   const file = path.join(dir, `case-${process.pid}-${counter++}.${result.mode}`)
   await fs.writeFile(file, result.code)

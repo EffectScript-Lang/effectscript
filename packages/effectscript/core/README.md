@@ -32,5 +32,13 @@ const { code, map, mappings, diagnostics, mode } = toTypeScript(source, {
 })
 ```
 
+A compile succeeds unless a diagnostic has severity `"error"`; warnings never abort output.
+
 The compiler has no Node dependencies, so it runs in the browser. See the design spec in
-`docs/superpowers/specs/2026-10-02-effectscript-design.md` for the full language.
+`docs/superpowers/specs/2026-10-02-effectscript-design.md` for the full language, and
+`docs/adr/` for the reasons behind each decision.
+
+## Status
+
+Experimental. Versions follow Effect's major.minor (`4.0.0-alpha.N` targets `effect@4.0`,
+ADR-0015).
