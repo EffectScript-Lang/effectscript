@@ -65,17 +65,37 @@ def segments(x, n):
     return out
 
 
-def main():
+def trim(clip, floor_db=-45):
+    """Trim leading and trailing silence, keeping a short breath either side."""
+    env = np.abs(clip).max(axis=1)
+    on = np.nonzero(env > env.max() * 10 ** (floor_db / 20))[0]
+    if not len(on):
+        return clip
+    return clip[max(0, on[0] - SR // 40) : min(len(clip), on[-1] + SR // 8)]
+
+
+def clips(cues):
+    """One clip per cue: ElevenLabs Studio's numbered per-paragraph export, or
+    a single timeline export split at its gaps."""
+    numbered = sorted(
+        (FILM / "build" / "audio-in").glob("ElevenLabs_*/*_Chapter_*.wav"), key=lambda p: int(p.name.split("_")[0])
+    )
+    if len(sys.argv) <= 1 and len(numbered) == len(cues):
+        return [trim(load(p)) for p in numbered], numbered[0].parent.name
     src = [Path(sys.argv[1])] if len(sys.argv) > 1 else sorted((FILM / "build" / "audio-in").glob("vo-timeline.*"))
     if not src:
-        raise SystemExit("no build/audio-in/vo-timeline.* yet")
-    cues = list(csv.DictReader(open(FILM / "prompts" / "voiceover-script.csv")))
+        raise SystemExit("no voice export found in build/audio-in")
     x = load(src[0])
-    segs = segments(x, len(cues))
+    return [x[a:b].copy() for a, b in segments(x, len(cues))], src[0].name
+
+
+def main():
+    cues = list(csv.DictReader(open(FILM / "prompts" / "voiceover-script.csv")))
+    parts, source = clips(cues)
+    print(f"{len(parts)} lines from {source}")
     out = np.zeros((int(DUR * SR), 2), np.float32)
     report = []
-    for i, ((a, b), cue) in enumerate(zip(segs, cues)):
-        clip = x[a:b].copy()
+    for i, (clip, cue) in enumerate(zip(parts, cues)):
         fade = min(len(clip) // 4, SR // 100)
         ramp = np.linspace(0, 1, fade, dtype=np.float32)[:, None]
         clip[:fade] *= ramp

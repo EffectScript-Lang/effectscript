@@ -165,8 +165,7 @@ def thread_material():
 
 def fuzz_material():
     s = fx.Shader("Fuzz")
-    b = s.principled(base=0.8, rough=0.6, sheen=0.5, sss=0.3, sss_radius=(0.6, 0.6, 0.6), sss_scale=0.0001,
-                     emit_color=1.0, emit=s.math("MULTIPLY", glow_ramp(s), 1.0))
+    b = s.principled(base=0.8, rough=0.6, sheen=0.5, emit_color=1.0, emit=s.math("MULTIPLY", glow_ramp(s), 1.0))
     return s.output(b.outputs[0])
 
 
@@ -185,7 +184,7 @@ def build():
     c = scene.cycles
     c.adaptive_threshold = 0.025
     c.adaptive_min_samples = 16
-    scene.cycles_curves.shape = "THICK"
+    scene.cycles_curves.shape = os.environ.get("CURVE_SHAPE", "RIBBONS")
     scene.cycles_curves.subdivisions = 2
     scene.render.film_transparent = False
     fx.compositor(scene, bloom=0.32, bloom_size=0.45, threshold=1.4, fog=0.0, vignette=0.25)

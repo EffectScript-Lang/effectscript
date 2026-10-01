@@ -17,7 +17,9 @@ describe("superset", () => {
         count++
         const source = fs.readFileSync(path.join(absolute, file), "utf8")
         const result = toTypeScript(source, { filename: file })
-        if (result.diagnostics.length > 0) failures.push(`${dir}/${file}: ${result.diagnostics[0]!.message}`)
+        // warnings (e.g. EFX8104 explicit any) don't change meaning (ADR-0028)
+        const errors = result.diagnostics.filter((d) => d.severity === "error")
+        if (errors.length > 0) failures.push(`${dir}/${file}: ${errors[0]!.message}`)
         else if (result.code !== source) failures.push(`${dir}/${file}: output differs`)
       }
     }

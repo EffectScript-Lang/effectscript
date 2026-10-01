@@ -22,8 +22,14 @@ export interface CompileOptions {
   readonly prelude?: boolean | undefined
   readonly rewriteImportExtensions?: "ts" | "js" | false | undefined
   readonly sourceMap?: boolean | undefined
-  /** Recover from parse errors for editors (ADR-0020). Never use for builds. */
+  /** Recover from parse errors for editors (ADR-0020). Never use for builds. Browser-safe. */
   readonly recover?: boolean | undefined
+  /** Ambient capture of `console`/`Date`/`Math`/`process.env` in `effect` code (§4.15). Default `true`; `// @efx no-ambient` turns it off. Browser-safe. */
+  readonly ambient?: boolean | undefined
+  /** Promote strict-mode warnings to errors (ADR-0028). Default `false`; `// @efx strict` turns it on. Browser-safe. */
+  readonly strict?: boolean | undefined
+  /** The installed `effect` version, compared with a `// @effect X.Y` header (EFX1003). Project-only: supplied by integrations. */
+  readonly effectVersion?: string | undefined
 }
 
 /**
@@ -39,6 +45,9 @@ export interface ResolvedOptions {
   readonly rewriteImportExtensions: "ts" | "js" | false
   readonly sourceMap: boolean
   readonly recover: boolean
+  readonly ambient: boolean
+  readonly strict: boolean
+  readonly effectVersion: string | undefined
 }
 
 /**
@@ -53,7 +62,10 @@ export const resolveOptions = (options: CompileOptions): ResolvedOptions => ({
   prelude: options.prelude ?? true,
   rewriteImportExtensions: options.rewriteImportExtensions ?? false,
   sourceMap: options.sourceMap ?? true,
-  recover: options.recover ?? false
+  recover: options.recover ?? false,
+  ambient: options.ambient ?? true,
+  strict: options.strict ?? false,
+  effectVersion: options.effectVersion
 })
 
 /**

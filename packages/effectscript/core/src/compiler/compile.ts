@@ -4,7 +4,7 @@
 import { MagicString } from "magic-string"
 import { analyze } from "./analyze/scope.ts"
 import type { Ctx } from "./context.ts"
-import { type Diagnostic, diagnosticError } from "./diagnostics.ts"
+import { type Diagnostic, diagnosticError, diagnosticWarning } from "./diagnostics.ts"
 import { emitImports, makeImportSet } from "./imports.ts"
 import { fullFeatures, toCodeMappings } from "./mappings.ts"
 import {
@@ -25,12 +25,45 @@ import { walk } from "./walk.ts"
  * @category compiler
  */
 export const toTypeScript = (source: string, options: CompileOptions = {}): CompileResult => {
-  const base = resolveOptions(options)
-  const resolved = /^\s*\/\/\s*@efx\s+no-prelude\b/m.test(source) ? { ...base, prelude: false } : base
+  const resolved = withDirectives(resolveOptions(options), source)
   const result = compileOnce(source, resolved)
   const parseError = result.diagnostics.find((d) => d.code === "EFX1001")
-  if (!resolved.recover || parseError === undefined) return result
-  return recover(source, resolved, parseError)
+  const final = !resolved.recover || parseError === undefined ? result : recover(source, resolved, parseError)
+  const diagnostics = [...final.diagnostics, ...headerDiagnostics(source, resolved)]
+  return {
+    ...final,
+    // strict mode promotes warnings to errors (ADR-0028)
+    diagnostics: resolved.strict ? diagnostics.map((d) => ({ ...d, severity: "error" as const })) : diagnostics
+  }
+}
+
+const directive = (source: string, name: string): boolean =>
+  new RegExp(`^\\s*\\/\\/\\s*@efx\\s+${name}\\b`, "m").test(source)
+
+/** `// @efx no-prelude`, `// @efx no-ambient`, `// @efx strict` (ADR-0017). */
+const withDirectives = (options: ResolvedOptions, source: string): ResolvedOptions => ({
+  ...options,
+  prelude: options.prelude && !directive(source, "no-prelude"),
+  ambient: options.ambient && !directive(source, "no-ambient"),
+  strict: options.strict || directive(source, "strict")
+})
+
+/** EFX1003: a `// @effect X.Y` header that disagrees with the installed `effect` (§7.6). */
+const headerDiagnostics = (source: string, options: ResolvedOptions): Array<Diagnostic> => {
+  const header = /^\s*\/\/\s*@effect\s+(\d+)\.(\d+)/m.exec(source)
+  const installed = /^(\d+)\.(\d+)/.exec(options.effectVersion ?? "")
+  if (header === null || installed === null) return []
+  if (header[1] === installed[1] && header[2] === installed[2]) return []
+  const start = header.index + header[0].indexOf("@effect")
+  return [
+    diagnosticWarning(
+      "EFX1003",
+      `This file targets effect ${header[1]}.${header[2]}, but effect ${installed[1]}.${installed[2]} is installed`,
+      start,
+      header.index + header[0].length,
+      "update the header or the installed effect"
+    )
+  ]
 }
 
 /** Line ranges around the error, in the order ADR-0020 tries them. */

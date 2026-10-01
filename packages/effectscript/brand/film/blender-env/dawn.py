@@ -37,8 +37,8 @@ MULL_U = 0.3  # vertical mullion at 30% of the width
 TRAN_V = 0.64  # transom at 64% of the height
 
 # the visible sun (sky) and the key light direction (towards the sun)
-SUN_VIS_AZ0, SUN_VIS_EL0 = math.radians(-15.0), math.radians(5.0)
-SUN_VIS_EL1 = math.radians(6.2)
+SUN_VIS_AZ0, SUN_VIS_EL0 = math.radians(5.0), math.radians(6.6)
+SUN_VIS_EL1 = math.radians(7.9)
 GROUND_Z = -95.0  # the office is ~30 floors up
 KEY_AZ = math.radians(-48.0)  # azimuth from +y towards -x is negative
 KEY_EL0, KEY_EL1 = math.radians(19.0), math.radians(21.5)
@@ -174,13 +174,25 @@ def building_material():
     cam = b.new("ShaderNodeCameraData")
     dist = cam.outputs["View Distance"]
     # facade grid (floors 3.5 m, bays 2.2 m)
-    fl = b.m("FRACT", b.m("DIVIDE", z, 3.5))
-    bay = b.m("FRACT", b.m("DIVIDE", b.add(x, y), 2.2))
-    win = b.mul(b.mr(fl, 0.25, 0.32, 0.0, 1.0), b.mr(bay, 0.15, 0.25, 0.0, 1.0))
-    tone = b.add(0.035, b.mul(win, 0.02))
-    p = b.principled(base=b.grey(tone), rough=b.mixf(win, 0.7, 0.15), spec=0.5)
+    nrm = b.new("ShaderNodeNewGeometry").outputs["Normal"]
+    roof = b.mr(b.xyz(nrm)[2], 0.5, 0.9)
+    bid = b.white(b.combine(b.m("FLOOR", b.mul(x, 0.03)), b.m("FLOOR", b.mul(y, 0.03)), 2.0))
+    fpitch = b.add(3.2, b.mul(bid, 1.0))
+    fl = b.m("FRACT", b.m("DIVIDE", z, fpitch))
+    bay = b.m("FRACT", b.m("DIVIDE", b.add(x, y), b.add(1.5, b.mul(bid, 1.6))))
+    win = b.mul(b.mr(fl, 0.28, 0.34, 0.0, 1.0), b.mr(fl, 0.82, 0.88, 1.0, 0.0))
+    win = b.mul(win, b.mr(bay, 0.1, 0.18, 0.0, 1.0))
+    win = b.mul(win, b.m("SUBTRACT", 1.0, roof))
+    cellw = b.white(b.combine(b.m("FLOOR", b.m("DIVIDE", b.add(x, y), 1.8)), b.m("FLOOR", b.m("DIVIDE", z, 3.4)), 5.0))
+    lit = b.mul(win, b.mr(cellw, 0.985, 0.988, 0.0, 1.0))
+    wall_tone = b.add(0.05, b.mul(bid, 0.07))
+    tone = b.mixf(win, wall_tone, 0.018)
+    tone = b.mixf(roof, tone, b.add(0.06, b.mul(bid, 0.05)))
+    p = b.principled(base=b.grey(tone), rough=b.mixf(win, 0.8, 0.12), spec=0.4)
+    b.set(p.inputs["Emission Color"], E.gray(1.0))
+    b.set(p.inputs["Emission Strength"], b.mul(lit, 0.12))
     # haze: luminance rises towards the horizon glow
-    fog = b.m("SUBTRACT", 1.0, b.m("EXPONENT", b.mul(dist, -1.0 / 1300.0)))
+    fog = b.m("SUBTRACT", 1.0, b.m("EXPONENT", b.mul(b.m("MAXIMUM", b.add(dist, -350.0), 0.0), -1.0 / 1700.0)))
     fog = b.mul(fog, b.mr(z, GROUND_Z, 250.0, 1.0, 0.6))
     em = b.new("ShaderNodeEmission")
     b.set(em.inputs["Strength"], 1.0)
@@ -188,7 +200,7 @@ def building_material():
     sd = dir_from(SUN_VIS_AZ0, SUN_VIS_EL0)
     cs = b.v("DOT_PRODUCT", inc, tuple(-sd), out="Value")
     toward = b.mul(b.m("EXPONENT", b.mul(b.add(cs, -1.0), 1.0 / (0.3 * 0.3))), 1.6)
-    hz = b.mul(b.mr(z, GROUND_Z, 200.0, 1.0, 0.6), b.add(0.8, toward))
+    hz = b.mul(b.mr(z, GROUND_Z, 200.0, 0.55, 0.32), b.add(0.45, b.mul(toward, 0.8)))
     b.set(em.inputs["Color"], b.grey(b.mul(hz, b.new("ShaderNodeValue").outputs[0])))
     hv = [nd for nd in b.n if nd.bl_idname == "ShaderNodeValue"][-1]
     hv.name = "HazeLevel"
@@ -383,8 +395,8 @@ def plant(scene, loc, pot_mat, leaf_mat, stem_mat, soil_mat, seed=11, n_leaves=2
         if trailing and k % 3 == 0:
             reach, rise = rng.uniform(0.15, 0.4) * scale, -rng.uniform(0.1, 0.45) * scale
         else:
-            reach = rng.uniform(0.03, 0.17) * scale
-            rise = rng.uniform(0.08, 0.36) * scale
+            reach = rng.uniform(0.03, 0.2) * scale
+            rise = rng.uniform(0.04, 0.3) * scale
         tip = Vector((math.cos(az) * reach, math.sin(az) * reach, ph * 0.86 + rise))
         mid = Vector((math.cos(az) * reach * 0.35, math.sin(az) * reach * 0.35, ph * 0.86 + rise * 0.75 + 0.02))
         pts = [Vector((math.cos(az) * 0.01, math.sin(az) * 0.01, ph * 0.86))]
@@ -393,7 +405,7 @@ def plant(scene, loc, pot_mat, leaf_mat, stem_mat, soil_mat, seed=11, n_leaves=2
             pts.append((1 - t) ** 2 * pts[0] + 2 * (1 - t) * t * mid + t * t * tip)
         st = tube(scene, f"Stem{k}", pts, 0.0022 * scale, stem_mat, 6)
         st.parent = root
-        L = rng.uniform(0.07, 0.12) * scale
+        L = rng.uniform(0.08, 0.14) * scale
         v, f, uv = leaf_mesh(L, L * rng.uniform(0.55, 0.7), rng.uniform(-0.25, 0.15), rng.uniform(0.1, 0.35), k)
         # orient: leaf points outward from the stem tip, drooping
         droop = rng.uniform(-0.9, 0.2)
@@ -471,26 +483,42 @@ def skyline(scene, mat):
     def add_box(cx, cy, w, d, h, z0=GROUND_Z):
         i = len(verts)
         x0, x1, y0, y1 = cx - w / 2, cx + w / 2, cy - d / 2, cy + d / 2
-        verts.extend([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0), (x0, y0, z0 + h), (x1, y0, z0 + h), (x1, y1, z0 + h), (x0, y1, z0 + h)])
+        verts.extend([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0), (x0, y0, z0 + h), (x1, y0, z0 + h), (x1, y1, z0 + h), (x0, y1, z0 + h)])  # noqa: E501
         faces.extend([(i + 0, i + 1, i + 5, i + 4), (i + 1, i + 2, i + 6, i + 5), (i + 2, i + 3, i + 7, i + 6), (i + 3, i + 0, i + 4, i + 7), (i + 4, i + 5, i + 6, i + 7)])
 
-    for k in range(1400):
-        dist = 260 + (rng.random() ** 1.3) * 3600
+    for k in range(2200):
+        dist = 240 + (rng.random() ** 1.15) * 3800
         az = math.radians(rng.uniform(-60, 45))
         cx, cy = math.sin(az) * dist - 2.0, math.cos(az) * dist + WY
-        tall = rng.random()
-        # a denser, taller downtown cluster across the river, right of the sun
-        dt = math.exp(-(((az - math.radians(4)) / 0.2) ** 2)) * math.exp(-(((dist - 2300) / 700) ** 2))
-        h = 12 + 45 * tall**2 + dt * rng.uniform(80, 330) * (rng.random() < 0.8)
-        w = rng.uniform(16, 40) * (0.75 if h > 140 else 1.0)
-        d = rng.uniform(16, 40)
-        if 1150 < dist < 1500:  # the river
+        if 1150 < dist < 1450:  # the river
             continue
-        add_box(cx, cy, w, d, h)
-        if h > 140 and rng.random() < 0.6:  # setback crown / spire
-            add_box(cx, cy, w * 0.6, d * 0.6, h + rng.uniform(10, 40))
-            if rng.random() < 0.4:
-                add_box(cx, cy, 1.2, 1.2, h + rng.uniform(50, 90))
+        tall = rng.random()
+        dt = math.exp(-(((az - math.radians(13)) / 0.16) ** 2)) * math.exp(-(((dist - 2300) / 700) ** 2))
+        near = dist < 1100
+        h = (10 + 38 * tall**2) if near else (14 + 60 * tall**2)
+        if not near and rng.random() < 0.8:
+            h += dt * rng.uniform(80, 340)
+        w = rng.uniform(14, 38) * (0.75 if h > 140 else 1.0)
+        d = rng.uniform(14, 38) * (0.75 if h > 140 else 1.0)
+        # tiers with setbacks
+        tiers = 1 if h < 60 else rng.integers(2, 4)
+        z0, hh, ww, dd = GROUND_Z, h, w, d
+        for ti in range(tiers):
+            seg_h = hh * (0.62 if ti < tiers - 1 else 1.0) if tiers > 1 else hh
+            add_box(cx, cy, ww, dd, seg_h, z0)
+            z0 += seg_h
+            hh -= seg_h
+            ww *= rng.uniform(0.62, 0.85)
+            dd *= rng.uniform(0.62, 0.85)
+            if hh <= 1:
+                break
+        top = z0
+        if h > 160 and rng.random() < 0.45:
+            add_box(cx, cy, 1.0, 1.0, rng.uniform(25, 70), top)
+        # rooftop clutter on the low blocks we look down on
+        if h < 80:
+            for _ in range(rng.integers(0, 4)):
+                add_box(cx + rng.uniform(-w, w) * 0.3, cy + rng.uniform(-d, d) * 0.3, rng.uniform(2, 6), rng.uniform(2, 6), rng.uniform(1.5, 4.5), top)
     ob = E.mesh_object(scene, "Skyline", verts, faces, mat)
     gnd = E.mesh_object(scene, "CityGround", [(-8000, 0, GROUND_Z), (8000, 0, GROUND_Z), (8000, 8000, GROUND_Z), (-8000, 8000, GROUND_Z)], [(0, 1, 2, 3)], mat)
     return ob, gnd
@@ -519,21 +547,22 @@ def world(scene):
         s = math.radians(sig_deg)
         return b.mul(b.m("EXPONENT", b.mul(b.add(cos_a, -1.0), 1.0 / (s * s))), k)
 
-    disc = b.mul(b.mr(cos_a, math.cos(math.radians(0.42)), math.cos(math.radians(0.3)), 0.0, 1.0), 5.5)
-    halo = glow(1.6, 2.2)
+    disc = b.mul(b.mr(cos_a, math.cos(math.radians(0.4)), math.cos(math.radians(0.32)), 0.0, 1.0), 6.0)
+    halo = glow(1.3, 1.6)
     wide = glow(7.0, 1.0)
     broad = glow(28.0, 0.45)
-    grad = b.add(b.mr(dz, -0.02, 0.35, 0.95, 0.28, interp="SMOOTHSTEP"), b.mr(dz, 0.0, 0.06, 0.35, 0.0))
-    sky = b.add(b.add(grad, broad), b.add(wide, b.add(halo, disc)))
+    grad = b.add(b.mr(dz, -0.02, 0.3, 0.75, 0.16, interp="SMOOTHSTEP"), b.mr(dz, 0.0, 0.05, 0.3, 0.0))
+    sky = b.add(b.add(grad, broad), b.add(wide, halo))
     # stratus streaks
     inv = b.m("DIVIDE", 1.0, b.m("MAXIMUM", b.add(dz, 0.03), 0.03))
-    P = b.combine(b.mul(dx, inv), b.mul(b.mul(dy, inv), 4.0), 1.7)
-    st = b.noise(P, 0.6, 6.0, 0.6, distort=0.4)
-    st = b.mr(st, 0.45, 0.7, 0.0, 1.0, interp="SMOOTHSTEP")
+    P = b.combine(b.mul(dx, inv), b.mul(b.mul(dy, inv), 2.2), 1.7)
+    st = b.noise(P, 0.5, 7.0, 0.62, distort=0.9)
+    st = b.mr(st, 0.42, 0.66, 0.0, 1.0, interp="SMOOTHSTEP")
     st = b.mul(st, b.mr(dz, 0.01, 0.06, 0.0, 1.0))
     # streaks are darker away from the sun, glowing near it
     cl = b.add(b.mul(sky, 0.55), b.mul(b.add(wide, halo), 0.9))
-    sky = b.mixf(b.mul(st, 0.7), sky, cl)
+    sky = b.mixf(b.mul(st, 0.85), sky, cl)
+    sky = b.add(sky, disc)  # the disc burns through the thin stratus
     lvl = b.new("ShaderNodeValue")
     lvl.name = "SkyLevel"
     lvl.outputs[0].default_value = 1.0
@@ -601,7 +630,7 @@ def dust(scene, count, box, seed, radius):
     ln.new(sz.outputs["Attribute"], iop.inputs["Scale"])
     setm = n.new("GeometryNodeSetMaterial")
     mat, bb, o = E.material("Mote")
-    p = bb.principled(base=E.gray(0.85), rough=0.5, spec=0.5)
+    p = bb.principled(base=E.gray(0.6), rough=0.5, spec=0.5)
     tr = bb.new("ShaderNodeBsdfTranslucent")
     tr.inputs["Color"].default_value = E.gray(0.9)
     mx = bb.new("ShaderNodeMixShader")
@@ -622,7 +651,7 @@ def dust(scene, count, box, seed, radius):
 
 
 def build():
-    scene = E.new_scene(FRAMES, samples=48, adaptive=0.03, bounces=(6, 3, 3, 8), clamp_ind=4.0)
+    scene = E.new_scene(FRAMES, samples=int(os.environ.get("SAMPLES", "32")), adaptive=0.035, bounces=(4, 2, 2, 8), clamp_ind=3.0)
     c = scene.cycles
     c.volume_biased = True
     c.volume_step_rate = 4.0
@@ -648,12 +677,12 @@ def build():
 
     room(scene, plaster, floor_mat, frame_mat, glass_material())
     top = desk(scene, desk_wood, dark_wood, steel)
-    laptop(scene, (-0.4, 1.78, top), math.radians(84), alu)
-    mug(scene, (-0.52, 1.18, top), math.radians(200), glaze)
-    plant(scene, (-0.28, 2.62, top), potm, leafm, stemm, soil, seed=11, n_leaves=24, scale=1.15)
+    laptop(scene, (-0.42, 1.5, top), math.radians(84), alu)
+    mug(scene, (-0.6, 1.1, top), math.radians(200), glaze)
+    plant(scene, (-0.2, 1.0, top), potm, leafm, stemm, soil, seed=11, n_leaves=40, scale=1.15)
     plant(scene, (-3.75, WY + 0.02, WIN_Z[0]), potm, leafm, stemm, soil, seed=23, n_leaves=20, scale=0.9, trailing=True)
-    books(scene, (-0.2, 0.42, top), math.radians(92), cover, pages)
-    chair(scene, (-0.92, 1.25, 0.0), math.radians(-96), fabric, blackmetal)
+    books(scene, (-0.2, 2.6, top), math.radians(92), cover, pages)
+    chair(scene, (-0.92, 2.05, 0.0), math.radians(-96), fabric, blackmetal)
 
     tmat, haze_level = building_material()
     skyline(scene, tmat)
@@ -661,16 +690,36 @@ def build():
 
     # key light (sun) through the window
     ld = bpy.data.lights.new("Sun", "SUN")
-    ld.angle = math.radians(0.6)
+    ld.angle = math.radians(2.0)
     sun = bpy.data.objects.new("Sun", ld)
     scene.collection.objects.link(sun)
     sun.visible_glossy = True
 
-    # room air: homogeneous haze, only inside the room
-    vmat, vb, vol, vout = E.volume_material("RoomAir", density=float(os.environ.get("AIR", "0.12")), anisotropy=0.7)
+    # room air: a faint haze everywhere, thicker (dust) along the sunbeam so
+    # the shafts read without veiling the room. Near-isotropic phase: we see
+    # the beam side-on.
+    vmat, vb, vol, vout = E.volume_material("RoomAir", density=0.0, anisotropy=0.25)
+    pos = vb.new("ShaderNodeNewGeometry").outputs["Position"]
+    px, py, pz = vb.xyz(pos)
+    # back-project along the key direction onto the window plane: dust only
+    # where the sunbeam is (both elevation extremes covered by the margins)
+    kd = dir_from(KEY_AZ, (KEY_EL0 + KEY_EL1) / 2)
+    s_ = vb.mul(vb.add(py, -WY), -1.0 / kd.y)
+    qx = vb.add(px, vb.mul(s_, kd.x))
+    qz = vb.add(pz, vb.mul(s_, kd.z))
+    m = 0.12
+    inx = vb.mul(vb.mr(qx, WIN_X[0] - m, WIN_X[0] + m), vb.mr(qx, WIN_X[1] - m, WIN_X[1] + m, 1.0, 0.0))
+    inz = vb.mul(vb.mr(qz, WIN_Z[0] - 0.25, WIN_Z[0] + 0.05), vb.mr(qz, WIN_Z[1] - m, WIN_Z[1] + 0.25, 1.0, 0.0))
+    beam = vb.mul(inx, inz)
+    # keep the shaft up and to the right: the lower left stays clean for type
+    beam = vb.mul(beam, vb.mul(vb.mr(pz, 0.85, 1.6), vb.mr(px, -3.3, -2.0)))
+    dn = vb.noise(pos, 1.6, 3.0, 0.55)
+    beam = vb.mul(beam, vb.mr(dn, 0.3, 0.72, 0.35, 1.35))
+    dens = vb.add(float(os.environ.get("AIR", "0.004")), vb.mul(beam, float(os.environ.get("BEAM", "0.32"))))
+    vb.set(vol.inputs["Density"], dens)
     air = E.box(scene, "RoomAir", (5.5, 6.7, CEIL - 0.02), (-2.8, WY - 3.4, CEIL / 2), vmat)
     air.visible_shadow = False
-    dust(scene, 2600, ((-4.2, -0.1), (0.2, WY - 0.1), (0.4, 2.5)), 5, 0.00045)
+    dust(scene, 1800, ((-2.9, -0.15), (0.4, WY - 0.15), (1.05, 2.5)), 5, 0.0004)
 
     # animation: sun rises a little, light grows
     for f in (1, FRAMES):
@@ -699,7 +748,7 @@ def build():
     for f in (1, FRAMES):
         t = (f - 1) / (FRAMES - 1)
         E.look_at(cam, c0.lerp(c1, t), tg0.lerp(tg1, t))
-        E.key_camera(cam, f, focus=(Vector((-0.4, 1.78, 0.78)) - c0.lerp(c1, t)).length)
+        E.key_camera(cam, f, focus=(Vector((-0.42, 1.5, 0.78)) - c0.lerp(c1, t)).length)
     E.set_interp(cam, "LINEAR")
     E.set_interp(cam.data, "LINEAR")
     return scene
