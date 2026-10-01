@@ -691,7 +691,9 @@ describe("Users", () => {
 layer(Users.layerTest)("with shared layer", (it) => { it.effect("uses it", () => Effect.gen(…)) })
 ```
 
-- Test modifiers: `test.live`, `test.skip`, `test.only`. Test bodies are `effect` bodies.
+- Test modifiers: `test.live`, `test.skip`, `test.only` (→ `it.live`, `it.effect.skip`,
+  `it.effect.only`). Test bodies are `effect` bodies. `it.effect` provides the `Scope`, so they are
+  never wrapped in `Effect.scoped`.
 - `describe`, `it`, `assert`, `expect`, and `layer` are imported automatically from
   `@effect/vitest`.
 
@@ -797,12 +799,19 @@ const AppConfig = Config.all({
   port: Config.Port("PORT").pipe(Config.withDefault(3000)),
   databaseUrl: Config.Redacted("DATABASE_URL"),
   logLevel: Config.LogLevel("LOG_LEVEL").pipe(Config.withDefault("Info")),
-  region: Config.option(Config.Literals("REGION", ["eu", "us"]))
+  region: Config.option(Config.Literals(["eu", "us"], "REGION"))
 })
 ```
 
 - Keys become `SCREAMING_SNAKE_CASE`.
 - Usage: `const cfg = await AppConfig`. A `Config` is itself an Effect.
+- Field types:
+  - `string`/`number`/`boolean` use the matching constructor.
+  - `Int`, `Finite`, `Port`, `LogLevel`, `Redacted`, `Duration`, `URL`, `Date` and
+    `NonEmptyString` use `Config.<Name>`.
+  - A literal union uses `Config.Literals([…], KEY)`.
+  - Any other name is a schema: `Config.schema(Name, KEY)`.
+  - Anything else is **EFX3010**.
 
 #### `atom` (`effect/reactivity`, for frontends)
 
@@ -846,9 +855,10 @@ traced, structured, testable (`TestClock`, seeded `Random`, `ConfigProvider`), a
 | `console.log/info/warn/error/debug(…)` | `yield* Effect.log/logInfo/logWarning/logError/logDebug(…)` |
 | `Date.now()`                         | `(yield* Clock.currentTimeMillis)`                           |
 | `Math.random()`                      | `(yield* Random.next)`                                       |
-| `process.env.NAME`                   | `(yield* Config.String("NAME"))`; a missing value is a typed `ConfigError` |
-| `process.env.NAME ?? d`              | `(yield* Config.String("NAME").pipe(Config.withDefault(d)))` |
+| `process.env.NAME`                   | `(yield* Config.String("NAME").pipe(Config.withDefault(undefined)))`: still `string \| undefined`, so `??`, `\|\|` and truthiness keep their meaning (ADR-0027) |
 
+Only *free* `console`, `Date`, `Math` and `process` are captured. Writes to `process.env` are
+left alone.
 Nested non-`effect` functions are boundaries and keep native behavior. You can turn this off per file
 with `// @efx no-ambient` or project-wide with `ambient: false`.
 
@@ -871,7 +881,7 @@ Errors apply only to `effect` code, so the superset guarantee holds:
 | Code    | Rule                                                                                              |
 | ------- | ------------------------------------------------------------------------------------------------- |
 | EFX8001 | **Floating effect:** an expression statement that calls a prelude Effect module or a local `effect` without `await`. The effect would be created and never run. |
-| EFX8002 | `yield` / `yield*` inside `effect` (use `await`)                                                       |
+| EFX8002 | `yield` / `yield*` inside `effect` (use `await`); enforced by the parser as a syntax error (EFX1001) |
 | EFX8003 | `Effect.runPromise/runSync/runFork/runCallback` inside `effect` (running effects inside effects)        |
 | EFX8004 | `throw` of a primitive (`throw "x"`); declare an `error`                                          |
 | EFX8005 | `catch (e: any)`                                                                                  |
@@ -1450,17 +1460,20 @@ The order was revised after the plan review (ADR-0016).
    graph-aware import rewriting, `efx check` (Volar on the TypeScript 6 JS API), running on Node,
    VS Code IntelliSense including incomplete code, reverse conversion of the supported subset, and a
    packed-package consumer.
-4. **Library constructs (§4.14), ambient capture, observability and strict mode (§4.15–4.17).**
-5. **Full reverse compiler:** §6 shapes and blockers, and the round-trip contract (§6.4).
-6. **CLI, integrations and distribution:** the rest of `efx`, the Bun and Vite plugins, the
+4. **Everyday constructs (Plan 4).** Done: `config`, top-level `layer`, `test`/`describe`, ambient
+   capture, and syntactic strict mode (ADR-0027, ADR-0028).
+5. **Library DSLs and telemetry (Plan 5).** `api`/`group`/`impl`, `command`, `atom`, and the OTLP
+   layer for `main` (§4.14, §4.16).
+6. **Full reverse compiler:** §6 shapes and blockers, and the round-trip contract (§6.4).
+7. **CLI, integrations and distribution:** the rest of `efx`, the Bun and Vite plugins, the
    standalone binary, the Homebrew tap, the install script, `setup`/`doctor`/`convert --ai`, and
    the examples package.
-7. **Language tooling completion:** the language server for other editors, and VS Code commands
+8. **Language tooling completion:** the language server for other editors, and VS Code commands
    and grammar polish.
-8. **AI skill:** `SKILL.md` + references, generated syntax reference, and `efx skill`.
-9. **Site:** VS Code-style before/after gallery, Monaco two-way playground, and the narrative
+9. **AI skill:** `SKILL.md` + references, generated syntax reference, and `efx skill`.
+10. **Site:** VS Code-style before/after gallery, Monaco two-way playground, and the narrative
    sections. Every claim links to evidence (review R15).
-10. **Monorepo registration and release prep:** §10 surfaces, changeset, README.
+11. **Monorepo registration and release prep:** §10 surfaces, changeset, README.
 
 ## 14. Roadmap (explicitly out of v0.1)
 
