@@ -22,6 +22,8 @@ export interface CompileOptions {
   readonly prelude?: boolean | undefined
   readonly rewriteImportExtensions?: "ts" | "js" | false | undefined
   readonly sourceMap?: boolean | undefined
+  /** Recover from parse errors for editors (ADR-0020). Never use for builds. */
+  readonly recover?: boolean | undefined
 }
 
 /**
@@ -36,6 +38,7 @@ export interface ResolvedOptions {
   readonly prelude: boolean
   readonly rewriteImportExtensions: "ts" | "js" | false
   readonly sourceMap: boolean
+  readonly recover: boolean
 }
 
 /**
@@ -49,7 +52,8 @@ export const resolveOptions = (options: CompileOptions): ResolvedOptions => ({
   runtime: options.runtime ?? "node",
   prelude: options.prelude ?? true,
   rewriteImportExtensions: options.rewriteImportExtensions ?? false,
-  sourceMap: options.sourceMap ?? true
+  sourceMap: options.sourceMap ?? true,
+  recover: options.recover ?? false
 })
 
 /**
@@ -105,4 +109,6 @@ export interface CompileResult {
   readonly mappings: ReadonlyArray<CodeMapping>
   /** The compile succeeded when no diagnostic has severity `"error"` (ADR-0017). */
   readonly diagnostics: ReadonlyArray<Diagnostic>
+  /** With `recover`: whether failing lines were neutralized to produce `code` (ADR-0020). */
+  readonly recovered?: boolean | undefined
 }
