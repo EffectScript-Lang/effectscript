@@ -465,16 +465,23 @@ Rules:
 
 - **Function style** (Effect style): if the right-hand side contains no topic `%`, `a |> f |> g`
   applies `f`, then `g`, to `a`:
-  - If `a` is known to be pipeable → `a.pipe(f, g)`. Known pipeable means an `effect` expression, a call
-    or member chain rooted at a pipeable prelude module (`Effect`, `Layer`, `Stream`, `Schema`,
-    `Schedule`, `Option`, `Result`, `Exit`, `Sink`, `Channel`, `Chunk`, `HashMap`, `HashSet`,
-    `Duration`, `Cause`), or a local `const` initialized with one of those.
-  - Otherwise → `pipe(a, f, g)`, with `pipe` imported automatically.
+  - If `a` is known to be pipeable → `a.pipe(f, g)`. Known pipeable means an `effect` block, a call
+    to a module-level `effect` declaration, or a module-level `const` initialized with one of
+    those.
+    - The rule is deliberately narrow. Module calls such as `Effect.runSync(…)` or
+      `Option.getOrElse(…)` return plain values, so "rooted at a pipeable module" would produce
+      `.pipe` on non-pipeables.
+  - Otherwise → `pipe(a, f, g)`, with `pipe` imported automatically. This is always correct.
 - **Hack style** (the proposal as currently specified): a right-hand side containing the topic `%`
   substitutes the left-hand side. For example, `user |> Effect.map(%, f)` → `Effect.map(user, f)`.
-  The value is inlined if everything evaluated before `%` is side-effect-free (identifiers, member
-  reads, literals). Otherwise the compiler emits `(($) => rhs)(lhs)`. A `%` outside a pipeline
-  right-hand side is a syntax error.
+  - The value is inlined if the right-hand side has exactly one `%` and everything evaluated before
+    it is side-effect-free (identifiers, member reads, literals, function expressions).
+  - Otherwise the step becomes the function `($) => rhs` inside the surrounding `pipe(…)`, which
+    preserves evaluation order.
+  - A `%` outside a pipeline right-hand side is a syntax error.
+- **`await` covers the whole pipeline.** Inside `effect` code, `await x |> f |> g` means
+  `await (x |> f |> g)` → `yield* x.pipe(f, g)`. This is the most common Effect pattern: pipe,
+  then run.
 - Consecutive steps of the same flavor are grouped into one `.pipe(…)`/`pipe(…)`.
 - Precedence is below `??`/`||` and above `?:`/assignment/arrow. `a ? b : c |> f` pipes only `c`.
   Use parentheses to pipe the whole conditional.
@@ -1114,70 +1121,96 @@ barrels. That keeps `pnpm check`/`lint` meaningful and proves the compiler on re
 
 ---
 
-## 9. Site (`packages/effectscript/site`, Astro)
+## 9. Site and docs (`packages/effectscript/site`, at effectscript.dev)
 
-### 9.1 Page
+The site lives in this monorepo, so there are no separate repos to maintain. Its domain is
+**effectscript.dev**; effectscript.com redirects there for now.
+
+### 9.1 Audience and pitch
+
+The page must sell the idea in seconds. It opens with **the problem, then the solution**, and
+speaks to two groups:
+
+1. **People who wanted Effect but could not stand the verbosity.**
+2. **Effect users who want code that is easier to read and review.**
+
+The message: the same Effect, as a language. It is less verbose, stricter than TypeScript, built
+for agents (fewer tokens, one canonical way to write things), and has no lock-in (two-way compiler,
+any TS is valid).
+
+**Credit:** the site says it is made by **@gunta85**, with a "Follow @gunta85" call to action in
+the hero, in the footer, and after the playground.
+
+### 9.2 Page
 
 The narrative follows §0: Effect is settled → verbosity is the complaint → EffectScript → zero risk.
 
-- **Hero:** "Effect, as a language." A live typing demo of `.efx` beside its compiled TS.
-- **Before/after gallery:** rendered as **real VS Code-style editor windows**, with title bar, tab
-  strip (`orders.ts` · `orders.effect.ts` · `orders.efx`), activity bar, gutter line numbers,
-  minimap strip, and status bar (language mode, `Ln/Col`, `UTF-8`). Code is highlighted by Shiki
-  using **our own `source.efx` TextMate grammar** (§7.4) and the VS Code Dark Modern / Light Modern
-  themes. Three panes, plain TS · Effect TS · EffectScript, for six scenarios:
-  1. typed errors + retry
-  2. services + layers
-  3. schemas + decoding
-  4. concurrency
-  5. resources (`defer`/`using`)
-  6. pattern matching
+1. **Problem → Solution hero.** A real Effect TS snippet next to its EffectScript twin, with live
+   token counts. The headline says the same thing ("Effect, as a language"), backed by the numbers.
+2. **Before/after gallery:** rendered as **real VS Code-style editor windows**, with title bar, tab
+   strip (`orders.ts` · `orders.effect.ts` · `orders.efx`), activity bar, gutter line numbers,
+   minimap strip, and status bar (language mode, `Ln/Col`, `UTF-8`).
+   - Code is highlighted by Shiki using **our own `source.efx` TextMate grammar** (§7.4) and the
+     VS Code Dark Modern / Light Modern themes.
+   - There are three panes, plain TS · Effect TS · EffectScript.
+   - There are ten scenarios: typed errors + retry, services + layers, schemas + decoding,
+     concurrency, resources, pattern matching, HTTP API, CLI, tests (vitest + Effect), and config.
+   - The Effect TS pane is generated at build time by `toTypeScript`, so it cannot drift. The
+     samples are type-checked in CI.
+3. **Live, real token counts.** A real BPE tokenizer runs in the browser (`gpt-tokenizer`,
+   `o200k_base`, in a Web Worker):
+   - Each pane shows its token count and the change relative to the others.
+   - A **"show tokens"** toggle colors each token boundary.
+   - The tokenizer is labeled honestly.
+   - Claude token counts are computed at build time (Anthropic `count_tokens` API, cached JSON)
+     when `ANTHROPIC_API_KEY` is set.
+4. **Two-way playground:** built on **`@effect/monaco-editor`**, the same Monaco setup the Effect
+   website uses:
+   - our grammar, compiler diagnostics as squiggles, and a Problems panel
+   - live two-way conversion that follows the focused pane
+   - presets, "left as TS because …" notes, and a shareable URL hash
+   - the compiler running in a Web Worker
+5. **"Stricter than TypeScript, ready for agents":** strict-mode rules (§4.17), one canonical way
+   to write each construct, explicit effects, fewer tokens, and the AI skill.
+6. **Library constructs:** `test`/`describe` (the vitest + Effect story), `api`/`impl`, `command`,
+   `config`, `layer`, and zero-config observability (§4.14–4.16).
+7. **"Zero risk":** the superset guarantee, mixing in one file, two-way conversion, `.ts` ↔ `.efx`
+   imports, and "works with your tools" (Bun, Vite, Vitest, Astro, tsc, VS Code).
+8. **Roadmap teaser**, clearly labeled as future work (§14): proofs (Lean 4 / Bend2), Alchemy infra
+   constructs, AoT-friendly output, and direct oxlint support.
+9. **Install/quickstart**, and the follow call to action.
 
-  The Effect TS pane is generated at build time by running `toTypeScript` on the EffectScript
-  sample, so it cannot drift. The same samples are type-checked in CI. Each scenario shows counts
-  (characters, lines, ceremony tokens) and the percentage reduction.
-- **Live, real token counts.** A real BPE tokenizer runs in the browser
-  (`gpt-tokenizer`, `o200k_base`, in a Web Worker):
-  - Each pane (TS, TS+Effect, EFX) shows its token count, updated as you type in the playground.
-  - Each pane shows the change relative to the others (for example "EFX −41% vs Effect TS").
-  - A **"show tokens"** toggle colors each token boundary in the editor, so people see where the
-    tokens go.
-  - The tokenizer is labeled honestly.
-  - Claude token counts for the gallery samples are computed at build time with Anthropic's
-    `count_tokens` API when `ANTHROPIC_API_KEY` is set, and cached in a committed JSON file. They
-    appear next to the live `o200k` counts as "Claude (build-time)".
-  - Ten scenarios in total: the six above plus HTTP API, CLI, tests, and config, each built on
-    §4.14.
-- **Two-way playground:** built on **Monaco**, the editor component inside VS Code, so it is a real
-  editor with minimap, folding, find, and multi-cursor:
-  - Syntax highlighting uses our grammar through `@shikijs/monaco`.
-  - EffectScript compiler diagnostics appear as squiggles (Monaco markers) and in a Problems panel.
-  - Typing in either pane converts the other live; direction follows the focused pane.
-  - It has example presets, a notes panel with "left as TS because …" explanations, and a shareable
-    URL hash.
-  - The compiler runs in a Web Worker.
-- **Sections:**
-  - "Zero risk": the superset guarantee, mixing in one file, two-way conversion, `.ts` ↔ `.efx`
-    imports.
-  - "Works with your tools": Bun, Vite, Vitest, Astro, tsc, VS Code.
-  - "Built for AI": the skill, fewer tokens, explicit effects, and the hypothesis from §0, labeled
-    as an experiment.
-  - The TC39-proposals table.
-  - Install/quickstart.
+### 9.3 Docs (Starlight at `/docs`)
 
-### 9.2 Why no wasm
+The docs are a language reference generated from the golden fixtures (EffectScript ↔ TypeScript
+pairs), plus guides: getting started, migrating with `efx convert`, services and layers, errors,
+testing, HTTP, CLI, the strict rules, editor setup, and the AI skill. The pages use Expressive Code
+blocks with the `.efx` grammar, and every example has an "Open in playground" link.
+
+### 9.4 Stack (mirrors the Effect website)
+
+The site uses the same tools as `Effect-TS/website`:
+
+- Astro 7 (static output) + Starlight
+- Expressive Code + Shiki 4
+- Tailwind CSS 4
+- React 19 islands
+- `@effect/monaco-editor`
+- `motion` for animation
+- `astro-seo` plus generated Open Graph images
+
+**Deployment** follows the Effect website: Alchemy (`alchemy/Cloudflare`, `Cloudflare.Website.Astro`)
+to Cloudflare, with the domains `effectscript.dev` and `effectscript.com` (the latter redirects).
+The `alchemy.run.ts` deployment file is written in `.efx` as a dogfooding example once Plan 4's
+runner exists.
+
+Visual design is done during implementation with the frontend-design skill.
+
+### 9.5 Why no wasm
 
 The compiler is plain JavaScript (acorn + magic-string, about 250 KB minified before gzip). It runs
 natively in the browser with no wasm. Wasm would only matter for a future Rust (oxc-based)
 implementation.
-
-### 9.3 Build
-
-- Astro (static output). Shiki highlighting with the `source.efx` grammar, rendered inside
-  VS Code-style editor frames (an Astro component).
-- The playground is a client island: Monaco (lazy-loaded) + `@shikijs/monaco` + the compiler in a
-  Web Worker.
-- Visual design is done during implementation with the frontend-design skill.
 
 ---
 
@@ -1258,6 +1291,36 @@ Each phase ends green: its tests pass, plus `pnpm check` and `pnpm lint` for the
 - A GitHub "view as EffectScript" browser extension, built on the reverse compiler.
 - A Rust/oxc implementation compiled to wasm, for speed at scale.
 - Partial application, if the proposal advances.
+- **AoT-ready output.** Bun is experimenting with AoT compilation of TS that relies on baked-in
+  type guesses, and ChadScript compiles a fixed-shape subset of TS to native code. EffectScript
+  output should help these tools:
+  - **Generated code never introduces `any`.** It keeps every explicit type the source has
+    (`Effect.fn.Return<…>` from `throws`, schema-derived types).
+  - **`schema`/`error`/`service` classes give fixed object shapes.**
+  - **Schema decoding at the boundaries turns type guesses into verified types**, so code after
+    decoding can be trusted.
+  - **An opt-in `strict: "aot"` profile** adds ChadScript-like rules to EffectScript's strict mode:
+    no `any`, no `eval`, no dynamic property addition or `delete` on schema instances, and every
+    optional field initialized.
+  - **`isolatedDeclarations`-friendly exports**, for fast `.d.ts` emit in tsgo and oxc.
+  - **AoT type hints** in a Bun-specific emit mode, once Bun exposes a stable mechanism.
+- **Proofs.** Generate Effect code *and* proof obligations automatically. Planned in stages:
+  1. **Contracts.** `requires`/`ensures` clauses on `effect` functions and schema refinements. They
+     are checked at runtime in development, and property tests are derived from them automatically
+     (fast-check through Schema `Arbitrary` and `it.effect.prop`).
+  2. **Export.** Pure functions plus their contracts and schemas are exported to Lean 4 theorem
+     statements and Bend2 specs.
+  3. **CI.** Proof status is reported in CI.
+- **Alchemy integration.** `infra`/`resource` constructs compile to Alchemy's Effect-based
+  resources, so infrastructure is written in `.efx` as well.
+- **Linting `.efx` directly.** Run oxlint on the compiled TS, mapping diagnostics back through
+  source maps. Then, if worthwhile, contribute or fork a parser so oxlint lints `.efx` natively.
+- **Performance profile.**
+  - `hot effect name()` → `Effect.fnUntraced`, with no span or stack capture, for hot paths.
+  - Schema codecs precompiled at build time.
+  - AoT hints (above).
+- **More observability magic.** Automatic span attributes for parameters whose type is a branded
+  ID schema (`UserId`), which carry no PII by construction. A `span "name" { … }` block sugar.
 - **AI evaluation harness** to test the §0 hypothesis: the same Effect tasks solved by models
   writing `.efx` versus Effect TS. Measure correctness (does the compiled output type-check and pass
   the tests?), idiomatic-ness (lint against `LLMS.md` practices), and tokens used.
