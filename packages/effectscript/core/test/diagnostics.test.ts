@@ -63,6 +63,12 @@ describe("try diagnostics", () => {
 })
 
 describe("resource diagnostics", () => {
+  it("EFX2013: using … await outside the top level of an effect", () => {
+    expect(codes("effect f(r: Effect.Effect<Disposable>) {\n  for (const x of [1]) {\n    using a = await r\n  }\n}\n"))
+      .toEqual(["EFX2013"])
+    expect(codes("effect f(r: Effect.Effect<Disposable>) {\n  using a = await r\n  return 1\n}\n")).toEqual([])
+  })
+
   it("EFX2010: break inside for await", () => {
     expect(codes("effect f(s: Stream.Stream<number>) {\n  for await (const n of s) {\n    break\n  }\n}\n")).toEqual([
       "EFX2010"

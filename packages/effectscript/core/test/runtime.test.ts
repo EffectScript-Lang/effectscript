@@ -81,6 +81,30 @@ describe("runtime", () => {
     expect(mod.summed).toBe(4)
   })
 
+  it("defer with await runs an effectful finalizer; using releases at exit in reverse order", async () => {
+    const mod = await runCompiled(`
+      import { Effect } from "effect"
+      export const log: Array<string> = []
+      const resource = (name: string) =>
+        Effect.acquireRelease(
+          Effect.sync(() => { log.push(\`open \${name}\`); return name }),
+          () => Effect.sync(() => { log.push(\`close \${name}\`) })
+        )
+      effect run() {
+        using a = await resource("a")
+        using b = await resource("b")
+        defer {
+          await Effect.sync(() => log.push("deferred"))
+        }
+        log.push(\`body \${a}\${b}\`)
+        return 1
+      }
+      export const result = Effect.runSync(run())
+    `)
+    expect(mod.result).toBe(1)
+    expect(mod.log).toEqual(["open a", "open b", "body ab", "deferred", "close b", "close a"])
+  })
+
   it("error declarations are tagged, yieldable and catchable", async () => {
     const mod = await runCompiled(`
       import { Effect } from "effect"

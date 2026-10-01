@@ -4,12 +4,12 @@
  * @since 0.1.0
  */
 import { children, containsThis, type Node } from "../ast.ts"
-import { type Handler, withEffect } from "../context.ts"
+import { type Handler, makeFrame, withEffect } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
 import { ref } from "../names.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
-import { findCrossingJump } from "./try.ts"
+import { findCrossingJump, isEffectful } from "./try.ts"
 
 const deferStatement: Handler = (node, _parent, ctx) => {
   if (ctx.effect === undefined) {
@@ -21,6 +21,13 @@ const deferStatement: Handler = (node, _parent, ctx) => {
   ctx.effect.scoped = true
   const E = ref(ctx, "effect", "Effect")
   const argument: Node = node.argument
+  if (argument.type === "BlockStatement" && isEffectful(argument)) {
+    // `defer { … await … }`: the finalizer is its own effect (ADR-0011)
+    ctx.s.update(node.start, argument.start, `yield* ${E}.addFinalizer(() => ${E}.gen(function*() `)
+    ctx.s.appendLeft(argument.end, "))")
+    withEffect(ctx, makeFrame(argument, "block"), () => walk(argument, node, ctx))
+    return true
+  }
   if (argument.type === "BlockStatement") {
     ctx.s.update(node.start, argument.start, `yield* ${E}.addFinalizer(() => ${E}.sync(() => `)
     ctx.s.appendLeft(argument.end, "))")
@@ -32,9 +39,20 @@ const deferStatement: Handler = (node, _parent, ctx) => {
   return true
 }
 
-const usingDeclaration: Handler = (node, _parent, ctx) => {
+const usingDeclaration: Handler = (node, parent, ctx) => {
   if (ctx.effect === undefined || node.kind !== "using") return
   if (!node.declarations.every((d: Node) => d.init?.type === "AwaitExpression")) return
+  if (parent !== ctx.effect.node.body) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX2013",
+        "`using … await` must be at the top level of an `effect`",
+        node.start,
+        node.start + 5,
+        "move it to the top of the `effect`, or put the block in its own `effect { … }` and `await` it"
+      )
+    )
+  }
   ctx.effect.scoped = true
   ctx.s.update(node.start, node.start + 5, "const")
 }
