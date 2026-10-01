@@ -132,6 +132,7 @@ export default defineConfig({
         }
       }),
       ...project("effectscript", "packages/effectscript/core"),
+      ...project("@effectscript/language", "packages/effectscript/language"),
       ...project("@effect/opentelemetry", "packages/opentelemetry"),
       ...project("@effect/platform-browser", "packages/platform/browser", true, {
         test: {

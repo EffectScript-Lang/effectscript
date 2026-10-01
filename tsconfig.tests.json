@@ -102,6 +102,8 @@
       "effectscript": ["./packages/effectscript/core/src/index.ts"],
       "effectscript/compiler": ["./packages/effectscript/core/src/compiler/index.ts"],
       "effectscript/*": ["./packages/effectscript/core/src/*.ts"],
+      "@effectscript/language": ["./packages/effectscript/language/src/index.ts"],
+      "@effectscript/language/*": ["./packages/effectscript/language/src/*.ts"],
       "@effect/vitest/*": ["./packages/vitest/src/*.ts"],
       // TODO: This is a special alias used by some tests. We should try to get rid of it.
       "effect-test/*": ["./packages/effect/test/*.ts"]

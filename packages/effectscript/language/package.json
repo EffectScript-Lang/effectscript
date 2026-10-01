@@ -1,0 +1,55 @@
+{
+  "name": "@effectscript/language",
+  "version": "4.0.0-alpha.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "EffectScript language tooling: Volar language plugin, TypeScript server plugin and efx-tsc",
+  "homepage": "https://github.com/gunta/effect-lang/tree/effectscript/packages/effectscript/language",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gunta/effect-lang.git",
+    "directory": "packages/effectscript/language"
+  },
+  "sideEffects": [],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./index": null
+  },
+  "files": [
+    "bin/**/*.js",
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./*": "./dist/*.js",
+      "./index": null
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@volar/language-core": "2.4.28",
+    "@volar/typescript": "2.4.28",
+    "effectscript": "workspace:^"
+  },
+  "peerDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "effect": "workspace:^",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
+  }
+}
