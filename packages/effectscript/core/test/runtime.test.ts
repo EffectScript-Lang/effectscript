@@ -54,4 +54,30 @@ describe("runtime", () => {
     expect(mod.order).toEqual(["A", "B", "C"])
     expect(mod.parsed).toBe("bad json")
   })
+
+  it("defer runs finalizers in reverse order at function exit; for await consumes streams", async () => {
+    const mod = await runCompiled(`
+      import { Effect, Stream } from "effect"
+      export const log: Array<string> = []
+      effect run() {
+        defer Effect.sync(() => log.push("first-registered"))
+        defer { log.push("second-registered") }
+        log.push("body")
+        return 1
+      }
+      export const result = Effect.runSync(run())
+      effect total() {
+        let sum = 0
+        for await (const n of Stream.make(1, -2, 3)) {
+          if (n < 0) continue
+          sum += n
+        }
+        return sum
+      }
+      export const summed = Effect.runSync(total())
+    `)
+    expect(mod.result).toBe(1)
+    expect(mod.log).toEqual(["body", "second-registered", "first-registered"])
+    expect(mod.summed).toBe(4)
+  })
 })

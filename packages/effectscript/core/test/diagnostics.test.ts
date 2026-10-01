@@ -55,3 +55,21 @@ describe("try diagnostics", () => {
     expect(codes("try {} catch (a) {} catch (b) {}\n")).toEqual(["EFX2024"])
   })
 })
+
+describe("resource diagnostics", () => {
+  it("EFX2010: break inside for await", () => {
+    expect(codes("effect f(s: Stream.Stream<number>) {\n  for await (const n of s) {\n    break\n  }\n}\n")).toEqual([
+      "EFX2010"
+    ])
+  })
+
+  it("EFX2011: defer outside effect", () => {
+    expect(codes("function f() {\n  defer close()\n}\n")).toEqual(["EFX2011"])
+  })
+
+  it("EFX2012: for await without a declaration", () => {
+    expect(codes("effect f(s: Stream.Stream<number>) {\n  let n = 0\n  for await (n of s) {}\n}\n")).toEqual([
+      "EFX2012"
+    ])
+  })
+})

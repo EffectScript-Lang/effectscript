@@ -155,6 +155,7 @@ export const efxPlugin = (Base: any): any =>
 
     parseStatement(context: unknown, topLevel: unknown, exports: unknown): any {
       if (this.efxIsEffectDeclarationStart()) return this.efxParseEffectDeclaration(false)
+      if (this.efxDeferFollows()) return this.efxParseDefer()
       return super.parseStatement(context, topLevel, exports)
     }
 
@@ -318,5 +319,22 @@ export const efxPlugin = (Base: any): any =>
       node.finalizer = this.eat(tt._finally) ? this.parseBlock() : null
       if (node.handler === null && node.finalizer === null) this.raise(node.start, "Missing catch or finally clause")
       return this.finishNode(node, "TryStatement")
+    }
+
+    efxDeferFollows(): boolean {
+      if (!this.efxIsWord("defer")) return false
+      const next = this.lookahead()
+      if (!this.efxSameLine(next)) return false
+      return next.type === tt.braceL || next.type === tt.name || next.type === tt._new || next.type === tt._this ||
+        next.type === tt.string || next.type === tt.backQuote || next.type === tt._void
+    }
+
+    efxParseDefer(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.argument = this.type === tt.braceL ? this.parseBlock() : this.parseExpression()
+      this.semicolon()
+      return this.finishNode(node, "DeferStatement")
     }
   }

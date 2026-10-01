@@ -138,3 +138,16 @@ describe("try statements", () => {
     expect(statement.finalizer.type).toBe("BlockStatement")
   })
 })
+
+describe("defer", () => {
+  it("parses defer expressions and blocks, but not defer calls", () => {
+    const { program } = ok(
+      "effect f() {\n  defer close()\n  defer { cleanup() }\n}\nconst defer = (x: unknown) => x\ndefer(1)\n"
+    )
+    const [a, b] = program.body[0].body.body
+    expect(a.type).toBe("DeferStatement")
+    expect(a.argument.type).toBe("CallExpression")
+    expect(b.argument.type).toBe("BlockStatement")
+    expect(program.body[2].type).toBe("ExpressionStatement")
+  })
+})
