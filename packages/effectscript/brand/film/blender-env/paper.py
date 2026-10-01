@@ -370,7 +370,7 @@ def lamp(scene, metal, bulb_mat):
     parts.append(rod(joint1, elbow))
     parts.append(rod(elbow, head))
     # shade: an open cone pointing down towards the desk front
-    axis = (Vector((-0.1, -0.15, DESK["top"])) - BULB).normalized() * 0 + (Vector((0.05, -0.2, DESK["top"])) - BULB).normalized()
+    axis = (Vector((0.05, -0.2, DESK["top"])) - BULB).normalized()
     prof = [(0.012, 0.0), (0.03, 0.01), (0.06, 0.05), (0.09, 0.13), (0.094, 0.135)]
     verts, faces = [], []
     seg = 48
@@ -395,6 +395,7 @@ def lamp(scene, metal, bulb_mat):
     bulb = dawn.lathe(scene, "Bulb", [(0.0, -0.03), (0.022, -0.02), (0.028, 0.0), (0.02, 0.02), (0.008, 0.035), (0.0, 0.036)], bulb_mat, 32)
     bulb.rotation_euler = q.to_euler()
     bulb.location = BULB + axis * 0.035
+    bulb.visible_shadow = False  # the key light sits inside it
     return axis
 
 
@@ -493,7 +494,7 @@ def build():
     scene.render.use_motion_blur = True
     scene.render.motion_blur_shutter = 0.5
     scene.render.motion_blur_position = "CENTER"
-    E.compositor(scene, bloom=0.35, bloom_size=0.75, threshold=2.0, vignette=0.4, gain=1.0)
+    E.compositor(scene, bloom=0.35, bloom_size=0.75, threshold=2.0, vignette=0.4, gain=float(os.environ.get("GAIN", "1.0")))
 
     w = bpy.data.worlds.new("Dark")
     scene.world = w
@@ -540,9 +541,9 @@ def build():
 
     # the lamp: a spot inside the shade plus the glowing bulb
     sd = bpy.data.lights.new("LampKey", "SPOT")
-    sd.energy = float(os.environ.get("LAMP", "650"))
+    sd.energy = float(os.environ.get("LAMP", "170"))
     sd.color = (1.0, 0.92, 0.8)
-    sd.spot_size = math.radians(100)
+    sd.spot_size = math.radians(84)
     sd.spot_blend = 0.35
     sd.shadow_soft_size = 0.02
     key = bpy.data.objects.new("LampKey", sd)
@@ -550,7 +551,7 @@ def build():
     key.location = BULB + axis * 0.03
     key.rotation_euler = axis.to_track_quat("-Z", "Y").to_euler()
     pt = bpy.data.lights.new("LampSpill", "POINT")
-    pt.energy = 30.0
+    pt.energy = 14.0
     pt.color = (1.0, 0.92, 0.8)
     pt.shadow_soft_size = 0.02
     spill = bpy.data.objects.new("LampSpill", pt)

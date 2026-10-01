@@ -21,7 +21,8 @@ describe("test / describe (§4.14)", () => {
   })
 
   it("leaves identifiers named describe and test alone", () => {
-    const source = "const describe = (s: string) => s\nconst test = { live: 1 }\nexport const a = describe(\"x\") + test.live\n"
+    const source =
+      "const describe = (s: string) => s\nconst test = { live: 1 }\nexport const a = describe(\"x\") + test.live\n"
     expect(toTypeScript(source).code).toBe(source)
   })
 })

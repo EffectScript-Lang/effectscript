@@ -19,7 +19,7 @@ describe "Users" {
   }
 
   test.skip "is skipped" {
-    await fail("never runs")
+    return await fail("never runs")
   }
 }
 

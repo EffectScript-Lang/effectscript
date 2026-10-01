@@ -517,7 +517,10 @@ export const efxPlugin = (Base: any): any =>
     /** `test[.live|.skip|.only] "name" { … }` (§4.14). */
     efxIsTestStart(): boolean {
       if (!this.efxIsWord("test")) return false
-      const rest = this.input.slice(this.end, this.input.indexOf("\n", this.end) === -1 ? undefined : this.input.indexOf("\n", this.end))
+      const rest = this.input.slice(
+        this.end,
+        this.input.indexOf("\n", this.end) === -1 ? undefined : this.input.indexOf("\n", this.end)
+      )
       return /^\s*(?:\.\s*(?:live|skip|only)\s*)?["']/.test(rest)
     }
 

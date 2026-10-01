@@ -23,7 +23,7 @@ describe("Users", () => {
   }))
 
   it.effect.skip("is skipped", () => Effect.gen(function*() {
-    yield* Effect.fail("never runs")
+    return yield* Effect.fail("never runs")
   }))
 })
 

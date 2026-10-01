@@ -146,40 +146,141 @@ def glitch(strength):
     return x * env(n, 0.0005, 0.02) * 0.6 * strength
 
 
+# ---------------------------------------------------------------- recorded sources
+
+LIBDIR = Path(__file__).resolve().parent.parent / "sfx"
+
+
+def _read(name):
+    with wave.open(str(LIBDIR / f"{name}.wav")) as w:
+        x = np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, w.getnchannels()).astype(np.float32) / 32768
+    x = x.mean(axis=1) if x.ndim == 2 else x
+    return x / max(np.abs(x).max(), 1e-6)
+
+
+def _slices(name, min_gap=0.08, max_len=0.22):
+    """Cut a take of separated hits (keystrokes) into one-shots at its onsets."""
+    x = _read(name)
+    env = signal.sosfilt(signal.butter(2, 40, fs=SR, output="sos"), np.abs(signal.hilbert(x)))
+    hop = SR // 200
+    d = np.maximum(np.diff(env[::hop]), 0)
+    peaks, _ = signal.find_peaks(d, height=d.max() * 0.18, distance=int(min_gap * 200))
+    on = peaks * hop
+    out = []
+    for i, a in enumerate(on):
+        a = max(0, a - SR // 400)
+        b = min(len(x), on[i + 1] - SR // 400 if i + 1 < len(on) else a + int(max_len * SR), a + int(max_len * SR))
+        hit = x[a:b].copy()
+        if len(hit) < SR // 50:
+            continue
+        hit *= np.minimum(1, np.linspace(0, 40, len(hit)))[:]  # 0.5 ms fade-in
+        tail = min(len(hit), SR // 60)
+        hit[-tail:] *= np.linspace(1, 0, tail)
+        out.append(hit / max(np.abs(hit).max(), 1e-6))
+    return out
+
+
+KEYS = _slices("keys-a") + _slices("keys-b")
+SPACES = _slices("spacebar", min_gap=0.15, max_len=0.3)
+ONESHOT = {n: _read(n) for n in ["enter", "stamp", "whoosh", "longwhoosh", "swish", "buzz", "error", "retry"]}
+GLITCH = _read("glitch")
+_last = {"k": -1}
+
+
+def resample(x, ratio):
+    n = max(8, int(len(x) / ratio))
+    return np.interp(np.linspace(0, len(x) - 1, n), np.arange(len(x)), x).astype(np.float32)
+
+
+def real_key(strength, pool=None, light=False):
+    pool = pool or KEYS
+    i = int(rng.integers(len(pool)))
+    if i == _last["k"]:
+        i = (i + 1) % len(pool)
+    _last["k"] = i
+    x = resample(pool[i], rng.uniform(0.96, 1.04)) * rng.uniform(0.75, 1.0) * strength
+    if light:
+        x = highpass(x, 1800) * 0.8
+    return x
+
+
+def real(name, strength, pitch=0.0):
+    x = ONESHOT[name]
+    if pitch:
+        x = resample(x, 2 ** (rng.uniform(-pitch, pitch) / 12))
+    return x * strength
+
+
+def real_glitch(strength):
+    n = int(rng.uniform(0.03, 0.07) * SR)
+    a = int(rng.integers(0, len(GLITCH) - n))
+    g = GLITCH[a : a + n].copy()
+    g *= np.linspace(1, 0.3, n)
+    return g * strength
+
+
 VOICES = {
-    "key": lambda s: key(s),
-    "space": lambda s: key(s, deep=True),
-    "tick": lambda s: key(s, light=True),
-    "enter": lambda s: key(s * 1.2, deep=True) + np.pad(whoosh(0.3, 0.4), (0, 0))[: int(0.09 * SR)],
-    "stamp": stamp,
+    "key": lambda s: real_key(s),
+    "space": lambda s: real_key(s, SPACES),
+    "tick": lambda s: real_key(s, light=True),
+    "enter": lambda s: real("enter", s),
+    "stamp": lambda s: real("stamp", s, pitch=2.0),
     "morph": shimmer,
-    "whoosh": lambda s: whoosh(s, 1.0),
-    "longwhoosh": lambda s: whoosh(s, 3.6),
-    "swish": lambda s: whoosh(s, 0.35),
+    "whoosh": lambda s: real("whoosh", s),
+    "longwhoosh": lambda s: real("longwhoosh", s),
+    "swish": lambda s: real("swish", s, pitch=1.5),
     "success": chime,
     "chip": pop,
-    "error": error_buzz,
-    "retry": blip,
-    "buzz": vibrate,
-    "glitch": glitch,
+    "error": lambda s: real("error", s),
+    "retry": lambda s: real("retry", s),
+    "buzz": lambda s: real("buzz", s),
+    "glitch": real_glitch,
 }
 LEVEL = {
-    "key": 0.17,
-    "space": 0.17,
-    "tick": 0.18,
-    "enter": 0.4,
-    "stamp": 0.55,
-    "morph": 0.35,
+    "key": 0.16,
+    "space": 0.15,
+    "tick": 0.07,
+    "enter": 0.3,
+    "stamp": 0.38,
+    "morph": 0.16,
     "whoosh": 0.22,
-    "longwhoosh": 0.28,
-    "swish": 0.16,
-    "success": 0.6,
-    "chip": 0.35,
-    "error": 0.5,
-    "retry": 0.45,
-    "buzz": 0.55,
-    "glitch": 0.35,
+    "longwhoosh": 0.3,
+    "swish": 0.14,
+    "success": 0.45,
+    "chip": 0.22,
+    "error": 0.3,
+    "retry": 0.35,
+    "buzz": 0.5,
+    "glitch": 0.3,
 }
+
+# continuous beds under the picture: (source, start, end, gain, fade in, fade out)
+BEDS = [
+    ("rain", 11.2, 16.2, 0.10, 1.2, 0.5),  # the night desk: rain on the window
+    ("paper", 38.0, 41.0, 0.32, 0.05, 1.0),  # the paper avalanche
+    ("cables", 40.0, 54.0, 0.20, 2.0, 0.0),  # the tangle strains and tightens (cut dead at 54)
+]
+
+
+def bed(name, start, end, gain, fin, fout, n):
+    x = _read(name)
+    length = int((end - start) * SR)
+    if len(x) < length:
+        x = np.tile(x, length // len(x) + 1)
+    x = x[:length] * gain
+    e = np.ones(length, np.float32)
+    if fin:
+        k = int(fin * SR)
+        e[:k] = np.linspace(0, 1, k) ** 2
+    if fout:
+        k = int(fout * SR)
+        e[-k:] *= np.linspace(1, 0, k) ** 2
+    if name == "cables":
+        e *= np.linspace(0.5, 1.4, length)  # tightens as the tangle grows
+    out = np.zeros(n)
+    a = int(start * SR)
+    out[a : a + length] = x * e
+    return out
 
 
 def main():
@@ -199,6 +300,10 @@ def main():
             pan_curve = np.full(end - start, pan)
         mix[start:end, 0] += x[: end - start] * np.sqrt(0.5 - pan_curve / 2) * 1.414
         mix[start:end, 1] += x[: end - start] * np.sqrt(0.5 + pan_curve / 2) * 1.414
+    for spec in BEDS:
+        b = bed(*spec, n)
+        mix[:, 0] += b
+        mix[:, 1] += b
     # a small room so the Foley sits in the same space as the score
     ir_n = int(0.6 * SR)
     ir = rng.standard_normal((ir_n, 2)) * np.exp(-np.arange(ir_n) / (0.12 * SR))[:, None]

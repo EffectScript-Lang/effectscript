@@ -3,9 +3,9 @@
  *
  * @since 0.1.0
  */
+import { isTypeFree, isValueFree } from "../analyze/scope.ts"
 import type { Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
-import { isTypeFree, isValueFree } from "../analyze/scope.ts"
 import { ref } from "../names.ts"
 import { isBareType, isServiceTag, resolveType, resolveValue } from "../prelude/resolve.ts"
 import type { HandlerGroup } from "./registry.ts"

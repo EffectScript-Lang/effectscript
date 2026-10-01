@@ -155,9 +155,22 @@ def exr_settings(im):
     im.exr_codec = "DWAA"
 
 
-def compositor(scene, bloom=0.25, bloom_size=0.6, threshold=2.0, vignette=0.25, gain=1.0):
-    """Gentle bloom on the HDR highlights, forced monochrome, a soft vignette
-    and a linear gain. Scene-linear out; blacks are not lifted."""
+KNEE, LIMIT = 4.0, 6.5
+
+
+def softknee_np(x, k=KNEE, lim=LIMIT):
+    """Highlight rolloff: identity below k, then asymptotic to lim."""
+    import numpy as _np
+
+    p = _np.maximum(x - k, 0.0)
+    return x - p + p / (1.0 + p / (lim - k))
+
+
+def compositor(scene, bloom=0.25, bloom_size=0.6, threshold=2.0, vignette=0.25, gain=1.0, knee=True):
+    """Gentle bloom on the HDR highlights, forced monochrome, a soft vignette,
+    a linear gain and a highlight soft-knee (identity below 4.0, asymptotic
+    to 6.5) so sun discs and bulbs stay inside the 3-6 contract.
+    Scene-linear out; blacks are not lifted."""
     scene.render.use_compositing = True
     tree = bpy.data.node_groups.new("Grade", "CompositorNodeTree")
     tree.interface.new_socket("Image", in_out="OUTPUT", socket_type="NodeSocketColor")
@@ -204,6 +217,28 @@ def compositor(scene, bloom=0.25, bloom_size=0.6, threshold=2.0, vignette=0.25, 
         ln.new(cur, mul.inputs[6])
         mul.inputs[7].default_value = (gain, gain, gain, 1.0)
         cur = mul.outputs[2]
+    if knee:
+        sep = n.new("CompositorNodeSeparateColor")
+        ln.new(cur, sep.inputs[0])
+        x = sep.outputs[0]  # monochrome: R == G == B
+
+        def m(op, a_, b_):
+            nd = n.new("ShaderNodeMath")
+            nd.operation = op
+            for i, v in enumerate((a_, b_)):
+                if isinstance(v, float):
+                    nd.inputs[i].default_value = v
+                else:
+                    ln.new(v, nd.inputs[i])
+            return nd.outputs[0]
+
+        pexc = m("MAXIMUM", m("SUBTRACT", x, KNEE), 0.0)
+        y = m("ADD", m("SUBTRACT", x, pexc), m("DIVIDE", pexc, m("ADD", m("DIVIDE", pexc, LIMIT - KNEE), 1.0)))
+        comb = n.new("CompositorNodeCombineColor")
+        for i in range(3):
+            ln.new(y, comb.inputs[i])
+        comb.inputs[3].default_value = 1.0
+        cur = comb.outputs[0]
     out = n.new("NodeGroupOutput")
     ln.new(cur, out.inputs[0])
     return tree
