@@ -73,3 +73,9 @@ describe("resource diagnostics", () => {
     ])
   })
 })
+
+describe("proposal diagnostics", () => {
+  it("EFX7001: return escaping a do expression", () => {
+    expect(codes("function f() {\n  const x = do {\n    return 1\n  }\n}\n")).toEqual(["EFX7001"])
+  })
+})

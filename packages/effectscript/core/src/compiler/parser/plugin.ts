@@ -241,6 +241,18 @@ export const efxPlugin = (Base: any): any =>
           }
         }
       }
+      if (this.type === tt._throw) {
+        const node = this.startNode()
+        this.next()
+        node.argument = this.parseMaybeUnary(null, false, false, false)
+        return this.finishNode(node, "ThrowExpression")
+      }
+      if (this.type === tt._do) {
+        const node = this.startNode()
+        this.next()
+        node.body = this.parseBlock()
+        return this.finishNode(node, "DoExpression")
+      }
       return super.parseExprAtom(refDestructuringErrors, forInit, forNew)
     }
 

@@ -4,6 +4,7 @@
 import type { Handler } from "../context.ts"
 import { awaitHandlers } from "./await.ts"
 import { effectHandlers } from "./effect.ts"
+import { proposalHandlers } from "./proposals.ts"
 import { resourceHandlers } from "./resources.ts"
 import { returnTypeHandlers } from "./returnType.ts"
 import { tryHandlers } from "./try.ts"
@@ -36,4 +37,11 @@ export const registry = (...groups: ReadonlyArray<HandlerGroup>): ReadonlyMap<st
  * @since 0.1.0
  * @category handlers
  */
-export const handlers = registry(effectHandlers, tryHandlers, resourceHandlers, awaitHandlers, returnTypeHandlers)
+export const handlers = registry(
+  effectHandlers,
+  tryHandlers,
+  resourceHandlers,
+  proposalHandlers,
+  awaitHandlers,
+  returnTypeHandlers
+)
