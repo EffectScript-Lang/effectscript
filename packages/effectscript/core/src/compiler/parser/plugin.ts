@@ -6,6 +6,7 @@
  * @since 0.1.0
  */
 import * as acorn from "acorn"
+import { skipBalanced, skipSpace } from "./scan.ts"
 
 const tt = acorn.tokTypes
 
@@ -93,5 +94,206 @@ export const efxPlugin = (Base: any): any =>
         return this.parseExprOp(node, leftStartPos, leftStartLoc, minPrec, forInit)
       }
       return super.parseExprOp(left, leftStartPos, leftStartLoc, minPrec, forInit)
+    }
+
+    efxNextIsNameSameLine(): boolean {
+      const next = this.lookahead()
+      return next.type === tt.name && this.efxSameLine(next)
+    }
+
+    efxIsEffectDeclarationStart(): boolean {
+      return this.efxIsWord("effect") && this.efxNextIsNameSameLine()
+    }
+
+    /** A block in which `await` is allowed: the body of an effect. */
+    efxParseAsyncBlock(): any {
+      const oldYieldPos = this.yieldPos
+      const oldAwaitPos = this.awaitPos
+      const oldAwaitIdentPos = this.awaitIdentPos
+      const oldLabels = this.labels
+      this.yieldPos = 0
+      this.awaitPos = 0
+      this.awaitIdentPos = 0
+      this.labels = []
+      this.enterScope(2 | 4) // SCOPE_FUNCTION | SCOPE_ASYNC
+      const body = this.parseBlock(false)
+      this.exitScope()
+      this.yieldPos = oldYieldPos
+      this.awaitPos = oldAwaitPos
+      this.awaitIdentPos = oldAwaitIdentPos
+      this.labels = oldLabels
+      return body
+    }
+
+    /** Trailing `|> expr` items after a declaration-like construct. */
+    efxAttachPipes(node: any): void {
+      const pipes: Array<any> = []
+      const ops: Array<{ start: number; end: number }> = []
+      while (this.type === pipelineToken) {
+        ops.push({ start: this.start, end: this.end })
+        this.next()
+        const start = this.start
+        const startLoc = this.startLoc
+        pipes.push(
+          this.parseExprOp(this.parseMaybeUnary(null, false, false, false), start, startLoc, pipelineToken.binop, false)
+        )
+      }
+      node.efxPipes = pipes
+      node.efxPipeOps = ops
+      if (pipes.length > 0) this.eat(tt.semi)
+    }
+
+    efxParseEffectDeclaration(exportDefault: boolean): any {
+      const node = this.startNode()
+      const keyword = { start: this.start, end: this.end }
+      this.next()
+      const fn = this.parseFunction(node, 1, /* FUNC_STATEMENT */ false, true)
+      fn.efx = exportDefault ? { kind: "declaration", keyword, exportDefault: true } : { kind: "declaration", keyword }
+      this.efxAttachPipes(fn)
+      return fn
+    }
+
+    parseStatement(context: unknown, topLevel: unknown, exports: unknown): any {
+      if (this.efxIsEffectDeclarationStart()) return this.efxParseEffectDeclaration(false)
+      return super.parseStatement(context, topLevel, exports)
+    }
+
+    shouldParseExportStatement(): any {
+      return this.efxIsEffectDeclarationStart() || super.shouldParseExportStatement()
+    }
+
+    parseExportDefaultDeclaration(): any {
+      if (this.efxIsEffectDeclarationStart()) return this.efxParseEffectDeclaration(true)
+      return super.parseExportDefaultDeclaration()
+    }
+
+    // --- effect expressions --------------------------------------------------------------------
+
+    /** `(params)` followed by `=>`, or by `: ReturnType … =>`. */
+    efxIsParenArrowAhead(parenStart: number): boolean {
+      const end = skipBalanced(this.input, parenStart)
+      if (end === -1) return false
+      let i = skipSpace(this.input, end)
+      if (this.input.startsWith("=>", i)) return true
+      if (this.input[i] !== ":") return false
+      i++
+      while (i < this.input.length) {
+        i = skipSpace(this.input, i)
+        if (this.input.startsWith("=>", i)) return true
+        const ch = this.input[i]!
+        if (ch === "(" || ch === "[" || ch === "{") {
+          i = skipBalanced(this.input, i)
+          if (i === -1) return false
+          continue
+        }
+        if (ch === ";" || ch === "," || ch === ")" || ch === "}" || ch === "]") return false
+        i++
+      }
+      return false
+    }
+
+    efxParseEffectBlock(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.body = this.efxParseAsyncBlock()
+      return this.finishNode(node, "EffectBlock")
+    }
+
+    efxParseEffectArrow(): any {
+      const keyword = { start: this.start, end: this.end }
+      this.next()
+      const state = this.efxState()
+      const arrowStart = this.start
+      state.arrowStarts.add(arrowStart)
+      let arrow: any
+      if (this.type === tt.parenL) {
+        arrow = this.parseParenAndDistinguishExpression(true, false)
+      } else {
+        const start = this.start
+        const startLoc = this.startLoc
+        const param = this.parseIdent(false)
+        this.expect(tt.arrow)
+        arrow = this.parseArrowExpression(this.startNodeAt(start, startLoc), [param], true, false)
+      }
+      state.arrowStarts.delete(arrowStart)
+      if (arrow.type !== "ArrowFunctionExpression") {
+        this.raise(keyword.start, "Expected an arrow function after `effect`")
+      }
+      arrow.efx = { kind: "arrow", keyword }
+      return arrow
+    }
+
+    parseArrowExpression(node: any, params: any, isAsync: boolean, forInit: boolean): any {
+      const forced = this.efxState().arrowStarts.has(node.start)
+      return super.parseArrowExpression(node, params, forced || isAsync, forInit)
+    }
+
+    parseExprAtom(refDestructuringErrors: unknown, forInit: unknown, forNew: unknown): any {
+      if (this.efxIsWord("effect")) {
+        const next = this.lookahead()
+        if (this.efxSameLine(next)) {
+          if (next.type === tt.braceL) return this.efxParseEffectBlock()
+          if (next.type === tt.parenL && this.efxIsParenArrowAhead(next.start)) return this.efxParseEffectArrow()
+          if (next.type === tt.name && this.input.startsWith("=>", skipSpace(this.input, next.end))) {
+            return this.efxParseEffectArrow()
+          }
+        }
+      }
+      return super.parseExprAtom(refDestructuringErrors, forInit, forNew)
+    }
+
+    // --- effect methods ------------------------------------------------------------------------
+
+    efxIsMethodAhead(): boolean {
+      if (!this.efxIsWord("effect")) return false
+      const next = this.lookahead()
+      return this.efxSameLine(next) &&
+        (next.type === tt.name || next.type === tt.string || next.type === tt.num || next.type === tt.bracketL ||
+          next.type.keyword !== undefined)
+    }
+
+    parseProperty(isPattern: boolean, refDestructuringErrors: unknown): any {
+      if (!isPattern && this.efxIsMethodAhead()) {
+        const keyword = { start: this.start, end: this.end }
+        this.value = "async" // reuse acorn's `async` method path; the key is re-parsed afterwards
+        const prop = super.parseProperty(isPattern, refDestructuringErrors)
+        prop.efxMethod = true
+        if (prop.value?.type === "FunctionExpression") prop.value.efx = { kind: "method", keyword }
+        return prop
+      }
+      return super.parseProperty(isPattern, refDestructuringErrors)
+    }
+
+    parseClassElement(constructorAllowsSuper: boolean): any {
+      if (this.efxIsMethodAhead()) {
+        const keyword = { start: this.start, end: this.end }
+        this.value = "async"
+        const element = super.parseClassElement(constructorAllowsSuper)
+        element.efx = { kind: "method", keyword }
+        if (element.value?.type === "FunctionExpression" || element.value?.type === "TSDeclareMethod") {
+          element.value.efx = element.efx
+        }
+        return element
+      }
+      return super.parseClassElement(constructorAllowsSuper)
+    }
+
+    // --- throws / needs ------------------------------------------------------------------------
+
+    tsParseTypeOrTypePredicateAnnotation(returnToken: unknown): any {
+      const annotation = super.tsParseTypeOrTypePredicateAnnotation(returnToken)
+      if (this.efxIsWord("throws") && !this.hasPrecedingLineBreak()) {
+        annotation.efxThrowsKeyword = { start: this.start, end: this.end }
+        this.next()
+        annotation.efxThrows = this.tsInType(() => this.tsParseType())
+      }
+      if (this.efxIsWord("needs") && !this.hasPrecedingLineBreak()) {
+        annotation.efxNeedsKeyword = { start: this.start, end: this.end }
+        this.next()
+        annotation.efxNeeds = this.tsInType(() => this.tsParseType())
+      }
+      if (annotation.efxThrows !== undefined || annotation.efxNeeds !== undefined) annotation.end = this.lastTokEnd
+      return annotation
     }
   }
