@@ -1055,9 +1055,17 @@ All live under `packages/effectscript/`, registered in the monorepo (§10).
   `.ts`/`.tsx`/`.js` plus maps. Relative `.efx` imports are rewritten.
 - `efx convert [paths] [--write] [--explain]`: TS+Effect → `.efx` (the codemod).
 - `efx print <file> [--to ts|efx]`: print one conversion to stdout, useful for reviews and AI.
-- `efx run <file> [-- args]`: run with Bun if available, otherwise Node with `effectscript/register`.
+- `efx run <file> [-- args]`: run an `.efx` (or `.ts`) file. The standalone binary runs it with its
+  embedded Bun runtime (§7.5), so nothing else needs to be installed. From npm, it uses a local Bun
+  if present, otherwise Node with `effectscript/register`.
 - `efx check`: delegates to `efx-tsc` from `@effectscript/language`.
-- `efx init`: add tsconfig/bunfig/vite settings, scripts, and the skill.
+- `efx init`: add tsconfig/bunfig/vite settings, scripts, and the skill to a project.
+- `efx setup`: detect the editors and coding agents installed on this machine and offer to set each
+  one up (§7.5).
+- `efx convert --ai`: after the mechanical conversion, hand the leftovers to a locally installed
+  coding agent along with the skill (§7.5).
+- `efx doctor`: report what is installed and configured (runtime, editors, agents, project) and
+  what is missing.
 - `efx skill [--dir]`: install the AI skill (default `.claude/skills/effectscript`).
 
 Dogfooding: the CLI's command modules are `src/cli/*.efx`. `pnpm codegen` compiles them into
@@ -1103,6 +1111,72 @@ barrels. That keeps `pnpm check`/`lint` meaningful and proves the compiler on re
   EffectScript**, and **Convert File to TypeScript**.
 
 ---
+
+### 7.5 Distribution and onboarding: from zero to EffectScript in one minute
+
+```bash
+brew install effectscript   # or: npm i -D effectscript / curl -fsSL https://effectscript.dev/install | sh
+efx setup                   # editors + agents on this machine
+efx convert                 # this repo → EffectScript (mechanical; add --ai for the rest)
+```
+
+**Channels:**
+
+- **npm:** `npm i -D effectscript` (project-local; `npx`/`bunx effectscript` also work).
+- **Homebrew:** `brew install effectscript`, from the `gunta/tap` tap first and homebrew-core
+  later.
+- **Install script:** `curl -fsSL https://effectscript.dev/install | sh`, served by the site.
+- **Later:** Windows via winget/scoop.
+
+**Standalone binary.** `efx` is built with `bun build --compile` for darwin-arm64, darwin-x64,
+linux-x64, linux-arm64, and windows-x64, and published on GitHub Releases.
+
+- **Contents:** the Bun runtime, the compiler, the Bun plugin, the language server, and the skill
+  files. Users need no Node, Bun, or npm to run `.efx` files.
+- **How `efx run` works:** it runs in-process. It registers the EffectScript Bun plugin, then
+  imports the entry file.
+- **Resolving `effect`:**
+  - inside a project → the project's own install;
+  - a lone file outside a project → Bun's auto-install where available, otherwise `efx run`
+    offers to create a minimal project (a `package.json` plus an install).
+- A locally installed Bun or Node is never required, but `efx run --runtime node` lets you choose
+  one explicitly.
+
+**`efx setup`** is interactive, writes only after you confirm each item, and supports `--yes` for
+CI. It detects:
+
+- **VS Code-family editors** (VS Code, Cursor, Windsurf, VSCodium): installs the EffectScript
+  extension through each editor's CLI (`code`/`cursor`/`windsurf`/`codium --install-extension`).
+  It uses the VS Code Marketplace or Open VSX, with the `.vsix` bundled in the binary as a
+  fallback.
+- **Neovim:** writes an `lsp/effectscript.lua` config (Neovim 0.11 `vim.lsp.config`) that points
+  at `efx lsp`, plus filetype detection for `.efx`.
+- **Helix and Zed:** `languages.toml` / extension settings that point at `efx lsp`. The Zed
+  extension itself is a Plan 5 stretch goal.
+- **JetBrains IDEs:** instructions for LSP4IJ that point at `efx lsp`; a native plugin is on the
+  roadmap.
+- **Coding agents** (Claude Code, Codex, Cursor, Gemini CLI, opencode): installs the EffectScript
+  skill in each agent's skill or rules location, user-wide or per project. Where the agent
+  supports it (for example, Claude Code plugins with LSP servers), it also registers `efx lsp` and
+  `efx check` as tools.
+
+**`efx convert`** turns a whole project into EffectScript:
+
+1. **Safety:** requires a clean git working tree (or `--force`) and works on a new branch,
+   `effectscript/convert`.
+2. **Mechanical pass** (deterministic, no AI): `toEffectScript` runs on every `.ts`/`.tsx` file.
+   Files are renamed to `.efx`, relative imports are updated, and a report lists everything left
+   as TS, with the reason.
+3. **Verification:** `efx check` (type check) and the project's test command must pass. Otherwise
+   the conversion is reverted file by file down to the last green state.
+4. **`--ai` pass (opt-in):** for the regions the mechanical pass left as TS, `efx` runs a coding
+   agent already installed locally (`claude -p`, `codex exec`, or another detected agent) with the
+   EffectScript skill. It uses the "left as TS because …" notes as task context. Each AI edit is
+   kept only if verification still passes. No code is sent anywhere except through the user's own
+   agent.
+
+**One-command onboarding:** `efx setup` and `efx convert` are offered at the end of `brew install`
+(via the formula's caveats) and at the end of `efx init`.
 
 ## 8. AI skill (`packages/effectscript/core/skills/effectscript/`)
 
@@ -1268,7 +1342,7 @@ Each phase ends green: its tests pass, plus `pnpm check` and `pnpm lint` for the
    - b. library constructs (§4.14)
    - c. ambient capture, observability, and strict mode (§4.15–4.17)
 2. **Reverse compiler:** §6 shapes and blockers, plus the round-trip tests.
-3. **CLI + integrations:** `efx` (handlers in `.efx`), the Bun plugin, the Vite plugin, the Node
+3. **CLI, integrations, and distribution:** `efx` (handlers in `.efx`), `run`/`setup`/`doctor`/`convert --ai`, the standalone Bun-compiled binary, the Homebrew tap, the install script, the Bun plugin, the Vite plugin, the Node
    hook, and the examples package.
 4. **Language tooling:** Volar plugin, `efx-tsc`, TS server plugin, language server, and the
    VS Code extension (grammar + commands).
