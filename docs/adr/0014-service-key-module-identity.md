@@ -1,6 +1,6 @@
 # ADR-0014: Service keys include the module
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by ADR-0018
 - **Date:** 2026-10-02
 - **Deciders:** agent ruling on review D04 (reproduced at `9a84acc32`)
 - **Related:** review D04; spec §4.8

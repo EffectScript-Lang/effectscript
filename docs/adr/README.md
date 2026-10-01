@@ -25,10 +25,11 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0011](0011-resource-lifetimes.md)                    | `using` is function-level only; `defer` is function-scoped    | Accepted |
 | [0012](0012-pipeline-evaluation-order.md)             | Pipelines evaluate the head first                             | Accepted |
 | [0013](0013-exact-optional-schema-fields.md)          | `name?: T` maps to `Schema.optionalKey`                       | Accepted |
-| [0014](0014-service-key-module-identity.md)           | Service keys include the module                               | Accepted |
+| [0014](0014-service-key-module-identity.md)           | Service keys include the module                               | Accepted, amended by 0018 |
 | [0015](0015-lockstep-versioning.md)                   | Version in lockstep with Effect                               | Accepted |
 | [0016](0016-harden-then-adoption-slice.md)            | Harden semantics, then prove an adoption slice                | Accepted |
 | [0017](0017-syntactic-vs-checker-diagnostics.md)      | Syntactic diagnostics in the compiler, typed ones in the checker | Accepted |
+| [0018](0018-relative-filenames-in-service-keys.md)    | Relative filenames keep their directories in service keys    | Accepted |
 
 ## Template
 

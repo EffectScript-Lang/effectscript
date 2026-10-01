@@ -13,7 +13,7 @@ export class Users extends Context.Service<Users, {
   list(): Effect.Effect<ReadonlyArray<User>>
   readonly size: number
 
-}>()("fixtures/service/Users") {
+}>()("fixtures/service/basic/Users") {
   static readonly layer = Layer.effect(Users, Effect.gen(function*() {
     const cache = new Map<string, User>()
     yield* Effect.addFinalizer(() => Effect.log("users layer released"))

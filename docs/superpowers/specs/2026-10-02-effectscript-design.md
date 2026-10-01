@@ -483,8 +483,8 @@ Rules:
 - **Key** (ADR-0014). By default, `"<package>/<dir>/<module>/<Name>"`: `<dir>` is relative to the
   package root, minus a leading `src/`; `<module>` is the file name without extension, omitted when
   it equals `<Name>` (ignoring case) or is `index`. So `src/users/Users.efx` → `"myapp/users/Users"`,
-  and `src/a.efx` → `"myapp/a/Users"`. Without a package root, only the file name is used, never an
-  absolute path. Without package information, the key is `"<Name>"`. To override:
+  and `src/a.efx` → `"myapp/a/Users"`. A relative filename keeps its directories; an absolute one outside the package root keeps only
+  its file name, so keys never contain absolute paths (ADR-0018). Without package information, the key is `"<Name>"`. To override:
   `service Users as "acme/Users" { … }`.
 - `Context.Reference` services with defaults are on the roadmap.
 
