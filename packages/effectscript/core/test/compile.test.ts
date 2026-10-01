@@ -6,7 +6,8 @@ describe("golden fixtures", () => {
   for (const file of listFixtures()) {
     it(file, async () => {
       const { outFile, result } = compileFixture(file)
-      expect(result.diagnostics).toEqual([])
+      // fixtures may show discouraged-but-valid code: strict warnings are allowed (ADR-0028)
+      expect(result.diagnostics.filter((d) => d.severity === "error")).toEqual([])
       await expect(result.code).toMatchFileSnapshot(path.join(fixturesDir, outFile))
     })
   }

@@ -75,7 +75,7 @@ def cables(seed=4600):
         tone.append(g)
 
     # bundles between nodes: each bundle is many cables, fanned at the ends
-    for _ in range(1500):
+    for _ in range(1150):
         i = rng.integers(0, nk)
         d = np.linalg.norm(nodes - nodes[i], axis=1)
         cand = np.where((d > 4.0) & (d < 26.0))[0]
@@ -85,7 +85,7 @@ def cables(seed=4600):
         a, b = nodes[i], nodes[j]
         span = d[j]
         sag = span * rng.uniform(0.08, 0.32)
-        count = int(np.clip(rng.lognormal(math.log(10), 0.7), 2, 50))
+        count = int(np.clip(rng.lognormal(math.log(8), 0.7), 2, 40))
         spread = rng.uniform(0.15, 0.6)
         for _ in range(count):
             oa = rng.normal(0, spread, 3) * (1, 1, 0.5)
@@ -97,7 +97,7 @@ def cables(seed=4600):
             add(c, rng.uniform(0.008, 0.03), rng.uniform(0.0, 1.0))
     # dangling ends from knots, some reaching the floor and pooling there
     for i in range(nk):
-        for _ in range(rng.integers(4, 26)):
+        for _ in range(rng.integers(2, 12)):
             a = knots[i, :3] + rng.normal(0, 0.4, 3)
             length = rng.uniform(3.0, a[2] + 3.0)
             t = np.linspace(0, 1, SEG)
@@ -113,7 +113,7 @@ def cables(seed=4600):
             z = np.maximum(z, 0.0) + 0.02
             add(np.column_stack([x, y, z]), rng.uniform(0.007, 0.022), rng.uniform(0.0, 1.0))
     # floor coils: random walks lying on the floor, clear of the figure's aisle
-    for _ in range(900):
+    for _ in range(500):
         p = np.array([rng.uniform(-HALL_X, HALL_X), rng.uniform(Y0, Y1), 0.02])
         if abs(p[0]) < 3.0 + 0.04 * p[1]:
             p[0] += np.sign(p[0] + 1e-3) * (3.0 + 0.04 * p[1])
@@ -156,7 +156,7 @@ def cable_material():
     tone = s.attr("tone")
     co = s.node("ShaderNodeTexCoord").outputs["Object"]
     grime = s.noise(co, 3.0, 4.0, 0.6)
-    base = s.math("ADD", s.mrange(tone, 0.0, 1.0, 0.05, 0.42), s.mrange(grime, 0.3, 0.7, -0.03, 0.03))
+    base = s.math("ADD", s.mrange(s.math("POWER", tone, 0.3), 0.0, 1.0, 0.03, 0.6), s.mrange(grime, 0.3, 0.7, -0.03, 0.03))
     rough = s.mrange(grime, 0.3, 0.7, 0.38, 0.58)
     b = s.principled(base=s.gray(base), rough=rough, spec=0.45, sheen=0.4, sheen_rough=0.4, sheen_tint=1.0)
     return s.output(b.outputs[0])
@@ -184,7 +184,7 @@ def stone_material():
     n2 = s.noise(co, 9.0, 4.0, 0.6)
     flute = s.node("ShaderNodeTexWave", {"Vector": co, "Scale": 1.4, "Distortion": 0.3},
                    wave_type="RINGS", rings_direction="Z").outputs["Fac"]
-    tone = s.math("ADD", s.mrange(n1, 0.3, 0.7, 0.025, 0.06), s.mrange(n2, 0.3, 0.7, -0.008, 0.008))
+    tone = s.math("ADD", s.mrange(n1, 0.3, 0.7, 0.06, 0.13), s.mrange(n2, 0.3, 0.7, -0.015, 0.015))
     nrm = s.bump(s.math("ADD", flute, s.math("MULTIPLY", n2, 0.5)), 0.5, 0.05)
     b = s.principled(base=s.gray(tone), rough=0.8, spec=0.3, normal=nrm)
     return s.output(b.outputs[0])
@@ -291,7 +291,7 @@ def build():
     stone = stone_material()
     for s in (-1, 1):
         for y in np.arange(14.0, Y1, 12.0):
-            pillar(scene, s * 17.0, y, stone)
+            pillar(scene, s * 21.0, y, stone, r=0.95)
         box(scene, "Wall", (s * HALL_X - (0.5 if s > 0 else -0.5) - 0.5, -5, 0),
             (s * HALL_X + (0.5 if s > 0 else -0.5) + 0.5, Y1 + 5, HALL_Z + 6), stone)
     box(scene, "BackWall", (-HALL_X - 2, Y1, 0), (HALL_X + 2, Y1 + 1, HALL_Z + 6), stone)
@@ -321,13 +321,21 @@ def build():
 
     # the shaft: one tight spot through the vault opening, landing just
     # behind the figure; volumetric shadows cut it into rays
-    fx.spot(scene, "Shaft", (-1.0, FIG_Y + 5.0, HALL_Z + 30.0), (0.0, FIG_Y + 3.5, 0.0), 2.6e6, 8.5,
-            blend=0.35, radius=0.6, volume=1.0)
+    fx.spot(scene, "Shaft", (-1.0, FIG_Y + 5.0, HALL_Z + 30.0), (0.0, FIG_Y + 3.5, 0.0), 1.2e5, 8.5,
+            blend=0.35, radius=0.6, volume=15.0)
     # glow at the far end of the hall behind the figure (silhouette, floor sheen)
-    fx.spot(scene, "Far", (0.0, Y1 - 2.0, 6.0), (0.0, 20.0, 0.0), 1.2e5, 40, blend=1.0, radius=3.0, volume=0.6)
+    fx.spot(scene, "Far", (0.0, Y1 - 2.0, 6.0), (0.0, 20.0, 0.0), 3.0e4, 40, blend=1.0, radius=3.0, volume=0.6)
     # soft high fill so the upper cables read as pale silhouettes
-    fx.area(scene, "Vault", (0.0, 60.0, HALL_Z + 2.0), (0.0, 60.0, 0.0), 3.0e4, size=40.0, size_y=90.0,
-            volume=0.15)
+    fx.area(scene, "Vault", (0.0, FIG_Y + 10.0, HALL_Z + 2.0), (0.0, FIG_Y + 10.0, 0.0), 1.0e5, size=16.0,
+            size_y=50.0, volume=0.08, spread=75.0)
+    # skylight falling through the vault: dappled light on every cable top
+    sun = bpy.data.lights.new("Sky", "SUN")
+    sun.energy = 0.4
+    sun.angle = math.radians(6.0)
+    sun.volume_factor = 0.0
+    so = bpy.data.objects.new("Sky", sun)
+    scene.collection.objects.link(so)
+    so.rotation_euler = (math.radians(14.0), math.radians(-8.0), 0.0)
 
     cam = fx.camera(scene, lens=LENS, fstop=4.0, focus=FIG_Y, clip=(0.1, 400))
     for f in range(1, FRAMES + 1):

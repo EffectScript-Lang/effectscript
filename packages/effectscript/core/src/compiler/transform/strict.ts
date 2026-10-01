@@ -4,9 +4,9 @@
  * @since 4.0.0
  */
 import { isTypeFree, isValueFree } from "../analyze/scope.ts"
-import type { Node } from "../ast.ts"
+import { children, type Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
-import { diagnosticError } from "../diagnostics.ts"
+import { diagnosticError, diagnosticWarning } from "../diagnostics.ts"
 import { excludedNames, namespaceExports } from "../prelude/tables.ts"
 import { importedLocal } from "../reverse/origin.ts"
 import type { HandlerGroup } from "./registry.ts"
@@ -137,15 +137,108 @@ const promiseAwait: Handler = (node, _parent, ctx) => {
   )
 }
 
+const warn = (ctx: Ctx, code: string, message: string, node: Node, hint?: string) =>
+  ctx.diagnostics.push(diagnosticWarning(code, message, node.start, node.end, hint))
+
+const isGlobalCall = (ctx: Ctx, callee: Node, object: string, members?: ReadonlyArray<string>): boolean =>
+  members === undefined
+    ? callee.type === "Identifier" && callee.name === object && isFree(ctx, object)
+    : callee.type === "MemberExpression" && !callee.computed && callee.object.type === "Identifier" &&
+      callee.object.name === object && isFree(ctx, object) && members.includes(callee.property.name)
+
+/** Warnings for calls inside `effect` code (EFX8102, 8105–8108). */
+const callWarnings = (node: Node, ctx: Ctx): void => {
+  if (ctx.effect === undefined) return
+  const callee: Node = node.callee
+  if (isGlobalCall(ctx, callee, "setTimeout") || isGlobalCall(ctx, callee, "setInterval")) {
+    warn(ctx, "EFX8105", "Timers inside `effect` code", callee, "use `sleep(…)` or a `Schedule`")
+  } else if (isGlobalCall(ctx, callee, "fetch")) {
+    warn(ctx, "EFX8106", "`fetch` inside `effect` code", callee, "use `HttpClient`")
+  } else if (isGlobalCall(ctx, callee, "Promise", ["all", "race", "allSettled", "any"])) {
+    warn(ctx, "EFX8107", "Promise combinators inside `effect` code", callee, "use `await [..]`, `all` or `race`")
+  } else if (isGlobalCall(ctx, callee, "JSON", ["parse"])) {
+    warn(ctx, "EFX8108", "`JSON.parse` inside `effect` code", callee, "decode with a `schema`")
+  } else if (callee.type === "MemberExpression" && !callee.computed && callee.property.name === "then") {
+    warn(ctx, "EFX8102", "`.then` inside `effect` code", callee.property, "use `await` on an effect")
+  }
+}
+
+const runAndWarn: Handler = (node, parent, ctx) => {
+  callWarnings(node, ctx)
+  return runInsideEffect(node, parent, ctx)
+}
+
+const newWarnings: Handler = (node, _parent, ctx) => {
+  if (ctx.effect === undefined) return
+  if (isGlobalCall(ctx, node.callee, "Promise")) {
+    warn(ctx, "EFX8102", "`new Promise` inside `effect` code", node, "use an effect")
+  } else if (isGlobalCall(ctx, node.callee, "Date") && node.arguments.length === 0) {
+    warn(ctx, "EFX8109", "`new Date()` inside `effect` code", node, "use `DateTime.now`")
+  }
+}
+
+const throwWarnings: Handler = (node, parent, ctx) => {
+  primitiveThrow(node, parent, ctx)
+  if (ctx.effect === undefined) return
+  const argument: Node = node.argument
+  if (argument.type === "NewExpression" && isGlobalCall(ctx, argument.callee, "Error")) {
+    warn(ctx, "EFX8103", "`throw new Error(…)` inside `effect` code", argument, "declare an `error` and throw it")
+  }
+}
+
+const asyncFunction: Handler = (node, _parent, ctx) => {
+  if (ctx.outerEffect === undefined || node.async !== true || node.efx !== undefined) return
+  warn(ctx, "EFX8102", "`async` function inside `effect` code", node, "use an `effect` function")
+}
+
+/** File-wide rules (EFX8101, 8104, 8110), from one scan of the program. */
+const fileWarnings: Handler = (node, _parent, ctx) => {
+  const effectLocal = importedLocal(ctx.analysis, "effect", "Effect") ?? "Effect"
+  const visit = (n: Node): void => {
+    if (n.type === "TSAnyKeyword") warn(ctx, "EFX8104", "Explicit `any`", n, "use `unknown` or a precise type")
+    if (
+      n.type === "CallExpression" && n.callee.type === "MemberExpression" && !n.callee.computed &&
+      n.callee.object.type === "Identifier" && n.callee.object.name === effectLocal &&
+      ["gen", "fn", "fnUntraced"].includes(n.callee.property.name)
+    ) {
+      warn(
+        ctx,
+        "EFX8101",
+        `\`Effect.${n.callee.property.name}\` written by hand`,
+        n.callee,
+        "use `effect` (`efx fix` converts it)"
+      )
+    }
+    if (n.type === "ClassDeclaration" && n.efxKind === "service") {
+      for (const member of n.body.body as Array<Node>) {
+        const type: Node | undefined = member.value?.returnType?.typeAnnotation ?? member.typeAnnotation?.typeAnnotation
+        if (
+          type?.type === "TSUnionType" &&
+          type.types.some((t: Node) => t.type === "TSNullKeyword" || t.type === "TSUndefinedKeyword")
+        ) {
+          warn(ctx, "EFX8110", "A nullable type in a service signature", type, "prefer `Option<T>`")
+        }
+      }
+    }
+    for (const child of children(n)) visit(child)
+  }
+  visit(node)
+}
+
 /**
  * @since 4.0.0
  * @category handlers
  */
 export const strictHandlers: HandlerGroup = {
+  Program: fileWarnings,
+  NewExpression: newWarnings,
+  FunctionExpression: asyncFunction,
+  ArrowFunctionExpression: asyncFunction,
+  FunctionDeclaration: asyncFunction,
   ExpressionStatement: floatingEffect,
-  CallExpression: runInsideEffect,
-  ThrowStatement: primitiveThrow,
-  ThrowExpression: primitiveThrow,
+  CallExpression: runAndWarn,
+  ThrowStatement: throwWarnings,
+  ThrowExpression: throwWarnings,
   TryStatement: anyCatch,
   AwaitExpression: promiseAwait
 }

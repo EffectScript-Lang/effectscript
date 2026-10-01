@@ -49,7 +49,8 @@ describe("try diagnostics", () => {
   })
 
   it("a typed catch around synchronous code is valid inside effect (ADR-0010)", () => {
-    expect(codes("effect f() {\n  try {\n    JSON.parse(\"1\")\n  } catch (e: UnknownError) {}\n}\n")).toEqual([])
+    const result = toTypeScript("effect f() {\n  try {\n    JSON.parse(\"1\")\n  } catch (e: UnknownError) {}\n}\n")
+    expect(result.diagnostics.filter((d) => d.severity === "error")).toEqual([])
   })
 
   it("EFX2023: untyped catch must be last", () => {

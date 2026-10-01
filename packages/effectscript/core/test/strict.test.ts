@@ -49,3 +49,37 @@ describe("strict-mode regressions", () => {
     expect(codes("const g = effect () => 1\neffect f() {\n  return await g()\n}\n")).toEqual([])
   })
 })
+
+describe("strict warnings (§4.17, ADR-0028)", () => {
+  const warnings = (source: string) =>
+    toTypeScript(source).diagnostics.filter((d) => d.severity === "warning").map((d) => d.code)
+
+  it.each([
+    ["EFX8101", "import { Effect } from \"effect\"\nexport const g = Effect.gen(function*() {\n  return 1\n})\n"],
+    ["EFX8102", "effect f() {\n  const load = async () => 1\n  return load\n}\n"],
+    ["EFX8103", "effect f() {\n  throw new Error(\"boom\")\n}\n"],
+    ["EFX8104", "export const a: any = 1\n"],
+    ["EFX8105", "effect f() {\n  setTimeout(() => {}, 10)\n}\n"],
+    ["EFX8106", "effect f() {\n  const p = fetch(\"https://example.com\")\n  return p\n}\n"],
+    ["EFX8107", "effect f() {\n  const p = Promise.all([])\n  return p\n}\n"],
+    ["EFX8108", "effect f(s: string) {\n  return JSON.parse(s)\n}\n"],
+    ["EFX8109", "effect f() {\n  return new Date()\n}\n"],
+    ["EFX8110", "service S {\n  effect find(id: string): string | undefined\n}\n"]
+  ])("%s: %j", (code, source) => {
+    expect(warnings(source)).toContain(code)
+  })
+
+  it("rules scoped to effect code stay quiet in plain functions", () => {
+    expect(
+      warnings("export function f(s: string) {\n  setTimeout(() => {}, 1)\n  return JSON.parse(s) as unknown\n}\n")
+    ).toEqual([])
+  })
+
+  it("strict promotes warnings to errors without changing output", () => {
+    const source = "export const a: any = 1\n"
+    const relaxed = toTypeScript(source)
+    const strict = toTypeScript(source, { strict: true })
+    expect(strict.diagnostics.map((d) => `${d.code}:${d.severity}`)).toEqual(["EFX8104:error"])
+    expect(strict.code).toBe(relaxed.code)
+  })
+})

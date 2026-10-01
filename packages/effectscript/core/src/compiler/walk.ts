@@ -20,6 +20,8 @@ const boundaries = new Set([
 export const walk = (node: Node, parent: Node | undefined, ctx: Ctx): void => {
   const previousScope = ctx.scope
   const previousEffect = ctx.effect
+  const previousOuter = ctx.outerEffect
+  ctx.outerEffect = previousEffect
   const scope = ctx.analysis.scopeOf.get(node)
   if (scope !== undefined) ctx.scope = scope
   if (boundaries.has(node.type) && node.efx === undefined) ctx.effect = undefined
@@ -33,6 +35,7 @@ export const walk = (node: Node, parent: Node | undefined, ctx: Ctx): void => {
   if (!handled) walkChildren(node, ctx)
   ctx.scope = previousScope
   ctx.effect = previousEffect
+  ctx.outerEffect = previousOuter
 }
 
 /**

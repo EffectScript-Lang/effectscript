@@ -133,6 +133,7 @@ const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): Co
     generatedNames: new Set(),
     scope: analysis.module,
     effect: undefined,
+    outerEffect: undefined,
     service: undefined,
     namespace: "Effect",
     testIt: undefined

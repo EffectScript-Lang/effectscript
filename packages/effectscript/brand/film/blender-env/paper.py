@@ -55,7 +55,7 @@ def page_material(name="Page", attr="page"):
     bu = b.mr(u, 0.11, 0.9, 0.0, 1.0, clamp=False)
     bv = b.mr(v, 0.93, 0.08, 0.0, 1.0, clamp=False)  # top to bottom
     inside = b.mul(b.mul(b.m("GREATER_THAN", bu, 0.0), b.m("LESS_THAN", bu, 1.0)), b.mul(b.m("GREATER_THAN", bv, 0.0), b.m("LESS_THAN", bv, 1.0)))
-    nlines, ncols = 52.0, 78.0
+    nlines, ncols = 40.0, 64.0
     line = b.m("FLOOR", b.mul(bv, nlines))
     fl = b.m("FRACT", b.mul(bv, nlines))
     col = b.mul(bu, ncols)
@@ -67,7 +67,7 @@ def page_material(name="Page", attr="page"):
     # indentation drifts like nested code: a smooth random walk down the page
     walk = b.noise(b.combine(b.mul(line, 0.21), pg, 4.0), 1.0, 1.0, 0.5)
     indent = b.mul(b.m("FLOOR", b.mr(b.add(walk, b.mul(r1, 0.15)), 0.32, 0.72, 0.0, 5.0)), 2.0)
-    length = b.add(indent, b.add(6.0, b.mul(b.m("POWER", r2, 0.7), 58.0)))
+    length = b.add(indent, b.add(5.0, b.mul(b.m("POWER", r2, 0.7), 46.0)))
     blank = b.m("LESS_THAN", r3, 0.14)
     # tokens: words of 2-9 chars separated by a space, some punctuation gaps
     tok = b.white(b.combine(line, b.m("FLOOR", b.mul(ci, 0.2)), b.add(pg, 5.0)))
@@ -76,7 +76,7 @@ def page_material(name="Page", attr="page"):
     ink = b.mul(ink, b.m("SUBTRACT", 1.0, gap))
     ink = b.mul(ink, b.m("SUBTRACT", 1.0, blank))
     # each "character" is a short dash: a band in the line, inset in the cell
-    band = b.mul(b.mr(fl, 0.34, 0.4, 0.0, 1.0), b.mr(fl, 0.6, 0.66, 1.0, 0.0))
+    band = b.mul(b.mr(fl, 0.26, 0.32, 0.0, 1.0), b.mr(fl, 0.66, 0.72, 1.0, 0.0))
     cell = b.mul(b.mr(fc, 0.04, 0.12, 0.0, 1.0), b.mr(fc, 0.88, 0.96, 1.0, 0.0))
     ink = b.mul(b.mul(b.mul(ink, band), cell), inside)
     weight = b.mr(b.white(b.combine(ci, line, b.add(pg, 7.0))), 0.0, 1.0, 0.55, 0.95)
@@ -84,7 +84,7 @@ def page_material(name="Page", attr="page"):
     fibre = b.noise(b.coord("Object"), 900.0, 3.0, 0.6)
     grime = b.noise(b.combine(u, v, pg), 3.0, 4.0, 0.6)
     paper = b.add(b.mr(grime, 0.3, 0.7, 0.66, 0.76), b.mr(fibre, 0.3, 0.7, -0.015, 0.015))
-    tone = b.mixf(ink, paper, 0.12)
+    tone = b.mixf(ink, paper, 0.09)
     p = b.principled(base=b.grey(tone), rough=b.mixf(ink, 0.72, 0.5), normal=b.bump(fibre, 0.05, 0.0002), spec=0.35)
     tr = b.new("ShaderNodeBsdfTranslucent")
     b.set(tr.inputs["Color"], b.grey(b.mul(tone, 0.9)))

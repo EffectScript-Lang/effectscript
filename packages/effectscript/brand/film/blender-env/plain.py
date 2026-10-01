@@ -137,7 +137,7 @@ def world(scene):
     rays = b.mul(rays, b.add(0.6, b.mul(rays2, 0.5)))
     fade = b.mul(b.m("EXPONENT", b.mul(ang, -1.0 / 0.13)), b.mr(ang, 0.01, 0.07, 0.0, 1.0, interp="SMOOTHSTEP"))
     up_only = b.mr(dz, 0.0, 0.06, 0.25, 1.0)
-    ray_l = b.mul(b.mul(b.mul(rays, fade), up_only), float(os.environ.get("RAYS", "0.85")))
+    ray_l = b.mul(b.mul(b.mul(rays, fade), up_only), 0.85)
     L = b.add(L, b.mul(ray_l, b.m("SUBTRACT", 1.0, b.mul(dens, 0.7))))
 
     # haze band at the horizon
@@ -376,7 +376,7 @@ def crowd(scene):
 
 def volumes(scene, t_frames):
     # aerial haze over the whole flat (homogeneous: cheap, carries the rays)
-    mat, b, v, out = E.volume_material("Air", density=float(os.environ.get("AIR", "0.00005")), anisotropy=float(os.environ.get("AIRG", "0.9")))
+    mat, b, v, out = E.volume_material("Air", density=0.00005, anisotropy=0.9)
     # starts ~45 m in front of the camera: shafts that pass right by the lens
     # would streak across the whole frame
     air = E.box(scene, "Air", (520, 570, 150), (0, 215, 75), mat)
@@ -395,7 +395,7 @@ def volumes(scene, t_frames):
         tval.outputs[0].keyframe_insert("default_value", frame=f)
     drift = b.combine(b.mul(tval.outputs[0], 1.6), b.mul(tval.outputs[0], 0.3), 0.0)
     pco = b.v("ADD", b.v("MULTIPLY", co, (1.0, 1.0, 3.2)), drift)
-    wisp = b.noise(pco, 0.045, float(os.environ.get("MISTD", "3")), 0.6)
+    wisp = b.noise(pco, 0.045, 3.0, 0.6)
     wisp = b.mr(wisp, 0.38, 0.72, 0.05, 1.0)
     fall = b.m("EXPONENT", b.mul(z, -1.0 / 1.5))
     depth = b.mr(y, -40.0, 20.0, 0.04, 1.0, interp="SMOOTHSTEP")
@@ -449,23 +449,8 @@ def build():
     for ob in E.build_mark(scene, MH, MD, MB, concrete_material()):
         ob.data.transform(__import__("mathutils").Matrix.Rotation(ROT, 4, "Z"))
     crowd(scene)
-    dbg = os.environ.get("PLAIN_DBG", "")
-    air, mist = volumes(scene, t_frames)
-    if "noair" in dbg:
-        bpy.data.objects.remove(air)
-    if "nomist" in dbg:
-        bpy.data.objects.remove(mist)
-    if "biased" in dbg:
-        scene.cycles.volume_biased = True
-        scene.cycles.volume_step_rate = float(os.environ.get("STEP", "4"))
-    if "nocookie" not in dbg:
-        cloud_cookie(scene)
-    if "flatworld" in dbg:
-        scene.world.node_tree.nodes.clear()
-        o = scene.world.node_tree.nodes.new("ShaderNodeOutputWorld")
-        bgn = scene.world.node_tree.nodes.new("ShaderNodeBackground")
-        bgn.inputs[0].default_value = (0.2, 0.2, 0.2, 1)
-        scene.world.node_tree.links.new(bgn.outputs[0], o.inputs[0])
+    volumes(scene, t_frames)
+    cloud_cookie(scene)
 
     sd = bpy.data.lights.new("Sun", "SUN")
     sd.energy = 7.0
@@ -478,19 +463,16 @@ def build():
     sun.visible_diffuse = True
 
     cam = E.camera(scene, lens=LENS)
-    # keep the mark's optical centre horizontally centred, horizon at ~76%
-    tgt_z = 9.5
+    # mark centred horizontally, horizon ~26% below frame centre
     for f in range(1, FRAMES + 1):
         t = (f - 1) / (FRAMES - 1)
         loc = CAM0.lerp(CAM1, t)
-        pitch_target = Vector((0.0, 0.0, 0.0))
         dist = MD / 2 - loc.y
         pitch = math.atan((0.26 * 20.25) / LENS)  # horizon 26% below centre
         pitch_target = Vector((0.0, MD / 2, loc.z + dist * math.tan(pitch)))
         E.look_at(cam, loc, pitch_target)
         E.key_camera(cam, f)
     E.set_interp(cam, "LINEAR")
-    del tgt_z
     return scene
 
 

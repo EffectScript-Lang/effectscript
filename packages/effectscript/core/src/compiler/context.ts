@@ -45,6 +45,8 @@ export interface Ctx {
   readonly generatedNames: Set<string>
   scope: Scope
   effect: EffectFrame | undefined
+  /** The effect frame around the node being walked, before a function boundary reset it. */
+  outerEffect: EffectFrame | undefined
   service: string | undefined
   namespace: string
   /** Inside `describe … with layer`, the `it` that `layer(…)` passes in. */
