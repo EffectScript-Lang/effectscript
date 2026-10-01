@@ -7,6 +7,9 @@ import * as path from "node:path"
 import { afterAll, describe, expect, it } from "vitest"
 import { createHarness } from "./utils/harness.ts"
 
+// Spawned processes run the sources, never a stale dist/ (review I10).
+process.env.EFFECTSCRIPT_DEV = "1"
+
 const require = createRequire(import.meta.url)
 const languageDir = path.resolve(import.meta.dirname, "..")
 const packages = path.resolve(languageDir, "../..")
@@ -18,6 +21,18 @@ const expected = "Ada (1), missing 2"
 const link = (dir: string, name: string, target: string) => {
   fs.mkdirSync(path.dirname(path.join(dir, "node_modules", name)), { recursive: true })
   fs.symlinkSync(target, path.join(dir, "node_modules", name))
+}
+/** `effect` as a consumer gets it from npm: the publish-time `exports` over the built `dist/`. */
+const linkPublishedEffect = (dir: string) => {
+  const target = path.join(dir, "node_modules/effect")
+  fs.mkdirSync(target, { recursive: true })
+  const pkg = JSON.parse(fs.readFileSync(path.join(packages, "effect/package.json"), "utf8"))
+  fs.writeFileSync(path.join(target, "package.json"), JSON.stringify({ ...pkg, exports: pkg.publishConfig.exports }))
+  // copied, not linked: a link's real path would sit under the workspace package.json (exports → src)
+  fs.cpSync(path.join(packages, "effect/dist"), path.join(target, "dist"), {
+    recursive: true,
+    filter: (file) => !file.endsWith(".map")
+  })
 }
 const node = (cwd: string, args: Array<string>) => spawnSync(process.execPath, args, { cwd, encoding: "utf8" })
 
@@ -64,7 +79,7 @@ describe("adoption slice, end to end (ADR-0016)", () => {
     fs.mkdirSync(installed, { recursive: true })
     expect(spawnSync("tar", ["-xzf", tarball, "-C", installed, "--strip-components=1"]).status).toBe(0)
     expect(fs.readdirSync(path.join(installed, "dist")).some((f) => f.endsWith(".efx"))).toBe(false)
-    link(consumer, "effect", path.join(packages, "effect"))
+    linkPublishedEffect(consumer)
     link(consumer, "@types/node", path.join(languageDir, "node_modules/@types/node"))
     fs.writeFileSync(path.join(consumer, "package.json"), JSON.stringify({ type: "module" }))
     fs.writeFileSync(
@@ -80,9 +95,9 @@ describe("adoption slice, end to end (ADR-0016)", () => {
           lib: ["ESNext", "DOM", "DOM.Iterable"],
           module: "NodeNext",
           moduleResolution: "NodeNext",
-          allowImportingTsExtensions: true,
           noEmit: true,
-          skipLibCheck: true,
+          // the published declarations are checked too (review C1)
+          skipLibCheck: false,
           types: ["node"]
         },
         include: ["app.ts"]

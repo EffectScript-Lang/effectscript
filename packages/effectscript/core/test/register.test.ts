@@ -4,6 +4,9 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { afterAll, describe, expect, it } from "vitest"
 
+// Spawned processes run the sources, never a stale dist/ (review I10).
+process.env.EFFECTSCRIPT_DEV = "1"
+
 const packages = path.resolve(import.meta.dirname, "../../..")
 const register = path.resolve(import.meta.dirname, "../src/register.ts")
 

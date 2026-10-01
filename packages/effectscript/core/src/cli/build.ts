@@ -89,7 +89,9 @@ export const build = (options: { readonly project: string; readonly cwd?: string
   const cwd = options.cwd ?? process.cwd()
   const configPath = path.resolve(cwd, options.project)
   const projectDir = path.dirname(configPath)
-  const stagingDir = path.join(projectDir, "node_modules/.cache/effectscript/build")
+  // Not under node_modules: TypeScript would treat staged files as a package and emit
+  // `import(".cache/…")` into declarations (review C1). Dot-folders are skipped by tsconfig globs.
+  const stagingDir = path.join(projectDir, ".efx/build")
   const errors: Array<string> = []
   const relative = (file: string) => path.relative(cwd, file)
   const parsedConfig = ts.getParsedCommandLineOfConfigFile(

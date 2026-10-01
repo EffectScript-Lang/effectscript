@@ -383,7 +383,7 @@ findings in one pass, each with a failing test first. Record deferred minors her
 - **Task 6:** the slice `efx` CLI parses its few arguments by hand instead of using
   `effect/unstable/cli` with `.efx` handlers (spec §7.1). The dogfooded CLI arrives with the full
   CLI/distribution plan. Cost if wrong: one rewrite of `src/cli/main.ts`. Staging lives in
-  `node_modules/.cache/effectscript/build`, so it is never packed with `dist/`.
+  `<project>/.efx/build`. It was first under `node_modules/.cache`, which broke emitted declarations (final review C1).
 - **Task 8:** the adoption fixture lives at `packages/effectscript/language/test/fixtures/adoption/`
   instead of `packages/effectscript/examples/adoption/`. It is test evidence, not a runnable example,
   and this location keeps it out of the workspace, lint and type-check globs. The examples package

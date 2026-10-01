@@ -4,6 +4,9 @@ import * as path from "node:path"
 import { afterAll, describe, expect, it } from "vitest"
 import { startTsserver } from "./utils/tsserver.ts"
 
+// Spawned processes run the sources, never a stale dist/ (review I10).
+process.env.EFFECTSCRIPT_DEV = "1"
+
 const packageDir = path.resolve(import.meta.dirname, "..")
 const packages = path.resolve(packageDir, "../..")
 

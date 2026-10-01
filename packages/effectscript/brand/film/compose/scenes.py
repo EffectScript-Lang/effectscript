@@ -608,8 +608,28 @@ _register_stamp_events(49.5, 52.5, 0.25, 0.8)
 _register_stamp_events(52.5, 54.0, 0.125, 1.0)
 
 
+# 3D replacements for the photo plates. A shot is used only once every frame
+# has rendered, so a half-finished render never reaches the cut.
+SHOT_FRAMES = {"tangle2": 420, "wirehall": 105, "thread": 200, "paper": 60, "dawn": 222, "plain": 80}
+
+
+@cache
+def ready(shot):
+    d = Path(__file__).resolve().parent.parent / "build" / "blender" / shot
+    return d.exists() and sum(1 for p in d.iterdir() if p.suffix == ".exr") >= SHOT_FRAMES[shot]
+
+
+def shot(c, name, t, t0, alpha=1.0, n=None):
+    if n is None:
+        n = int((t - t0) * FPS) + 1
+    draw_frame(c, blender_frame(name, min(max(1, n), SHOT_FRAMES[name])), alpha=alpha)
+
+
 def tangle(c, t):
-    draw_frame(c, blender_frame("tangle", int((t - 40.0) * FPS) + 1))
+    if ready("tangle2"):
+        shot(c, "tangle2", t, 40.0)
+    else:
+        draw_frame(c, blender_frame("tangle", int((t - 40.0) * FPS) + 1))
 
 
 def ceremony(c, t):
@@ -621,7 +641,10 @@ def ceremony(c, t):
         code_wall(c, t)
         return
     if t < 40.0:
-        kenburns(c, plate("paper-avalanche"), phase(t, 38, 40), 1.02, 1.16, (0.5, 0.42), (0.48, 0.38), shake=1.5 + 3 * phase(t, 38, 40), t=t)
+        if ready("paper"):
+            shot(c, "paper", t, 38.0)
+        else:
+            kenburns(c, plate("paper-avalanche"), phase(t, 38, 40), 1.02, 1.16, (0.5, 0.42), (0.48, 0.38), shake=1.5 + 3 * phase(t, 38, 40), t=t)
         stamps(c, t, 38.5, 40.0, 0.25, 11)
         return
     if t < 46.0:
@@ -640,7 +663,10 @@ def ceremony(c, t):
         text(c, "You wanted reliability.", W / 2, H / 2 + 34, 96, align="center", alpha=a, reveal=phase(t, 42.0, 43.0))
         return
     if t < 49.5:
-        kenburns(c, plate("threads-hall"), phase(t, 46, 49.5), 1.04, 1.2, (0.5, 0.78), (0.5, 0.42))
+        if ready("wirehall"):
+            shot(c, "wirehall", t, 46.0)
+        else:
+            kenburns(c, plate("threads-hall"), phase(t, 46, 49.5), 1.04, 1.2, (0.5, 0.78), (0.5, 0.42))
         flash(c, math.exp(-(t - 46.0) * 6) * 0.5)
         a = window(t, 46.0, 49.3, 0.01, 0.3)
         text(c, "You got ceremony.", W / 2, H / 2 + 40, 132, align="center", alpha=a, reveal=phase(t, 46.0, 46.45), glow=0.25)
@@ -654,9 +680,15 @@ def ceremony(c, t):
         elif sel == 1:
             code_wall(c, t, k=0.16 + 0.05 * hash01(f), level=4)
         elif sel == 2:
-            kenburns(c, plate("threads-hall"), hash01(f, 2), 1.3, 1.5, (0.5, 0.5), (0.5, 0.4))
+            if ready("wirehall"):
+                shot(c, "wirehall", t, 0, n=1 + int(hash01(f, 2) * 104))
+            else:
+                kenburns(c, plate("threads-hall"), hash01(f, 2), 1.3, 1.5, (0.5, 0.5), (0.5, 0.4))
         else:
-            kenburns(c, plate("paper-avalanche"), hash01(f, 3), 1.2, 1.4, (0.5, 0.45), (0.45, 0.4))
+            if ready("paper"):
+                shot(c, "paper", t, 0, n=1 + int(hash01(f, 3) * 59))
+            else:
+                kenburns(c, plate("paper-avalanche"), hash01(f, 3), 1.2, 1.4, (0.5, 0.45), (0.45, 0.4))
         flash(c, ease_in(phase(t, 52.5, 54.0), 3) * 0.9 * (0.5 + 0.5 * (f % 2)))
     else:
         tangle(c, t)
@@ -672,12 +704,15 @@ def question(c, t):
     if t < 55.0:
         return
     a_img = smooth(phase(t, 55.0, 57.8)) * 0.95
-    if t < 61.6:
-        kenburns(c, plate("one-thread"), phase(t, 55, 62), 1.16, 1.07, (0.5, 0.476), (0.5, 0.476), alpha=a_img)
-    x = smooth(phase(t, 60.2, 61.6))
+    if t < 62.2:
+        if ready("thread"):
+            shot(c, "thread", t, 55.0, alpha=a_img)
+        else:
+            kenburns(c, plate("one-thread"), phase(t, 55, 62), 1.16, 1.07, (0.5, 0.476), (0.5, 0.476), alpha=a_img)
+    x = smooth(phase(t, 61.0, 62.2))
     if x > 0:
         draw_frame(c, blender_frame("converge", int((t - 58.0) * FPS) + 1), alpha=x)
-    a = window(t, 56.5, 62.4, 0.01, 0.8)
+    a = window(t, 56.5, 61.5, 0.01, 0.7)
     text(c, "What if the language", W / 2, 330, 92, align="center", alpha=a, reveal=phase(t, 56.5, 57.6))
     text(c, "just understood?", W / 2, 440, 92, align="center", alpha=a, gradient=True, reveal=phase(t, 58.5, 59.6))
 
@@ -928,7 +963,10 @@ def three_am(c, t):
         text(c, "Your code already knew what to do.", W / 2, 940, 52, DISPLAY_SEMI, WHITE, alpha=ca, align="center", reveal=phase(t, 134.9, 135.7))
         return
     x = phase(t, 137.0, 144.4)
-    kenburns(c, plate("dawn"), x, 1.14, 1.0, (0.4, 0.42), (0.42, 0.45), alpha=smooth(phase(t, 137.0, 138.6)), exposure=lerp(0.75, 1.05, smooth(x)))
+    if ready("dawn"):
+        shot(c, "dawn", t, 137.0, alpha=smooth(phase(t, 137.0, 138.6)))
+    else:
+        kenburns(c, plate("dawn"), x, 1.14, 1.0, (0.4, 0.42), (0.42, 0.45), alpha=smooth(phase(t, 137.0, 138.6)), exposure=lerp(0.75, 1.05, smooth(x)))
     sh = skia.GradientShader.MakeLinear(
         [skia.Point(0, H * 0.45), skia.Point(0, H)], [argb(INK, 0.0), argb(INK, 0.78)], [0.0, 1.0]
     )
@@ -956,7 +994,10 @@ def finale(c, t):
         text(c, "None of the ceremony.", 150, 610, 100, alpha=a, gradient=True, reveal=phase(t, 147.5, 148.6))
     if 151.8 <= t < 154.4:
         a = smooth(phase(t, 151.8, 152.3)) * (1 - smooth(phase(t, 153.9, 154.4)))
-        kenburns(c, plate("monolith-plain"), phase(t, 151.8, 154.4), 1.0, 1.1, (0.38, 0.55), (0.37, 0.52), alpha=a)
+        if ready("plain"):
+            shot(c, "plain", t, 151.8, alpha=a)
+        else:
+            kenburns(c, plate("monolith-plain"), phase(t, 151.8, 154.4), 1.0, 1.1, (0.38, 0.55), (0.37, 0.52), alpha=a)
     if t >= 154.0:
         out = 1 - smooth(phase(t, 158.2, 159.6))
         light_field(c, t, amp=0.16 * smooth(phase(t, 154.2, 156)) * out)

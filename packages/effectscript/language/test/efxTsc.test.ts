@@ -2,6 +2,9 @@ import { spawnSync } from "node:child_process"
 import * as path from "node:path"
 import { describe, expect, it } from "vitest"
 
+// Spawned processes run the sources, never a stale dist/ (review I10).
+process.env.EFFECTSCRIPT_DEV = "1"
+
 const packageDir = path.resolve(import.meta.dirname, "..")
 
 describe("efx-tsc (ADR-0019)", () => {

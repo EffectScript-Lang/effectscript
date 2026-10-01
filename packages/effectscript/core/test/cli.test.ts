@@ -4,6 +4,9 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { afterAll, describe, expect, it } from "vitest"
 
+// Spawned processes run the sources, never a stale dist/ (review I10).
+process.env.EFFECTSCRIPT_DEV = "1"
+
 const packages = path.resolve(import.meta.dirname, "../../..")
 const efx = path.resolve(import.meta.dirname, "../bin/efx.js")
 
@@ -13,7 +16,9 @@ const files: Record<string, string> = {
   "src/users.efx":
     "import { view } from \"./view.efx\"\n\nexport effect greet(name: string): string {\n  return view(name)\n}\n",
   "src/index.ts":
-    "import { Effect } from \"effect\"\nimport { greet } from \"./users.efx\"\n\nexport const demo = (): string => Effect.runSync(greet(\"ada\"))\n",
+    "import { Effect } from \"effect\"\nimport { make } from \"./make.ts\"\nimport { greet } from \"./users.efx\"\n\nexport const demo = (): string => Effect.runSync(greet(\"ada\"))\nexport const origin = make()\n",
+  "src/model.efx": "export schema Point { x: number }\n",
+  "src/make.ts": "import { Point } from \"./model.efx\"\n\nexport const make = () => new Point({ x: 1 })\n",
   "src/main.ts": "import { demo } from \"./index.ts\"\n\nconsole.log(demo())\n",
   "src/jsx.d.ts": "declare namespace JSX {\n  interface IntrinsicElements {\n    [name: string]: unknown\n  }\n}\n",
   "package.json": JSON.stringify({ name: "efx-build-fixture", type: "module" }),
@@ -28,6 +33,7 @@ const files: Record<string, string> = {
       jsx: "react",
       jsxFactory: "h",
       declaration: true,
+      sourceMap: true,
       rootDir: "src",
       outDir: "dist",
       skipLibCheck: true,
@@ -57,7 +63,12 @@ describe("efx build / run (ADR-0022)", () => {
     expect(usersJs).toContain("from \"./view.js\"")
     expect(fs.existsSync(path.join(dir, "dist/users.d.ts"))).toBe(true)
     expect(fs.existsSync(path.join(dir, "dist/view.d.ts"))).toBe(true)
-    const staged = fs.readFileSync(path.join(dir, "node_modules/.cache/effectscript/build/users.ts"), "utf8")
+    // review C1: declarations and maps must not point into the staging directory
+    const indexDts = fs.readFileSync(path.join(dir, "dist/index.d.ts"), "utf8")
+    expect(indexDts).toContain("import(\"./model.ts\").Point")
+    expect(indexDts).not.toMatch(/node_modules|\.efx\//)
+    expect(fs.readFileSync(path.join(dir, "dist/users.js.map"), "utf8")).not.toMatch(/node_modules/)
+    const staged = fs.readFileSync(path.join(dir, ".efx/build/users.ts"), "utf8")
     expect(staged).toContain("from \"./view.tsx\"")
     const ran = spawnSync(process.execPath, ["dist/main.js"], { cwd: dir, encoding: "utf8" })
     expect(ran.stdout.trim()).toBe("<b>ada</b>")
