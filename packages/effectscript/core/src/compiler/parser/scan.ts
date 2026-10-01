@@ -4,7 +4,36 @@
  * @since 0.1.0
  */
 
+import { tokenizer } from "acorn"
+
 const closer: Record<string, string> = { "(": ")", "[": "]", "{": "}" }
+
+const openers = new Set(["(", "[", "{", "${"])
+const closers = new Set([")", "]", "}"])
+
+/**
+ * Like `skipBalanced`, but driven by acorn's tokenizer, so regex literals (`/\)/`) and templates
+ * are understood. Falls back to `skipBalanced` when the tokenizer can't continue (e.g. JSX text).
+ *
+ * @since 0.1.0
+ */
+export const skipBalancedTokens = (input: string, open: number): number => {
+  try {
+    let depth = 0
+    for (const token of tokenizer(input.slice(open), { ecmaVersion: "latest", allowHashBang: false })) {
+      const label = token.type.label
+      if (openers.has(label)) depth++
+      else if (closers.has(label)) {
+        depth--
+        if (depth === 0) return open + token.end
+        if (depth < 0) return -1
+      }
+    }
+    return -1
+  } catch {
+    return skipBalanced(input, open)
+  }
+}
 
 /**
  * Returns the index just past the bracket matching `input[open]`, or -1.

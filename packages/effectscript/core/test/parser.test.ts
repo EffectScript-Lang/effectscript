@@ -1,3 +1,4 @@
+import { toTypeScript } from "effectscript/compiler"
 import { parse } from "effectscript/compiler/parser/parse"
 import { describe, expect, it } from "vitest"
 
@@ -199,5 +200,17 @@ describe("match", () => {
       "default"
     ])
     expect(program.body[1].declarations[0].init.type).toBe("CallExpression")
+  })
+})
+
+describe("D06: lookahead understands regexes and templates", () => {
+  it.each([
+    "export const m = (s: string) => match (s.replace(/\\)/g, \"\")) { when \"a\": 1; default: 2 }\n",
+    "export const f = effect (s = /[)}]/) => s\n",
+    "export const g = effect (s = `${\")\"}`) => s\n"
+  ])("%s", (source) => {
+    const result = toTypeScript(source)
+    expect(result.diagnostics).toEqual([])
+    expect(result.code).toMatch(/Match\.value|Effect\.fnUntraced/)
   })
 })

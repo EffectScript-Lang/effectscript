@@ -6,7 +6,7 @@
  * @since 0.1.0
  */
 import * as acorn from "acorn"
-import { skipBalanced, skipSpace } from "./scan.ts"
+import { skipBalancedTokens, skipSpace } from "./scan.ts"
 
 const tt = acorn.tokTypes
 
@@ -180,7 +180,7 @@ export const efxPlugin = (Base: any): any =>
 
     /** `(params)` followed by `=>`, or by `: ReturnType … =>`. */
     efxIsParenArrowAhead(parenStart: number): boolean {
-      const end = skipBalanced(this.input, parenStart)
+      const end = skipBalancedTokens(this.input, parenStart)
       if (end === -1) return false
       let i = skipSpace(this.input, end)
       if (this.input.startsWith("=>", i)) return true
@@ -191,7 +191,7 @@ export const efxPlugin = (Base: any): any =>
         if (this.input.startsWith("=>", i)) return true
         const ch = this.input[i]!
         if (ch === "(" || ch === "[" || ch === "{") {
-          i = skipBalanced(this.input, i)
+          i = skipBalancedTokens(this.input, i)
           if (i === -1) return false
           continue
         }
@@ -508,7 +508,7 @@ export const efxPlugin = (Base: any): any =>
       if (!this.efxIsWord("match")) return false
       const next = this.lookahead()
       if (next.type !== tt.parenL || !this.efxSameLine(next)) return false
-      const end = skipBalanced(this.input, next.start)
+      const end = skipBalancedTokens(this.input, next.start)
       if (end === -1) return false
       const after = skipSpace(this.input, end)
       return this.input[after] === "{" && !lineBreak.test(this.input.slice(end, after))
