@@ -1,4 +1,4 @@
-import { toTypeScript } from "effectscript/compiler"
+import { formatDiagnostic, toTypeScript } from "effectscript/compiler"
 import { describe, expect, it } from "vitest"
 
 const codes = (source: string) => toTypeScript(source).diagnostics.map((d) => d.code)
@@ -113,5 +113,15 @@ describe("service diagnostics", () => {
 describe("main diagnostics", () => {
   it("EFX6001: only one main per module", () => {
     expect(codes("main {\n}\nmain {\n}\n")).toEqual(["EFX6001"])
+  })
+})
+
+describe("formatting", () => {
+  it("renders a code frame", () => {
+    const source = "const a = 1\nconst = 2\n"
+    const [diagnostic] = toTypeScript(source).diagnostics
+    expect(formatDiagnostic(source, "x.efx", diagnostic!)).toMatch(
+      /^x\.efx:2:7 - error EFX1001: .+\n\n2 \| const = 2\n {2}\| {7}\^/
+    )
   })
 })

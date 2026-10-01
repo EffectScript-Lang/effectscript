@@ -95,3 +95,14 @@ describe("main", () => {
     )
   })
 })
+
+describe("import extensions", () => {
+  it("rewrites relative .efx specifiers when asked", () => {
+    const source =
+      "import { a } from \"./a.efx\"\nexport * from \"../b.efx\"\nconst c = import(\"./c.efx\")\nimport \"pkg/d.efx\"\n"
+    expect(ts(source, { rewriteImportExtensions: "ts" })).toBe(
+      "import { a } from \"./a.ts\"\nexport * from \"../b.ts\"\nconst c = import(\"./c.ts\")\nimport \"pkg/d.efx\"\n"
+    )
+    expect(ts(source)).toBe(source)
+  })
+})
