@@ -40,6 +40,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0026](0026-register-strip-first-with-source-maps.md)  | `effectscript/register` strips first and maps stack traces to `.efx` | Accepted |
 | [0027](0027-ambient-process-env-preserves-undefined.md) | Ambient `process.env.NAME` keeps its `string \| undefined` meaning | Accepted |
 | [0028](0028-strict-mode-syntactic-rules.md)          | Strict-mode rules are syntactic; warnings never affect the superset guarantee | Accepted |
+| [0029](0029-otlp-through-layer-from-config.md)        | `main` telemetry uses `Otlp.layerFromConfig`                  | Accepted |
 
 ## Template
 
