@@ -59,6 +59,18 @@ describe("effectscript/register (ADR-0021)", () => {
     expect(result.stdout.trim()).toBe("A B")
   }, 120_000)
 
+  it("stack traces point at .efx lines (review I6)", () => {
+    const dir = project({
+      "three.efx":
+        "export effect one(): number {\n  return 1\n}\n\nexport function explode(): never {\n  throw new Error(\"boom\")\n}\n",
+      "main.ts":
+        "import { explode } from \"./three.efx\"\ntry {\n  explode()\n} catch (e) {\n  console.log((e as Error).stack!.split(\"\\n\")[1])\n}\n"
+    })
+    dirs.push(dir)
+    const result = run(dir, "main.ts")
+    expect(result.stdout).toContain("three.efx:6:9)")
+  }, 120_000)
+
   it("rejects .efx that compiles to TSX with EFX1101", () => {
     const dir = project({ "view.efx": "export const view = <div />\n", "main.ts": "import \"./view.efx\"\n" })
     dirs.push(dir)

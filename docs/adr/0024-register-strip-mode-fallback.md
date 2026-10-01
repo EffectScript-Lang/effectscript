@@ -1,6 +1,6 @@
 # ADR-0024: `effectscript/register` falls back to strip mode where transform mode is unavailable
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by ADR-0026
 - **Date:** 2026-10-02
 - **Deciders:** agent ruling while executing Plan 3, Task 5
 - **Related:** amends ADR-0021

@@ -32,11 +32,12 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0018](0018-relative-filenames-in-service-keys.md)    | Relative filenames keep their directories in service keys    | Accepted |
 | [0019](0019-volar-on-typescript-6-js-api.md)          | Editor and checker integration through Volar on the TS 6 JS API | Accepted |
 | [0020](0020-incomplete-code-recovery.md)              | Recover incomplete code by neutralizing failing lines         | Accepted |
-| [0021](0021-node-runtime-register-hooks.md)           | Run `.efx` on Node with `registerHooks` and transform stripping | Accepted, amended by 0024 |
+| [0021](0021-node-runtime-register-hooks.md)           | Run `.efx` on Node with `registerHooks` and transform stripping | Accepted, amended by 0024 and 0026 |
 | [0022](0022-build-staging-and-typescript-emit.md)     | `efx build` compiles to a staging tree, then TypeScript emits | Accepted |
 | [0023](0023-reverse-compiler-subset.md)               | Ship the reverse compiler for the adoption-slice subset first | Accepted |
-| [0024](0024-register-strip-mode-fallback.md)          | `effectscript/register` falls back to strip mode              | Accepted |
+| [0024](0024-register-strip-mode-fallback.md)          | `effectscript/register` falls back to strip mode              | Accepted, amended by 0026 |
 | [0025](0025-launch-film-made-from-code.md)            | The launch film is made from code; generated photos are plates only | Accepted |
+| [0026](0026-register-strip-first-with-source-maps.md)  | `effectscript/register` strips first and maps stack traces to `.efx` | Accepted |
 
 ## Template
 

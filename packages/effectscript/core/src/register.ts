@@ -14,6 +14,9 @@ import { toTypeScript } from "./compiler/compile.ts"
 import { formatDiagnostic } from "./compiler/diagnostics.ts"
 import { packageInfo } from "./project.ts"
 
+// Stack traces from `.efx` code point at `.efx` positions (review I6, ADR-0026).
+process.setSourceMapsEnabled(true)
+
 registerHooks({
   load(url, context, nextLoad) {
     if (!url.startsWith("file:") || !url.endsWith(".efx")) return nextLoad(url, context)
@@ -30,20 +33,32 @@ registerHooks({
           "use Bun, Vite or `efx build`"
       )
     }
-    return { format: "module", source: stripTypes(result.code, url), shortCircuit: true }
+    const stripped = stripTypes(result.code, url)
+    const map = stripped.positionsPreserved && result.map !== undefined
+      ? `\n//# sourceMappingURL=data:application/json;base64,${
+        Buffer.from(JSON.stringify({ ...result.map, sources: [url] })).toString("base64")
+      }`
+      : ""
+    return { format: "module", source: `${stripped.code}${map}`, shortCircuit: true }
   }
 })
 
 /**
- * Transform mode handles non-erasable syntax (enums, parameter properties). Newer Node typings only
- * allow `"strip"`, so fall back to it where transform mode is rejected (ADR-0024).
+ * Strip mode replaces types with whitespace, so positions survive and the compiler's `.efx` → TS
+ * source map applies to the JavaScript as is. Non-erasable syntax (enums, …) needs transform mode,
+ * where available; positions are then approximate (ADR-0026).
  */
-const stripTypes = (code: string, url: string): string => {
+const stripTypes = (code: string, url: string): { readonly code: string; readonly positionsPreserved: boolean } => {
   try {
-    const options = { mode: "transform", sourceMap: true, sourceUrl: url } as unknown as { mode: "strip" }
-    return stripTypeScriptTypes(code, options)
-  } catch (error) {
-    if ((error as { code?: unknown }).code !== "ERR_INVALID_ARG_VALUE") throw error
-    return stripTypeScriptTypes(code, { mode: "strip", sourceUrl: url })
+    return { code: stripTypeScriptTypes(code, { mode: "strip" }), positionsPreserved: true }
+  } catch (strip) {
+    if ((strip as { code?: unknown }).code !== "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX") throw strip
+    try {
+      const options = { mode: "transform", sourceMap: true, sourceUrl: url } as unknown as { mode: "strip" }
+      return { code: stripTypeScriptTypes(code, options), positionsPreserved: false }
+    } catch (transform) {
+      if ((transform as { code?: unknown }).code === "ERR_INVALID_ARG_VALUE") throw strip
+      throw transform
+    }
   }
 }

@@ -75,7 +75,7 @@ def world(scene):
         s = math.radians(sigma_deg)
         return b.mul(b.m("EXPONENT", b.mul(b.add(cos_a, -1.0), 1.0 / (s * s))), k)
 
-    core = glow(0.5, 5.5)
+    core = glow(0.5, 3.2)
     halo = glow(2.2, 2.2)
     wide = glow(6.5, 0.85)
     broad = glow(20.0, 0.16)
@@ -87,8 +87,8 @@ def world(scene):
     warp = b.noise(P, 0.45, 3.0, 0.5, out="Color")
     Pw = b.v("ADD", P, b.v("SCALE", b.v("SUBTRACT", warp, (0.5, 0.5, 0.5)), scale=1.1))
     def puff_at(vec):
-        big_ = b.noise(vec, 0.33, 7.0, 0.6, distort=0.25)
-        fine_ = b.noise(vec, 1.9, 9.0, 0.66)
+        big_ = b.noise(vec, 0.33, 5.0, 0.6, distort=0.25)
+        fine_ = b.noise(vec, 1.9, 7.0, 0.66)
         return big_, fine_, b.m("ADD", big_, b.mul(b.add(fine_, -0.5), 0.5))
 
     big, fine, puff = puff_at(Pw)
@@ -114,7 +114,7 @@ def world(scene):
     sky = b.add(b.add(0.04, b.mul(b.mr(dz, 0.0, 0.4, 0.05, 0.0), 1.0)), b.add(b.add(core, halo), b.add(b.mul(wide, 1.6), b.mul(broad, 2.4))))
     # cloud body: billows (fine noise), dark undersides, lit thin edges near
     # the sun (silver lining)
-    bill = b.noise(Pw, 5.5, 6.0, 0.6)
+    bill = b.noise(Pw, 5.5, 4.0, 0.6)
     tone = b.add(b.mr(fine, 0.3, 0.7, 0.012, 0.045), b.mr(bill, 0.35, 0.7, -0.006, 0.016))
     tone = b.mul(tone, b.mr(dz, 0.05, 0.45, 1.0, 0.55))
     thin = b.m("POWER", b.m("SUBTRACT", 1.0, dens, clamp=True), 1.8)
@@ -137,7 +137,7 @@ def world(scene):
     rays = b.mul(rays, b.add(0.6, b.mul(rays2, 0.5)))
     fade = b.mul(b.m("EXPONENT", b.mul(ang, -1.0 / 0.13)), b.mr(ang, 0.01, 0.07, 0.0, 1.0, interp="SMOOTHSTEP"))
     up_only = b.mr(dz, 0.0, 0.06, 0.25, 1.0)
-    ray_l = b.mul(b.mul(b.mul(rays, fade), up_only), float(os.environ.get("RAYS", "1.0")))
+    ray_l = b.mul(b.mul(b.mul(rays, fade), up_only), float(os.environ.get("RAYS", "0.85")))
     L = b.add(L, b.mul(ray_l, b.m("SUBTRACT", 1.0, b.mul(dens, 0.7))))
 
     # haze band at the horizon
@@ -221,6 +221,10 @@ def concrete_material():
     tone = b.add(tone, panel)
     tone = b.add(tone, b.mr(sand, 0.3, 0.7, -0.03, 0.03))
     tone = b.add(tone, b.mr(streak, 0.42, 0.75, 0.0, -0.16))
+    stain = b.noise(b.v("MULTIPLY", co, (1.0, 1.0, 0.35)), 0.09, 5.0, 0.6)
+    tone = b.add(tone, b.mr(stain, 0.5, 0.72, 0.0, -0.1))
+    bloom_ = b.mr(b.noise(co, 0.4, 6.0, 0.65), 0.62, 0.78, 0.0, 0.06)
+    tone = b.add(tone, b.mul(bloom_, b.mr(z, 0.5, 6.0, 1.0, 0.2)))
     tone = b.add(tone, b.mul(seams, -0.035))
     tone = b.add(tone, b.mul(holes, -0.22))
     tone = b.add(tone, b.mul(pores, -0.22))
@@ -252,9 +256,10 @@ def flat_material(t_node_frames):
     t = tval.outputs[0]
 
     # salt polygon ridges (Uyuni hexagons), ~1.6 m cells
-    edge = b.voronoi(co, 0.95, feature="DISTANCE_TO_EDGE", out="Distance", rand=0.85)
+    wco = b.v("ADD", co, b.v("SCALE", b.v("SUBTRACT", b.noise(co, 0.6, 2.0, out="Color"), (0.5, 0.5, 0.5)), scale=0.5))
+    edge = b.voronoi(wco, 0.95, feature="DISTANCE_TO_EDGE", out="Distance", rand=1.0)
     wob = b.noise(co, 3.0, 3.0)
-    ridge = b.mr(b.add(edge, b.mul(b.add(wob, -0.5), 0.04)), 0.0, 0.03, 1.0, 0.0, interp="SMOOTHSTEP")
+    ridge = b.mr(b.add(edge, b.mul(b.add(wob, -0.5), 0.05)), 0.0, 0.028, 0.6, 0.0, interp="SMOOTHSTEP")
     # how much crust pokes through: patches
     shallow = b.mr(b.noise(co, 0.035, 4.0, 0.55), 0.5, 0.66, 0.0, 1.0, interp="SMOOTHSTEP")
     islands = b.mr(b.noise(co, 0.11, 5.0, 0.6), 0.66, 0.71, 0.0, 1.0, interp="SMOOTHSTEP")
@@ -264,9 +269,11 @@ def flat_material(t_node_frames):
     grit = b.m("MAXIMUM", grit, chunks)
     dry = b.m("MAXIMUM", b.mul(ridge, b.mul(shallow, 0.7)), b.mul(islands, 0.8))
 
-    salt_tone = b.mr(b.noise(co, 1.5, 6.0), 0.3, 0.7, 0.16, 0.3)
+    salt_tone = b.mr(b.noise(co, 1.5, 6.0), 0.3, 0.7, 0.1, 0.2)
     # pools: mirror water; elsewhere a film of water over dark mud
     pool = b.add(b.mul(b.noise(co, 0.3, 6.0, 0.62), 0.6), b.mul(b.noise(co, 0.04, 3.0), 0.4))
+    # more open water towards the monolith, more mud towards the lens
+    pool = b.add(pool, b.mr(y, -100.0, -25.0, -0.07, 0.03))
     pool = b.mr(pool, 0.44, 0.56, 0.0, 1.0, interp="SMOOTHSTEP")
     water_tone = b.mixf(pool, b.mr(b.noise(co, 0.8, 5.0), 0.3, 0.7, 0.012, 0.035), 0.008)
     base = b.mixf(dry, water_tone, salt_tone)
@@ -276,7 +283,7 @@ def flat_material(t_node_frames):
     rco = b.combine(x, b.mul(y, 1.0), t)
     rip = b.noise(b.v("MULTIPLY", co, (1.0, 0.55, 1.0)), 1.6, 3.0, 0.5, dims="4D", w=b.mul(t, 0.35))
     rip2 = b.noise(rco, 9.0, 2.0, 0.5, dims="4D", w=b.mul(t, 0.9))
-    wrough = b.mixf(pool, b.mr(b.noise(co, 0.5, 3.0), 0.3, 0.7, 0.14, 0.34), b.mr(b.noise(co, 0.06, 3.0), 0.35, 0.7, 0.008, 0.05))
+    wrough = b.mixf(pool, b.mr(b.noise(co, 0.5, 3.0), 0.3, 0.7, 0.3, 0.55), b.mr(b.noise(co, 0.06, 3.0), 0.35, 0.7, 0.008, 0.05))
     rough = b.mixf(dry, wrough, 0.75)
     rough = b.mixf(grit, rough, 0.85)
     height = b.add(b.mul(rip, 1.0), b.mul(rip2, 0.35))
@@ -433,7 +440,7 @@ def build():
     c.volume_biased = True  # ray marching: ~2x faster than null scattering here
     c.volume_step_rate = 4.0
     c.volume_max_steps = 256
-    E.compositor(scene, bloom=0.22, bloom_size=0.7, threshold=2.5, vignette=0.32, gain=1.0)
+    E.compositor(scene, bloom=0.22, bloom_size=0.7, threshold=2.5, vignette=0.32, gain=1.2)
     world(scene)
 
     t_frames = [(1, 0.0), (FRAMES, (FRAMES - 1) / 30.0)]
