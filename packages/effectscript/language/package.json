@@ -50,6 +50,7 @@
   "devDependencies": {
     "@types/node": "^26.6.3",
     "effect": "workspace:^",
+    "shiki": "~4.4.3",
     "typescript": "^6.0.3",
     "vitest": "^5.0.2"
   },

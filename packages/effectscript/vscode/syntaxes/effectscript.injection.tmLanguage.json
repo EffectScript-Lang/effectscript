@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "scopeName": "effectscript.injection",
+  "injectionSelector": "L:source.efx -comment -string",
+  "patterns": [
+    { "include": "#effect" },
+    { "include": "#declaration" },
+    { "include": "#return-clauses" },
+    { "include": "#control" },
+    { "include": "#pipeline" }
+  ],
+  "repository": {
+    "effect": {
+      "match": "\\b(effect)\\b(?=\\s*(?:[A-Za-z_$][\\w$]*\\s*[(<]|\\{|\\(|[A-Za-z_$][\\w$]*\\s*=>))",
+      "captures": { "1": { "name": "keyword.control.effect.efx" } }
+    },
+    "declaration": {
+      "match": "(?:^|(?<=\\bexport\\s))\\s*\\b(schema|error|service|layer|config|atom|command|api|group)\\b(?=\\s+[A-Za-z_$])",
+      "captures": { "1": { "name": "storage.type.efx" } }
+    },
+    "return-clauses": {
+      "match": "\\b(throws|needs)\\b(?=\\s+[A-Za-z_$({\\[])",
+      "captures": { "1": { "name": "keyword.other.throws.efx" } }
+    },
+    "control": {
+      "match": "(?:^\\s*|\\b)(main|defer)\\b(?=\\s*\\{|\\s+[A-Za-z_$(])|\\b(match)\\b(?=\\s*\\()|\\b(when)\\b(?=\\s+[A-Za-z_$\"'0-9])",
+      "captures": {
+        "1": { "name": "keyword.control.efx" },
+        "2": { "name": "keyword.control.match.efx" },
+        "3": { "name": "keyword.control.match.efx" }
+      }
+    },
+    "pipeline": {
+      "match": "\\|>",
+      "name": "keyword.operator.pipeline.efx"
+    }
+  }
+}

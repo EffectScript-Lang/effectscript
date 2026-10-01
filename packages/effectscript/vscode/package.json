@@ -1,0 +1,53 @@
+{
+  "name": "effectscript-vscode",
+  "displayName": "EffectScript",
+  "description": "EffectScript (.efx): TypeScript with Effect as native syntax",
+  "version": "4.0.0-alpha.0",
+  "private": true,
+  "publisher": "effectscript",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gunta/effect-lang.git",
+    "directory": "packages/effectscript/vscode"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "effectscript",
+        "aliases": ["EffectScript", "efx"],
+        "extensions": [".efx"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "effectscript",
+        "scopeName": "source.efx",
+        "path": "./syntaxes/effectscript.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.tag.tsx": "typescriptreact"
+        }
+      },
+      {
+        "scopeName": "effectscript.injection",
+        "path": "./syntaxes/effectscript.injection.tmLanguage.json",
+        "injectTo": ["source.efx"]
+      }
+    ],
+    "typescriptServerPlugins": [
+      {
+        "name": "@effectscript/language",
+        "enableForWorkspaceTypeScriptVersions": true,
+        "languages": ["effectscript"]
+      }
+    ]
+  },
+  "dependencies": {
+    "@effectscript/language": "workspace:^"
+  }
+}
