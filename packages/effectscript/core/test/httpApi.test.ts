@@ -53,4 +53,49 @@ describe("group / api (§4.14)", () => {
     `)
     expect(mod.result).toEqual(["x", "Ada", "UserNotFound"])
   }, 180_000)
+
+  it("impl compiles to HttpApiBuilder.group with handleAll and span names", () => {
+    const { code } = toTypeScript(
+      "export const H = impl Api.users {\n  const users = await Users\n  return {\n    effect getById({ params }) {\n      return await users.find(params.id)\n    }\n  }\n} |> provide(Users.layer)\n"
+    )
+    expect(code).toContain("HttpApiBuilder.group(Api, \"users\", Effect.fn(\"Api.users\")(function*(handlers) {")
+    expect(code).toContain("return handlers.handleAll({")
+    expect(code).toContain("getById: Effect.fn(\"Api.users.getById\")(function*({ params }) {")
+    expect(code).toContain("})).pipe(Layer.provide(Users.layer))")
+  })
+
+  it("an EffectScript-only API answers requests (group, api, service, impl)", async () => {
+    const mod = await runCompiled(`${httpTestPrelude}
+      schema User {
+        id: string
+        name: string
+      }
+      error UserNotFound { id: string }
+      group UsersApi {
+        get getById "/:id" (params: { id: string }): User throws UserNotFound
+      }
+      api Api { UsersApi }
+      service Users {
+        effect find(id: string): User throws UserNotFound
+        layer = {
+          find: effect (id: string) => id === "1" ? new User({ id, name: "Ada" }) : throw new UserNotFound({ id })
+        }
+      }
+      const UsersLive = impl Api.users {
+        const users = await Users
+        return {
+          effect getById({ params }) {
+            return await users.find(params.id)
+          }
+        }
+      } |> provide(Users.layer)
+      export const result = await Effect.runPromise(Effect.gen(function*() {
+        const client = yield* HttpApiTest.groups(Api, ["users"]).pipe(Effect.provide(UsersLive))
+        const found = yield* client.users.getById({ params: { id: "1" } })
+        const missing = yield* Effect.flip(client.users.getById({ params: { id: "9" } }))
+        return [found.name, missing._tag]
+      }).pipe(Effect.scoped, Effect.provide(TestServices)))
+    `)
+    expect(mod.result).toEqual(["Ada", "UserNotFound"])
+  }, 180_000)
 })

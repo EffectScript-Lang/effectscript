@@ -23,3 +23,22 @@ export group SystemApi "system" {
 }
 
 export api Api { UsersApi, SystemApi }
+
+export service Users {
+  effect find(id: string): User throws UserNotFound
+  layer = {
+    find: effect (id: string) => id === "1" ? new User({ id, name: "Ada" }) : throw new UserNotFound({ id })
+  }
+}
+
+export const UsersHandlers = impl Api.users {
+  const users = await Users
+  return {
+    list: ({ query }) => succeed([new User({ id: "0", name: query.search ?? "all" })]),
+    effect getById({ params }) {
+      return await users.find(params.id)
+    },
+    create: ({ payload }) => succeed(new User({ id: "2", name: payload.name })),
+    remove: () => Effect.void
+  }
+} |> provide(Users.layer)

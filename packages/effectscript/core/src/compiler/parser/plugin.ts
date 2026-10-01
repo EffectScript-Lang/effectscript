@@ -252,6 +252,7 @@ export const efxPlugin = (Base: any): any =>
 
     parseExprAtom(refDestructuringErrors: unknown, forInit: unknown, forNew: unknown): any {
       if (this.efxIsMatchAhead()) return this.efxParseMatch()
+      if (this.efxIsImplAhead()) return this.efxParseImpl()
       if (this.efxIsWord("effect")) {
         const next = this.lookahead()
         if (this.efxSameLine(next)) {
@@ -566,6 +567,25 @@ export const efxPlugin = (Base: any): any =>
         if (this.type !== tt.braceR) this.expect(tt.comma)
       }
       return this.finishNode(node, "ApiDeclaration")
+    }
+
+    /** `impl Api.group { … }` in expression position (§4.14). */
+    efxIsImplAhead(): boolean {
+      if (!this.efxIsWord("impl")) return false
+      const lineEnd = this.input.indexOf("\n", this.end)
+      const rest = this.input.slice(this.end, lineEnd === -1 ? undefined : lineEnd)
+      return /^\s*[A-Za-z_$][\w$]*\s*\.\s*[A-Za-z_$][\w$]*\s*\{/.test(rest)
+    }
+
+    efxParseImpl(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.api = this.parseIdent()
+      this.expect(tt.dot)
+      node.group = this.parseIdent(true)
+      node.body = this.efxParseAsyncBlock()
+      return this.finishNode(node, "ImplExpression")
     }
 
     /** `describe "name" [with layer] { … }` (§4.14). */

@@ -4,9 +4,10 @@
  * @since 4.0.0
  */
 import type { Node } from "../ast.ts"
-import type { Ctx, Handler } from "../context.ts"
-import { ref } from "../names.ts"
+import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
+import { ref, unused } from "../names.ts"
 import { optionalField, typeToSchema } from "../schema/mapping.ts"
+import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 
 const module = "effect/http-api"
@@ -78,10 +79,45 @@ const apiDeclaration: Handler = (node, _parent, ctx) => {
 }
 
 /**
+ * `impl Api.group { … }` → `HttpApiBuilder.group(Api, "group", Effect.fn("Api.group")(function*(handlers) { … }))`.
+ * Top-level `return { … }` objects become `handlers.handleAll({ … })`; `effect` methods are spanned
+ * `Api.group.method`; pipes resolve in the `Layer` namespace.
+ */
+const implExpression: Handler = (node, _parent, ctx) => {
+  const api: string = node.api.name
+  const group: string = node.group.name
+  const handlers = unused(ctx, "handlers")
+  const E = ref(ctx, "effect", "Effect")
+  ctx.s.update(
+    node.start,
+    node.body.start,
+    `${ref(ctx, module, "HttpApiBuilder")}.group(${api}, ${JSON.stringify(group)}, ${E}.fn(${
+      JSON.stringify(`${api}.${group}`)
+    })(function*(${handlers}) `
+  )
+  ctx.s.appendLeft(node.body.end, "))")
+  for (const statement of node.body.body as Array<Node>) {
+    if (statement.type === "ReturnStatement" && statement.argument?.type === "ObjectExpression") {
+      ctx.s.appendRight(statement.argument.start, `${handlers}.handleAll(`)
+      ctx.s.prependLeft(statement.argument.end, ")")
+    }
+  }
+  node.efxPipeable = true
+  node.efxStepNamespace = "Layer"
+  const previous = ctx.service
+  ctx.service = `${api}.${group}`
+  // the layer owns the scope: never `Effect.scoped`
+  withEffect(ctx, makeFrame(node, "block", true), () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
+  ctx.service = previous
+  return true
+}
+
+/**
  * @since 4.0.0
  * @category handlers
  */
 export const httpApiHandlers: HandlerGroup = {
+  ImplExpression: implExpression,
   GroupDeclaration: groupDeclaration,
   ApiDeclaration: apiDeclaration
 }

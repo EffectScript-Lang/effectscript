@@ -5,7 +5,7 @@
  * @since 0.1.0
  */
 import { children, type Node } from "../ast.ts"
-import type { Ctx, Handler } from "../context.ts"
+import { type Ctx, type Handler, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
 import { ref, unused } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
@@ -63,6 +63,7 @@ export const knownPipeable = (ctx: Ctx, node: Node, seen: ReadonlySet<string> = 
   if (node.efxPipeable === true) return true
   switch (node.type) {
     case "EffectBlock":
+    case "ImplExpression":
       return true
     case "CallExpression":
       return node.callee.type === "Identifier" && ctx.analysis.localEffects.has(node.callee.name) &&
@@ -215,6 +216,7 @@ const inlinable = (ctx: Ctx, step: Step): boolean =>
   step.topics.length === 1 && pureBefore(ctx, step.rhs, step.topics[0]!) && evaluatedOnce(step.rhs, step.topics[0]!)
 
 const simpleTypes = new Set([
+  "ImplExpression",
   "Identifier",
   "CallExpression",
   "MemberExpression",
@@ -314,7 +316,12 @@ const pipeline: Handler = (node, _parent, ctx) => {
     i = steps.length
   }
   walk(head, node, ctx)
-  for (const step of steps) walk(step.rhs, node, ctx)
+  // a construct can make its pipes resolve in its own namespace (e.g. `impl` → `Layer`)
+  const stepNamespace: string | undefined = head.efxStepNamespace
+  for (const step of steps) {
+    if (stepNamespace === undefined) walk(step.rhs, node, ctx)
+    else withNamespace(ctx, stepNamespace, () => walk(step.rhs, node, ctx))
+  }
   return true
 }
 

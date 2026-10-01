@@ -1,5 +1,5 @@
-import { Schema } from "effect"
-import { HttpApi, HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
+import { Context, Effect, Layer, Schema } from "effect"
+import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
 export class User extends Schema.Class<User>("User")({
   id: Schema.String,
   name: Schema.String
@@ -25,3 +25,24 @@ export class SystemApi extends HttpApiGroup.make("system").add(
 ) {}
 
 export class Api extends HttpApi.make("api").add(UsersApi, SystemApi) {}
+
+export class Users extends Context.Service<Users, {
+  find(id: string): Effect.Effect<User, UserNotFound>
+}>()("fixtures/http/api/Users") {
+  static readonly layer = Layer.succeed(Users, Users.of({
+    find: Effect.fnUntraced(function*(id: string) { return id === "1" ? new User({ id, name: "Ada" }) : (yield* new UserNotFound({ id })) })
+  }))
+  static readonly find = (id: string) => Users.use((_) => _.find(id))
+}
+
+export const UsersHandlers = HttpApiBuilder.group(Api, "users", Effect.fn("Api.users")(function*(handlers) {
+  const users = yield* Users
+  return handlers.handleAll({
+    list: ({ query }) => Effect.succeed([new User({ id: "0", name: query.search ?? "all" })]),
+    getById: Effect.fn("Api.users.getById")(function*({ params }) {
+      return yield* users.find(params.id)
+    }),
+    create: ({ payload }) => Effect.succeed(new User({ id: "2", name: payload.name })),
+    remove: () => Effect.void
+  })
+})).pipe(Layer.provide(Users.layer))
