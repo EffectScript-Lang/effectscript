@@ -61,7 +61,10 @@ turns idiomatic Effect TypeScript back into EffectScript, so adopting it never l
 | Decision          | Choice                                                                  |
 | ----------------- | ----------------------------------------------------------------------- |
 | Name / extension  | **EffectScript**, `.efx`                                                 |
-| Effect bind       | `await` inside `fx` code (in place of `yield*`)                          |
+| Effect keyword    | `effect` (self-explanatory, same token cost as `fx`, the brand itself)   |
+| Effect bind       | `await` inside `effect` code (in place of `yield*`)                      |
+| Combinators       | Bare Effect builtins (`retry`, `timeout`, `all`, …); namespace follows the construct |
+| Philosophy        | Effect primitives over plain TS: builtins, ambient capture, strict rules |
 | Location          | Inside the Effect monorepo, following its conventions                   |
 | Scope             | Everything: compiler, CLI, integrations, editor tooling, site, skill     |
 | JSX               | One extension (`.efx`). The compiler auto-detects JSX (§3.2)            |
@@ -100,11 +103,19 @@ turns idiomatic Effect TypeScript back into EffectScript, so adopting it never l
 3. **Reversible.** Every canonical desugaring can be recognized, so the reverse compiler can
    re-sugar it. If a construct cannot be reversed reliably, change the construct, not the
    guarantee. Code that cannot be re-sugared stays TypeScript, which is still valid EffectScript.
-4. **Effects stay visible.** Effects are never implicit. `fx`, `await`, and `throw` mark every
-   effect boundary, so diffs are reviewable without type information. The compiler is purely
-   syntactic and never needs the type checker.
+4. **No hidden effects.** Every effect is visible in the source. It is either marked by
+   `effect`/`await`/`throw`, or it is an ambient call like `console.log` or `Date.now()` that is already
+   a side effect in JavaScript; the compiler only routes those through Effect services (§4.15). So
+   diffs are reviewable without type information. The compiler is purely syntactic and never needs
+   the type checker.
+7. **Magic only where it's safe.** Automatic behavior (spans, structured logs, scopes, service
+   keys, concurrency, platform services, telemetry) appears only when its result is exactly what an
+   Effect expert would write by hand, and when it can be reversed (§6).
+8. **Stricter than TypeScript.** `effect` code is checked for Effect bug patterns that TS cannot see,
+   such as a floating effect that is created but never run (§4.17). AI-written code is checked by
+   the compiler, not just by convention.
 5. **Familiar keywords first.** Reuse `await`, `throw`, `try/catch`, `using`, and TC39 syntax
-   before inventing words. New keywords (`fx`, `schema`, `error`, `service`, `layer`, `main`,
+   before inventing words. New keywords (`effect`, `schema`, `error`, `service`, `layer`, `main`,
    `match`, `when`, `defer`, `throws`, `needs`) are short and read as English.
 6. **Tooling-native.** No fork of TypeScript or Bun. Compile to TS with exact source maps and Volar
    mappings, the same model Vue, Svelte, Astro, and MDX use.
@@ -134,8 +145,8 @@ and every valid `.tsx` file parses in JSX mode, so the superset property holds f
 ### 3.3 Parser
 
 `acorn` + `@sveltejs/acorn-typescript` (the TS parser Svelte 5 maintains) + `efxPlugin`, an acorn
-plugin class that extends the TS parser. A spike validated the approach: `fx` declarations, `fx`
-blocks, `await`/`throw` inside `fx`, and left-associative `|>` all parse, with original source
+plugin class that extends the TS parser. A spike validated the approach: `effect` declarations, `effect`
+blocks, `await`/`throw` inside `effect`, and left-associative `|>` all parse, with original source
 positions. Notes from the spike:
 
 - acorn's `TokenType` treats `binop: 0` as "not a binary operator". `|>` uses `binop: 0.5`, which
@@ -151,13 +162,13 @@ positions. Notes from the spike:
 Each subsection gives the syntax, its canonical TypeScript desugaring (→), and its rules. In
 examples, "TS" means the compiler output.
 
-### 4.1 `fx` functions
+### 4.1 `effect` functions
 
 ```ts
-export fx getUser(id: UserId): User throws UserNotFound {
+export effect getUser(id: UserId): User throws UserNotFound {
   const users = await Users
   return await users.find(id)
-} |> Effect.retry({ times: 3 })
+} |> retry({ times: 3 })
 ```
 
 →
@@ -171,41 +182,41 @@ export const getUser = Effect.fn("getUser")(function*(id: UserId): Effect.fn.Ret
 
 | Form                                       | Desugars to                                                                |
 | ------------------------------------------ | -------------------------------------------------------------------------- |
-| `fx name(…) {…}` (declaration)             | `const name = Effect.fn("name")(function*(…) {…})`                         |
-| `fx name(…) {…}` nested in a `service`     | span name `"Service.name"` (matches the Effect idiom)                       |
-| `export default fx name(…) {…}`            | `const name = …` followed by `export default name`                         |
-| `fx (…) => expr` / `fx x => expr`          | `Effect.fnUntraced(function*(…) { return expr })`                          |
-| `fx (…) => { … }`                          | `Effect.fnUntraced(function*(…) { … })`                                     |
-| `fx { … }` (expression)                    | `Effect.gen(function*() { … })`                                             |
-| `fx { … }` using `this`                    | `Effect.gen({ self: this }, function*() { … })`                             |
-| `{ fx m(…) { … } }` (object method)        | `{ m: Effect.fn("m")(function*(…) { … }) }` (`"Service.m"` inside a service) |
-| `fx … {…} \|> p1 \|> p2` (declaration)     | extra `Effect.fn` arguments: `…}, p1, p2)`                                 |
+| `effect name(…) {…}` (declaration)             | `const name = Effect.fn("name")(function*(…) {…})`                         |
+| `effect name(…) {…}` nested in a `service`     | span name `"Service.name"` (matches the Effect idiom)                       |
+| `export default effect name(…) {…}`            | `const name = …` followed by `export default name`                         |
+| `effect (…) => expr` / `effect x => expr`          | `Effect.fnUntraced(function*(…) { return expr })`                          |
+| `effect (…) => { … }`                          | `Effect.fnUntraced(function*(…) { … })`                                     |
+| `effect { … }` (expression)                    | `Effect.gen(function*() { … })`                                             |
+| `effect { … }` using `this`                    | `Effect.gen({ self: this }, function*() { … })`                             |
+| `{ effect m(…) { … } }` (object method)        | `{ m: Effect.fn("m")(function*(…) { … }) }` (`"Service.m"` inside a service) |
+| `effect … {…} \|> p1 \|> p2` (declaration)     | extra `Effect.fn` arguments: `…}, p1, p2)`                                 |
 
 Rules:
 
 - Generics, `this` parameters, default parameters, and rest parameters pass through unchanged.
-- `fx` declarations compile to `const`, so they are not hoisted. A `main` block (§4.10) always runs
+- `effect` declarations compile to `const`, so they are not hoisted. A `main` block (§4.10) always runs
   after the whole module has initialized.
-- `fx` arrows must not reference `this`. Use a `fx` block or method instead. Error **EFX2001**.
-- `fx` class methods are on the roadmap (§14). Error **EFX2002** with a hint.
-- `fx` blocks at statement level are rejected. Error **EFX2003**: "an effect that is never used;
+- `effect` arrows must not reference `this`. Use an `effect` block or method instead. Error **EFX2001**.
+- `effect` class methods are on the roadmap (§14). Error **EFX2002** with a hint.
+- `effect` blocks at statement level are rejected. Error **EFX2003**: "an effect that is never used;
   did you mean `main { … }`?"
 
 ### 4.2 Return types: `throws` / `needs`
 
-`: A throws E needs R` on a `fx` function, arrow, method, or service member:
+`: A throws E needs R` on an `effect` function, arrow, method, or service member:
 
-- On `fx` functions → `: Effect.fn.Return<A, E, R>`. Without `throws`, E is `never`, so the
+- On `effect` functions → `: Effect.fn.Return<A, E, R>`. Without `throws`, E is `never`, so the
   signature becomes a checked contract.
 - On service members → `Effect.Effect<A, E>` in the service shape.
 
 `throws` without a return type is an error (**EFX2004**: write `: void throws E`).
 
-### 4.3 Inside `fx` code
+### 4.3 Inside `effect` code
 
-These rules apply to the body of the `fx` construct itself. Nested non-`fx` functions, arrows, and
-classes are boundaries, the same way `async` scoping works. Nested `fx` constructs start their own
-`fx` context.
+These rules apply to the body of the `effect` construct itself. Nested non-`effect` functions, arrows, and
+classes are boundaries, the same way `async` scoping works. Nested `effect` constructs start their own
+`effect` context.
 
 | EffectScript                                | TypeScript                                                       |
 | ------------------------------------------- | ---------------------------------------------------------------- |
@@ -224,20 +235,20 @@ classes are boundaries, the same way `async` scoping works. Nested `fx` construc
 `satisfies`, non-null, member, call-callee, tagged-template, or conditional-test expression. In
 every other position it emits a bare `yield* e`.
 
-Scoping: `defer` and `using … await` mark the enclosing `fx` as scoped:
+Scoping: `defer` and `using … await` mark the enclosing `effect` as scoped:
 
 - On declarations → `Effect.scoped` becomes the first extra `Effect.fn` argument.
 - On blocks → `.pipe(Effect.scoped, …)`.
 - On a `main` block → the scope wraps the program.
-- `fx` blocks that are `layer` constructors are never scoped, because the layer owns the scope.
+- `effect` blocks that are `layer` constructors are never scoped, because the layer owns the scope.
   This is the idiomatic acquire-in-layer pattern.
 
 `for await`: `continue` becomes `return`. `break`, labeled jumps, and `return` inside the loop are
 errors (**EFX2010**).
 
-### 4.4 `try` / `catch` / `finally` inside `fx`
+### 4.4 `try` / `catch` / `finally` inside `effect`
 
-A `try` statement in `fx` code is **effectful** if its `try` block contains, at that `fx` level, an
+A `try` statement in `effect` code is **effectful** if its `try` block contains, at that `effect` level, an
 `await` or a `throw`. Otherwise it is a plain JavaScript `try` and catches synchronous exceptions
 as usual. This rule follows what the code means: a `try` around effects catches their failures, and
 a `try` around synchronous code catches exceptions. It also keeps the reverse compiler exact
@@ -248,7 +259,7 @@ An effectful `try` desugars to an inner `Effect.gen` piped through handlers:
 ```ts
 try { return await load(id) }
 catch (e: NotFound) { return guest }
-catch (e) { await Console.error(e); return guest }
+catch (e) { console.error(e); return guest }
 finally { await Metric.increment(loads) }
 ```
 
@@ -257,7 +268,7 @@ finally { await Metric.increment(loads) }
 ```ts
 return yield* Effect.gen(function*() { return yield* load(id) }).pipe(
   Effect.catchTag("NotFound", (e) => Effect.gen(function*() { return guest })),
-  Effect.catch((e) => Effect.gen(function*() { yield* Console.error(e); return guest })),
+  Effect.catch((e) => Effect.gen(function*() { yield* Effect.logError(e); return guest })),
   Effect.ensuring(Effect.gen(function*() { yield* Metric.increment(loads) }))
 )
 ```
@@ -274,7 +285,7 @@ return yield* Effect.gen(function*() { return yield* load(id) }).pipe(
 
 Rules:
 
-- **Several `catch` clauses are EffectScript syntax** and are only valid inside `fx`.
+- **Several `catch` clauses are EffectScript syntax** and are only valid inside `effect`.
 - The tag name is the last segment of the type name (`Errors.NotFound` → `"NotFound"`). `error`
   declarations always tag with their class name. If a tag doesn't match, the type check of the
   output catches it.
@@ -307,7 +318,7 @@ schema User {                              // class form → Schema.Class
   id: UserId
   name: string
   email?: string
-  age = Schema.Int.check(Schema.isGreaterThan(0))   // `=` field: raw schema expression
+  age = Int.check(isGreaterThan(0))        // `=` field: schema expression (Schema builtins)
   get label() { return `${this.name} <${this.email ?? "?"}>` }
 }
 
@@ -394,21 +405,21 @@ The body uses the same rules as the `schema` class form: fields, `=` fields, and
 
 ```ts
 service Users {
-  fx find(id: UserId): User throws UserNotFound   // effectful member
+  effect find(id: UserId): User throws UserNotFound   // effectful member
   readonly size: number                           // plain member
 
-  layer = fx {                                     // static readonly layer
+  layer = effect {                                     // static readonly layer
     const sql = await SqlClient
     return {
       size: 0,
-      fx find(id) {                                // span "Users.find"
+      effect find(id) {                                // span "Users.find"
         const rows = await sql`select * from users where id = ${id}`
         return rows[0] ?? throw new UserNotFound({ id })
       }
     }
-  } |> Layer.provide(SqlLive)
+  } |> provide(SqlLive)
 
-  layer test = { size: 1, find: fx (id) => new User({ id, name: "Test" }) }
+  layer test = { size: 1, find: effect (id) => new User({ id, name: "Test" }) }
 }
 ```
 
@@ -436,11 +447,11 @@ class Users extends Context.Service<Users, {
 
 Rules:
 
-- **Members.** `fx m(…): A throws E` (a return type is required, error **EFX4001**), property
+- **Members.** `effect m(…): A throws E` (a return type is required, error **EFX4001**), property
   signatures, and plain method signatures form the shape. `layer [name] = expr` members become
   `static readonly layer[Name]`. Other class members are errors (**EFX4002**).
 - **Layer initializers:**
-  - A `fx` block → `Layer.effect(Self, Effect.gen(…))`. Every top-level `return { … }` object
+  - An `effect` block → `Layer.effect(Self, Effect.gen(…))`. Every top-level `return { … }` object
     literal is wrapped in `Self.of(…)`, which gives contextual typing for method parameters.
   - An object literal → `Layer.succeed(Self, Self.of({…}))`.
   - Any other expression is used as-is.
@@ -454,7 +465,7 @@ Rules:
 
 - **Function style** (Effect style): if the right-hand side contains no topic `%`, `a |> f |> g`
   applies `f`, then `g`, to `a`:
-  - If `a` is known to be pipeable → `a.pipe(f, g)`. Known pipeable means a `fx` expression, a call
+  - If `a` is known to be pipeable → `a.pipe(f, g)`. Known pipeable means an `effect` expression, a call
     or member chain rooted at a pipeable prelude module (`Effect`, `Layer`, `Stream`, `Schema`,
     `Schedule`, `Option`, `Result`, `Exit`, `Sink`, `Channel`, `Chunk`, `HashMap`, `HashSet`,
     `Duration`, `Cause`), or a local `const` initialized with one of those.
@@ -467,7 +478,7 @@ Rules:
 - Consecutive steps of the same flavor are grouped into one `.pipe(…)`/`pipe(…)`.
 - Precedence is below `??`/`||` and above `?:`/assignment/arrow. `a ? b : c |> f` pipes only `c`.
   Use parentheses to pipe the whole conditional.
-- `|>` directly after a `fx` declaration, `main`, or `layer` attaches pipeables (§4.1, §4.8,
+- `|>` directly after an `effect` declaration, `main`, or `layer` attaches pipeables (§4.1, §4.8,
   §4.10). Hack style is not allowed there (**EFX5001**).
 
 ### 4.10 `main`
@@ -476,7 +487,7 @@ Rules:
 main {
   const user = await getUser(UserId.make("42"))
   await Console.log(user.name)
-} |> Effect.provide(Users.layer)
+} |> provide(Users.layer)
 ```
 
 → emitted at the **end of the module** (so every declaration is initialized):
@@ -520,7 +531,7 @@ const label = Match.value(status).pipe(
 - Arms are separated by newlines, `;`, or `,`.
 - **Output:** if every arm is a tag pattern and there is no `default` → `Match.valueTags`.
   Otherwise → `Match.value(x).pipe(Match.tag | Match.when …, Match.orElse | Match.exhaustive)`.
-- **Inside `fx`:** if any arm contains `await` or `throw`, every arm becomes
+- **Inside `effect`:** if any arm contains `await` or `throw`, every arm becomes
   `Effect.fnUntraced(function*(binding) { return arm })` and the whole match is yielded.
 - **Syntax:** `match (x) {` requires the `{` on the same line as `)`. Guards (`if (…)`) are on the
   roadmap.
@@ -531,9 +542,9 @@ const label = Match.value(status).pipe(
 | -------------------------------- | -------- | ------------------------------------------------------------------------------- |
 | Pipeline operator                | Stage 2  | §4.9, both function and Hack styles                                             |
 | Pattern matching                 | Stage 1  | §4.11, compiled to Effect `Match`                                               |
-| Throw expressions                | Stage 2  | Inside `fx` → typed failure. Outside → `(() => { throw e })()`                  |
-| Do expressions                   | Stage 1  | `do { … }` in expression position → IIFE. Inside `fx` with `await` → `(yield* Effect.gen(…))`. The completion value is the last expression statement, recursing through `if`/`else` and blocks. `return`/`break`/`continue` that escape are errors (**EFX7001**) |
-| Explicit resource management     | Stage 3+ | Native outside `fx`. `using x = await e` in `fx` → scoped acquisition (§4.3)   |
+| Throw expressions                | Stage 2  | Inside `effect` → typed failure. Outside → `(() => { throw e })()`                  |
+| Do expressions                   | Stage 1  | `do { … }` in expression position → IIFE. Inside `effect` with `await` → `(yield* Effect.gen(…))`. The completion value is the last expression statement, recursing through `if`/`else` and blocks. `return`/`break`/`continue` that escape are errors (**EFX7001**) |
+| Explicit resource management     | Stage 3+ | Native outside `effect`. `using x = await e` in `effect` → scoped acquisition (§4.3)   |
 | Decorators                       | Stage 3  | Native TypeScript                                                               |
 
 Considered and **not adopted**:
@@ -556,22 +567,321 @@ A free identifier, meaning one not declared or imported anywhere in the file, th
 - The prelude includes every namespace export of `effect`'s `index.ts`, plus `pipe`, `flow`, and
   `identity`. It excludes names that shadow JS globals: `Array`, `BigInt`, `Boolean`, `Function`,
   `Iterable`, `Number`, `Record`, `String`, `Symbol`, `RegExp`.
-- Curated unstable modules: `HttpClient`, `HttpServer`, `HttpRouter`, … from `effect/unstable/http`;
-  `SqlClient` from `effect/unstable/sql`; CLI modules from `effect/unstable/cli`. The table is
-  generated from `packages/effect/package.json` exports and tested.
+- Subpath modules come from the export map of `packages/effect/package.json`; the table is
+  generated and tested:
+  - `effect/http`: `HttpClient`, `HttpRouter`, `HttpServer`, `FetchHttpClient`, …
+  - `effect/http-api`: `HttpApi`, `HttpApiGroup`, `HttpApiEndpoint`, `HttpApiBuilder`, …
+  - `effect/sql`: `SqlClient`, `Model`, …
+  - `effect/cli`: `Command`, `Flag`, `Argument`
+  - `effect/reactivity`: `Atom`
+  - `effect/observability`: `OtlpTracer`, `OtlpLogger`, …
+  - `effect/testing`: `TestClock`, …
+  - Platform runtimes: `NodeRuntime` and `NodeServices` from `@effect/platform-<runtime>`.
 - Opt-out: the `// @efx no-prelude` directive, or the `prelude: false` option.
+
+#### Effect builtins (bare combinators)
+
+Every value export of the `Effect` module is a **builtin** in `.efx`, for example:
+
+```ts
+getUser(id) |> retry({ times: 3 }) |> timeout("5 seconds") |> orDie
+await sleep("1 second")
+const [a, b] = await all([x, y])            // or `await [x, y]`
+```
+
+→ `Effect.retry(…)`, `Effect.timeout(…)`, `Effect.sleep(…)`, and so on. Output is always qualified
+and idiomatic.
+
+- **Resolution is lexical.** An identifier is a builtin only if it is *free*, meaning no local
+  declaration, parameter, or import has that name in scope. `const map = …` keeps its meaning.
+- **The namespace follows the construct.** A bare name resolves in the construct's namespace first,
+  then falls back to `Effect`:
+  - `layer` initializers and pipes, and `impl` pipes → `Layer` (`provide`, `provideMerge`, `launch`)
+  - schema `=` fields → `Schema` (`Int`, `isGreaterThan`, `check`)
+  - `atom` pipes → `Atom` (`keepAlive`)
+  - `command` pipes → `Command` (`withSubcommands`, `withDescription`)
+- **Excluded names keep their JS meaning:**
+  - JS reserved words (`void`, `if`, `try`, `catch`, `do`, …)
+  - JS, Web, and Node globals (`fetch`, `name`, `close`, `open`, `print`, `event`, `status`,
+    `length`, `exit`, …)
+
+  The set is generated from `globalThis`, the TypeScript `lib.dom`/`lib.es` declarations, and
+  `@types/node`, and it is tested. Use the qualified form for excluded names (`Effect.void`,
+  `Effect.exit`).
+- `gen`/`fn`/`fnUntraced` are builtins too. Strict warning **EFX8101** suggests `effect` instead.
+- **Reverse compiler:** `Effect.x(…)` becomes `x(…)` when `x` is free at that position and not
+  excluded. It never drops a qualifier when the bare name would be ambiguous (shadowed).
 - This is the one documented superset exception: a `.ts` file that references a *global* named,
   say, `Effect` would now resolve to the `effect` module.
 
-### 4.14 Superset guarantee and contextual keyword triggers
+### 4.14 Effect libraries as language constructs
+
+Each construct below replaces one of the most ceremony-heavy library shapes. Each has one
+canonical desugaring and one reverse shape (§6).
+
+#### `test` / `describe` (`@effect/vitest`)
+
+```ts
+describe "Users" {
+  test "finds a user" {
+    const user = await getUser(UserId.make("1"))
+    assert.strictEqual(user.name, "Ada")
+  } |> provide(Users.layerTest)
+  test.live "talks to the real clock" { await sleep(1) }
+}
+describe "with shared layer" with Users.layerTest {
+  test "uses it" { … }
+}
+```
+
+→
+
+```ts
+describe("Users", () => {
+  it.effect("finds a user", () => Effect.gen(function*() { … }).pipe(Effect.provide(Users.layerTest)))
+  it.live("talks to the real clock", () => Effect.gen(function*() { yield* Effect.sleep(1) }))
+})
+layer(Users.layerTest)("with shared layer", (it) => { it.effect("uses it", () => Effect.gen(…)) })
+```
+
+- Test modifiers: `test.live`, `test.skip`, `test.only`. Test bodies are `effect` bodies.
+- `describe`, `it`, `assert`, `expect`, and `layer` are imported automatically from
+  `@effect/vitest`.
+
+#### `api` / `group` / `impl` (HttpApi, `effect/http-api`)
+
+```ts
+export group UsersApi "users" {
+  get list "/" (query: { search?: string }): User[]
+  get getById "/:id" (params: { id: UserId }): User throws UserNotFound
+  post create "/" (payload: NewUser): User
+  middleware Authorization
+}
+export api Api "api" { UsersApi, SystemApi }
+
+export const UsersHandlers = impl Api.users {
+  const users = await Users
+  return {
+    list: ({ query }) => users.list(query.search) |> orDie,
+    effect getById({ params }) { return await users.getById(params.id) }
+  }
+} |> provide(Users.layer)
+```
+
+→
+
+```ts
+export class UsersApi extends HttpApiGroup.make("users").add(
+  HttpApiEndpoint.get("list", "/", { query: { search: Schema.optional(Schema.String) }, success: Schema.Array(User) }),
+  HttpApiEndpoint.get("getById", "/:id", { params: { id: UserId }, success: User, error: UserNotFound }),
+  HttpApiEndpoint.post("create", "/", { payload: NewUser, success: User })
+).middleware(Authorization) {}
+export class Api extends HttpApi.make("api").add(UsersApi, SystemApi) {}
+
+export const UsersHandlers = HttpApiBuilder.group(Api, "users", Effect.fn("Api.users")(function*(handlers) {
+  const users = yield* Users
+  return handlers.handleAll({
+    list: ({ query }) => users.list(query.search).pipe(Effect.orDie),
+    getById: Effect.fn("Api.users.getById")(function*({ params }) { return yield* users.getById(params.id) })
+  })
+})).pipe(Layer.provide(Users.layer))
+```
+
+- **Endpoint line:** `<method> <name> "<path>" [(sections)] [: Success] [throws E1 | E2]`. The
+  method is one of `get post put patch del head options`. The sections are `params`, `query`,
+  `payload`, and `headers`, typed with §4.6 types.
+- **Name strings:** the identifier string is optional. It defaults to the camelCase name with a
+  trailing `Api`/`Group` removed (`UsersApi` → `"users"`).
+- **`impl` bodies** are `effect` bodies. Their top-level `return { … }` is wrapped in
+  `handlers.handleAll(…)`.
+
+#### `command` (CLI, `effect/cli`)
+
+```ts
+/** Create a task */
+export command create(
+  /** Task title */ title: NonEmptyString,
+  /** Priority */ --priority: "low" | "normal" | "high" = "normal",
+  /** Assignee email @alias a */ --assignee?: Email,
+  --dryRun: boolean = false,
+) {
+  console.log(`Created "${title}" with ${priority} priority`)
+}
+```
+
+→
+
+```ts
+export const create = Command.make("create", {
+  title: Argument.String("title").pipe(Argument.withSchema(Schema.NonEmptyString), Argument.withDescription("Task title")),
+  priority: Flag.Literals("priority", ["low", "normal", "high"]).pipe(Flag.withDefault("normal"), Flag.withDescription("Priority")),
+  assignee: Flag.String("assignee").pipe(Flag.withSchema(Email), Flag.optional, Flag.withAlias("a"), Flag.withDescription("Assignee email")),
+  dryRun: Flag.Boolean("dry-run").pipe(Flag.withDefault(false))
+}, Effect.fn("create")(function*({ title, priority, assignee, dryRun }) {
+  yield* Effect.log(`Created "${title}" with ${priority} priority`)
+})).pipe(Command.withDescription("Create a task"))
+```
+
+- Parameters with a `--` prefix are flags; plain parameters are positional arguments.
+- **Type mapping:** `string`/`boolean`/`Int`/`Finite`/`Date`/`Redacted` and literal unions use the
+  native constructors (`Flag.String`, …, `Flag.Literals`). Any other type uses
+  `String` + `withSchema(T)`.
+- **Modifiers:** `= d` → `withDefault(d)`. `?` → `optional`.
+- **Metadata comes from JSDoc:** the text becomes `withDescription` and `@alias` becomes
+  `withAlias`.
+- camelCase names become kebab-case flags.
+- Compose subcommands with `|> withSubcommands([...])`.
+
+#### `config` (`Config`)
+
+```ts
+config AppConfig {
+  port: Port = 3000
+  databaseUrl: Redacted
+  logLevel: LogLevel = "Info"
+  region?: "eu" | "us"
+}
+```
+
+→
+
+```ts
+const AppConfig = Config.all({
+  port: Config.Port("PORT").pipe(Config.withDefault(3000)),
+  databaseUrl: Config.Redacted("DATABASE_URL"),
+  logLevel: Config.LogLevel("LOG_LEVEL").pipe(Config.withDefault("Info")),
+  region: Config.option(Config.Literals("REGION", ["eu", "us"]))
+})
+```
+
+- Keys become `SCREAMING_SNAKE_CASE`.
+- Usage: `const cfg = await AppConfig`. A `Config` is itself an Effect.
+
+#### `atom` (`effect/reactivity`, for frontends)
+
+`atom count = 0`, `atom doubled = (get) => get(count) * 2`, and `atom me = effect { … }` each compile to
+`const x = Atom.make(…)`. Pipes apply to the atom, for example `|> keepAlive`.
+
+#### Top-level `layer`
+
+`layer AppLive = Users.layer & Posts.layer |> provide(SqlLive)` →
+`const AppLive = Layer.mergeAll(Users.layer, Posts.layer).pipe(Layer.provide(SqlLive))`. Inside a
+`layer` initializer, `&` means merge. `layer Worker = effect { … }` → `Layer.effectDiscard(Effect.gen(…))`,
+for background tasks.
+
+#### Bare service tags and platform services
+
+- **Bare service tags:** `await M`, where `M` is a bare prelude module with a same-named service
+  (`FileSystem`, `Path`, `Terminal`, `HttpClient`, `SqlClient`, …; the list is generated and
+  tested), becomes `yield* M.M`. The same names in type positions expand like §4.5.
+- **Platform services in `main`:** `main` automatically provides `<Runtime>Services.layer`
+  (`NodeServices`/`BunServices`), so the file system, paths, terminal, and child processes just
+  work, as they would in a language with native I/O.
+- **Services you declare:** a `service` also gets **static accessors** for each `effect` member:
+
+  ```ts
+  static readonly find = (id: UserId) => Effect.flatMap(Users.asEffect(), (_) => _.find(id))
+  ```
+
+  So `await Users.find(id)` works from `.efx` and from plain `.ts`. Names that clash with
+  `Context.Service` statics (`key`, `of`, `Service`, `name`, `length`, …) skip accessor generation
+  (warning **EFX4003**).
+
+  The exact accessor body is confirmed during implementation against v4's `Context.Service` API.
+
+### 4.15 Ambient capture (magic, inside `effect` only)
+
+JavaScript's ambient side effects become calls to the matching Effect services. The result is
+traced, structured, testable (`TestClock`, seeded `Random`, `ConfigProvider`), and reversible.
+
+| In `effect` code                         | TypeScript                                                   |
+| ------------------------------------ | ------------------------------------------------------------ |
+| `console.log/info/warn/error/debug(…)` | `yield* Effect.log/logInfo/logWarning/logError/logDebug(…)` |
+| `Date.now()`                         | `(yield* Clock.currentTimeMillis)`                           |
+| `Math.random()`                      | `(yield* Random.next)`                                       |
+| `process.env.NAME`                   | `(yield* Config.String("NAME"))`; a missing value is a typed `ConfigError` |
+| `process.env.NAME ?? d`              | `(yield* Config.String("NAME").pipe(Config.withDefault(d)))` |
+
+Nested non-`effect` functions are boundaries and keep native behavior. You can turn this off per file
+with `// @efx no-ambient` or project-wide with `ambient: false`.
+
+### 4.16 Observability (zero-config)
+
+- **Automatic spans:** every `effect` declaration and method (`"name"`, `"Service.method"`), every
+  `impl` handler (`"Api.group.endpoint"`), and every `command` handler (`"command"`).
+- **Structured logs everywhere:** `console.*` in `effect` becomes Effect logging, with span and fiber
+  context (§4.15).
+- **Telemetry with no code:** with `observability: "otlp"` (set by `efx init`), `main` provides an
+  OTLP tracer and logger layer. That layer is emitted as idiomatic `Layer.unwrap(Effect.gen(…))`
+  code: it reads `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_SERVICE_NAME` through `Config`, and falls
+  back to `Layer.empty` when the endpoint is unset. Set one environment variable and every `effect` in
+  the app is traced.
+
+### 4.17 Strict mode (stricter than TypeScript)
+
+Errors apply only to `effect` code, so the superset guarantee holds:
+
+| Code    | Rule                                                                                              |
+| ------- | ------------------------------------------------------------------------------------------------- |
+| EFX8001 | **Floating effect:** an expression statement that calls a prelude Effect module or a local `effect` without `await`. The effect would be created and never run. |
+| EFX8002 | `yield` / `yield*` inside `effect` (use `await`)                                                       |
+| EFX8003 | `Effect.runPromise/runSync/runFork/runCallback` inside `effect` (running effects inside effects)        |
+| EFX8004 | `throw` of a primitive (`throw "x"`); declare an `error`                                          |
+| EFX8005 | `catch (e: any)`                                                                                  |
+
+Warnings apply anywhere in `.efx`. The `strict: true` option turns them into errors, and `efx fix`
+applies the fixes:
+
+| Code    | Rule                                                                                          |
+| ------- | --------------------------------------------------------------------------------------------- |
+| EFX8101 | TS-style Effect code (`Effect.gen`, `Effect.fn`, `.pipe`): `efx fix` runs `toEffectScript`     |
+| EFX8102 | `async`, `new Promise`, or `.then` inside `effect`                                                |
+| EFX8103 | `throw new Error(…)` inside `effect` (prefer a tagged `error`)                                    |
+| EFX8104 | explicit `any`                                                                                |
+| EFX8105 | `setTimeout`/`setInterval` inside `effect` (use `Effect.sleep`/`Schedule`)                         |
+| EFX8106 | `fetch` inside `effect` (use `HttpClient`)                                                        |
+| EFX8107 | `Promise.all/race/allSettled` inside `effect` (use `await [..]` / `all` / `race`)                  |
+| EFX8108 | `JSON.parse` inside `effect` (decode with `schema` + `Schema.decodeUnknown`)                       |
+| EFX8109 | `new Date()` inside `effect` (use `DateTime.now`)                                                |
+| EFX8110 | `T \| null` / `T \| undefined` in `service` member signatures (prefer `Option<T>`)                 |
+
+Type-level strictness:
+
+- `efx init` writes the strictest `tsconfig`: `strict`, `exactOptionalPropertyTypes`,
+  `noUncheckedIndexedAccess`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`,
+  `verbatimModuleSyntax`.
+- `efx check` adds the Effect language service's diagnostics (floating effects, leaking
+  requirements, and so on) on a best-effort basis (§7.3).
+
+### 4.18 Frontend patterns (inspired by Foldkit)
+
+Foldkit applies The Elm Architecture on top of Effect: one Schema model, messages as tagged unions,
+a pure `update`, and side effects as values. EffectScript expresses this with constructs it already
+has, so no runtime is bundled:
+
+- **Messages** are ADT `schema` declarations.
+- **`update`** is a `match`.
+- **Commands** are `effect` values.
+- **State** is `atom`.
+- **Views** use JSX in `.efx` with `@effect/atom-react`.
+
+The skill and the site include a TEA counter and a todo example. A dedicated `app` construct is on
+the roadmap.
+
+### 4.19 Superset guarantee and contextual keyword triggers
 
 | Keyword / syntax  | Triggers only when                                                                       |
 | ----------------- | ---------------------------------------------------------------------------------------- |
-| `fx`              | Followed on the same line by an identifier (declaration), `{` (block), or arrow parameters followed by `=>` (arrow; speculative parse with `fx` falling back to an identifier) |
-| `schema` `error` `service` | Statement position (optionally after `export`), followed on the same line by an identifier |
+| `effect`              | Followed on the same line by an identifier (declaration), `{` (block), or arrow parameters followed by `=>` (arrow; speculative parse with `effect` falling back to an identifier) |
+| `schema` `error` `service` `group` `api` `command` `config` `atom` `layer` | Statement position (optionally after `export`), followed on the same line by an identifier |
+| `test` `describe` (+ `.live/.skip/.only`) | Statement position, followed on the same line by a string literal |
+| `impl`            | Expression position, followed on the same line by `Ident.ident {`                        |
 | `main`            | Statement position, followed by `{` on the same line                                     |
-| `defer`           | Statement position inside `fx`, followed by an expression on the same line              |
-| `layer`           | `service` body member position                                                           |
+| `defer`           | Statement position inside `effect`, followed by an expression on the same line              |
+| `layer` (member)  | `service` body member position                                                           |
+| `--name` params   | `command` parameter lists only                                                           |
+| `get`/`post`/…, `middleware` | `group` body lines only                                                         |
+| Ambient capture   | Inside `effect` only, for free (non-shadowed) `console`, `Date`, `Math`, `process`           |
 | `throws` `needs`  | Directly after a return-type annotation                                                  |
 | `match` / `when` / `default` | `match (…) {` on one line, in expression position                             |
 | `\|>` `%`         | Expression context (never inside types)                                                  |
@@ -588,7 +898,7 @@ changes. CI checks this with the identity test (§11).
 source.efx
   │  parse (§3): acorn + acorn-typescript + efxPlugin, TS→JSX fallback
   ▼
-ESTree + TS AST (original offsets) ── analyze: scopes, fx contexts, declared names, local `error`s
+ESTree + TS AST (original offsets) ── analyze: scopes, effect contexts, declared names, local `error`s
   ▼
 transform: walk the AST and emit edits into MagicString(source)
   │   - only keyword/token overwrites, insertions at node boundaries, and node moves
@@ -601,8 +911,8 @@ Modules (one purpose each):
 
 - `parser/plugin.ts`: the `efxPlugin` acorn extension (tokens, statements, expressions, members).
 - `parser/parse.ts`: TS/JSX mode selection and fallback; returns `{ ast, mode }` or diagnostics.
-- `analyze/scope.ts`: declared names per scope, free identifiers, `this` usage, `fx` contexts.
-- `transform/*.ts`: one file per construct (`fx`, `await-throw`, `try`, `schema`, `error`,
+- `analyze/scope.ts`: declared names per scope, free identifiers, `this` usage, `effect` contexts.
+- `transform/*.ts`: one file per construct (`effect`, `await-throw`, `try`, `schema`, `error`,
   `service`, `pipeline`, `match`, `main`, `types`, `proposals`, `prelude`). Each takes `(node, ctx)`
   and edits through `ctx.s`.
 - `schema/mapping.ts`: the type → Schema table (shared with the reverse compiler).
@@ -656,14 +966,14 @@ Each row is the inverse of a row in §4.
 
 | TypeScript shape                                                                    | EffectScript                         |
 | ----------------------------------------------------------------------------------- | ------------------------------------ |
-| `const x = Effect.fn("x")(function*(…) {…}, …ps)` (`"Svc.x"` inside service `Svc`)  | `fx x(…) {…} \|> …ps`                 |
-| `Effect.fnUntraced(function*(…) {…})`                                               | `fx (…) => {…}`; a single `return e` body → `fx (…) => e` |
-| `Effect.gen(function*() {…})` / `Effect.gen({ self: this }, …)`                     | `fx {…}`                              |
+| `const x = Effect.fn("x")(function*(…) {…}, …ps)` (`"Svc.x"` inside service `Svc`)  | `effect x(…) {…} \|> …ps`                 |
+| `Effect.fnUntraced(function*(…) {…})`                                               | `effect (…) => {…}`; a single `return e` body → `effect (…) => e` |
+| `Effect.gen(function*() {…})` / `Effect.gen({ self: this }, …)`                     | `effect {…}`                              |
 | `: Effect.fn.Return<A, E, R>`                                                       | `: A throws E needs R`                |
 | `yield* e` inside those generators                                                  | `await e`                             |
 | `yield* Effect.all(xs, { concurrency: "unbounded" })` with an array/object literal | `await [ … ]` / `await { … }`         |
 | `return yield* Effect.fail(e)` / `return yield* new E(…)`                           | `throw e` / `throw new E(…)`          |
-| A native `throw e` inside an Effect generator (a defect)                            | `await Effect.die(e)`                 |
+| A native `throw e` inside an Effect generator (a defect)                            | `await die(e)`                 |
 | `yield* Effect.addFinalizer(() => e)` plus an `Effect.scoped` pipeable              | `defer e` (the pipeable is removed)   |
 | `Effect.gen(…).pipe(catch…/ensuring)` in the §4.4 shape                             | `try … catch … finally`               |
 | `x.pipe(f, g)` / `pipe(x, f, g)`                                                    | `x \|> f \|> g`                       |
@@ -675,6 +985,15 @@ Each row is the inverse of a row in §4.
 | `class S extends Context.Service<S, {…}>()("key") { static readonly layer… }`       | `service S [as "key"] { … layer … }` |
 | `Match.valueTags(x, {…})` / `Match.value(x).pipe(Match.tag/when…, orElse/exhaustive)` with expression arrows | `match (x) { when … }` |
 | `<Runtime>.runMain(e)` as the last statement                                         | `main {…} \|> …`                      |
+| `describe(…, () => {…})` with `it.effect(name, () => Effect.gen(…))`                 | `describe "…" { test "…" {…} }`       |
+| `HttpApiGroup.make(…).add(HttpApiEndpoint.<m>(…), …)` class / `HttpApi.make(…).add(…)` class | `group …` / `api …`         |
+| `HttpApiBuilder.group(Api, "g", Effect.fn(function*(handlers) { …; return handlers.handleAll({…}) }))` | `impl Api.g { … }` |
+| `Command.make(name, { Flag/Argument… }, Effect.fn(…))`                               | `command name(…)`                     |
+| `Config.all({ k: Config.X("K")… })`                                                  | `config …`                            |
+| `const x = Atom.make(e)` / `Layer.mergeAll(…)` / `Layer.effectDiscard(Effect.gen(…))` | `atom x = e` / `layer … = a & b` / `layer … = effect {…}` |
+| `yield* Effect.log*(…)`, `Clock.currentTimeMillis`, `Random.next`, `Config.String("X")` in generators | ambient forms (§4.15) |
+| `yield* M.M` (bare-service-tag set)                                                  | `await M`                             |
+| `Effect.x(…)` / `Layer.x(…)` in layer pipes / … where `x` is free and not excluded    | `x(…)` (builtins, §4.13)              |
 | `import { …prelude names } from "effect"`                                            | removed                               |
 
 Schema fields use the reverse of the §4.6 table. A field whose schema is not in the table becomes
@@ -780,17 +1099,17 @@ barrels. That keeps `pnpm check`/`lint` meaningful and proves the compiler on re
 
 ## 8. AI skill (`packages/effectscript/core/skills/effectscript/`)
 
-- `SKILL.md`: when to use EffectScript, the core rules (`fx`/`await`/`throw`, services, errors,
+- `SKILL.md`: when to use EffectScript, the core rules (`effect`/`await`/`throw`, services, errors,
   schemas, layers, `main`, `match`, `|>`), and a short decision table that maps the `LLMS.md`
   best practices to EffectScript ("prefer services", "errors are `error` declarations", "parse
-  with `schema`, never with predicates", "use `fx` declarations instead of functions that return
-  `fx { }`").
+  with `schema`, never with predicates", "use `effect` declarations instead of functions that return
+  `effect { }`").
 - `references/syntax.md`: the full syntax with desugarings (generated from §4 fixtures, so it never
   drifts).
-- `references/patterns.md`: services and layers, testing with `it.effect` + `fx`, HTTP, SQL,
+- `references/patterns.md`: services and layers, testing with `it.effect` + `effect`, HTTP, SQL,
   streams, resources, concurrency, retries, and schedules.
 - `references/pitfalls.md`: the `try` effectfulness rule, `await` on Promises (use
-  `Effect.tryPromise`), the hoisting of `fx` declarations, and the `catch` handler semantics.
+  `Effect.tryPromise`), the hoisting of `effect` declarations, and the `catch` handler semantics.
 - Written following the repo's `writing-for-agents` guidance. `efx skill` installs it.
 
 ---
@@ -817,6 +1136,18 @@ The narrative follows §0: Effect is settled → verbosity is the complaint → 
   The Effect TS pane is generated at build time by running `toTypeScript` on the EffectScript
   sample, so it cannot drift. The same samples are type-checked in CI. Each scenario shows counts
   (characters, lines, ceremony tokens) and the percentage reduction.
+- **Live, real token counts.** A real BPE tokenizer runs in the browser
+  (`gpt-tokenizer`, `o200k_base`, in a Web Worker):
+  - Each pane (TS, TS+Effect, EFX) shows its token count, updated as you type in the playground.
+  - Each pane shows the change relative to the others (for example "EFX −41% vs Effect TS").
+  - A **"show tokens"** toggle colors each token boundary in the editor, so people see where the
+    tokens go.
+  - The tokenizer is labeled honestly.
+  - Claude token counts for the gallery samples are computed at build time with Anthropic's
+    `count_tokens` API when `ANTHROPIC_API_KEY` is set, and cached in a committed JSON file. They
+    appear next to the live `o200k` counts as "Claude (build-time)".
+  - Ten scenarios in total: the six above plus HTTP API, CLI, tests, and config, each built on
+    §4.14.
 - **Two-way playground:** built on **Monaco**, the editor component inside VS Code, so it is a real
   editor with minimap, folding, find, and multi-cursor:
   - Syntax highlighting uses our grammar through `@shikijs/monaco`.
@@ -870,7 +1201,7 @@ implementation.
 
 | Layer             | What                                                                                     | Where                          |
 | ----------------- | ---------------------------------------------------------------------------------------- | ------------------------------ |
-| Parser            | Each trigger in §4.14 parses. Each non-trigger stays TS. Error positions.               | `core/test/parser.test.ts`     |
+| Parser            | Each trigger in §4.19 parses. Each non-trigger stays TS. Error positions.               | `core/test/parser.test.ts`     |
 | Golden            | `test/fixtures/<case>.efx` → `<case>.ts` (`toMatchFileSnapshot`)                          | `core/test/compile.test.ts`    |
 | Type check        | Every golden output type-checks against the workspace `effect` with strict settings (TS compiler API, in-memory host) | `core/test/typecheck.test.ts` |
 | Runtime           | Executes compiled fixtures and asserts behavior: try/catch, defer order, match, pipes, `await [..]`, scoped `using` | `core/test/runtime.test.ts` |
@@ -885,7 +1216,7 @@ implementation.
 
 ## 12. Diagnostics
 
-Codes have the form `EFX<area><nn>`. Areas: 1 = parse, 2 = `fx`, 3 = schema, 4 = service, 5 = pipe,
+Codes have the form `EFX<area><nn>`. Areas: 1 = parse, 2 = `effect`, 3 = schema, 4 = service, 5 = pipe,
 6 = main, 7 = proposals.
 
 Each diagnostic carries `{ code, message, start, end, severity, hint? }`. The integrations format
@@ -899,7 +1230,10 @@ them with a code frame. Parse errors don't throw: `toTypeScript` returns diagnos
 Each phase ends green: its tests pass, plus `pnpm check` and `pnpm lint` for the touched packages.
 
 1. **Core compiler:** parser plugin, analysis, every §4 transform, mappings, and diagnostics. Golden,
-   type-check, runtime, and superset-identity tests.
+   type-check, runtime, and superset-identity tests. Order:
+   - a. language core (§4.1–4.13)
+   - b. library constructs (§4.14)
+   - c. ambient capture, observability, and strict mode (§4.15–4.17)
 2. **Reverse compiler:** §6 shapes and blockers, plus the round-trip tests.
 3. **CLI + integrations:** `efx` (handlers in `.efx`), the Bun plugin, the Vite plugin, the Node
    hook, and the examples package.
@@ -912,10 +1246,13 @@ Each phase ends green: its tests pass, plus `pnpm check` and `pnpm lint` for the
 
 ## 14. Roadmap (explicitly out of v0.1)
 
-- `fx` class methods and `fx` methods in `schema` classes.
-- Generator streams (`fx*` with `yield` → `Stream`).
+- `effect` class methods and `effect` methods in `schema` classes.
+- Generator streams (`effect*` with `yield` → `Stream`).
 - `match` guards and object patterns (`when { status: 404 }`).
 - `Context.Reference` services with defaults.
+- More library constructs: `rpc` (RpcGroup), `workflow` (effect/workflow), `tool`/`toolkit`
+  (effect/ai), `entity` (cluster), and a Foldkit-style `app` (Model/Message/update/view).
+- Automatic layer wiring for `main` (whole-program analysis of which services are used).
 - Error-tolerant parsing that recovers at the statement level, for a smoother editor experience
   while typing.
 - A GitHub "view as EffectScript" browser extension, built on the reverse compiler.
