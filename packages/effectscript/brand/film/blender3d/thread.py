@@ -26,13 +26,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fx  # noqa: E402
 
 FRAMES = 200
-LENS = 100.0
+LENS = 180.0
 R_THREAD = 0.0005  # 1 mm thread
 PLY_R = 0.00026  # ply radius
 PLY_OFF = 0.00024  # ply centre distance from the axis
 PLY_PITCH = 0.0032  # one full twist of the plies (m)
 X0, X1 = -2.0, 2.0  # thread extent (m)
-FINAL_D = 1.07  # final camera distance: 1 mm -> ~10 px at 4K
+MACRO_D = 0.22  # macro camera distance: frame ~44 mm wide, thread ~87 px
+FSTOP = float(os.environ.get("THREAD_FSTOP", "8"))
+FINAL_D = 1.92  # final camera distance: 1 mm -> ~10 px at 4K (180 mm lens)
 
 
 # --------------------------------------------------------------------------
@@ -49,9 +51,9 @@ def cam_state(f):
     t = (f - 1) / (FRAMES - 1)
     # pull-out: frames 112-182
     k = ease((f - 112) / 70.0)
-    yaw = math.radians(38.0 - 10.0 * fx.smoothstep(1, 112, f)) * (1 - k)
-    d = math.exp(math.log(0.09) + (math.log(FINAL_D) - math.log(0.09)) * k)
-    fstop = 2.8 + (11.0 - 2.8) * k
+    yaw = math.radians(32.0 - 8.0 * fx.smoothstep(1, 112, f)) * (1 - k)
+    d = math.exp(math.log(MACRO_D) + (math.log(FINAL_D) - math.log(MACRO_D)) * k)
+    fstop = FSTOP + (22.0 - FSTOP) * k
     x = -0.006 + 0.018 * t  # slow lateral drift along the thread
     return x, yaw, d, fstop
 
@@ -87,7 +89,7 @@ def ply_curves():
     return np.concatenate(pts), counts, ul
 
 
-def fuzz_curves(seed=55, count=14000, steps=7):
+def fuzz_curves(seed=55, count=3200, steps=7):
     """Short stray fibres rooted on the thread surface, curling outwards.
     Denser where the macro lens looks (x in -4..+6 cm)."""
     rng = np.random.default_rng(seed)
@@ -119,10 +121,10 @@ def fuzz_curves(seed=55, count=14000, steps=7):
 
 def dust_points(seed=56, count=420):
     rng = np.random.default_rng(seed)
-    x = rng.uniform(-0.05, 0.07, count)
-    y = rng.uniform(-0.085, 0.07, count)
+    x = rng.uniform(-0.06, 0.16, count)
+    y = rng.uniform(-0.19, 0.08, count)
     # mostly below the thread; few in the upper third (text lives there)
-    z = np.where(rng.uniform(0, 1, count) < 0.8, rng.uniform(-0.03, 0.002, count), rng.uniform(0.002, 0.012, count))
+    z = np.where(rng.uniform(0, 1, count) < 0.8, rng.uniform(-0.03, 0.001, count), rng.uniform(0.001, 0.01, count))
     size = np.clip(rng.lognormal(math.log(0.000022), 0.45, count), 0.000008, 0.00007)
     return np.column_stack([x, y, z]), size
 
@@ -240,7 +242,7 @@ def build():
     rim = fx.area(scene, "Rim", (0.0, 0.10, 0.03), (0.0, 0.0, 0.0), 1.2, size=1.2, size_y=0.01)
     rim.data.spread = math.radians(40)
 
-    cam = fx.camera(scene, lens=LENS, fstop=2.8, focus=0.09, clip=(0.002, 50))
+    cam = fx.camera(scene, lens=LENS, fstop=FSTOP, focus=MACRO_D, clip=(0.005, 50))
     for f in range(1, FRAMES + 1):
         place_camera(cam, f)
     fx.set_interp(cam)

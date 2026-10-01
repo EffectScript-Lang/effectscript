@@ -1,0 +1,87 @@
+/**
+ * Ambient capture (§4.15, ADR-0027): inside `effect` code, JavaScript's ambient side effects on free
+ * `console`, `Date`, `Math` and `process` become calls to the matching Effect services.
+ *
+ * @since 4.0.0
+ */
+import { isTypeFree, isValueFree } from "../analyze/scope.ts"
+import type { Node } from "../ast.ts"
+import type { Ctx, Handler } from "../context.ts"
+import { ref } from "../names.ts"
+import { parenthesizeIfNeeded } from "./await.ts"
+import type { HandlerGroup } from "./registry.ts"
+
+const consoleMethods: Record<string, string> = {
+  log: "log",
+  info: "logInfo",
+  warn: "logWarning",
+  error: "logError",
+  debug: "logDebug"
+}
+
+const isFreeGlobal = (ctx: Ctx, node: Node, name: string): boolean =>
+  node.type === "Identifier" && node.name === name && isValueFree(ctx.scope, name) && isTypeFree(ctx.scope, name)
+
+const memberName = (node: Node): string | undefined =>
+  !node.computed && node.property.type === "Identifier"
+    ? node.property.name
+    : node.computed && node.property.type === "Literal" && typeof node.property.value === "string"
+    ? node.property.value
+    : undefined
+
+const enabled = (ctx: Ctx) => ctx.options.ambient && ctx.effect !== undefined
+
+const call: Handler = (node, parent, ctx) => {
+  if (!enabled(ctx)) return
+  const callee: Node = node.callee
+  if (callee.type !== "MemberExpression" || callee.computed || node.optional === true) return
+  const name = memberName(callee)
+  if (name === undefined) return
+  if (isFreeGlobal(ctx, callee.object, "console") && consoleMethods[name] !== undefined) {
+    parenthesizeIfNeeded(ctx, node, parent)
+    ctx.s.update(node.start, callee.end, `yield* ${ref(ctx, "effect", "Effect")}.${consoleMethods[name]}`)
+    return // the arguments are walked as usual
+  }
+  if (node.arguments.length !== 0) return
+  const replacement = isFreeGlobal(ctx, callee.object, "Date") && name === "now"
+    ? `yield* ${ref(ctx, "effect", "Clock")}.currentTimeMillis`
+    : isFreeGlobal(ctx, callee.object, "Math") && name === "random"
+    ? `yield* ${ref(ctx, "effect", "Random")}.next`
+    : undefined
+  if (replacement === undefined) return
+  parenthesizeIfNeeded(ctx, node, parent)
+  ctx.s.update(node.start, node.end, replacement)
+  return true
+}
+
+/** `process.env.NAME` in a read position. */
+const member: Handler = (node, parent, ctx) => {
+  if (!enabled(ctx)) return
+  const env: Node = node.object
+  if (env.type !== "MemberExpression" || env.computed || memberName(env) !== "env") return
+  if (!isFreeGlobal(ctx, env.object, "process")) return
+  const name = memberName(node)
+  if (name === undefined) return
+  const isWrite = (parent?.type === "AssignmentExpression" && parent.left === node) ||
+    parent?.type === "UpdateExpression" ||
+    (parent?.type === "UnaryExpression" && parent.operator === "delete") ||
+    (parent?.type === "CallExpression" && parent.callee === node)
+  if (isWrite) return
+  const Config = ref(ctx, "effect", "Config")
+  parenthesizeIfNeeded(ctx, node, parent)
+  ctx.s.update(
+    node.start,
+    node.end,
+    `yield* ${Config}.String(${JSON.stringify(name)}).pipe(${Config}.withDefault(undefined))`
+  )
+  return true
+}
+
+/**
+ * @since 4.0.0
+ * @category handlers
+ */
+export const ambientHandlers: HandlerGroup = {
+  CallExpression: call,
+  MemberExpression: member
+}

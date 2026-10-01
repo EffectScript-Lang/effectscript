@@ -1,0 +1,13 @@
+export effect report(name: string) {
+  console.log("hello", name)
+  console.warn("careful")
+  const startedAt = Date.now()
+  const jitter = Math.random() * 10
+  const region = process.env.REGION ?? "eu"
+  return { startedAt, jitter, region, debug: process.env["DEBUG"] }
+}
+
+export function plain() {
+  console.log("not captured: outside effect code")
+  return Date.now()
+}

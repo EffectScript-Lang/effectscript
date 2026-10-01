@@ -2,6 +2,7 @@
  * @since 0.1.0
  */
 import type { Handler } from "../context.ts"
+import { ambientHandlers } from "./ambient.ts"
 import { awaitHandlers } from "./await.ts"
 import { effectHandlers } from "./effect.ts"
 import { importRewriteHandlers } from "./imports.ts"
@@ -55,6 +56,7 @@ export const handlers = registry(
   proposalHandlers,
   pipelineHandlers,
   matchHandlers,
+  ambientHandlers,
   awaitHandlers,
   returnTypeHandlers,
   preludeHandlers
