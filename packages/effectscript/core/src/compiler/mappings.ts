@@ -130,5 +130,34 @@ export const toCodeMappings = (s: MagicString, source: string, code: string): Ar
     }
     i = j + 1
   }
-  return mappings
+  return withAnchors(mappings, source.length, code.length)
+}
+
+/**
+ * Generated text that maps to nothing (prepended imports, inserted calls) gets a zero-length,
+ * diagnostics-only anchor at the next source position, so errors there are reported instead of
+ * dropped (review I1).
+ */
+const withAnchors = (mappings: Array<CodeMapping>, sourceLength: number, codeLength: number): Array<CodeMapping> => {
+  const result: Array<CodeMapping> = []
+  let cursor = 0
+  const anchor = (from: number, to: number, sourceOffset: number) => {
+    if (to > from) {
+      result.push({
+        sourceOffsets: [sourceOffset],
+        generatedOffsets: [from],
+        lengths: [0],
+        generatedLengths: [to - from],
+        data: generatedFeatures
+      })
+    }
+  }
+  for (const mapping of mappings) {
+    const start = mapping.generatedOffsets[0]!
+    anchor(cursor, start, mapping.sourceOffsets[0]!)
+    result.push(mapping)
+    cursor = Math.max(cursor, start + (mapping.generatedLengths?.[0] ?? mapping.lengths[0]!))
+  }
+  anchor(cursor, codeLength, sourceLength)
+  return result
 }

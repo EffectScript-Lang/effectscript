@@ -4,4 +4,4 @@
  *
  * @since 4.0.0
  */
-export { createLanguagePlugin, type EffectScriptVirtualCode } from "./languagePlugin.ts"
+export { createLanguagePlugin, type EffectScriptVirtualCode, type LanguagePluginOptions } from "./languagePlugin.ts"

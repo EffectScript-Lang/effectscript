@@ -191,12 +191,14 @@ def build():
     fx.compositor(scene, bloom=0.32, bloom_size=0.45, threshold=1.4, fog=0.0, vignette=0.25)
     fx.world(scene, 0.0)
 
+    skip = os.environ.get("THREAD_SKIP", "").split(",")
     # thread: three plies meshed with a fine profile
     pts, counts, ul = ply_curves()
     plies = fx.curves_object(scene, "Plies", pts, counts, point_attrs={"ul": ul})
     g = fx.Graph("GN_Plies")
     g.set(g.out, fx.tube(g, g.inp, PLY_R, thread_material(), resolution=14))
     plies.modifiers.new("Tube", "NODES").node_group = g.ng
+    plies.hide_render = "plies" in skip
 
     fp, fc, frad = fuzz_curves()
     fuzz = fx.curves_object(scene, "Fuzz", fp, fc, curve_attrs={"rad": frad})
@@ -204,6 +206,7 @@ def build():
     cur = g.node("GeometryNodeSetCurveRadius", {"Curve": g.inp, "Radius": g.attr("rad")}).outputs[0]
     g.set(g.out, g.node("GeometryNodeSetMaterial", {"Geometry": cur, "Material": fuzz_material()}).outputs[0])
     fuzz.modifiers.new("Fuzz", "NODES").node_group = g.ng
+    fuzz.hide_render = "fuzz" in skip
 
     # dust motes: points instanced with spheres, drifting on time noise and
     # fading away during the pull-out
@@ -229,6 +232,7 @@ def build():
                                                    "Scale": g.math("MULTIPLY", g.attr("size"), fade)}).outputs[0]
     g.set(g.out, g.node("GeometryNodeSetMaterial", {"Geometry": inst, "Material": dust_material()}).outputs[0])
     motes.modifiers.new("Drift", "NODES").node_group = g.ng
+    motes.hide_render = "motes" in skip
 
     # thin top light: a long narrow strip right above the thread, plus a
     # faint back rim that makes the fuzz halo glow

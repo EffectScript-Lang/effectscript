@@ -73,4 +73,19 @@ describe("TypeScript server plugin (VS Code path, ADR-0019)", () => {
     })
     expect(completions.body.entries.map((e: { name: string }) => e.name)).toEqual(expect.arrayContaining(["n", "x"]))
   }, 120_000)
+
+  it("reports EffectScript compiler errors in the editor (review I1)", async () => {
+    const unused = "effect {\n  1\n}\n"
+    fs.writeFileSync(path.join(dir, "unused.efx"), unused)
+    await server.send("open", { file: path.join(dir, "unused.efx"), fileContent: unused, scriptKindName: "TS" }, false)
+    const diagnostics = await server.send("syntacticDiagnosticsSync", { file: path.join(dir, "unused.efx") })
+    expect(diagnostics.body).toEqual([
+      expect.objectContaining({
+        text: "EFX2003: This effect is created but never used",
+        start: { line: 1, offset: 1 },
+        category: "error",
+        source: "effectscript"
+      })
+    ])
+  }, 120_000)
 })

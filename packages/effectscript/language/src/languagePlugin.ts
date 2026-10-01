@@ -6,7 +6,7 @@
  */
 import type { CodeMapping, IScriptSnapshot, LanguagePlugin, VirtualCode } from "@volar/language-core"
 import type { TypeScriptServiceScript } from "@volar/typescript"
-import { toTypeScript } from "effectscript/compiler"
+import { type Diagnostic, toTypeScript } from "effectscript/compiler"
 import { packageInfo } from "effectscript/project"
 import type * as ts from "typescript"
 
@@ -27,16 +27,27 @@ const stringSnapshot = (text: string): IScriptSnapshot => ({
 
 /**
  * @since 4.0.0
+ * @category models
+ */
+export interface LanguagePluginOptions {
+  /** Called with the EffectScript compiler diagnostics of every compile (review I1). */
+  readonly onCompile?: (fileName: string, source: string, diagnostics: ReadonlyArray<Diagnostic>) => void
+}
+
+/**
+ * @since 4.0.0
  * @category constructors
  */
 export const createLanguagePlugin = (
-  typescript: { readonly ScriptKind: typeof ts.ScriptKind }
+  typescript: { readonly ScriptKind: typeof ts.ScriptKind },
+  options: LanguagePluginOptions = {}
 ): LanguagePlugin<string, EffectScriptVirtualCode> => ({
   getLanguageId: (fileName) => (fileName.endsWith(".efx") ? "effectscript" : undefined),
   createVirtualCode(fileName, languageId, snapshot) {
     if (languageId !== "effectscript") return undefined
     const source = snapshot.getText(0, snapshot.getLength())
     const result = toTypeScript(source, { filename: fileName, recover: true, ...packageInfo(fileName) })
+    options.onCompile?.(fileName, source, result.diagnostics)
     return {
       id: "root",
       languageId: result.mode === "tsx" ? "typescriptreact" : "typescript",
