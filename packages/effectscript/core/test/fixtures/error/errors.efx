@@ -1,0 +1,13 @@
+export error UserNotFound { id: string }
+error DbError { cause: Defect }
+error Timeout {
+  _tag: "RequestTimeout"
+  ms: number
+  get summary() { return `timed out after ${this.ms}ms` }
+}
+
+effect find(id: string): string throws UserNotFound | DbError {
+  if (id === "") throw new UserNotFound({ id })
+  if (id === "db") throw new DbError({ cause: new Error("down") })
+  return id
+}

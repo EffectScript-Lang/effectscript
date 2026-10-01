@@ -80,4 +80,24 @@ describe("runtime", () => {
     expect(mod.log).toEqual(["body", "second-registered", "first-registered"])
     expect(mod.summed).toBe(4)
   })
+
+  it("error declarations are tagged, yieldable and catchable", async () => {
+    const mod = await runCompiled(`
+      import { Effect } from "effect"
+      error NotFound { id: string }
+      effect get(id: string): string throws NotFound {
+        if (id !== "ok") throw new NotFound({ id })
+        return id
+      }
+      effect safe(id: string) {
+        try {
+          return await get(id)
+        } catch (e: NotFound) {
+          return \`missing:\${e.id}\`
+        }
+      }
+      export const values = [Effect.runSync(safe("ok")), Effect.runSync(safe("x"))]
+    `)
+    expect(mod.values).toEqual(["ok", "missing:x"])
+  })
 })
