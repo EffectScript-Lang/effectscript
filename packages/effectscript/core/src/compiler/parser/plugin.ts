@@ -164,14 +164,16 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsMainStart()) return this.efxParseMain()
       if (this.efxIsWord("schema") && this.efxNextIsNameSameLine()) return this.efxParseSchema()
       if (this.efxIsClassLikeStart()) return this.efxParseClassLike(this.value)
-      if (this.efxIsLayerDeclarationStart()) return this.efxParseLayerDeclaration()
+      if (this.efxIsBindingDeclarationStart("layer")) return this.efxParseBindingDeclaration("LayerDeclaration")
+      if (this.efxIsBindingDeclarationStart("atom")) return this.efxParseBindingDeclaration("AtomDeclaration")
       if (this.efxIsDescribeStart()) return this.efxParseDescribe()
       if (this.efxIsTestStart()) return this.efxParseTest()
       return super.parseStatement(context, topLevel, exports)
     }
 
     shouldParseExportStatement(): any {
-      return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() || this.efxIsLayerDeclarationStart() ||
+      return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() ||
+        this.efxIsBindingDeclarationStart("layer") || this.efxIsBindingDeclarationStart("atom") ||
         super.shouldParseExportStatement()
     }
 
@@ -537,15 +539,15 @@ export const efxPlugin = (Base: any): any =>
       return node
     }
 
-    /** `layer Name = …` (a top-level layer, §4.14). */
-    efxIsLayerDeclarationStart(): boolean {
-      if (!this.efxIsWord("layer") || !this.efxNextIsNameSameLine()) return false
+    /** `layer Name = …` / `atom name = …` (§4.14). */
+    efxIsBindingDeclarationStart(keyword: string): boolean {
+      if (!this.efxIsWord(keyword) || !this.efxNextIsNameSameLine()) return false
       const name = this.lookahead()
       const after = skipSpace(this.input, name.end)
       return this.input[after] === "=" && this.input[after + 1] !== "=" && this.input[after + 1] !== ">"
     }
 
-    efxParseLayerDeclaration(): any {
+    efxParseBindingDeclaration(type: string): any {
       const node = this.startNode()
       node.keyword = { start: this.start, end: this.end }
       this.next()
@@ -553,7 +555,7 @@ export const efxPlugin = (Base: any): any =>
       this.expect(tt.eq)
       node.init = this.parseMaybeAssign()
       this.semicolon()
-      return this.finishNode(node, "LayerDeclaration")
+      return this.finishNode(node, type)
     }
 
     efxIsMainStart(): boolean {
