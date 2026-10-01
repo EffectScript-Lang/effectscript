@@ -229,7 +229,7 @@ class Flutter:
         self.yawr = rng.normal(0, 1.2, n)
         self.tumble = rng.random(n) < 0.28
         self.spin = rng.uniform(4.0, 9.0, n) * rng.choice([-1, 1], n)
-        self.c0 = rng.normal(0, 0.035, n)
+        self.c0 = rng.normal(0, 0.05, n)
         self.c1 = rng.uniform(0.01, 0.035, n)
         self.w2 = rng.uniform(5.0, 11.0, n)
         self.fl = rng.uniform(0.002, 0.008, n)
@@ -299,13 +299,15 @@ def ream_stack(scene, verts, faces, base, height, rng, lean=0.0):
     z = base[2]
     k = 0
     while z < base[2] + height:
-        t = rng.uniform(0.035, 0.07)
-        w, d = A4[0] + rng.uniform(-0.004, 0.01), A4[1] + rng.uniform(-0.004, 0.01)
-        if rng.random() < 0.5:
-            w, d = d, w
-        cx = base[0] + rng.normal(0, 0.012) + lean * (z - base[2])
-        cy = base[1] + rng.normal(0, 0.012)
-        a = base[3] + rng.normal(0, 0.06)
+        t = rng.uniform(0.008, 0.028)
+        w, d = A4[0] + rng.uniform(-0.002, 0.006), A4[1] + rng.uniform(-0.002, 0.006)
+        cx = base[0] + rng.normal(0, 0.006) + lean * (z - base[2])
+        cy = base[1] + rng.normal(0, 0.006)
+        a = base[3] + rng.normal(0, 0.035)
+        if rng.random() < 0.06:  # a loose bundle jutting out
+            cx += rng.normal(0, 0.03)
+            cy += rng.normal(0, 0.03)
+            a += rng.normal(0, 0.25)
         ca, sa = math.cos(a), math.sin(a)
         i = len(verts)
         for dz in (0.0, t):
@@ -313,7 +315,7 @@ def ream_stack(scene, verts, faces, base, height, rng, lean=0.0):
                 px, py = sx * w / 2, sy * d / 2
                 verts.append((cx + px * ca - py * sa, cy + px * sa + py * ca, z + dz))
         faces.extend([(i, i + 3, i + 2, i + 1), (i + 4, i + 5, i + 6, i + 7), (i, i + 1, i + 5, i + 4), (i + 1, i + 2, i + 6, i + 5), (i + 2, i + 3, i + 7, i + 6), (i + 3, i, i + 4, i + 7)])
-        z += t + 0.0005
+        z += t
         k += 1
     return z
 
@@ -538,9 +540,9 @@ def build():
 
     # the lamp: a spot inside the shade plus the glowing bulb
     sd = bpy.data.lights.new("LampKey", "SPOT")
-    sd.energy = float(os.environ.get("LAMP", "120"))
+    sd.energy = float(os.environ.get("LAMP", "650"))
     sd.color = (1.0, 0.92, 0.8)
-    sd.spot_size = math.radians(115)
+    sd.spot_size = math.radians(100)
     sd.spot_blend = 0.35
     sd.shadow_soft_size = 0.02
     key = bpy.data.objects.new("LampKey", sd)
@@ -548,7 +550,7 @@ def build():
     key.location = BULB + axis * 0.03
     key.rotation_euler = axis.to_track_quat("-Z", "Y").to_euler()
     pt = bpy.data.lights.new("LampSpill", "POINT")
-    pt.energy = 6.0
+    pt.energy = 30.0
     pt.color = (1.0, 0.92, 0.8)
     pt.shadow_soft_size = 0.02
     spill = bpy.data.objects.new("LampSpill", pt)
@@ -557,7 +559,7 @@ def build():
 
     # cold moon/streetlight through the back window: rims the stacks
     ad = bpy.data.lights.new("Night", "AREA")
-    ad.energy = 60.0
+    ad.energy = 40.0
     ad.size, ad.size_y = 1.2, 1.7
     ad.shape = "RECTANGLE"
     ad.color = (0.85, 0.9, 1.0)
@@ -565,15 +567,24 @@ def build():
     scene.collection.objects.link(night)
     E.look_at(night, (0.05, 3.25, 2.05), (0.0, 0.0, 0.6))
 
+    # a faint warm bounce off the ceiling above the lamp, lifting the floor
+    bd = bpy.data.lights.new("Bounce", "AREA")
+    bd.energy = 11.0
+    bd.size = 2.5
+    bd.color = (1.0, 0.95, 0.88)
+    bounce = bpy.data.objects.new("Bounce", bd)
+    scene.collection.objects.link(bounce)
+    E.look_at(bounce, (-0.2, -0.6, 3.25), (-0.2, -0.6, 0.0))
+    bounce.visible_glossy = False
     # haze
-    vmat, vb, vol, vout = E.volume_material("Haze", density=float(os.environ.get("HAZE", "0.05")), anisotropy=0.45)
+    vmat, vb, vol, vout = E.volume_material("Haze", density=float(os.environ.get("HAZE", "0.03")), anisotropy=0.6)
     hz = E.box(scene, "Haze", (5.0, 7.8, 3.3), (0, -0.6, 1.65), vmat)
     hz.visible_shadow = False
 
     # camera: slow push in, slight handheld shake
     cam = E.camera(scene, lens=32, fstop=3.2, focus=4.0)
     nx_, ny_, nr_ = E.SmoothNoise(31, 4, 1.0), E.SmoothNoise(32, 4, 1.0), E.SmoothNoise(33, 4, 1.0)
-    p0, p1 = Vector((0.25, -4.05, 1.48)), Vector((0.18, -3.55, 1.42))
+    p0, p1 = Vector((0.22, -3.7, 1.45)), Vector((0.16, -3.25, 1.4))
     tg = Vector((-0.12, 0.6, 1.05))
     for f in range(1, FRAMES + 1):
         t = (f - 1) / (FRAMES - 1)

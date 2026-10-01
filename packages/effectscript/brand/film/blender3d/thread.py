@@ -160,9 +160,14 @@ def thread_material():
     nrm = s.bump(h, 0.8, 0.00004)
     tone = s.mrange(irregular, 0.3, 0.7, 0.62, 0.86)
     b = s.principled(base=s.gray(tone), rough=0.72, spec=0.3, normal=nrm, sheen=0.8, sheen_rough=0.4,
-                     sheen_tint=1.0, sss=0.35, sss_radius=(0.6, 0.6, 0.6), sss_scale=0.0003, emit_color=1.0,
+                     sheen_tint=1.0, emit_color=1.0,
                      emit=s.math("MULTIPLY", glow_ramp(s), 3.2))
-    return s.output(b.outputs[0])
+    # cheap subsurface: a little light passes through the fibres
+    tl = s.node("ShaderNodeBsdfTranslucent", {"Color": (0.85, 0.85, 0.85, 1), "Normal": nrm})
+    mix = s.node("ShaderNodeMixShader", {"Fac": 0.22})
+    s.set(mix.inputs[1], b.outputs[0])
+    s.set(mix.inputs[2], tl.outputs[0])
+    return s.output(mix.outputs[0])
 
 
 def fuzz_material():
@@ -237,9 +242,9 @@ def build():
 
     # thin top light: a long narrow strip right above the thread, plus a
     # faint back rim that makes the fuzz halo glow
-    top = fx.area(scene, "Top", (0.0, 0.004, 0.06), (0.0, 0.004, 0.0), 4.0, size=1.2, size_y=0.006)
+    top = fx.area(scene, "Top", (0.0, 0.004, 0.06), (0.0, 0.004, 0.0), 1.0, size=1.2, size_y=0.006)
     top.data.spread = math.radians(60)
-    rim = fx.area(scene, "Rim", (0.0, 0.10, 0.03), (0.0, 0.0, 0.0), 1.2, size=1.2, size_y=0.01)
+    rim = fx.area(scene, "Rim", (0.0, 0.10, 0.03), (0.0, 0.0, 0.0), 0.35, size=1.2, size_y=0.01)
     rim.data.spread = math.radians(40)
 
     cam = fx.camera(scene, lens=LENS, fstop=FSTOP, focus=MACRO_D, clip=(0.005, 50))

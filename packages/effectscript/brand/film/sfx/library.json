@@ -1,0 +1,137 @@
+{
+  "enter": {
+    "text": "A single firm press of the Enter key on a mechanical keyboard, deep satisfying thock, close-mic, dry",
+    "duration_seconds": 1.5,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/rsdkNC3cHGPvIOAhXeq7F_sound_effect.wav",
+    "bytes": 284204,
+    "container": "wav"
+  },
+  "stamp": {
+    "text": "One loud heavy impact: a thick hardcover book slammed down hard onto a solid wooden desk, deep punchy thud with a sharp papery slap on top, close microphone, short room tail",
+    "duration_seconds": 1.5,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf19/HRoUWArfpy_kWsf27_PRn_sound_effect.wav",
+    "bytes": 284204,
+    "container": "wav"
+  },
+  "spacebar": {
+    "text": "Close-mic recording of a mechanical keyboard spacebar pressed six times slowly, deep hollow thock with a subtle stabiliser rattle, gaps between presses, dry room",
+    "duration_seconds": 6,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/GLAjvh6SmtaH6O5oNbyXW_sound_effect.wav",
+    "bytes": 1152044,
+    "container": "wav"
+  },
+  "whoosh": {
+    "text": "A single fast smooth air whoosh passing close by left to right, clean cinematic transition, no tone, short tail",
+    "duration_seconds": 1.2,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/V47Cvbr6cOZYFpDSdUrgF_sound_effect.wav",
+    "bytes": 230444,
+    "container": "wav"
+  },
+  "keys-a": {
+    "text": "Close-mic studio recording of slow, deliberate typing on a premium mechanical keyboard with tactile switches: individual keystrokes clearly separated by short gaps, soft deep thock, crisp but not clicky, wooden desk, quiet room, no music, no voices",
+    "duration_seconds": 10,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/9uj1KBa6ETGUmiVLLG5eO_sound_effect.wav",
+    "bytes": 1920044,
+    "container": "wav"
+  },
+  "keys-b": {
+    "text": "Close-mic recording of someone typing a sentence on a high-end mechanical keyboard with lubed linear switches, creamy muted thocks, each key distinct, natural human rhythm, intimate dry room, no music",
+    "duration_seconds": 10,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/NH8-cWTOGtHKYlgF_mCrN_sound_effect.wav",
+    "bytes": 1920044,
+    "container": "wav"
+  },
+  "buzz": {
+    "text": "A smartphone vibrating twice on a wooden bedside table at night, two short buzzes with light rattle, quiet room",
+    "duration_seconds": 1.5,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/mkTitPos9yOtKX_DMXXdp_sound_effect.wav",
+    "bytes": 284204,
+    "container": "wav"
+  },
+  "longwhoosh": {
+    "text": "A slow wide airy whoosh that swells and pulls away into the distance, like a camera rapidly pulling back, soft low rumble underneath, cinematic, no music",
+    "duration_seconds": 3.8,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/0n_Macc0BdriWXYIkB52I_sound_effect.wav",
+    "bytes": 721964,
+    "container": "wav"
+  },
+  "swish": {
+    "text": "A very short soft air swish, subtle and quick, like a card sliding past the microphone",
+    "duration_seconds": 0.6,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/bgwbwASgOtF1Xn2MpaPg6_sound_effect.wav",
+    "bytes": 115244,
+    "container": "wav"
+  },
+  "paper": {
+    "text": "Hundreds of paper sheets sliding off a tall stack and fluttering to the floor in a small office, rustling avalanche of paper, close perspective",
+    "duration_seconds": 3,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/-ZVCw3FPWiEBdHBgsonk3_sound_effect.wav",
+    "bytes": 576044,
+    "container": "wav"
+  },
+  "glitch": {
+    "text": "Short harsh digital glitch bursts and data corruption crackles, stuttering, electronic, dry",
+    "duration_seconds": 3,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf15/KyuLWCG7WkKhTg8-ueq9M_sound_effect.wav",
+    "bytes": 576044,
+    "container": "wav"
+  },
+  "cables": {
+    "text": "Thick cables and ropes straining and creaking under tension, low groaning stretch, slow tightening knots, dark cavernous space, no music",
+    "duration_seconds": 14,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf16/yE9cnoyXgrsACDg1jiupW_sound_effect.wav",
+    "bytes": 2688044,
+    "container": "wav"
+  },
+  "rain": {
+    "text": "Soft steady rain on a large window at night, heard from inside a quiet apartment, distant city hum, intimate, calm",
+    "duration_seconds": 6,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf16/cGxcQuUetDVs8Gw2dDiYe_sound_effect.wav",
+    "bytes": 1152044,
+    "container": "wav"
+  },
+  "error": {
+    "text": "A soft muted low error buzz from a computer terminal, short, subtle, dry",
+    "duration_seconds": 0.8,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf16/-tGQflmfg30c8dXtI5px1_sound_effect.wav",
+    "bytes": 153644,
+    "container": "wav"
+  },
+  "retry": {
+    "text": "A soft subtle digital blip, short soft click-tone, minimal user interface sound, dry",
+    "duration_seconds": 0.6,
+    "prompt_influence": 0.55,
+    "output_format": "pcm_48000",
+    "url": "https://v3b.fal.media/files/b/0aacaf16/VoFzCZB1UdYIKFvT4tkfB_sound_effect.wav",
+    "bytes": 115244,
+    "container": "wav"
+  }
+}

@@ -1,0 +1,30 @@
+service Users {
+  effect find(id: string): string
+  layer test = { find: effect (id: string) => `user-${id}` }
+}
+
+describe "Users" {
+  test "finds a user" {
+    const user = await Users.find("1")
+    assert.strictEqual(user, "user-1")
+  } |> provide(Users.layerTest)
+
+  test "scopes resources to the test" {
+    using value = await acquireRelease(succeed(1), () => Effect.void)
+    assert.strictEqual(value, 1)
+  }
+
+  test.live "runs on the live clock" {
+    expect(Date.now()).toBeGreaterThan(0)
+  }
+
+  test.skip "is skipped" {
+    await fail("never runs")
+  }
+}
+
+describe "with a shared layer" with Users.layerTest {
+  test "provides the layer to every test" {
+    expect(await Users.find("2")).toBe("user-2")
+  }
+}

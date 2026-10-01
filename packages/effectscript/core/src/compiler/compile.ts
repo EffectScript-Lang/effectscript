@@ -134,7 +134,8 @@ const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): Co
     scope: analysis.module,
     effect: undefined,
     service: undefined,
-    namespace: "Effect"
+    namespace: "Effect",
+    testIt: undefined
   }
   try {
     walk(parsed.program, undefined, ctx)

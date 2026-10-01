@@ -5,6 +5,7 @@
  */
 import type { Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
+import { isTypeFree, isValueFree } from "../analyze/scope.ts"
 import { ref } from "../names.ts"
 import { isBareType, isServiceTag, resolveType, resolveValue } from "../prelude/resolve.ts"
 import type { HandlerGroup } from "./registry.ts"
@@ -54,8 +55,17 @@ export const isValueReference = (ctx: Ctx, node: Node, parent: Node | undefined)
   return true
 }
 
+const testGlobals = new Set(["assert", "expect", "vi"])
+
 const identifier: Handler = (node, parent, ctx) => {
   if (!isValueReference(ctx, node, parent)) return
+  if (
+    ctx.analysis.hasTests && testGlobals.has(node.name) && isValueFree(ctx.scope, node.name) &&
+    isTypeFree(ctx.scope, node.name)
+  ) {
+    ctx.imports.need("@effect/vitest", node.name)
+    return
+  }
   const resolution = resolveValue(ctx, node.name)
   if (resolution === undefined) return
   if (resolution.prefix !== "") {

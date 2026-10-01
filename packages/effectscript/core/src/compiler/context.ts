@@ -47,6 +47,8 @@ export interface Ctx {
   effect: EffectFrame | undefined
   service: string | undefined
   namespace: string
+  /** Inside `describe … with layer`, the `it` that `layer(…)` passes in. */
+  testIt: string | undefined
 }
 
 /**

@@ -165,6 +165,8 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsWord("schema") && this.efxNextIsNameSameLine()) return this.efxParseSchema()
       if (this.efxIsClassLikeStart()) return this.efxParseClassLike(this.value)
       if (this.efxIsLayerDeclarationStart()) return this.efxParseLayerDeclaration()
+      if (this.efxIsDescribeStart()) return this.efxParseDescribe()
+      if (this.efxIsTestStart()) return this.efxParseTest()
       return super.parseStatement(context, topLevel, exports)
     }
 
@@ -489,6 +491,47 @@ export const efxPlugin = (Base: any): any =>
         node.efxServiceKey = this.parseExprAtom(null, false, false)
       }
       return super.parseClassSuper(node)
+    }
+
+    /** `describe "name" [with layer] { … }` (§4.14). */
+    efxIsDescribeStart(): boolean {
+      if (!this.efxIsWord("describe")) return false
+      const next = this.lookahead()
+      return next.type === tt.string && this.efxSameLine(next)
+    }
+
+    efxParseDescribe(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.name = this.parseExprAtom(null, false, false)
+      node.layer = null
+      if (this.type === tt._with) {
+        this.next()
+        node.layer = this.parseExprSubscripts(null, false)
+      }
+      node.body = this.parseBlock()
+      return this.finishNode(node, "DescribeStatement")
+    }
+
+    /** `test[.live|.skip|.only] "name" { … }` (§4.14). */
+    efxIsTestStart(): boolean {
+      if (!this.efxIsWord("test")) return false
+      const rest = this.input.slice(this.end, this.input.indexOf("\n", this.end) === -1 ? undefined : this.input.indexOf("\n", this.end))
+      return /^\s*(?:\.\s*(?:live|skip|only)\s*)?["']/.test(rest)
+    }
+
+    efxParseTest(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.modifier = null
+      if (this.eat(tt.dot)) node.modifier = this.parseIdent(true).name
+      node.name = this.parseExprAtom(null, false, false)
+      node.body = this.efxParseAsyncBlock()
+      this.finishNode(node, "TestStatement")
+      this.efxAttachPipes(node)
+      return node
     }
 
     /** `layer Name = …` (a top-level layer, §4.14). */

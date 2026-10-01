@@ -17,6 +17,7 @@ import { resourceHandlers } from "./resources.ts"
 import { returnTypeHandlers } from "./returnType.ts"
 import { schemaHandlers } from "./schema.ts"
 import { serviceHandlers } from "./service.ts"
+import { testHandlers } from "./test.ts"
 import { tryHandlers } from "./try.ts"
 
 /**
@@ -55,6 +56,7 @@ export const handlers = registry(
   serviceHandlers,
   effectHandlers,
   mainHandlers,
+  testHandlers,
   tryHandlers,
   resourceHandlers,
   proposalHandlers,

@@ -35,6 +35,8 @@ export interface ScopeAnalysis {
   readonly identifierNames: ReadonlySet<string>
   /** Names bound (in either namespace) in any scope other than the module scope. */
   readonly innerBound: ReadonlySet<string>
+  /** The file declares `test`/`describe` blocks: free `assert`/`expect`/`vi` come from `@effect/vitest`. */
+  readonly hasTests: boolean
 }
 
 const makeScope = (parent: Scope | undefined, kind: Scope["kind"]): Scope => ({
@@ -340,7 +342,8 @@ export const analyze = (program: Node): ScopeAnalysis => {
     localEffects,
     bindings,
     identifierNames: collectNames(program),
-    innerBound
+    innerBound,
+    hasTests: containsTests(program)
   }
 }
 
@@ -371,6 +374,9 @@ const classTag = (node: Node): string | undefined => {
     : undefined
   return taggedConstructors.has(name) ? first.value : undefined
 }
+
+const containsTests = (node: Node): boolean =>
+  node.type === "TestStatement" || node.type === "DescribeStatement" || children(node).some(containsTests)
 
 const collectNames = (program: Node): Set<string> => {
   const names = new Set<string>()
