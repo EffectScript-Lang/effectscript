@@ -9,7 +9,8 @@ describe("ADR-0023: reverse compiler subset", () => {
     "error NotFound { id: string }\n\nexport effect find(id: string): string throws NotFound {\n  if (id === \"\") throw new NotFound({ id })\n  return id\n}\n",
     "export schema User {\n  name: string\n  email?: string\n  tags: Array<string>\n}\n",
     "schema Point { x: number; y: number | null }\n",
-    "export effect retried(n: number): number {\n  return n\n} |> retry({ times: 3 })\n"
+    "export effect retried(n: number): number {\n  return n\n} |> retry({ times: 3 })\n",
+    "export schema User {\n  name: string // display name, may change\n  email?: string // optional, may be absent\n}\n"
   ])("round-trips %s", (efx) => {
     const back = roundTrip(efx)
     expect(back).toBe(efx)
@@ -22,6 +23,12 @@ describe("ADR-0023: reverse compiler subset", () => {
     expect(toEffectScript(ts).code).toBe(
       "import { Effect } from \"effect\"\nexport effect f() {\n  return 1\n}\nexport const run = Effect.runSync(f())\n"
     )
+  })
+
+  it("ignores commas inside comments between fields (review I9)", () => {
+    const ts =
+      "import { Schema } from \"effect\"\nclass A extends Schema.Class<A>(\"A\")({ a: Schema.String /* x, y */, b: Schema.Number }) {}\n"
+    expect(toEffectScript(ts).code).toBe("schema A { a: string /* x, y */; b: number }\n")
   })
 
   it("never re-sugars a user object named Effect", () => {

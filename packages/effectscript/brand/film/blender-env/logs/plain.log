@@ -1,0 +1,5 @@
+/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/blender-env/plain.py:65: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  w.use_nodes = True
+00:53.551  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0001.exr'
+Info: Saved as "plain.blend"
+[plain] frame 1 done in 52.2s

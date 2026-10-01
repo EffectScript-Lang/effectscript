@@ -152,6 +152,22 @@ const convertDeclaration = (ctx: Ctx, statement: Node): void => {
   convertBody(ctx, fn.body)
 }
 
+/** The first `,` in `[from, to)` outside comments (review I9), or -1. */
+const separatorComma = (source: string, from: number, to: number): number => {
+  for (let i = from; i < to; i++) {
+    if (source.startsWith("//", i)) {
+      const end = source.indexOf("\n", i)
+      i = end === -1 ? to : end
+    } else if (source.startsWith("/*", i)) {
+      const end = source.indexOf("*/", i + 2)
+      i = end === -1 ? to : end + 1
+    } else if (source[i] === ",") {
+      return i
+    }
+  }
+  return -1
+}
+
 /** `class X extends Schema.TaggedError<X>()("X", {…}) {}` → `error X {…}`; `Schema.Class` → `schema`. */
 const convertClass = (ctx: Ctx, cls: Node): void => {
   const outer: Node | null = cls.superClass
@@ -208,7 +224,8 @@ const convertClass = (ctx: Ctx, cls: Node): void => {
     ctx.s.update(property.key.end, property.value.end, `${field.optional}: ${field.type}`)
     const next = properties[i + 1]
     if (next !== undefined) {
-      const comma = ctx.source.indexOf(",", property.end)
+      const comma = separatorComma(ctx.source, property.end, next.start)
+      if (comma === -1) return
       if (ctx.source.slice(comma, next.start).includes("\n")) ctx.s.remove(comma, comma + 1)
       else ctx.s.update(comma, comma + 1, ";")
     }
@@ -216,9 +233,8 @@ const convertClass = (ctx: Ctx, cls: Node): void => {
   // a trailing comma before the closing brace
   const last = properties[properties.length - 1]
   if (last !== undefined) {
-    const tail = ctx.source.slice(last.end, fields.end - 1)
-    const comma = tail.indexOf(",")
-    if (comma !== -1) ctx.s.remove(last.end + comma, last.end + comma + 1)
+    const comma = separatorComma(ctx.source, last.end, fields.end - 1)
+    if (comma !== -1) ctx.s.remove(comma, comma + 1)
   }
 }
 
