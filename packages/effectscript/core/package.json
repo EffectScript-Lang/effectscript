@@ -20,6 +20,7 @@
     "./index": null
   },
   "files": [
+    "bin/**/*.js",
     "src/**/*.ts",
     "dist/**/*.js",
     "dist/**/*.js.map",
@@ -54,5 +55,20 @@
     "effect": "workspace:^",
     "typescript": "^6.0.3",
     "vitest": "^5.0.2"
+  },
+  "bin": {
+    "efx": "./bin/efx.js"
+  },
+  "peerDependencies": {
+    "@effectscript/language": "workspace:^",
+    "typescript": "^6.0.3"
+  },
+  "peerDependenciesMeta": {
+    "@effectscript/language": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
   }
 }

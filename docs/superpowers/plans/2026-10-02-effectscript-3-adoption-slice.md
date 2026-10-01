@@ -377,3 +377,10 @@ step un-qualifies it when it is free and not excluded (§4.13).
 Run a whole-branch review from the Plan 3 base commit on the most capable model. Give it this
 plan, ADRs 0016 and 0019–0023, and review sections R07–R10, R14 and R15. Fix Critical/Important
 findings in one pass, each with a failing test first. Record deferred minors here.
+
+## Rulings during execution
+
+- **Task 6:** the slice `efx` CLI parses its few arguments by hand instead of using
+  `effect/unstable/cli` with `.efx` handlers (spec §7.1). The dogfooded CLI arrives with the full
+  CLI/distribution plan. Cost if wrong: one rewrite of `src/cli/main.ts`. Staging lives in
+  `node_modules/.cache/effectscript/build`, so it is never packed with `dist/`.

@@ -363,6 +363,9 @@ importers:
 
   packages/effectscript/core:
     dependencies:
+      '@effectscript/language':
+        specifier: workspace:^
+        version: link:../language
       '@sveltejs/acorn-typescript':
         specifier: ^1.0.13
         version: 1.0.13(acorn@8.18.0)
