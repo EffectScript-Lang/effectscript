@@ -1,4 +1,4 @@
-# ADR-0019: The launch film is made from code, with generated photography as plates only
+# ADR-0025: The launch film is made from code, with generated photography as plates only
 
 - **Status:** Accepted
 - **Date:** 2026-10-02

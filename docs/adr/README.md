@@ -36,7 +36,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0022](0022-build-staging-and-typescript-emit.md)     | `efx build` compiles to a staging tree, then TypeScript emits | Accepted |
 | [0023](0023-reverse-compiler-subset.md)               | Ship the reverse compiler for the adoption-slice subset first | Accepted |
 | [0024](0024-register-strip-mode-fallback.md)          | `effectscript/register` falls back to strip mode              | Accepted |
-| [0019](0019-launch-film-made-from-code.md)            | The launch film is made from code; generated photos are plates only | Accepted |
+| [0025](0025-launch-film-made-from-code.md)            | The launch film is made from code; generated photos are plates only | Accepted |
 
 ## Template
 
