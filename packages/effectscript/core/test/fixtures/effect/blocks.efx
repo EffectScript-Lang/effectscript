@@ -1,0 +1,31 @@
+declare const task: Effect.Effect<number>
+
+export const program = effect {
+  const n = await task
+  return n + 1
+}
+
+class Counter {
+  count = 0
+  readonly increment = effect {
+    this.count++
+    return this.count
+  }
+}
+
+export const add = effect (n: number) => (await task) + n
+export const addAll = effect (xs: ReadonlyArray<number>): number => {
+  let total = 0
+  for (const x of xs) total += x + (await task)
+  return total
+}
+export const typed = effect (s: string): string throws never => s.trim()
+
+export const api = {
+  effect fetch(id: string) {
+    return id.length + (await task)
+  },
+  plain() {
+    return 1
+  }
+}

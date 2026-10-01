@@ -3,9 +3,10 @@
  *
  * @since 0.1.0
  */
-import type { Node } from "../ast.ts"
-import { type Ctx, type Handler, makeFrame, withEffect } from "../context.ts"
+import { containsThis, type Node } from "../ast.ts"
+import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
+import { skipSpace } from "../parser/scan.ts"
 import { walk, walkChildren } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 import { rewriteReturnType } from "./returnType.ts"
@@ -89,11 +90,115 @@ const effectDeclaration: Handler = (node, parent, ctx) => {
   return true
 }
 
+const effectBlock: Handler = (node, parent, ctx) => {
+  if (parent?.type === "ExpressionStatement") {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX2003",
+        "This effect is created but never used",
+        node.start,
+        node.keyword.end,
+        "did you mean `main { … }`?"
+      )
+    )
+  }
+  ctx.imports.need("effect", "Effect")
+  const head = containsThis(node.body) ? "Effect.gen({ self: this }, function*() " : "Effect.gen(function*() "
+  ctx.s.update(node.start, node.body.start, head)
+  const frame = makeFrame(node, "block", node.efxLayerConstructor === true)
+  withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
+  if (frame.scoped && !frame.layerConstructor) {
+    ctx.s.appendRight(node.start, "Effect.scoped(")
+    ctx.s.prependLeft(node.end, "))")
+  } else {
+    ctx.s.prependLeft(node.end, ")")
+  }
+  return true
+}
+
+const effectArrow: Handler = (node, _parent, ctx) => {
+  if (node.efx?.kind !== "arrow") return
+  const keyword: { start: number; end: number } = node.efx.keyword
+  if (containsThis(node.body)) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX2001",
+        "`effect` arrows cannot use `this`",
+        keyword.start,
+        keyword.end,
+        "use an `effect { … }` block or an `effect` method"
+      )
+    )
+  }
+  ctx.imports.need("effect", "Effect")
+  const params: Array<Node> = node.params
+  if (ctx.source[skipSpace(ctx.source, keyword.end)] === "(") {
+    ctx.s.update(keyword.start, node.start, "Effect.fnUntraced(function*")
+  } else {
+    ctx.s.update(keyword.start, params[0]!.start, "Effect.fnUntraced(function*(")
+    ctx.s.appendLeft(params[0]!.end, ")")
+  }
+  rewriteReturnType(ctx, node.returnType, "Effect.fn.Return")
+  const searchFrom: number = node.returnType?.end ?? (params.length > 0 ? params[params.length - 1]!.end : node.start)
+  const arrow = ctx.source.indexOf("=>", searchFrom)
+  const expressionBody = node.body.type !== "BlockStatement"
+  if (expressionBody) ctx.s.update(arrow, arrow + 2, "{ return")
+  else ctx.s.remove(arrow, node.body.start)
+  const frame = makeFrame(node, "arrow")
+  withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walkChildren(node, ctx)))
+  const close = frame.scoped ? ", Effect.scoped)" : ")"
+  ctx.s.prependLeft(node.end, expressionBody ? ` }${close}` : close)
+  return true
+}
+
+const effectProperty: Handler = (node, _parent, ctx) => {
+  if (node.efxMethod !== true) return
+  const fn: Node = node.value
+  ctx.imports.need("effect", "Effect")
+  const keyStart = node.computed ? ctx.source.lastIndexOf("[", node.key.start) : node.key.start
+  ctx.s.remove(fn.efx.keyword.start, keyStart)
+  const name: string | undefined = node.computed
+    ? undefined
+    : node.key.type === "Identifier"
+    ? node.key.name
+    : String(node.key.value)
+  ctx.s.appendRight(
+    fn.start,
+    name === undefined
+      ? ": Effect.fnUntraced(function*"
+      : `: Effect.fn(${JSON.stringify(spanName(ctx, name))})(function*`
+  )
+  rewriteReturnType(ctx, fn.returnType, "Effect.fn.Return")
+  if (node.computed) walk(node.key, node, ctx)
+  const frame = makeFrame(fn, "method")
+  withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(fn, node, ctx)))
+  ctx.s.prependLeft(fn.end, frame.scoped ? ", Effect.scoped)" : ")")
+  return true
+}
+
+const effectClassMember: Handler = (node, _parent, ctx) => {
+  if (node.efx?.kind !== "method") return
+  ctx.diagnostics.push(
+    diagnosticError(
+      "EFX2002",
+      "`effect` class methods are not supported yet",
+      node.efx.keyword.start,
+      node.efx.keyword.end,
+      "use a property: `name = effect (…) => { … }`, or a `service`"
+    )
+  )
+}
+
 /**
  * @since 0.1.0
  * @category handlers
  */
 export const effectHandlers: HandlerGroup = {
   FunctionDeclaration: effectDeclaration,
-  TSDeclareFunction: effectDeclaration
+  TSDeclareFunction: effectDeclaration,
+  EffectBlock: effectBlock,
+  ArrowFunctionExpression: effectArrow,
+  Property: effectProperty,
+  MethodDefinition: effectClassMember,
+  TSDeclareMethod: effectClassMember
 }
