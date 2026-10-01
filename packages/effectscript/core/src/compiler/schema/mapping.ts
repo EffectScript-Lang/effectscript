@@ -97,8 +97,24 @@ const union = (ctx: Ctx, types: ReadonlyArray<Node>): string => {
 const member = (ctx: Ctx, node: Node): string => {
   if (node.type !== "TSPropertySignature" || node.typeAnnotation === undefined) return unsupported(ctx, node)
   const key = node.key.type === "Identifier" ? node.key.name : slice(ctx, node.key)
-  const schema = typeToSchema(ctx, node.typeAnnotation.typeAnnotation)
-  return `${key}: ${node.optional === true ? `${schemaRef(ctx, "optional")}(${schema})` : schema}`
+  const type: Node = node.typeAnnotation.typeAnnotation
+  return `${key}: ${node.optional === true ? optionalField(ctx, type) : typeToSchema(ctx, type)}`
+}
+
+/**
+ * The schema of an optional field `name?: T` (ADR-0013): `Schema.optionalKey(T)`, or
+ * `Schema.optional(U)` when `T` is `U | undefined` (an explicit `undefined` is then allowed).
+ *
+ * @since 0.1.0
+ * @category schema
+ */
+export const optionalField = (ctx: Ctx, type: Node): string => {
+  if (type.type === "TSUnionType" && type.types.some((t: Node) => t.type === "TSUndefinedKeyword")) {
+    const rest: Array<Node> = type.types.filter((t: Node) => t.type !== "TSUndefinedKeyword")
+    const inner = rest.length === 1 ? rest[0]! : { ...type, types: rest }
+    return `${schemaRef(ctx, "optional")}(${typeToSchema(ctx, inner)})`
+  }
+  return `${schemaRef(ctx, "optionalKey")}(${typeToSchema(ctx, type)})`
 }
 
 /**

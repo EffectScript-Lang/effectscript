@@ -5,7 +5,7 @@ type UserId = typeof UserId.Type
 export class User extends Schema.Class<User>("User")({
   id: UserId,
   name: Schema.String,
-  email: Schema.optional(Schema.String),
+  email: Schema.optionalKey(Schema.String),
   tags: Schema.Array(Schema.String),
   role: Schema.Literals(["admin", "member"]),
   manager: Schema.NullOr(UserId),

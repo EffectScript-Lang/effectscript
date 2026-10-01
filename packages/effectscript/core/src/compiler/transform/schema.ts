@@ -6,7 +6,7 @@
 import type { Node } from "../ast.ts"
 import type { Handler } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
-import { schemaRef, typeToSchema } from "../schema/mapping.ts"
+import { optionalField, schemaRef, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
 import { fieldsOf, moveMembersAfter, removeLine, rewriteField } from "./classLike.ts"
 import type { HandlerGroup } from "./registry.ts"
@@ -99,8 +99,8 @@ const schemaAdt: Handler = (node, parent, ctx) => {
           ctx.diagnostics.push(diagnosticError("EFX3004", "A field needs a type or `= <schema>`", f.start, f.end))
           return `${f.key.name}: ${schemaRef(ctx, "Unknown")}`
         }
-        const schema = typeToSchema(ctx, f.typeAnnotation.typeAnnotation)
-        return `${f.key.name}: ${f.optional === true ? `${schemaRef(ctx, "optional")}(${schema})` : schema}`
+        const type: Node = f.typeAnnotation.typeAnnotation
+        return `${f.key.name}: ${f.optional === true ? optionalField(ctx, type) : typeToSchema(ctx, type)}`
       }).join(", ")
     } }`
     const from = i === 0 ? node.id.end : (node.variants as Array<Node>)[i - 1]!.end
