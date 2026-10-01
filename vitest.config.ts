@@ -131,6 +131,7 @@ export default defineConfig({
           environment: "happy-dom"
         }
       }),
+      ...project("effectscript", "packages/effectscript/core"),
       ...project("@effect/opentelemetry", "packages/opentelemetry"),
       ...project("@effect/platform-browser", "packages/platform/browser", true, {
         test: {

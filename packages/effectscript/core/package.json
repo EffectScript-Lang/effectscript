@@ -1,0 +1,51 @@
+{
+  "name": "effectscript",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "EffectScript: TypeScript with Effect as native syntax",
+  "homepage": "https://github.com/gunta/effect-lang/tree/effectscript/packages/effectscript/core",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gunta/effect-lang.git",
+    "directory": "packages/effectscript/core"
+  },
+  "sideEffects": [],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./compiler": "./src/compiler/index.ts"
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./compiler": "./dist/compiler/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@sveltejs/acorn-typescript": "^1.0.13",
+    "acorn": "^8.18.0",
+    "magic-string": "^1.4.2"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "workspace:^",
+    "@effect/vitest": "workspace:^",
+    "@types/node": "^26.6.3",
+    "effect": "workspace:^",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
+  }
+}

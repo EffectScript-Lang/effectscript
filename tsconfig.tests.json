@@ -14,7 +14,7 @@
     "./packages/**/typetest/**/*.ts",
     "./packages/**/benchmark/**/*.ts"
   ],
-  "exclude": ["**/node_modules/**", "**/dist/**", "./packages/platform/deno/**"],
+  "exclude": ["**/node_modules/**", "**/dist/**", "./packages/platform/deno/**", "./packages/effectscript/**/fixtures/**"],
   "compilerOptions": {
     "rootDir": ".",
     "noEmit": true,
@@ -94,6 +94,9 @@
       "@effect/tools-utils": ["./packages/tools/utils/src/index.ts"],
       "@effect/tools-utils/*": ["./packages/tools/utils/src/*.ts"],
       "@effect/vitest": ["./packages/vitest/src/index.ts"],
+      "effectscript": ["./packages/effectscript/core/src/index.ts"],
+      "effectscript/compiler": ["./packages/effectscript/core/src/compiler/index.ts"],
+      "effectscript/*": ["./packages/effectscript/core/src/*.ts"],
       "@effect/vitest/*": ["./packages/vitest/src/*.ts"],
       // TODO: This is a special alias used by some tests. We should try to get rid of it.
       "effect-test/*": ["./packages/effect/test/*.ts"]

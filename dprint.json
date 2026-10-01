@@ -18,6 +18,7 @@
     "**/build",
     "**/docs",
     "**/coverage",
+    "packages/effectscript/**/fixtures",
     "**/*.tsbuildinfo",
     "**/CHANGELOG.md",
     "packages/effect/src/StandardSchema.ts",

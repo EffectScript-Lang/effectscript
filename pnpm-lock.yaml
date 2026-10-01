@@ -361,6 +361,37 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0(typescript@7.0.2)
 
+  packages/effectscript/core:
+    dependencies:
+      '@sveltejs/acorn-typescript':
+        specifier: ^1.0.13
+        version: 1.0.13(acorn@8.18.0)
+      acorn:
+        specifier: ^8.18.0
+        version: 8.18.0
+      magic-string:
+        specifier: ^1.4.2
+        version: 1.4.2
+    devDependencies:
+      '@effect/platform-node':
+        specifier: workspace:^
+        version: link:../../platform/node
+      '@effect/vitest':
+        specifier: workspace:^
+        version: link:../../vitest
+      '@types/node':
+        specifier: ^26.6.3
+        version: 26.6.3
+      effect:
+        specifier: workspace:^
+        version: link:../../effect
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.2
+        version: 5.0.2(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.1)(@types/node@26.6.3)(@vitest/coverage-v8@5.0.2)(happy-dom@20.14.5)(jsdom@30.0.1)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+
   packages/opentelemetry:
     dependencies:
       effect:
@@ -3097,6 +3128,11 @@ packages:
     engines: {node: '>=16.0.0'}
     cpu: [x64, ia32]
     os: [win32]
+
+  '@sveltejs/acorn-typescript@1.0.13':
+    resolution: {integrity: sha512-wgKggnhZVL9Bfx1OaKKTrYY9BFRk6C8UAkQNUcIv1+llzYrIqy+RZm5HPKzn0NpEBvTVhTqB4kQyllZywsRBRQ==}
+    peerDependencies:
+      acorn: ^8.9.0
 
   '@testcontainers/mssqlserver@12.1.0':
     resolution: {integrity: sha512-DesPv/vgd6MBGzML5qWZyhIxREDdcdlzJ39WsH+lDgx6287mLZ38/v02GGeeOsv6P0Tw2TElp8lBieK5wH4Xhw==}
@@ -8484,6 +8520,10 @@ snapshots:
 
   '@sqliteai/sqlite-vector-win32-x86_64@1.0.0':
     optional: true
+
+  '@sveltejs/acorn-typescript@1.0.13(acorn@8.18.0)':
+    dependencies:
+      acorn: 8.18.0
 
   '@testcontainers/mssqlserver@12.1.0(supports-color@10.2.2)':
     dependencies:
