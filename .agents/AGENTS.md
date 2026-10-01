@@ -49,3 +49,27 @@ rule.
 `LLMS.md` is generated from `ai-docs/src`, and `migration/v3-to-v4.md` is
 generated from `migration/annotations`. Update checked-in third-party assets
 through their generator or documented import procedure.
+
+## Architecture Decision Records
+
+Every decision gets a written rationale in `docs/adr/`, so future agents and people know why
+something is the way it is, not only what it is.
+
+- **What needs an ADR:** any choice that shapes language semantics, compiler output, public APIs,
+  architecture, tooling, versioning, delivery order, or process, and any choice among real
+  alternatives that a later reader could reasonably question. Bug fixes and refactors that keep a
+  documented contract don't need one.
+- **When:** in the same change that implements the decision. A decision made in conversation
+  with the user, in a review, or as a ruling while executing a plan is recorded before or with
+  the code that depends on it.
+- **Before changing a decided area:** read `docs/adr/README.md` and the ADRs it lists for that
+  area. To change a decision, write a new ADR that supersedes the old one. Don't rewrite history:
+  in the old ADR, change only its status line (`Superseded by ADR-NNNN`).
+- **Format:** `docs/adr/NNNN-kebab-title.md`, numbered sequentially, following the template in
+  `docs/adr/README.md`: status, date, deciders, context, decision, consequences, and alternatives
+  considered (each with why it was rejected). Add the ADR to the index table in the README.
+- **Specs and plans:** design specs (`docs/superpowers/specs`) describe _what_ is built;
+  ADRs record _why_. When a spec or plan section follows from an ADR, link it (`ADR-0010`). When
+  they disagree, the newest accepted ADR wins and the spec is updated to match.
+- **Reviews:** external reviews live in `docs/reviews/`. Every finding that changes a decision
+  ends in an ADR that cites the review.

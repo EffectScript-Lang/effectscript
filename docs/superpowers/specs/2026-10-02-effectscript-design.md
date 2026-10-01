@@ -3,6 +3,8 @@
 - **Status:** Draft for review
 - **Date:** 2026-10-02
 - **Location:** `packages/effectscript/*` in the `gunta/effect-lang` fork of the Effect monorepo
+- **Decisions:** the reasons behind this design are recorded as ADRs in `docs/adr/`. When this
+  spec and an accepted ADR disagree, the ADR wins and this spec is fixed.
 
 EffectScript is TypeScript with Effect built into the language. Source files use the `.efx`
 extension, and every valid `.ts` or `.tsx` file is also a valid `.efx` file. The compiler turns
@@ -23,7 +25,7 @@ turns idiomatic Effect TypeScript back into EffectScript, so adopting it never l
 - **EffectScript removes the ceremony, not the semantics.** Effect becomes the language's own
   syntax. You still get the same idiomatic Effect code, written with less noise.
 - **"It looks like another language."** It is one, but it is a 100% superset of TypeScript and
-  compiles to TS instantly. That makes adoption risk-free:
+  compiles to TS instantly. That makes adoption low-risk:
   - **No full buy-in.** Any TS is valid EffectScript, so you can mix both inside one file.
   - **Mix files freely.** `.ts` imports `.efx` and `.efx` imports `.ts`.
   - **Go back and forth.** The two-way compiler converts TS+Effect → `.efx` and back, so there is
@@ -33,7 +35,9 @@ turns idiomatic Effect TypeScript back into EffectScript, so adopting it never l
 - **Hypothesis (to be proven, roadmap §14):** models get better at Effect when they write `.efx`.
   In EffectScript the Effect way is the only syntax there is, so nobody has to remind the model to
   "do it the Effect way", and the code it reads and writes is denser and has less ceremony.
-- **Status:** an experiment, but a working one. Every interop path is tested.
+- **Status:** an experiment, but a working one. Each interop claim names the test or fixture
+  that proves it, and its state: planned, implemented, locally tested, host-qualified, or released
+  (review R15).
 
 ---
 
@@ -73,10 +77,11 @@ turns idiomatic Effect TypeScript back into EffectScript, so adopting it never l
 ### Assumptions (open to correction)
 
 - Output must read like hand-written Effect code. Reviewability and AI training quality depend on
-  this, so no runtime helper library and no opaque helper calls.
+  this, so no runtime helper library and no opaque helper calls. Readable local temporaries are
+  allowed when correctness needs them (ADR-0003).
 - The target is Effect v4 (`effect@4.0.0`, this repo's `packages/effect`).
-- The first release is explicitly experimental (`0.x`). Some constructs are deferred to a roadmap
-  (§14).
+- The first releases are explicitly experimental (`4.0.0-alpha.N`, ADR-0015). Some constructs are
+  deferred to a roadmap (§14).
 
 ### Success criteria
 
@@ -84,8 +89,8 @@ turns idiomatic Effect TypeScript back into EffectScript, so adopting it never l
    `exactOptionalPropertyTypes` against this repo's `effect`. CI-verified.
 2. Superset property: real-world `.ts` files (the whole `packages/effect/src` tree) parse as `.efx`
    and compile to themselves byte-for-byte.
-3. Round-trip property: for every canonical fixture, `toEffectScript(toTypeScript(x)) ≡ x` and
-   `toTypeScript(toEffectScript(t)) ≡ t`, where `≡` is defined in §6.4.
+3. Round-trip property: the canonicalization contract of §6.4 holds for every canonical fixture,
+   with runtime traces and exported-declaration checks for each supported shape.
 4. These all work: `bun run app.efx`, `node --import effectscript/register app.efx`, Vite, Vitest,
    Astro, `efx build`, `efx check` (real tsc diagnostics mapped to `.efx` lines), and VS Code
    IntelliSense in `.efx` files.
@@ -227,13 +232,19 @@ classes are boundaries, the same way `async` scoping works. Nested `effect` cons
 | `throw new E(…)` (`E` is a local `error`)   | `return yield* new E(…);`                                        |
 | `x ?? throw e` (throw expression)           | `x ?? (yield* Effect.fail(e))`; with a local `error` → `x ?? (yield* new E(…))` |
 | `defer e`                                   | `yield* Effect.addFinalizer(() => e)`, and the function is scoped |
-| `defer { stmts }`                           | `yield* Effect.addFinalizer(() => Effect.sync(() => { stmts }))`  |
-| `using x = await e`                         | `const x = yield* e`, and the function is scoped                 |
+| `defer { stmts }`                           | `yield* Effect.addFinalizer(() => Effect.sync(() => { stmts }))`; with `await` inside → `Effect.gen(function*() { stmts })` |
+| `using x = await e` (top level of the `effect` only, ADR-0011) | `const x = yield* e`, and the function is scoped |
 | `for await (const x of s) { … }`            | `yield* Stream.runForEach(s, (x) => Effect.gen(function*() { … }))` |
 
 `yield*` precedence: the compiler adds parentheses when the parent is a binary, unary, `as`,
 `satisfies`, non-null, member, call-callee, tagged-template, or conditional-test expression. In
 every other position it emits a bare `yield* e`.
+
+Resource lifetimes (ADR-0011): `using x = await e` is only allowed directly in the top-level body
+of an `effect`; anywhere else it is an error (**EFX2013**). `using x = e` without `await` keeps
+native TS semantics. `defer` is function-scoped, like Go's: allowed anywhere in `effect` code, and
+each executed `defer` registers a finalizer that runs when the `effect` exits, in reverse order. The
+deferred expression is evaluated at cleanup time.
 
 Scoping: `defer` and `using … await` mark the enclosing `effect` as scoped:
 
@@ -248,13 +259,9 @@ errors (**EFX2010**).
 
 ### 4.4 `try` / `catch` / `finally` inside `effect`
 
-A `try` statement in `effect` code is **effectful** if its `try` block contains, at that `effect` level, an
-`await` or a `throw`. Otherwise it is a plain JavaScript `try` and catches synchronous exceptions
-as usual. This rule follows what the code means: a `try` around effects catches their failures, and
-a `try` around synchronous code catches exceptions. It also keeps the reverse compiler exact
-(§6.3).
-
-An effectful `try` desugars to an inner `Effect.gen` piped through handlers:
+The contract and its rationale are in ADR-0010. Inside `effect` code, **every** `try` compiles to
+Effect, whatever it contains. Outside `effect` code, `try` is native JavaScript. A harmless added
+`await` therefore never changes what a `catch` catches.
 
 ```ts
 try { return await load(id) }
@@ -267,36 +274,46 @@ finally { await Metric.increment(loads) }
 
 ```ts
 return yield* Effect.gen(function*() { return yield* load(id) }).pipe(
-  Effect.catchTag("NotFound", (e) => Effect.gen(function*() { return guest })),
-  Effect.catch((e) => Effect.gen(function*() { yield* Effect.logError(e); return guest })),
+  Effect.catchDefect((defect) => Effect.fail(new Cause.UnknownError(defect))),
+  Effect.catchTag("NotFound", (e) => Effect.gen(function*() { return guest }), (e) => Effect.gen(function*() { yield* Effect.logError(e); return guest })),
   Effect.ensuring(Effect.gen(function*() { yield* Metric.increment(loads) }))
 )
 ```
 
-| Catch clauses                                    | Handlers                                                    |
-| ------------------------------------------------ | ----------------------------------------------------------- |
-| `catch (e)` / `catch`                            | `Effect.catch((e) => …)`                                     |
-| `catch (e: A)`                                   | `Effect.catchTag("A", …)`                                    |
-| `catch (e: A \| B)`                              | `Effect.catchTag(["A", "B"], …)`                             |
-| Several typed clauses, each a single tag         | one `Effect.catchTags({ A: …, B: … })`                       |
-| Several typed clauses, some unions               | sequential `Effect.catchTag(…)` calls in source order       |
-| A final untyped clause after typed ones          | the `orElse` argument of the last `catchTags`/`catchTag`     |
-| `finally { … }`                                  | appended `Effect.ensuring(Effect.gen(…))`                    |
+**What each clause catches.** Clauses are alternatives over the original outcome of the `try`
+block, checked in source order:
+
+- `catch (e: A)` / `catch (e: A | B)` catches typed failures by `_tag`.
+- An untyped `catch (e)` / `catch` (last clause only) catches every failure no typed clause
+  matched, **and every defect of the `try` block**, such as a `JSON.parse` exception. Defects arrive
+  as `Cause.UnknownError` with the thrown value in `e.cause` (Effect's convention for thrown
+  values). So `e: E | Cause.UnknownError`, and `catch (e: UnknownError)` catches only thrown
+  exceptions.
+- **Interruption is never caught.**
+- A failure or defect raised inside a handler propagates; sibling clauses never see it.
+- `finally` runs on success, failure, defect and interruption.
+
+| Catch clauses                                       | Handlers after `Effect.gen(…)`                                   |
+| --------------------------------------------------- | ---------------------------------------------------------------- |
+| any clause that catches defects (untyped or `UnknownError`) | first `Effect.catchDefect((defect) => Effect.fail(new Cause.UnknownError(defect)))` |
+| `catch (e)` / `catch` only                          | `Effect.catch((e) => …)`                                          |
+| one typed clause `catch (e: A)` / `(e: A \| B)` [+ untyped] | `Effect.catchTag("A" \| ["A", "B"], (e) => …[, (e) => …])`       |
+| several single-tag typed clauses [+ untyped]        | `Effect.catchTags({ A: …, B: … }[, (e) => …])`                    |
+| several typed clauses, some unions [+ untyped]      | nested `orElse`: `Effect.catchTag(K1, h1, (e) => Effect.catchTag(Effect.fail(e), K2, h2[, …]))` |
+| `finally { … }`                                     | `Effect.ensuring(Effect.gen(…))`                                  |
 
 Rules:
 
-- **Several `catch` clauses are EffectScript syntax** and are only valid inside `effect`.
-- The tag name is the last segment of the type name (`Errors.NotFound` → `"NotFound"`). `error`
-  declarations always tag with their class name. If a tag doesn't match, the type check of the
-  output catches it.
-- Control flow: if every path of the `try` and `catch` blocks ends in `return`/`throw`, emit
+- **Several `catch` clauses are EffectScript syntax** and are only valid inside `effect`
+  (**EFX2024** outside). An untyped clause must be last (**EFX2023**).
+- **Tags.** A local `error`, or a `schema` with `_tag`, contributes its declared tag (custom
+  `_tag` values included). Any other type uses the last segment of its name
+  (`Errors.NotFound` → `"NotFound"`); `catchTag`'s signature makes the type check reject a tag that
+  isn't in the error channel.
+- **Control flow.** If every path of the `try` and `catch` blocks ends in `return`/`throw`, emit
   `return yield* …`. If no path does, emit `yield* …;`. Anything mixed is an error (**EFX2020**,
   with a refactoring hint). `break`/`continue` that cross the `try` boundary, and `return` in
   `finally`, are errors (**EFX2021**).
-- Semantics: a final untyped clause after typed clauses compiles to the `orElse` argument of
-  `Effect.catchTags`/`Effect.catchTag`, so a failure raised inside a typed clause propagates and is not
-  caught by a sibling clause, as in JavaScript. With several union-typed clauses compiled to sequential
-  `catchTag` calls, a later typed clause can still see an earlier clause's failure.
 
 ### 4.5 Bare Effect types
 
@@ -338,7 +355,7 @@ schema Shape =                             // ADT form → TaggedClass per varia
 class User extends Schema.Class<User>("User")({
   id: UserId,
   name: Schema.String,
-  email: Schema.optional(Schema.String),
+  email: Schema.optionalKey(Schema.String),
   age: Schema.Int.check(Schema.isGreaterThan(0))
 }) {
   get label() { return `${this.name} <${this.email ?? "?"}>` }
@@ -375,14 +392,19 @@ and tested.
 | `Map<K, V>` / `ReadonlyMap<K, V>`           | `Schema.ReadonlyMap(K, V)`                      |
 | `Option<T>` / `Redacted<T>`                 | `Schema.Option(T)` / `Schema.Redacted(T)`       |
 | `Date` / `URL` / `Uint8Array` / `Duration` / `BigDecimal` | `Schema.Date` / `.URL` / …        |
-| `{ a: T; b?: U }`                           | `Schema.Struct({ a: T, b: Schema.optional(U) })` |
+| `{ a: T; b?: U }`                           | `Schema.Struct({ a: T, b: Schema.optionalKey(U) })` |
+| `b?: U \| undefined` (field)                | `b: Schema.optional(U)` (accepts an explicit `undefined`) |
 | `T & Brand<"X">`                            | `T.pipe(Schema.brand("X"))`                      |
 | Schema vocabulary: `Int`, `Finite`, `NonEmptyString`, `Trimmed`, `DateTimeUtc` | `Schema.Int`, … |
 | `Defect`                                    | `Schema.Defect()`                               |
 | `Name` (other identifier)                   | `Name` (must be a schema value)                  |
 | `A.B` (qualified name)                      | `A.B` (schema value)                             |
 
-`readonly` modifiers are ignored, because schemas are already readonly. Unsupported type syntax
+Optional fields follow `exactOptionalPropertyTypes` (ADR-0013): `name?: T` → `Schema.optionalKey(T)`,
+`name?: T | undefined` → `Schema.optional(T)`. This holds in class, `error`, ADT and alias forms.
+`readonly` modifiers are ignored, because schemas are already readonly: `T[]` decodes to
+`ReadonlyArray<T>`, and `Set`/`Map` to their readonly forms. That is deliberate, not exact
+preservation of a mutable type. Unsupported type syntax
 (conditional, mapped, `keyof`, generics of unknown names) is an error (**EFX3001**) that suggests
 an `=` field.
 
@@ -458,36 +480,51 @@ Rules:
   - An object literal → `Layer.succeed(Self, Self.of({…}))`.
   - Any other expression is used as-is.
   - `|>` pipes apply to the resulting `Layer`.
-- **Key.** By default, `"<package name>/<dir relative to package root, minus a leading src/>/<Name>"`
-  (the convention in `LLMS.md`). With no package information, the key is `"<Name>"`. To override:
+- **Key** (ADR-0014). By default, `"<package>/<dir>/<module>/<Name>"`: `<dir>` is relative to the
+  package root, minus a leading `src/`; `<module>` is the file name without extension, omitted when
+  it equals `<Name>` (ignoring case) or is `index`. So `src/users/Users.efx` → `"myapp/users/Users"`,
+  and `src/a.efx` → `"myapp/a/Users"`. Without a package root, only the file name is used, never an
+  absolute path. Without package information, the key is `"<Name>"`. To override:
   `service Users as "acme/Users" { … }`.
 - `Context.Reference` services with defaults are on the roadmap.
 
 ### 4.9 Pipeline `|>` (TC39 Stage 2, both flavors)
 
+Evaluation order is decided in ADR-0012.
+
 - **Function style** (Effect style): if the right-hand side contains no topic `%`, `a |> f |> g`
   applies `f`, then `g`, to `a`:
   - If `a` is known to be pipeable → `a.pipe(f, g)`. Known pipeable means an `effect` block, a call
-    to a module-level `effect` declaration, or a module-level `const` initialized with one of
-    those.
+    to a module-level `effect` declaration that has no declaration pipes, or a module-level `const`
+    initialized with one of those.
     - The rule is deliberately narrow. Module calls such as `Effect.runSync(…)` or
       `Option.getOrElse(…)` return plain values, so "rooted at a pipeable module" would produce
       `.pipe` on non-pipeables.
-  - Otherwise → `pipe(a, f, g)`, with `pipe` imported automatically. This is always correct.
+  - Otherwise → `pipe(a, f, g)`, with `pipe` imported automatically (hygienically, ADR-0009).
+  - **Order:** Effect's `pipe` order. The head is evaluated, then every stage expression, then each
+    application in turn (`head, make f, make g, apply f, apply g`). This is what Effect code
+    written by hand does. It differs from a strictly sequential reading only when stage
+    expressions have side effects.
 - **Hack style** (the proposal as currently specified): a right-hand side containing the topic `%`
   substitutes the left-hand side. For example, `user |> Effect.map(%, f)` → `Effect.map(user, f)`.
-  - The value is inlined only for the first step after the head, when the right-hand side has exactly
-    one `%`, everything evaluated before it is side-effect-free, and `%` is evaluated exactly once
-    (not inside a function, a short-circuit operand, a conditional branch or an optional chain).
+  - **The head is always evaluated first.** A step is inlined only into the head, only when
+    everything evaluated before `%` in the right-hand side is a literal, an identifier, or a member
+    read on an imported module namespace (`Effect.map`), and only when `%` occurs exactly once and
+    is evaluated unconditionally (not inside a function, a short-circuit operand, a conditional
+    branch or an optional chain).
   - Otherwise the step becomes the function `($) => rhs` inside the surrounding `pipe(…)`, which
-    preserves evaluation order.
+    preserves evaluation order. `makeValue() |> obj.method(%)` → `pipe(makeValue(), ($) =>
+    obj.method($))`. The parameter name is fresh in the whole file.
+  - An effect `await` inside a step that must become a function is an error (**EFX5002**: assign the
+    awaited value to a variable first).
   - A `%` outside a pipeline right-hand side is a syntax error.
 - **`await` covers the whole pipeline.** Inside `effect` code, `await x |> f |> g` means
   `await (x |> f |> g)` → `yield* x.pipe(f, g)`. This is the most common Effect pattern: pipe,
   then run.
 - Consecutive steps of the same flavor are grouped into one `.pipe(…)`/`pipe(…)`.
 - Precedence is below `??`/`||` and above `?:`/assignment/arrow. `a ? b : c |> f` pipes only `c`.
-  Use parentheses to pipe the whole conditional.
+  Use parentheses to pipe the whole conditional. This precedence, and mixing both flavors, are
+  EffectScript choices and differ from the current TC39 topic proposal.
 - `|>` directly after an `effect` declaration, `main`, or `layer` attaches pipeables (§4.1, §4.8,
   §4.10). Hack style is not allowed there (**EFX5001**).
 
@@ -953,7 +990,7 @@ interface CompileResult {
   mode: "ts" | "tsx"
   map: SourceMapV3 | undefined
   mappings: ReadonlyArray<CodeMapping>   // Volar-compatible
-  diagnostics: ReadonlyArray<Diagnostic> // empty when successful
+  diagnostics: ReadonlyArray<Diagnostic> // success = no diagnostic with severity "error" (ADR-0017)
 }
 ```
 
@@ -1015,7 +1052,7 @@ an `=` field, so it is lossless.
 A generator stays `Effect.gen`/`Effect.fn` TypeScript, which is still valid EffectScript, when its
 direct body contains any of these:
 
-- a native `try` whose `try` block contains `yield*` (it would change meaning under §4.4)
+- a native `try` around `yield*` (under §4.4 every `try` in `effect` code is an Effect `try`, so re-sugaring it would change its meaning)
 - `yield` without `*`
 - `arguments`
 - an `Effect.fn` span name that doesn't match the binding (or the `Svc.x` rule)
@@ -1026,20 +1063,31 @@ direct body contains any of these:
 The converter reports what it left as TS and why, for example in `efx convert --explain` and in the
 playground's notes panel.
 
-### 6.4 Round-trip equivalence
+### 6.4 Round-trip contract
 
-`a ≡ b` means both parse, and after these normalizations their ASTs are equal (ignoring positions):
+Reversibility is canonicalization plus semantic preservation (from review R07), not recovery of
+arbitrary source text:
 
-- import declarations are normalized (merged and sorted by module and name)
-- redundant parentheses are dropped
-- `return yield* Effect.fail(new E(…))` is treated as `return yield* new E(…)`
-- `yield* Effect.die(e)` is treated as a native `throw e` inside generators
-- `.pipe(…)` on a known-pipeable value is treated as `pipe(…)`
-- the position of a trailing `runMain` statement is ignored
+```text
+toEffectScript(toTypeScript(efx)) = normalizeEFX(efx)
+toTypeScript(toEffectScript(ts))  = canonicalTS(ts)   for supported shapes, preserving runtime
+                                                      behavior and public types
+Unsupported shapes stay TypeScript, with an explanation.
+```
 
-Tests assert `≡` over every fixture in both directions (§11).
-
----
+- `normalizeEFX` and `canonicalTS` are defined construct by construct, next to each canonical
+  shape. They never permit an observable order change. Import order and module side effects are
+  preserved. Moving `runMain` is allowed only because `main` is defined to run after module
+  initialization (§4.10).
+- Several sources can share one output (for example `T[]`, `Array<T>` and `ReadonlyArray<T>` in a
+  schema). The reverse direction produces one canonical spelling; that loss is listed explicitly
+  per shape.
+- Canonical outputs reach a fixed point: converting again changes nothing.
+- Effect APIs are recognized by binding origin (their import), never by spelling (ADR-0009). A
+  user object named `Effect` is never re-sugared.
+- Comments and documentation are preserved where the shape keeps their anchor, and each shape that
+  drops them says so. Side-effectful imports get dedicated cases.
+- Evidence: structural fixtures, plus runtime traces and exported-declaration tests for each shape.
 
 ## 7. Packages and integrations
 
@@ -1193,10 +1241,17 @@ EffectScript's own (the `@types/node` convention):
 
 - `effectscript@4.0.x` targets `effect@4.0.*`, as a peer dependency `effect: ~4.0.0`.
 - When Effect releases 4.1.0, `effectscript@4.1.0` follows.
-- During the experiment, releases are `4.0.0-alpha.N`.
+- During the experiment, releases are `4.0.0-alpha.N`. Breaking language changes are allowed in
+  alpha; afterwards they ship only with an Effect minor and are called out in the changelog.
+- The review (R11) recommended independent semver instead. The user chose lockstep; the reasons
+  and the conditions for revisiting are in ADR-0015.
+- Three versions stay distinct: the compiler's own, the target Effect version (header or option),
+  and the version actually installed (known only to Node and project integrations, never to the
+  browser compiler).
 
 The link is technical, not cosmetic: the prelude tables (§4.13) and the builtins are generated from
-that Effect release's source.
+that Effect release's source. The prelude is a curated compatibility surface: each release PR shows
+the diff of newly exposed names for review, and nothing becomes a builtin unreviewed.
 
 **Version header.** A file may start with `// @effect 4.0`:
 
@@ -1212,7 +1267,7 @@ that Effect release's source.
 2. **Upgrade:** a workflow syncs the upstream merge into this fork and regenerates the prelude tables
    (`pnpm codegen`). It then runs the full EffectScript suite against the new Effect: superset,
    goldens, type-checking, runtime, and the reverse round trip.
-3. **Green:** open a release PR, then publish `effectscript@<effect major.minor>.0`, the binaries,
+3. **Green:** open a release PR (with the prelude diff); after human approval, publish `effectscript@<effect major.minor>.0`, the binaries,
    the Homebrew formula, and the VS Code extension.
 4. **Red:** open an issue with the failing tests. Hand it to an AI agent, either GitHub Copilot's
    coding agent or the Claude Code GitHub Action, with the skill and the failing goldens as context.
@@ -1230,7 +1285,7 @@ that Effect release's source.
 - `references/patterns.md`: services and layers, testing with `it.effect` + `effect`, HTTP, SQL,
   streams, resources, concurrency, retries, and schedules.
 - `SKILL.md` and the docs open with the `async` ↔ `effect` table: `await`, `throw`, `try`/`catch`/`finally`, `for await`, `using`. They also cover the one real difference, laziness: an effect that is never `await`ed never runs.
-- `references/pitfalls.md`: the `try` effectfulness rule, `await` on Promises (use
+- `references/pitfalls.md`: the `try` contract (`catch (e)` also catches defects, as `UnknownError`), `await` on Promises (use
   `Effect.tryPromise`), the hoisting of `effect` declarations, and the `catch` handler semantics.
 - Written following the repo's `writing-for-agents` guidance. `efx skill` installs it.
 
@@ -1364,8 +1419,13 @@ implementation.
 
 ## 12. Diagnostics
 
-Codes have the form `EFX<area><nn>`. Areas: 1 = parse, 2 = `effect`, 3 = schema, 4 = service, 5 = pipe,
-6 = main, 7 = proposals.
+Codes have the form `EFX<area><nn>`. Areas: 1 = parse, internal errors and configuration, 2 = `effect`,
+3 = schema, 4 = service, 5 = pipe, 6 = main, 7 = proposals, 8 = strict rules.
+
+The compiler reports syntactic diagnostics; rules that need types run in the checker (language
+service and `efx check`). Heuristic rules say so in their message. A compile fails only when a
+diagnostic has severity `error`; warnings never abort output unless `strict: true` promotes them
+(ADR-0017).
 
 Each diagnostic carries `{ code, message, start, end, severity, hint? }`. The integrations format
 them with a code frame. Parse errors don't throw: `toTypeScript` returns diagnostics and an empty
@@ -1376,21 +1436,28 @@ them with a code frame. Parse errors don't throw: `toTypeScript` returns diagnos
 ## 13. Delivery phases
 
 Each phase ends green: its tests pass, plus `pnpm check` and `pnpm lint` for the touched packages.
+The order was revised after the plan review (ADR-0016).
 
-1. **Core compiler:** parser plugin, analysis, every §4 transform, mappings, and diagnostics. Golden,
-   type-check, runtime, and superset-identity tests. Order:
-   - a. language core (§4.1–4.13)
-   - b. library constructs (§4.14)
-   - c. ambient capture, observability, and strict mode (§4.15–4.17)
-2. **Reverse compiler:** §6 shapes and blockers, plus the round-trip tests.
-3. **CLI, integrations, and distribution:** `efx` (handlers in `.efx`), `run`/`setup`/`doctor`/`convert --ai`, the standalone Bun-compiled binary, the Homebrew tap, the install script, the Bun plugin, the Vite plugin, the Node
-   hook, and the examples package.
-4. **Language tooling:** Volar plugin, `efx-tsc`, TS server plugin, language server, and the
-   VS Code extension (grammar + commands).
-5. **AI skill:** `SKILL.md` + references, generated syntax reference, and `efx skill`.
-6. **Site:** VS Code-style before/after gallery, Monaco two-way playground, and the narrative
-   sections.
-7. **Monorepo registration and release prep:** §10 surfaces, changeset, README.
+1. **Core compiler, language core (§4.1–4.13).** Done (Plan 1).
+2. **Semantic hardening (Plan 2).** Hygienic references (ADR-0009), the `try` contract
+   (ADR-0010), resource lifetimes (ADR-0011), pipeline order (ADR-0012), exact optional fields
+   (ADR-0013), service keys (ADR-0014), diagnostics policy (ADR-0017), and behavior tests that
+   observe order, cleanup and failure kinds.
+3. **Adoption slice (Plan 3).** A fixture project: `.efx` + `.ts` modules, `efx build` with
+   graph-aware import rewriting, `efx check` (Volar on the TypeScript 6 JS API), running on Node,
+   VS Code IntelliSense including incomplete code, reverse conversion of the supported subset, and a
+   packed-package consumer.
+4. **Library constructs (§4.14), ambient capture, observability and strict mode (§4.15–4.17).**
+5. **Full reverse compiler:** §6 shapes and blockers, and the round-trip contract (§6.4).
+6. **CLI, integrations and distribution:** the rest of `efx`, the Bun and Vite plugins, the
+   standalone binary, the Homebrew tap, the install script, `setup`/`doctor`/`convert --ai`, and
+   the examples package.
+7. **Language tooling completion:** the language server for other editors, and VS Code commands
+   and grammar polish.
+8. **AI skill:** `SKILL.md` + references, generated syntax reference, and `efx skill`.
+9. **Site:** VS Code-style before/after gallery, Monaco two-way playground, and the narrative
+   sections. Every claim links to evidence (review R15).
+10. **Monorepo registration and release prep:** §10 surfaces, changeset, README.
 
 ## 14. Roadmap (explicitly out of v0.1)
 
