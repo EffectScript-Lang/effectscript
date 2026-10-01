@@ -1,0 +1,38 @@
+import { Data } from "effect"
+
+class NotFound extends Data.TaggedError("NotFound")<{}> {}
+class Timeout extends Data.TaggedError("Timeout")<{}> {}
+
+declare const load: (id: string) => Effect.Effect<string, NotFound | Timeout | Error>
+
+effect withFallback(id: string) {
+  try {
+    return await load(id)
+  } catch (e: NotFound) {
+    return "missing"
+  } catch (e: Timeout) {
+    return "slow"
+  } catch (e) {
+    return `failed: ${String(e)}`
+  }
+}
+
+effect logged(id: string) {
+  let result = "none"
+  try {
+    result = await load(id)
+  } catch (e: NotFound | Timeout) {
+    result = e._tag
+  } finally {
+    await Effect.log("done")
+  }
+  return result
+}
+
+effect plain(json: string) {
+  try {
+    return JSON.parse(json) as unknown
+  } catch {
+    return null
+  }
+}

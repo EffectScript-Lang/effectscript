@@ -44,3 +44,17 @@ export const walkChildren = (node: Node, ctx: Ctx, skip?: ReadonlySet<Node>): vo
     if (skip === undefined || !skip.has(child)) walk(child, node, ctx)
   }
 }
+
+/**
+ * Walks `node` with the scope recorded for `scopeNode` (e.g. a catch clause body).
+ *
+ * @since 0.1.0
+ * @category traversal
+ */
+export const walkInScopeOf = (scopeNode: Node, node: Node, parent: Node | undefined, ctx: Ctx): void => {
+  const previous = ctx.scope
+  const scope = ctx.analysis.scopeOf.get(scopeNode)
+  if (scope !== undefined) ctx.scope = scope
+  walk(node, parent, ctx)
+  ctx.scope = previous
+}

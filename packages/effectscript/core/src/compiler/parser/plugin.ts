@@ -296,4 +296,27 @@ export const efxPlugin = (Base: any): any =>
       if (annotation.efxThrows !== undefined || annotation.efxNeeds !== undefined) annotation.end = this.lastTokEnd
       return annotation
     }
+
+    parseTryStatement(node: any): any {
+      this.next()
+      node.block = this.parseBlock()
+      node.handlers = []
+      while (this.type === tt._catch) {
+        const clause = this.startNode()
+        this.next()
+        if (this.eat(tt.parenL)) {
+          clause.param = this.parseCatchClauseParam()
+        } else {
+          clause.param = null
+          this.enterScope(0)
+        }
+        clause.body = this.parseBlock(false)
+        this.exitScope()
+        node.handlers.push(this.finishNode(clause, "CatchClause"))
+      }
+      node.handler = node.handlers[0] ?? null
+      node.finalizer = this.eat(tt._finally) ? this.parseBlock() : null
+      if (node.handler === null && node.finalizer === null) this.raise(node.start, "Missing catch or finally clause")
+      return this.finishNode(node, "TryStatement")
+    }
   }

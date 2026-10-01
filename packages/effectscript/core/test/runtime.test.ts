@@ -18,4 +18,40 @@ describe("runtime", () => {
     expect(mod.ok).toBe(2)
     expect(mod.isFailure).toBe(true)
   })
+
+  it("effectful try/catch catches typed failures in clause order and runs finally", async () => {
+    const mod = await runCompiled(`
+      import { Data, Effect } from "effect"
+      class A extends Data.TaggedError("A")<{}> {}
+      class B extends Data.TaggedError("B")<{}> {}
+      const fail = (tag: "A" | "B" | "C"): Effect.Effect<string, A | B | "C"> =>
+        tag === "A" ? Effect.fail(new A()) : tag === "B" ? Effect.fail(new B()) : Effect.fail("C" as const)
+      export const order: Array<string> = []
+      effect handle(tag: "A" | "B" | "C") {
+        try {
+          return await fail(tag)
+        } catch (e: A) {
+          return "a"
+        } catch (e: B) {
+          return "b"
+        } catch (e) {
+          return "other"
+        } finally {
+          order.push(tag)
+        }
+      }
+      effect parse(s: string) {
+        try {
+          return JSON.parse(s) as string
+        } catch {
+          return "bad json"
+        }
+      }
+      export const results = (["A", "B", "C"] as const).map((t) => Effect.runSync(handle(t)))
+      export const parsed = Effect.runSync(parse("{"))
+    `)
+    expect(mod.results).toEqual(["a", "b", "other"])
+    expect(mod.order).toEqual(["A", "B", "C"])
+    expect(mod.parsed).toBe("bad json")
+  })
 })

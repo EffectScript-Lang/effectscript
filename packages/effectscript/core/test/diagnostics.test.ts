@@ -20,3 +20,38 @@ describe("effect diagnostics", () => {
     expect(codes("effect f(): void\n")).toEqual(["EFX2005"])
   })
 })
+
+describe("try diagnostics", () => {
+  it("EFX2020: mixed returns", () => {
+    expect(
+      codes(
+        "effect f(x: Effect.Effect<number>) {\n  try {\n    if (Math.random()) return await x\n    await x\n  } catch {\n    return 0\n  }\n  return 1\n}\n"
+      )
+    )
+      .toEqual(["EFX2020"])
+  })
+
+  it("EFX2021: break crossing the try boundary", () => {
+    expect(
+      codes(
+        "effect f(x: Effect.Effect<number>) {\n  for (;;) {\n    try {\n      await x\n      break\n    } catch {}\n  }\n}\n"
+      )
+    )
+      .toEqual(["EFX2021"])
+  })
+
+  it("EFX2022: typed catch on a plain try inside effect", () => {
+    expect(codes("effect f() {\n  try {\n    JSON.parse(\"1\")\n  } catch (e: SyntaxError) {}\n}\n")).toEqual([
+      "EFX2022"
+    ])
+  })
+
+  it("EFX2023: untyped catch must be last", () => {
+    expect(codes("effect f(x: Effect.Effect<number>) {\n  try {\n    await x\n  } catch (e) {} catch (e: A) {}\n}\n"))
+      .toEqual(["EFX2023"])
+  })
+
+  it("EFX2024: multiple catch outside effect", () => {
+    expect(codes("try {} catch (a) {} catch (b) {}\n")).toEqual(["EFX2024"])
+  })
+})

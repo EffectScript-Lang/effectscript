@@ -127,3 +127,14 @@ describe("effect syntax", () => {
     )
   })
 })
+
+describe("try statements", () => {
+  it("parses multiple typed catch clauses", () => {
+    const { program } = ok("try { a } catch (e: A) { b } catch (e: B | C) { c } catch { d } finally { e }\n")
+    const statement = program.body[0]
+    expect(statement.handlers).toHaveLength(3)
+    expect(statement.handler).toBe(statement.handlers[0])
+    expect(statement.handlers[2].param).toBeNull()
+    expect(statement.finalizer.type).toBe("BlockStatement")
+  })
+})
