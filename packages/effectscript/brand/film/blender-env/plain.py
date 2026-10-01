@@ -122,6 +122,24 @@ def world(scene):
     cloud = b.add(b.add(tone, lining), b.mul(b.mr(dz, 0.0, 0.12, 0.04, 0.0), 1.0))
     L = b.mixf(dens, sky, cloud)
 
+    # distant crepuscular rays fanning from the break (noise over the polar
+    # angle around the sun, fading with distance from it)
+    e1 = SUN.cross(Vector((0, 0, 1))).normalized()
+    e2 = e1.cross(SUN).normalized()
+    u = b.v("NORMALIZE", b.v("SUBTRACT", D, b.v("SCALE", tuple(SUN), scale=cos_a)))
+    cphi = b.v("DOT_PRODUCT", u, tuple(e1), out="Value")
+    sphi = b.v("DOT_PRODUCT", u, tuple(e2), out="Value")
+    ang = b.m("ARCCOSINE", b.m("MINIMUM", cos_a, 1.0))
+    rv = b.combine(b.mul(cphi, 9.0), b.mul(sphi, 9.0), b.mul(ang, 1.2))
+    rays = b.noise(rv, 1.0, 3.0, 0.55)
+    rays = b.m("POWER", b.mr(rays, 0.42, 0.75, 0.0, 1.0), 1.3)
+    rays2 = b.mr(b.noise(b.v("MULTIPLY", rv, (2.6, 2.6, 0.3)), 1.0, 2.0, 0.5), 0.4, 0.75, 0.0, 1.0)
+    rays = b.mul(rays, b.add(0.6, b.mul(rays2, 0.5)))
+    fade = b.mul(b.m("EXPONENT", b.mul(ang, -1.0 / 0.13)), b.mr(ang, 0.01, 0.07, 0.0, 1.0, interp="SMOOTHSTEP"))
+    up_only = b.mr(dz, 0.0, 0.06, 0.25, 1.0)
+    ray_l = b.mul(b.mul(b.mul(rays, fade), up_only), float(os.environ.get("RAYS", "1.0")))
+    L = b.add(L, b.mul(ray_l, b.m("SUBTRACT", 1.0, b.mul(dens, 0.7))))
+
     # haze band at the horizon
     hz = b.mr(dz, -0.01, 0.07, 1.0, 0.0, interp="SMOOTHSTEP")
     haze_col = b.add(0.09, b.add(b.mul(wide, 0.5), b.mul(broad, 1.2)))
@@ -197,10 +215,11 @@ def concrete_material():
     damp = b.mr(z, 0.0, 2.6, 1.0, 0.0, interp="SMOOTHSTEP")
     damp = b.mul(damp, b.mr(b.noise(b.v("MULTIPLY", co, (1, 1, 3.0)), 1.4, 4.0), 0.3, 0.7, 0.6, 1.0))
 
-    tone = b.add(b.mr(mottle, 0.3, 0.7, 0.54, 0.68), b.mr(blotch, 0.35, 0.65, -0.05, 0.035))
+    tone = b.add(b.mr(mottle, 0.3, 0.7, 0.47, 0.62), b.mr(blotch, 0.35, 0.65, -0.06, 0.035))
+    tone = b.add(tone, b.mr(z, 2.0, 28.0, -0.03, 0.03))
     tone = b.add(tone, panel)
     tone = b.add(tone, b.mr(sand, 0.3, 0.7, -0.03, 0.03))
-    tone = b.add(tone, b.mr(streak, 0.45, 0.75, 0.0, -0.11))
+    tone = b.add(tone, b.mr(streak, 0.42, 0.75, 0.0, -0.16))
     tone = b.add(tone, b.mul(seams, -0.05))
     tone = b.add(tone, b.mul(holes, -0.22))
     tone = b.add(tone, b.mul(pores, -0.22))
@@ -239,23 +258,29 @@ def flat_material(t_node_frames):
     shallow = b.mr(b.noise(co, 0.035, 4.0, 0.55), 0.5, 0.66, 0.0, 1.0, interp="SMOOTHSTEP")
     islands = b.mr(b.noise(co, 0.11, 5.0, 0.6), 0.66, 0.71, 0.0, 1.0, interp="SMOOTHSTEP")
     grit = b.mr(b.noise(co, 4.5, 5.0, 0.7), 0.68, 0.73, 0.0, 1.0)
+    chunks = b.voronoi(co, 1.7, feature="F1", out="Distance")
+    chunks = b.mul(b.mr(chunks, 0.05, 0.16, 1.0, 0.0), b.mr(b.noise(co, 0.25, 3.0), 0.55, 0.65))
+    grit = b.m("MAXIMUM", grit, chunks)
     dry = b.m("MAXIMUM", b.mul(ridge, b.mul(shallow, 0.7)), b.mul(islands, 0.8))
-    dry = b.m("MAXIMUM", dry, b.mul(grit, 0.9))
 
-    salt_tone = b.add(b.mr(b.noise(co, 1.5, 6.0), 0.3, 0.7, 0.16, 0.3), b.mul(grit, -0.2))
+    salt_tone = b.mr(b.noise(co, 1.5, 6.0), 0.3, 0.7, 0.16, 0.3)
     # pools: mirror water; elsewhere a film of water over dark mud
-    pool = b.mr(b.noise(b.v("MULTIPLY", co, (0.35, 1.0, 1.0)), 0.09, 5.0, 0.6), 0.47, 0.55, 0.0, 1.0, interp="SMOOTHSTEP")
+    pool = b.add(b.mul(b.noise(co, 0.3, 6.0, 0.62), 0.6), b.mul(b.noise(co, 0.04, 3.0), 0.4))
+    pool = b.mr(pool, 0.44, 0.56, 0.0, 1.0, interp="SMOOTHSTEP")
     water_tone = b.mixf(pool, b.mr(b.noise(co, 0.8, 5.0), 0.3, 0.7, 0.012, 0.035), 0.008)
     base = b.mixf(dry, water_tone, salt_tone)
+    base = b.mixf(grit, base, 0.012)
 
     # ripples: two drifting noise fields, tiny amplitude
     rco = b.combine(x, b.mul(y, 1.0), t)
     rip = b.noise(b.v("MULTIPLY", co, (1.0, 0.55, 1.0)), 1.6, 3.0, 0.5, dims="4D", w=b.mul(t, 0.35))
     rip2 = b.noise(rco, 9.0, 2.0, 0.5, dims="4D", w=b.mul(t, 0.9))
-    wrough = b.mixf(pool, b.mr(b.noise(co, 0.5, 3.0), 0.3, 0.7, 0.22, 0.42), b.mr(b.noise(co, 0.06, 3.0), 0.35, 0.7, 0.008, 0.05))
+    wrough = b.mixf(pool, b.mr(b.noise(co, 0.5, 3.0), 0.3, 0.7, 0.14, 0.34), b.mr(b.noise(co, 0.06, 3.0), 0.35, 0.7, 0.008, 0.05))
     rough = b.mixf(dry, wrough, 0.75)
+    rough = b.mixf(grit, rough, 0.85)
     height = b.add(b.mul(rip, 1.0), b.mul(rip2, 0.35))
     height = b.mixf(dry, height, b.add(b.mul(ridge, 6.0), b.mul(b.noise(co, 30.0, 3.0), 2.0)))
+    height = b.add(height, b.mul(grit, 8.0))
     nrm = b.bump(height, 0.05, 0.02)
     p = b.principled(base=b.grey(base), rough=rough, normal=nrm, spec=0.5)
     p.inputs["IOR"].default_value = 1.33
@@ -343,15 +368,17 @@ def crowd(scene):
 
 def volumes(scene, t_frames):
     # aerial haze over the whole flat (homogeneous: cheap, carries the rays)
-    mat, b, v, out = E.volume_material("Air", density=float(os.environ.get("AIR", "0.00028")), anisotropy=float(os.environ.get("AIRG", "0.82")))
-    air = E.box(scene, "Air", (900, 650, 150), (0, 175, 75), mat)
+    mat, b, v, out = E.volume_material("Air", density=float(os.environ.get("AIR", "0.00005")), anisotropy=float(os.environ.get("AIRG", "0.9")))
+    # starts ~45 m in front of the camera: shafts that pass right by the lens
+    # would streak across the whole frame
+    air = E.box(scene, "Air", (520, 570, 150), (0, 215, 75), mat)
     air.visible_shadow = False
 
     # ground mist: thicker towards and beyond the mark, wisps drifting
     mat, b, out = E.material("Mist")
     vol = b.new("ShaderNodeVolumePrincipled")
     vol.inputs["Color"].default_value = E.gray(1.0)
-    vol.inputs["Anisotropy"].default_value = 0.5
+    vol.inputs["Anisotropy"].default_value = 0.35
     co = b.coord("Object")
     x, y, z = b.xyz(co)
     tval = b.new("ShaderNodeValue")
@@ -379,7 +406,7 @@ def cloud_cookie(scene):
     co = b.coord("Object")
     deck = b.noise(co, 0.006, 2.0, 0.5)  # where the cloud deck is open at all
     n2 = b.noise(co, 0.055, 2.0, 0.55)
-    hole = b.mul(b.mr(n2, 0.56, 0.61, 0.0, 1.0), b.mr(deck, 0.4, 0.55, 0.1, 1.0))
+    hole = b.mul(b.mr(n2, 0.5, 0.62, 0.12, 1.0, interp="SMOOTHSTEP"), b.mr(deck, 0.35, 0.6, 0.3, 1.0))
     tr = b.new("ShaderNodeBsdfTransparent")
     df = b.new("ShaderNodeBsdfDiffuse")
     df.inputs["Color"].default_value = E.gray(0.0)
@@ -428,6 +455,8 @@ def build():
     sun = bpy.data.objects.new("Sun", sd)
     scene.collection.objects.link(sun)
     sun.rotation_euler = (-SUN).to_track_quat("-Z", "Y").to_euler()
+    sun.visible_glossy = False  # the sky's own sun core is what the water mirrors
+    sun.visible_diffuse = True
 
     cam = E.camera(scene, lens=LENS)
     # keep the mark's optical centre horizontally centred, horizon at ~76%

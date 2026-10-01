@@ -87,6 +87,17 @@ describe("efx build / run (ADR-0022)", () => {
     expect(ran.stdout.trim()).toBe("HI")
   }, 120_000)
 
+  it("works without TypeScript for --help and run; build explains what's missing (review I7)", () => {
+    const noTypeScript =
+      "data:text/javascript,import{registerHooks}from'node:module';registerHooks({resolve(s,c,n){if(s==='typescript')throw new Error('Cannot find package typescript');return n(s,c)}})"
+    const help = spawnSync(process.execPath, ["--import", noTypeScript, efx, "--help"], { cwd: dir, encoding: "utf8" })
+    expect(help.status).toBe(0)
+    expect(help.stderr).toContain("usage: efx")
+    const built = spawnSync(process.execPath, ["--import", noTypeScript, efx, "build"], { cwd: dir, encoding: "utf8" })
+    expect(built.status).toBe(1)
+    expect(built.stderr).toContain("efx build needs TypeScript 6")
+  }, 120_000)
+
   it("build reports compile errors with .efx positions and fails", () => {
     fs.writeFileSync(path.join(dir, "src/broken.efx"), "effect f() {\n  const x = .\n}\n")
     const result = spawnSync(process.execPath, [efx, "build", "-p", "tsconfig.json"], { cwd: dir, encoding: "utf8" })

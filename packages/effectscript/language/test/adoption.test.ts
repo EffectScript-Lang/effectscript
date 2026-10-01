@@ -46,13 +46,15 @@ describe("adoption slice, end to end (ADR-0016)", () => {
   afterAll(() => fs.rmSync(root, { recursive: true, force: true }))
 
   it("1. efx check passes, and reports an injected error at its .efx position", () => {
-    const ok = node(project, [efx, "check", "-p", "tsconfig.json", "--noEmit"])
+    // no --noEmit: efx check must never write files (review I2)
+    const ok = node(project, [efx, "check", "-p", "tsconfig.json"])
     expect(ok.stdout + ok.stderr).toBe("")
     expect(ok.status).toBe(0)
+    expect(fs.existsSync(path.join(project, "dist"))).toBe(false)
     const users = path.join(project, "src/users.efx")
     const original = fs.readFileSync(users, "utf8")
     fs.writeFileSync(users, `${original}export const broken: number = "x"\n`)
-    const failed = node(project, [efx, "check", "-p", "tsconfig.json", "--noEmit"])
+    const failed = node(project, [efx, "check", "-p", "tsconfig.json"])
     fs.writeFileSync(users, original)
     const line = original.split("\n").length
     expect(failed.stdout).toContain(`src/users.efx(${line},14): error TS2322`)

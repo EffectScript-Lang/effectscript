@@ -26,6 +26,7 @@ export const check = (args: ReadonlyArray<string>): number => {
     return 1
   }
   const bin = path.join(path.dirname(packageJson), "bin/efx-tsc.js")
-  return spawnSync(process.execPath, [bin, ...(args.length > 0 ? args : ["--noEmit"])], { stdio: "inherit" }).status ??
-    1
+  // `efx check` never writes files (review I2)
+  const noEmit = args.includes("--noEmit") ? [] : ["--noEmit"]
+  return spawnSync(process.execPath, [bin, ...args, ...noEmit], { stdio: "inherit" }).status ?? 1
 }

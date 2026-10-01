@@ -1,0 +1,36 @@
+speaker,line,start_time,end_time
+Narrator,"[softly, thoughtful] Every great idea...",1.8,3.5
+Narrator,"[softly, thoughtful] starts as one line.",3.6,5.6
+Narrator,"[quietly, warm] One line. [pause] One intention.",8.6,10.6
+Narrator,"[warm, a little in awe] You found Effect.",12.8,14.4
+Narrator,[growing excitement] Typed errors.,16.0,17.1
+Narrator,[growing excitement] Retries.,18.0,19.0
+Narrator,[growing excitement] Resources that never leak.,20.0,21.9
+Narrator,[growing excitement] Concurrency... that just works.,22.0,24.2
+Narrator,"[proud, with a quiet smile] It felt like a superpower.",24.4,26.8
+Narrator,"[slower, hesitant] ...Then you wrote it down.",28.1,31.0
+Narrator,"[dry, increasingly tired, speeding up] Generators. Pipes. Layers. Tags. Wrappers... around wrappers.",34.6,38.2
+Narrator,[weary] You wanted reliability.,42.0,43.5
+Narrator,"[flat, heavy] You got ceremony.",46.0,47.5
+Narrator,"[barely above a whisper, wondering, as if the idea just arrived] What if the language...",56.6,58.5
+Narrator,"[barely above a whisper, wondering] just understood?",58.6,59.8
+Narrator,"[calm, confident] Introducing...",72.6,73.8
+Narrator,"[warm, proud] EffectScript.",76.6,77.6
+Narrator,"[clear, simple] TypeScript... with Effect built into the language.",78.6,82.2
+Narrator,"[bright, confident, conversational] An effect is just a function. And await... is yield star.",83.6,88.8
+Narrator,"[bright, confident] Errors live in the signature. Throw means fail.",89.6,93.1
+Narrator,"[bright, confident] Catch by type. Whatever you don't handle... stays in the type.",95.6,100.8
+Narrator,"[bright, confident] Behaviour reads left to right.",101.4,103.8
+Narrator,[lightly amused] Services and layers... without the incantation.,108.6,111.8
+Narrator,[crisp] Cleanup you can't forget.,114.3,116.2
+Narrator,[crisp] Schemas. Pattern matching. Built in.,119.3,121.6
+Narrator,"[satisfied, confident] And it all compiles to plain, idiomatic Effect.",122.4,126.0
+Narrator,"[hushed, intimate, late at night] Three-oh-seven A.M.",126.8,128.0
+Narrator,"[hushed, intimate] The database blinks.",128.5,130.1
+Narrator,"[softly, reassuring] Your code already knew what to do.",135.0,138.2
+Narrator,"[warm, tender, with a small smile] You slept through it.",138.3,140.2
+Narrator,"[slow, sincere] Because you wrote... what you meant.",140.9,144.2
+Narrator,"[resolute, quietly powerful] All of Effect.",145.0,146.6
+Narrator,"[warm, certain] None of the ceremony.",147.5,149.4
+Narrator,"[warm, inviting] EffectScript.",154.6,155.6
+Narrator,[softly] Built on Effect.,156.4,158.0

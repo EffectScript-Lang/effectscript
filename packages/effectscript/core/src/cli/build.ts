@@ -7,12 +7,12 @@
 import { MagicString } from "magic-string"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import ts from "typescript"
 import { children, type Node } from "../compiler/ast.ts"
 import { toTypeScript } from "../compiler/compile.ts"
 import { formatDiagnostic } from "../compiler/diagnostics.ts"
 import type { CodeMapping } from "../compiler/options.ts"
 import { type Mode, parse } from "../compiler/parser/parse.ts"
+import type { TypeScript } from "./typescript.ts"
 
 /**
  * @since 4.0.0
@@ -29,12 +29,6 @@ interface Compiled {
   readonly code: string
   readonly source: string
   readonly mappings: ReadonlyArray<CodeMapping>
-}
-
-const efxExtension: ts.FileExtensionInfo = {
-  extension: ".efx",
-  isMixedContent: false,
-  scriptKind: ts.ScriptKind.Deferred
 }
 
 const stagedName = (file: string, mode: Mode) => file.replace(/\.efx$/, mode === "tsx" ? ".tsx" : ".ts")
@@ -85,7 +79,11 @@ const toSourceOffset = (mappings: ReadonlyArray<CodeMapping>, offset: number): n
  * @since 4.0.0
  * @category build
  */
-export const build = (options: { readonly project: string; readonly cwd?: string | undefined }): BuildResult => {
+export const build = (
+  ts: TypeScript,
+  options: { readonly project: string; readonly cwd?: string | undefined }
+): BuildResult => {
+  const efxExtension = { extension: ".efx", isMixedContent: false, scriptKind: ts.ScriptKind.Deferred }
   const cwd = options.cwd ?? process.cwd()
   const configPath = path.resolve(cwd, options.project)
   const projectDir = path.dirname(configPath)
