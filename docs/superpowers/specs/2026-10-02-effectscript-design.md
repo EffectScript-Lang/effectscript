@@ -1183,6 +1183,38 @@ CI. It detects:
 **One-command onboarding:** `efx setup` and `efx convert` are offered at the end of `brew install`
 (via the formula's caveats) and at the end of `efx init`.
 
+### 7.6 Versioning, the Effect version header, and release automation
+
+**Lockstep versions.** EffectScript's major.minor follows Effect's; the patch number is
+EffectScript's own (the `@types/node` convention):
+
+- `effectscript@4.0.x` targets `effect@4.0.*`, as a peer dependency `effect: ~4.0.0`.
+- When Effect releases 4.1.0, `effectscript@4.1.0` follows.
+- During the experiment, releases are `4.0.0-alpha.N`.
+
+The link is technical, not cosmetic: the prelude tables (§4.13) and the builtins are generated from
+that Effect release's source.
+
+**Version header.** A file may start with `// @effect 4.0`:
+
+- It tells an agent or reader which Effect API the file targets, even for a single file pasted
+  without its project.
+- `efx init` and `efx convert` can add it (`header: true` in config).
+- The source of truth is still the project's installed `effect`. The compiler warns (EFX1003) when
+  a header and the installed major.minor disagree.
+
+**Release automation (CI):**
+
+1. **Trigger:** a new `effect` release, detected by watching npm or upstream tags.
+2. **Upgrade:** a workflow syncs the upstream merge into this fork and regenerates the prelude tables
+   (`pnpm codegen`). It then runs the full EffectScript suite against the new Effect: superset,
+   goldens, type-checking, runtime, and the reverse round trip.
+3. **Green:** open a release PR, then publish `effectscript@<effect major.minor>.0`, the binaries,
+   the Homebrew formula, and the VS Code extension.
+4. **Red:** open an issue with the failing tests. Hand it to an AI agent, either GitHub Copilot's
+   coding agent or the Claude Code GitHub Action, with the skill and the failing goldens as context.
+   A human reviews the resulting PR before anything ships.
+
 ## 8. AI skill (`packages/effectscript/core/skills/effectscript/`)
 
 - `SKILL.md`: when to use EffectScript, the core rules (`effect`/`await`/`throw`, services, errors,
