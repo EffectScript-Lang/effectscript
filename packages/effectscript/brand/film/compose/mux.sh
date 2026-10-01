@@ -11,7 +11,7 @@ if [ -f vo.wav ] && [ -f duck.wav ]; then
   # music dips under the narrator; Foley and voice sit on top
   music=score.wav; [ -f music.wav ] && music=music.wav
   ffmpeg -y -loglevel error -i "$music" -i duck.wav -i sfx.wav -i vo.wav \
-    -filter_complex "[0:a][1:a]amultiply[m];[2:a]volume=0.8[f];[3:a]volume=1.0[v];[m][f][v]amix=inputs=3:normalize=0:duration=first,alimiter=limit=0.891:level=false" \
+    -filter_complex "[0:a][1:a]amultiply[m];[2:a]volume=0.8[f];[3:a]volume=1.0[v];[m][f][v]amix=inputs=3:normalize=0:duration=first,volume=2dB,alimiter=limit=0.891:level=false" \
     -c:a pcm_s24le mix.wav
 else
   ffmpeg -y -loglevel error -i score.wav -i sfx.wav \

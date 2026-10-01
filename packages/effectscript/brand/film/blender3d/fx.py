@@ -154,6 +154,7 @@ def new_scene(frames, engine="BLENDER_EEVEE", samples=32):
         c.denoiser = "OPENIMAGEDENOISE"
         c.denoising_input_passes = "RGB_ALBEDO_NORMAL"
         c.denoising_prefilter = "ACCURATE"
+        c.denoising_use_gpu = True
         c.max_bounces = 6
         c.diffuse_bounces = 2
         c.glossy_bounces = 3

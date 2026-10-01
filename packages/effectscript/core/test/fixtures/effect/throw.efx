@@ -1,11 +1,12 @@
 import { Data } from "effect"
 
 class Invalid extends Data.TaggedError("Invalid")<{}> {}
+class Zero extends Data.TaggedError("Zero")<{}> {}
 
-effect check(n: number): number throws Invalid | string {
+effect check(n: number): number throws Invalid | Zero {
   if (n < 0) throw new Invalid()
   if (n === 0) {
-    throw "zero"
+    throw new Zero()
   }
   const parse = (s: string) => {
     if (s === "") throw new Error("plain JS throw")

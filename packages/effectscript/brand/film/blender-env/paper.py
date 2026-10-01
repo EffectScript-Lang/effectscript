@@ -494,7 +494,7 @@ def build():
     scene.render.use_motion_blur = True
     scene.render.motion_blur_shutter = 0.5
     scene.render.motion_blur_position = "CENTER"
-    E.compositor(scene, bloom=0.35, bloom_size=0.75, threshold=2.0, vignette=0.4, gain=float(os.environ.get("GAIN", "1.0")))
+    E.compositor(scene, bloom=0.35, bloom_size=0.75, threshold=2.0, vignette=0.4, gain=float(os.environ.get("GAIN", "1.3")))
 
     w = bpy.data.worlds.new("Dark")
     scene.world = w
@@ -541,7 +541,7 @@ def build():
 
     # the lamp: a spot inside the shade plus the glowing bulb
     sd = bpy.data.lights.new("LampKey", "SPOT")
-    sd.energy = float(os.environ.get("LAMP", "170"))
+    sd.energy = float(os.environ.get("LAMP", "90"))
     sd.color = (1.0, 0.92, 0.8)
     sd.spot_size = math.radians(84)
     sd.spot_blend = 0.35

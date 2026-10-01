@@ -325,7 +325,7 @@ def fibre_material():
 
 
 def build():
-    scene = fx.new_scene(FRAMES, samples=32)
+    scene = fx.new_scene(FRAMES, samples=16)
     scene.render.use_motion_blur = os.environ.get("NO_MB", "") == ""
     scene.render.motion_blur_shutter = 0.3
     scene.eevee.motion_blur_steps = int(os.environ.get("MB_STEPS", "1"))
@@ -337,7 +337,7 @@ def build():
     # lights: a long soft top light catches the cable sheen; a back light far
     # down the tunnel rims everything and glows in the haze; a weak low fill
     fx.area(scene, "Top", (0.0, 9.0, 6.0), (0.0, 9.0, 0.0), 1000, size=1.2, size_y=26.0, volume=0.2)
-    fx.spot(scene, "Back", (2.5, 40.0, 9.0), (0.0, 4.0, -0.5), 16000, 34, blend=1.0, radius=3.0, volume=0.6)
+    fx.spot(scene, "Back", (2.5, 40.0, 9.0), (0.0, 4.0, -0.5), 16000, 34, blend=1.0, radius=3.0, volume=0.45)
     kick = fx.spot(scene, "Kick", (-6.0, 2.0, -3.0), (0.0, 8.0, 0.5), 250, 50, blend=1.0, radius=2.0, volume=0.05)
     kick.data.use_shadow = False
 

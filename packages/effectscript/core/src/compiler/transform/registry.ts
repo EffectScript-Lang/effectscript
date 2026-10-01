@@ -17,6 +17,7 @@ import { resourceHandlers } from "./resources.ts"
 import { returnTypeHandlers } from "./returnType.ts"
 import { schemaHandlers } from "./schema.ts"
 import { serviceHandlers } from "./service.ts"
+import { strictHandlers } from "./strict.ts"
 import { testHandlers } from "./test.ts"
 import { tryHandlers } from "./try.ts"
 
@@ -49,6 +50,7 @@ export const registry = (...groups: ReadonlyArray<HandlerGroup>): ReadonlyMap<st
  * @category handlers
  */
 export const handlers = registry(
+  strictHandlers,
   importRewriteHandlers,
   schemaHandlers,
   configHandlers,

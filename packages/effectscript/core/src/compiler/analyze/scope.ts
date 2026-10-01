@@ -30,6 +30,8 @@ export interface ScopeAnalysis {
   /** Module-level class name → its `_tag` (from `error`/`schema` declarations and `Tagged*` superclasses). */
   readonly localTags: ReadonlyMap<string, string>
   readonly localEffects: Set<string>
+  /** Module-level `async` functions (EFX8111). */
+  readonly localAsync: Set<string>
   readonly bindings: Set<Node>
   /** Every identifier name in the file, bound or free (for fresh names, ADR-0009). */
   readonly identifierNames: ReadonlySet<string>
@@ -149,6 +151,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
   const localErrors = new Set<string>()
   const localTags = new Map<string, string>()
   const localEffects = new Set<string>()
+  const localAsync = new Set<string>()
   const bindings = new Set<Node>()
 
   const visitChildren = (node: Node, scope: Scope): void => {
@@ -160,6 +163,8 @@ export const analyze = (program: Node): ScopeAnalysis => {
       if (node.id) {
         scope.values.add(node.id.name)
         bindings.add(node.id)
+        // `effect` functions are parsed as async (to allow `await`); they are not Promises
+        if (scope === module && node.async === true && node.efx === undefined) localAsync.add(node.id.name)
       }
       // a declaration with `|>` pipes may no longer return an Effect (ADR-0012)
       if (
@@ -207,6 +212,9 @@ export const analyze = (program: Node): ScopeAnalysis => {
           for (const name of patternNames(declarator.id, [], bindings)) target.values.add(name)
           if (scope === module && node.kind === "const" && declarator.id.type === "Identifier" && declarator.init) {
             constInits.set(declarator.id.name, declarator.init)
+            if (declarator.init.async === true && declarator.init.efx === undefined) {
+              localAsync.add(declarator.id.name)
+            }
           }
         }
         return visitChildren(node, scope)
@@ -340,6 +348,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
     localErrors,
     localTags,
     localEffects,
+    localAsync,
     bindings,
     identifierNames: collectNames(program),
     innerBound,
