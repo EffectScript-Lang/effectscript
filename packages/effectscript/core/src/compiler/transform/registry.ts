@@ -5,6 +5,7 @@ import type { Handler } from "../context.ts"
 import { awaitHandlers } from "./await.ts"
 import { effectHandlers } from "./effect.ts"
 import { mainHandlers } from "./main.ts"
+import { matchHandlers } from "./match.ts"
 import { pipelineHandlers } from "./pipeline.ts"
 import { preludeHandlers } from "./prelude.ts"
 import { proposalHandlers } from "./proposals.ts"
@@ -51,6 +52,7 @@ export const handlers = registry(
   resourceHandlers,
   proposalHandlers,
   pipelineHandlers,
+  matchHandlers,
   awaitHandlers,
   returnTypeHandlers,
   preludeHandlers

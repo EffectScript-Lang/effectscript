@@ -120,4 +120,23 @@ describe("runtime", () => {
     expect(mod.live).toBe("hi ada")
     expect(mod.test).toBe("test ada")
   })
+
+  it("match dispatches on tags and literals", async () => {
+    const mod = await runCompiled(`
+      schema Shape =
+        | Circle { radius: number }
+        | Square { side: number }
+      export const areas = [new Circle({ radius: 1 }), new Square({ side: 2 })].map((s) =>
+        match (s) {
+          when Circle({ radius }): radius * 10
+          when Square({ side }): side * side
+        }
+      )
+      export const words = (["a", "b", "z"] as const).map((x) =>
+        match (x) { when "a": "first"; when "b": "second"; default: "other" }
+      )
+    `)
+    expect(mod.areas).toEqual([10, 4])
+    expect(mod.words).toEqual(["first", "second", "other"])
+  })
 })

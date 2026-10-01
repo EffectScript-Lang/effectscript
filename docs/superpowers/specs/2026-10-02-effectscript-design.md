@@ -539,7 +539,7 @@ const label = Match.value(status).pipe(
 - **Output:** if every arm is a tag pattern and there is no `default` → `Match.valueTags`.
   Otherwise → `Match.value(x).pipe(Match.tag | Match.when …, Match.orElse | Match.exhaustive)`.
 - **Inside `effect`:** if any arm contains `await` or `throw`, every arm becomes
-  `Effect.fnUntraced(function*(binding) { return arm })` and the whole match is yielded.
+  `(binding) => Effect.gen(function*() { return arm })` and the whole match is yielded.
 - **Syntax:** `match (x) {` requires the `{` on the same line as `)`. Guards (`if (…)`) are on the
   roadmap.
 

@@ -238,6 +238,7 @@ export const efxPlugin = (Base: any): any =>
     }
 
     parseExprAtom(refDestructuringErrors: unknown, forInit: unknown, forNew: unknown): any {
+      if (this.efxIsMatchAhead()) return this.efxParseMatch()
       if (this.efxIsWord("effect")) {
         const next = this.lookahead()
         if (this.efxSameLine(next)) {
@@ -493,5 +494,69 @@ export const efxPlugin = (Base: any): any =>
       this.finishNode(node, "MainStatement")
       this.efxAttachPipes(node)
       return node
+    }
+
+    efxIsMatchAhead(): boolean {
+      if (!this.efxIsWord("match")) return false
+      const next = this.lookahead()
+      if (next.type !== tt.parenL || !this.efxSameLine(next)) return false
+      const end = skipBalanced(this.input, next.start)
+      if (end === -1) return false
+      const after = skipSpace(this.input, end)
+      return this.input[after] === "{" && !lineBreak.test(this.input.slice(end, after))
+    }
+
+    efxParseMatchPattern(): any {
+      const node = this.startNode()
+      if (
+        this.type === tt.string || this.type === tt.num || this.type === tt._true || this.type === tt._false ||
+        this.type === tt._null || this.efxIsWord("undefined")
+      ) {
+        node.value = this.efxIsWord("undefined") ? this.parseIdent() : this.parseExprAtom(null, false, false)
+        return this.finishNode(node, "LiteralPattern")
+      }
+      let tag = this.parseIdent()
+      while (this.eat(tt.dot)) {
+        const member = this.startNodeAt(tag.start, tag.loc.start)
+        member.object = tag
+        member.property = this.parseIdent(true)
+        member.computed = false
+        tag = this.finishNode(member, "MemberExpression")
+      }
+      node.tag = tag
+      node.binding = null
+      if (this.eat(tt.parenL)) {
+        node.binding = this.parseBindingAtom()
+        this.expect(tt.parenR)
+      }
+      return this.finishNode(node, "TagPattern")
+    }
+
+    efxParseMatch(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      this.expect(tt.parenL)
+      node.discriminant = this.parseExpression()
+      this.expect(tt.parenR)
+      this.expect(tt.braceL)
+      node.arms = []
+      while (!this.eat(tt.braceR)) {
+        const arm = this.startNode()
+        if (this.type === tt._default) {
+          this.next()
+          arm.pattern = null
+        } else if (this.efxIsWord("when")) {
+          this.next()
+          arm.pattern = this.efxParseMatchPattern()
+        } else {
+          this.unexpected()
+        }
+        this.expect(tt.colon)
+        arm.body = this.parseMaybeAssign()
+        if (!this.eat(tt.semi)) this.eat(tt.comma)
+        node.arms.push(this.finishNode(arm, "MatchArm"))
+      }
+      return this.finishNode(node, "MatchExpression")
     }
   }

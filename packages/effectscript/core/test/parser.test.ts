@@ -185,3 +185,19 @@ describe("schema declarations", () => {
     ok("const schema = { parse: (x: unknown) => x }\nschema.parse(1)\n")
   })
 })
+
+describe("match", () => {
+  it("parses tag, literal and default arms; match() calls stay calls", () => {
+    const { program } = ok(
+      "const a = match (s) {\n  when Circle({ radius }): radius\n  when \"x\": 1; default: 0\n}\nconst b = match(1, 2)\n"
+    )
+    const m = program.body[0].declarations[0].init
+    expect(m.type).toBe("MatchExpression")
+    expect(m.arms.map((arm: any) => arm.pattern?.type ?? "default")).toEqual([
+      "TagPattern",
+      "LiteralPattern",
+      "default"
+    ])
+    expect(program.body[1].declarations[0].init.type).toBe("CallExpression")
+  })
+})
