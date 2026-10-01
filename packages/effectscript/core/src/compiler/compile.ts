@@ -49,7 +49,8 @@ const withDirectives = (options: ResolvedOptions, source: string): ResolvedOptio
   ...options,
   prelude: options.prelude && !directive(source, "no-prelude"),
   ambient: options.ambient && !directive(source, "no-ambient"),
-  strict: options.strict || directive(source, "strict")
+  strict: options.strict || directive(source, "strict"),
+  observability: options.observability ?? (directive(source, "observability\\s+otlp") ? "otlp" : undefined)
 })
 
 /** EFX1003: a `// @effect X.Y` header that disagrees with the installed `effect` (§7.6). */

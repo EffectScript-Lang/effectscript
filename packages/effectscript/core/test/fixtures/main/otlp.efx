@@ -1,0 +1,4 @@
+// @efx observability otlp
+main {
+  await log("traced")
+}

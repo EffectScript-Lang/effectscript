@@ -30,6 +30,8 @@ export interface CompileOptions {
   readonly strict?: boolean | undefined
   /** The installed `effect` version, compared with a `// @effect X.Y` header (EFX1003). Project-only: supplied by integrations. */
   readonly effectVersion?: string | undefined
+  /** `"otlp"`: `main` provides OTLP telemetry from `OTEL_*` configuration (ADR-0029). `// @efx observability otlp` turns it on. Browser-safe. */
+  readonly observability?: "otlp" | undefined
 }
 
 /**
@@ -48,6 +50,7 @@ export interface ResolvedOptions {
   readonly ambient: boolean
   readonly strict: boolean
   readonly effectVersion: string | undefined
+  readonly observability: "otlp" | undefined
 }
 
 /**
@@ -65,7 +68,8 @@ export const resolveOptions = (options: CompileOptions): ResolvedOptions => ({
   recover: options.recover ?? false,
   ambient: options.ambient ?? true,
   strict: options.strict ?? false,
-  effectVersion: options.effectVersion
+  effectVersion: options.effectVersion,
+  observability: options.observability
 })
 
 /**

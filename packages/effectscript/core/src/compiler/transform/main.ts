@@ -58,7 +58,16 @@ const mainStatement: Handler = (node, parent, ctx) => {
   ctx.s.update(node.start, node.body.start, `${runtime}.runMain(${E}.gen(function*() `)
   const frame = makeFrame(node, "main")
   withEffect(ctx, frame, () => walk(node.body, node, ctx))
-  const provide = services === undefined ? undefined : `${E}.provide(${services}.layer)`
+  const telemetry = ctx.options.observability === "otlp"
+    ? `${E}.provide(${ref(ctx, "effect/observability", "Otlp")}.layerFromConfig().pipe(${
+      ref(ctx, "effect", "Layer")
+    }.provide([${ref(ctx, "effect/http", "FetchHttpClient")}.layer, ${
+      ref(ctx, "effect/observability", "OtlpSerialization")
+    }.layerJson])))`
+    : undefined
+  const provides = [telemetry, services === undefined ? undefined : `${E}.provide(${services}.layer)`]
+    .filter((p): p is string => p !== undefined)
+  const provide = provides.length === 0 ? undefined : provides.join(", ")
   const pipes: Array<Node> = node.efxPipes
   if (pipes.length === 0) {
     const extras = [...(frame.scoped ? [`${E}.scoped`] : []), ...(provide === undefined ? [] : [provide])]
