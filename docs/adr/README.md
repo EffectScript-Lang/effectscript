@@ -38,6 +38,8 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0024](0024-register-strip-mode-fallback.md)          | `effectscript/register` falls back to strip mode              | Accepted, amended by 0026 |
 | [0025](0025-launch-film-made-from-code.md)            | The launch film is made from code; generated photos are plates only | Accepted |
 | [0026](0026-register-strip-first-with-source-maps.md)  | `effectscript/register` strips first and maps stack traces to `.efx` | Accepted |
+| [0027](0027-ambient-process-env-preserves-undefined.md) | Ambient `process.env.NAME` keeps its `string \| undefined` meaning | Accepted |
+| [0028](0028-strict-mode-syntactic-rules.md)          | Strict-mode rules are syntactic; warnings never affect the superset guarantee | Accepted |
 
 ## Template
 
