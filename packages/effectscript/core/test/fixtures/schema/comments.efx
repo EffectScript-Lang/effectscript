@@ -1,0 +1,7 @@
+/** A product. */
+export schema Product {
+  // the sku
+  sku: string
+  /** price in cents */
+  price: Int
+}

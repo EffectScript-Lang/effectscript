@@ -25,6 +25,7 @@ const lineBreak = /[\n\r\u2028\u2029]/
 interface EfxState {
   pipeDepth: number
   readonly arrowStarts: Set<number>
+  readonly classKinds: Array<string>
 }
 
 /**
@@ -33,7 +34,7 @@ interface EfxState {
 export const efxPlugin = (Base: any): any =>
   class EfxParser extends Base {
     efxState(): EfxState {
-      return (this.efx ??= { pipeDepth: 0, arrowStarts: new Set<number>() })
+      return (this.efx ??= { pipeDepth: 0, arrowStarts: new Set<number>(), classKinds: [] })
     }
 
     // --- token helpers ---------------------------------------------------------------------------
@@ -159,11 +160,13 @@ export const efxPlugin = (Base: any): any =>
     parseStatement(context: unknown, topLevel: unknown, exports: unknown): any {
       if (this.efxIsEffectDeclarationStart()) return this.efxParseEffectDeclaration(false)
       if (this.efxDeferFollows()) return this.efxParseDefer()
+      if (this.efxIsWord("schema") && this.efxNextIsNameSameLine()) return this.efxParseSchema()
+      if (this.efxIsClassLikeStart()) return this.efxParseClassLike(this.value)
       return super.parseStatement(context, topLevel, exports)
     }
 
     shouldParseExportStatement(): any {
-      return this.efxIsEffectDeclarationStart() || super.shouldParseExportStatement()
+      return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() || super.shouldParseExportStatement()
     }
 
     parseExportDefaultDeclaration(): any {
@@ -386,5 +389,72 @@ export const efxPlugin = (Base: any): any =>
       }
       node.argument = left
       return this.finishNode(node, "AwaitExpression")
+    }
+
+    efxIsClassLikeStart(): boolean {
+      return (this.efxIsWord("schema") || this.efxIsWord("error") || this.efxIsWord("service")) &&
+        this.efxNextIsNameSameLine()
+    }
+
+    efxParseClassLike(kind: string): any {
+      const node = this.startNode()
+      node.efxKind = kind
+      node.efxKeyword = { start: this.start, end: this.end }
+      return this.parseClass(node, true)
+    }
+
+    parseClass(node: any, isStatement: unknown): any {
+      const state = this.efxState()
+      state.classKinds.push(node.efxKind ?? "class")
+      try {
+        return super.parseClass(node, isStatement)
+      } finally {
+        state.classKinds.pop()
+      }
+    }
+
+    efxParseSchema(): any {
+      const name = this.lookahead()
+      const after = skipSpace(this.input, name.end)
+      if (this.input[after] === "=" && this.input[after + 1] !== "=" && this.input[after + 1] !== ">") {
+        return this.efxParseSchemaAlias()
+      }
+      return this.efxParseClassLike("schema")
+    }
+
+    efxIsVariantsStart(): boolean {
+      let i = this.start
+      if (this.type === tt.bitwiseOR) i = skipSpace(this.input, this.end)
+      const match = /^[A-Za-z_$][\w$]*/.exec(this.input.slice(i))
+      return match !== null && this.input[skipSpace(this.input, i + match[0].length)] === "{"
+    }
+
+    efxParseSchemaAlias(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.id = this.parseIdent()
+      this.expect(tt.eq)
+      if (this.efxIsVariantsStart()) {
+        node.variants = []
+        this.eat(tt.bitwiseOR)
+        do {
+          const id = this.startNode()
+          const name = this.value
+          const idEnd = this.end
+          const idEndLoc = this.endLoc
+          const variant = this.startNode()
+          variant.efxKind = "variant"
+          this.parseClass(variant, "nullableID") // consumes the variant name in place of `class`
+          id.name = name
+          variant.id = this.finishNodeAt(id, "Identifier", idEnd, idEndLoc)
+          node.variants.push(variant)
+        } while (this.eat(tt.bitwiseOR))
+        this.semicolon()
+        return this.finishNode(node, "SchemaAdtDeclaration")
+      }
+      node.typeAnnotation = this.tsInType(() => this.tsParseType())
+      this.semicolon()
+      return this.finishNode(node, "SchemaAliasDeclaration")
     }
   }

@@ -204,6 +204,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
         if (node.type === "ClassDeclaration" && node.id) {
           scope.values.add(node.id.name)
           scope.types.add(node.id.name)
+          if (scope === module && node.efxKind === "error") localErrors.add(node.id.name)
         }
         const inner = makeScope(scope, "block")
         scopeOf.set(node, inner)
@@ -236,6 +237,20 @@ export const analyze = (program: Node): ScopeAnalysis => {
         scope.values.add(node.id.name)
         scope.types.add(node.id.name)
         return visitChildren(node, scope)
+      }
+      case "SchemaAliasDeclaration": {
+        scope.values.add(node.id.name)
+        scope.types.add(node.id.name)
+        bindings.add(node.id)
+        return
+      }
+      case "SchemaAdtDeclaration": {
+        for (const named of [node, ...node.variants]) {
+          scope.values.add(named.id.name)
+          scope.types.add(named.id.name)
+          bindings.add(named.id)
+        }
+        return
       }
       case "TSConditionalType": {
         visit(node.checkType, scope)

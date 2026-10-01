@@ -166,3 +166,22 @@ describe("pipelines and await", () => {
     expect(program.body[1].declarations[0].init.operator).toBe("%")
   })
 })
+
+describe("schema declarations", () => {
+  it("parses the class, alias and ADT forms", () => {
+    const { program } = ok(
+      "export schema User {\n  id: string\n  email?: string\n}\nschema Id = string & Brand<\"Id\">\nschema Shape =\n  | Circle { radius: number }\n  | Empty {}\n"
+    )
+    const cls = program.body[0].declaration
+    expect(cls.type).toBe("ClassDeclaration")
+    expect(cls.efxKind).toBe("schema")
+    expect(cls.body.body[1].optional).toBe(true)
+    expect(program.body[1].type).toBe("SchemaAliasDeclaration")
+    expect(program.body[2].type).toBe("SchemaAdtDeclaration")
+    expect(program.body[2].variants.map((v: any) => v.id.name)).toEqual(["Circle", "Empty"])
+  })
+
+  it("keeps schema as an identifier elsewhere", () => {
+    ok("const schema = { parse: (x: unknown) => x }\nschema.parse(1)\n")
+  })
+})

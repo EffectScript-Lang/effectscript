@@ -85,3 +85,13 @@ describe("pipeline diagnostics", () => {
     expect(codes("effect f() {\n  return 1\n} |> g(%)\n")).toEqual(["EFX5001"])
   })
 })
+
+describe("schema diagnostics", () => {
+  it("EFX3001: unsupported types", () => {
+    expect(codes("schema A {\n  f: keyof B\n}\n")).toEqual(["EFX3001"])
+  })
+
+  it("EFX3002: extends is not supported", () => {
+    expect(codes("schema A extends B {\n  x: string\n}\n")).toEqual(["EFX3002"])
+  })
+})

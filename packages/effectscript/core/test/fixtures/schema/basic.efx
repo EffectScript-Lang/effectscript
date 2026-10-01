@@ -1,0 +1,26 @@
+schema UserId = string & Brand<"UserId">
+
+export schema User {
+  id: UserId
+  name: string
+  email?: string
+  tags: ReadonlyArray<string>
+  role: "admin" | "member"
+  manager: UserId | null
+  age = Int.check(isGreaterThan(0))
+  get label() {
+    return `${this.name} <${this.email ?? "?"}>`
+  }
+}
+
+export schema Point = { x: number; y: number }
+
+export schema Shape =
+  | Circle { radius: number }
+  | Square { side: number }
+
+schema Event {
+  _tag: "Event"
+  at: Date
+  payload: Record<string, unknown>
+}
