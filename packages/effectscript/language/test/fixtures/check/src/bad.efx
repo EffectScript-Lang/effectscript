@@ -1,0 +1,4 @@
+export effect bad(): string {
+  const n: number = "nope"
+  return String(n)
+}

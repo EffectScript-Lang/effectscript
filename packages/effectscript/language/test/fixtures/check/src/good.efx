@@ -1,0 +1,6 @@
+export effect double(n: number): number {
+  const x = await succeed(n)
+  return x * 2
+}
+
+export schema User { name: string }

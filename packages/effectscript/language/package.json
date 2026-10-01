@@ -53,5 +53,8 @@
     "typescript": "^6.0.3",
     "vitest": "^5.0.2"
   },
-  "main": "./bin/typescript-plugin.cjs"
+  "main": "./bin/typescript-plugin.cjs",
+  "bin": {
+    "efx-tsc": "./bin/efx-tsc.js"
+  }
 }
