@@ -1,0 +1,8 @@
+export config AppConfig {
+  port: Port = 3000
+  databaseUrl: Redacted
+  logLevel: LogLevel = "Info"
+  region?: "eu" | "us"
+  serviceName: string
+  workers: Int = 4
+}

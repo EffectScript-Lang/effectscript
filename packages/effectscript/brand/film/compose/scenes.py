@@ -741,7 +741,7 @@ def introducing(c, t):
         draw_frame(c, blender_frame("monolith", int((t - 68.0) * FPS) + 1), alpha=1 - smooth(phase(t, 76.2, 77.4)))
     flash(c, math.exp(-max(0.0, t - 70.0) * 5) * (t >= 70.0) * 0.55)
     a = window(t, 72.4, 75.8, 0.6, 0.5)
-    text(c, "Introducing", W / 2, 880, 44, DISPLAY_SEMI, SUBTLE, alpha=a, align="center", tracking=0.01)
+    text(c, "Introducing", W / 2, 170, 44, DISPLAY_SEMI, SUBTLE, alpha=a, align="center", tracking=0.01)
     if t < 76.2:
         return
     # the 3D mark flattens into the logo, then makes room for the wordmark

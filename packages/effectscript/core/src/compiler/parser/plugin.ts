@@ -414,7 +414,8 @@ export const efxPlugin = (Base: any): any =>
     }
 
     efxIsClassLikeStart(): boolean {
-      return (this.efxIsWord("schema") || this.efxIsWord("error") || this.efxIsWord("service")) &&
+      return (this.efxIsWord("schema") || this.efxIsWord("error") || this.efxIsWord("service") ||
+        this.efxIsWord("config")) &&
         this.efxNextIsNameSameLine()
     }
 
