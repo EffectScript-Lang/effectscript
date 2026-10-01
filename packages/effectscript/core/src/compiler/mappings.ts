@@ -22,6 +22,22 @@ export const fullFeatures: CodeInformation = {
   format: false
 }
 
+/**
+ * For edited or generated text (a rewritten keyword, inserted Effect calls): diagnostics map back to
+ * the source, but completion, navigation, rename and hover don't (review D10).
+ *
+ * @since 0.1.0
+ * @category constants
+ */
+export const generatedFeatures: CodeInformation = {
+  verification: true,
+  completion: false,
+  semantic: false,
+  navigation: false,
+  structure: false,
+  format: false
+}
+
 const lineStarts = (text: string): Array<number> => {
   const starts = [0]
   for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) === 10) starts.push(i + 1)
@@ -47,11 +63,16 @@ export const toCodeMappings = (s: MagicString, source: string, code: string): Ar
   let i = 0
   while (i < points.length) {
     const [generated, original] = points[i]!
+    // A run is consecutive, unchanged characters. An edited chunk starts with one segment that can
+    // look like the continuation of the previous run, so runs also require matching characters.
+    const same = (point: readonly [number, number]) => code[point[0]] === source[point[1]]
     let j = i
     while (
+      same(points[i]!) &&
       j + 1 < points.length &&
       points[j + 1]![0] === points[j]![0] + 1 &&
-      points[j + 1]![1] === points[j]![1] + 1
+      points[j + 1]![1] === points[j]![1] + 1 &&
+      same(points[j + 1]!)
     ) j++
     const next = points[j + 1]
     if (j > i) {
@@ -64,15 +85,19 @@ export const toCodeMappings = (s: MagicString, source: string, code: string): Ar
     } else {
       const generatedLength = (next === undefined ? code.length : next[0]) - generated
       const sourceLength = next !== undefined && next[1] > original ? next[1] - original : generatedLength
+      // A chunk whose text is unchanged is user code; anything else was edited or generated.
+      const verbatim = generatedLength === sourceLength &&
+        source.slice(original, original + sourceLength) === code.slice(generated, generated + generatedLength)
+      const data = verbatim ? fullFeatures : generatedFeatures
       mappings.push(
         generatedLength === sourceLength
-          ? { sourceOffsets: [original], generatedOffsets: [generated], lengths: [sourceLength], data: fullFeatures }
+          ? { sourceOffsets: [original], generatedOffsets: [generated], lengths: [sourceLength], data }
           : {
             sourceOffsets: [original],
             generatedOffsets: [generated],
             lengths: [sourceLength],
             generatedLengths: [generatedLength],
-            data: fullFeatures
+            data
           }
       )
     }

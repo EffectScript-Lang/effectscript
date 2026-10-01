@@ -27,3 +27,21 @@ describe("mappings", () => {
     expect(mapping!.sourceOffsets[0]! + (generated - mapping!.generatedOffsets[0]!)).toBe(original)
   })
 })
+
+describe("D10: role-aware mappings", () => {
+  it("rewritten keywords get diagnostics only; user identifiers keep navigation", () => {
+    const source = "export effect f(x: number) {\n  return await g(x)\n}\n"
+    const { mappings } = toTypeScript(source)
+    const covering = (offset: number) =>
+      mappings.find((m) => m.sourceOffsets[0]! <= offset && offset < m.sourceOffsets[0]! + m.lengths[0]!)
+    const keyword = covering(source.indexOf("effect"))!
+    expect(keyword.data.navigation).toBe(false)
+    expect(keyword.data.completion).toBe(false)
+    expect(keyword.data.verification).toBe(true)
+    const awaitKeyword = covering(source.indexOf("await"))!
+    expect(awaitKeyword.data.semantic).toBe(false)
+    const identifier = covering(source.indexOf("x: number"))!
+    expect(identifier.data.navigation).toBe(true)
+    expect(identifier.data.semantic).toBe(true)
+  })
+})
