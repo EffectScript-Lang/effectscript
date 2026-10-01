@@ -62,7 +62,7 @@ turns idiomatic Effect TypeScript back into EffectScript, so adopting it never l
 | ----------------- | ----------------------------------------------------------------------- |
 | Name / extension  | **EffectScript**, `.efx`                                                 |
 | Effect keyword    | `effect` (self-explanatory, same token cost as `fx`, the brand itself)   |
-| Effect bind       | `await` inside `effect` code (in place of `yield*`)                      |
+| Effect bind       | `await` inside `effect` code (in place of `yield*`), with guardrails: EFX8111, distinct editor styling and hover for effect awaits, a plain-English rewrite of Promise-await type errors, and docs that lead with `async` ↔ `effect` (decided after a multi-angle review; `run`/`perform`/postfix `.run` rejected) |
 | Combinators       | Bare Effect builtins (`retry`, `timeout`, `all`, …); namespace follows the construct |
 | Philosophy        | Effect primitives over plain TS: builtins, ambient capture, strict rules |
 | Location          | Inside the Effect monorepo, following its conventions                   |
@@ -835,6 +835,7 @@ Errors apply only to `effect` code, so the superset guarantee holds:
 | EFX8003 | `Effect.runPromise/runSync/runFork/runCallback` inside `effect` (running effects inside effects)        |
 | EFX8004 | `throw` of a primitive (`throw "x"`); declare an `error`                                          |
 | EFX8005 | `catch (e: any)`                                                                                  |
+| EFX8111 | `await` on a visible Promise inside `effect` (`fetch(…)`, `new Promise`, `Promise.*`, `.then(…)`, a call to a local `async` function). Hint: `await tryPromise(() => …)` |
 
 Warnings apply anywhere in `.efx`. The `strict: true` option turns them into errors, and `efx fix`
 applies the fixes:
@@ -1095,6 +1096,10 @@ barrels. That keeps `pnpm check`/`lint` meaningful and proves the compiler on re
   `.ts` files import `.efx` modules. It decorates syntactic diagnostics with EffectScript compiler
   diagnostics. When parsing fails, the virtual code is the source verbatim, with the compiler
   diagnostic shown.
+- **`await` guardrails in the editor:**
+  - `await` inside `effect` bodies gets its own semantic token (`keyword` with modifier `effect`), so themes color it differently.
+  - Hovering an effect `await` shows "Effect bind (`yield*`): runs this effect here and short-circuits on failure".
+  - TS errors caused by awaiting a Promise inside `effect` are rewritten into "Cannot `await` a Promise inside `effect` — use `await tryPromise(() => …)`".
 - `efx-language-server`: the standalone LSP (`@volar/language-server` +
   `volar-service-typescript`) for Neovim, Zed, and others.
 
@@ -1189,6 +1194,7 @@ CI. It detects:
   drifts).
 - `references/patterns.md`: services and layers, testing with `it.effect` + `effect`, HTTP, SQL,
   streams, resources, concurrency, retries, and schedules.
+- `SKILL.md` and the docs open with the `async` ↔ `effect` table: `await`, `throw`, `try`/`catch`/`finally`, `for await`, `using`. They also cover the one real difference, laziness: an effect that is never `await`ed never runs.
 - `references/pitfalls.md`: the `try` effectfulness rule, `await` on Promises (use
   `Effect.tryPromise`), the hoisting of `effect` declarations, and the `catch` handler semantics.
 - Written following the repo's `writing-for-agents` guidance. `efx skill` installs it.
