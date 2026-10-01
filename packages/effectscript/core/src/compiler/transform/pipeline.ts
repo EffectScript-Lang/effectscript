@@ -6,8 +6,10 @@
  */
 import { children, type Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
+import { diagnosticError } from "../diagnostics.ts"
 import { ref, unused } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
+import { preludeModules } from "../prelude/tables.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 
@@ -113,22 +115,68 @@ const flatten = (node: Node): { readonly head: Node; readonly steps: Array<Step>
   return { head: current, steps }
 }
 
-const sideEffectTypes = new Set([
-  "CallExpression",
-  "NewExpression",
-  "AssignmentExpression",
-  "UpdateExpression",
-  "AwaitExpression",
-  "YieldExpression",
-  "TaggedTemplateExpression",
-  "ImportExpression"
-])
+/** Where `name` is bound: the module scope, an inner scope, or nowhere (free). */
+const bindingOf = (ctx: Ctx, name: string): "module" | "inner" | "free" => {
+  for (let scope: typeof ctx.scope | undefined = ctx.scope; scope !== undefined; scope = scope.parent) {
+    if (scope.values.has(name)) return scope === ctx.analysis.module ? "module" : "inner"
+  }
+  return "free"
+}
 
-const unsafeBefore = (node: Node, topic: Node): boolean => {
-  if (node.start >= topic.start) return false
-  if (node.end <= topic.start && sideEffectTypes.has(node.type)) return true
-  if (node.type === "ArrowFunctionExpression" || node.type === "FunctionExpression") return false
-  return children(node).some((child) => unsafeBefore(child, topic))
+const isImportBinding = (ctx: Ctx, name: string): boolean =>
+  ctx.analysis.program.body.some((s: Node) =>
+    s.type === "ImportDeclaration" && s.importKind !== "type" &&
+    s.specifiers.some((spec: Node) => spec.local.name === name && spec.importKind !== "type")
+  )
+
+/** A module namespace read: `Effect.map`, `Option.some` (imported, or a free prelude module). */
+const isNamespaceRead = (ctx: Ctx, node: Node): boolean => {
+  let root = node
+  while (root.type === "MemberExpression" && !root.computed) root = root.object
+  if (root.type !== "Identifier" || root === node) return false
+  const binding = bindingOf(ctx, root.name)
+  return binding === "module"
+    ? isImportBinding(ctx, root.name)
+    : binding === "free" && ctx.options.prelude && preludeModules.has(root.name)
+}
+
+/** Evaluating `node` has no observable effect (ADR-0012). */
+const isPure = (ctx: Ctx, node: Node): boolean => {
+  switch (node.type) {
+    case "Literal":
+    case "Identifier":
+    case "ArrowFunctionExpression":
+    case "FunctionExpression":
+      return true
+    case "TemplateLiteral":
+      return node.expressions.length === 0
+    case "MemberExpression":
+      return isNamespaceRead(ctx, node)
+    default:
+      // type syntax (`f<T>(…)`) is erased
+      return node.type.startsWith("TS") && !node.type.endsWith("Expression")
+  }
+}
+
+/** Everything evaluated before the topic, along the path from `rhs`, is pure. */
+const pureBefore = (ctx: Ctx, rhs: Node, topic: Node): boolean => {
+  const path = pathTo(rhs, topic)
+  if (path === undefined) return false
+  return path.every((node, i) => {
+    const next = path[i + 1] ?? topic
+    return children(node).every((child) => child.end > next.start || isPure(ctx, child))
+  })
+}
+
+/** An `await` at this function level (a step that becomes `($) => …` can't contain one). */
+const findAwait = (node: Node): Node | undefined => {
+  if (node.type === "AwaitExpression") return node
+  if (/Function|Class|EffectBlock/.test(node.type) || node.efx !== undefined) return undefined
+  for (const child of children(node)) {
+    const found = findAwait(child)
+    if (found !== undefined) return found
+  }
+  return undefined
 }
 
 /** Nodes from `root` down to `target` (exclusive of target). */
@@ -166,8 +214,8 @@ const evaluatedOnce = (rhs: Node, topic: Node): boolean => {
   })
 }
 
-const inlinable = (step: Step): boolean =>
-  step.topics.length === 1 && !unsafeBefore(step.rhs, step.topics[0]!) && evaluatedOnce(step.rhs, step.topics[0]!)
+const inlinable = (ctx: Ctx, step: Step): boolean =>
+  step.topics.length === 1 && pureBefore(ctx, step.rhs, step.topics[0]!) && evaluatedOnce(step.rhs, step.topics[0]!)
 
 const simpleTypes = new Set([
   "Identifier",
@@ -206,6 +254,20 @@ const applyGroup = (ctx: Ctx, current: Current, group: ReadonlyArray<Step>): voi
   group.forEach((step, i) => {
     const rhs = outer(ctx, step.rhs)
     if (step.topics.length > 0) {
+      if (ctx.effect !== undefined) {
+        const awaited = findAwait(step.rhs)
+        if (awaited !== undefined) {
+          ctx.diagnostics.push(
+            diagnosticError(
+              "EFX5002",
+              "`await` cannot be used in this pipeline step",
+              awaited.start,
+              awaited.start + 5,
+              "assign the awaited value to a variable first"
+            )
+          )
+        }
+      }
       const name = unused(ctx, "$")
       ctx.s.appendRight(rhs.start, `(${name}) => `)
       for (const topic of step.topics) ctx.s.update(topic.start, topic.end, name)
@@ -234,7 +296,7 @@ const pipeline: Handler = (node, _parent, ctx) => {
   let i = 0
   while (i < steps.length) {
     // Inline only directly into the head: later steps would re-move ranges an earlier move split.
-    if (i === 0 && inlinable(steps[0]!)) {
+    if (i === 0 && inlinable(ctx, steps[0]!)) {
       inline(ctx, current, steps[0]!)
       current = { ...outer(ctx, steps[0]!.rhs), pipeable: false, node: steps[0]!.rhs }
       i++

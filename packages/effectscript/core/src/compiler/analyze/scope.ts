@@ -159,7 +159,10 @@ export const analyze = (program: Node): ScopeAnalysis => {
         scope.values.add(node.id.name)
         bindings.add(node.id)
       }
-      if (scope === module && node.efx?.kind === "declaration" && node.id) localEffects.add(node.id.name)
+      // a declaration with `|>` pipes may no longer return an Effect (ADR-0012)
+      if (
+        scope === module && node.efx?.kind === "declaration" && node.id && (node.efxPipes ?? []).length === 0
+      ) localEffects.add(node.id.name)
     }
     const fn = makeScope(scope, "function")
     scopeOf.set(node, fn)

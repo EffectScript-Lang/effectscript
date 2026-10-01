@@ -62,6 +62,14 @@ describe("try diagnostics", () => {
   })
 })
 
+describe("pipeline diagnostics", () => {
+  it("EFX5002: await inside a pipeline step that becomes a function", () => {
+    expect(
+      codes("effect f(o: { m(n: number): number }, x: Effect.Effect<number>) {\n  return 1 |> o.m(% + await x)\n}\n")
+    ).toEqual(["EFX5002"])
+  })
+})
+
 describe("resource diagnostics", () => {
   it("EFX2013: using … await outside the top level of an effect", () => {
     expect(codes("effect f(r: Effect.Effect<Disposable>) {\n  for (const x of [1]) {\n    using a = await r\n  }\n}\n"))
