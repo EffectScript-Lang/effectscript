@@ -22,7 +22,7 @@ WORD_TRACKING = -0.022
 
 # Lockup proportions, relative to the wordmark cap height (C).
 MARK_H_PER_CAP = 1.62  # mark height = 1.62 C
-GAP_PER_CAP = 0.78  # space between mark and wordmark = 0.78 C
+GAP_PER_CAP = 0.62  # space between mark and wordmark = 0.62 C
 STACK_GAP_PER_CAP = 0.9
 
 

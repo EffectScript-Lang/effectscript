@@ -1,0 +1,51 @@
+[
+  {
+    "id": "night-desk",
+    "prompt": "Use: Full-frame 16:9 film still for a cinematic launch video; white headline text will be composited over the left half later.\nSubject: A lone software developer at a desk at 3 in the morning, seen from behind and slightly to the side, shoulders tired, hoodie, one hand resting on a keyboard.\nComposition: Figure and glowing monitor in the right third; the left half is deep darkness with a rain-streaked window holding soft out-of-focus city lights.\nLight: The monitor is the only light source, cool and soft, rim-lighting the hair and the edge of the face; everything else falls into near-black.\nStyle: Black and white photograph, true monochrome with no colour cast, shot on a 50mm lens at f/1.4, fine 35mm film grain, deep blacks, quiet and intimate, like a still from an A24 film.\nConstraints: The monitor screen is an abstract soft glow, no readable text, no logos, no lettering anywhere.",
+    "variants": 2,
+    "options": { "preset": "hq", "size": "3840x2160" }
+  },
+  {
+    "id": "hands",
+    "prompt": "Use: Full-frame 16:9 film still for a cinematic launch video.\nSubject: Extreme close-up of two hands on a low-profile mechanical keyboard, fingers mid-keystroke, caught in a moment of decision.\nComposition: Hands in the lower centre, keyboard receding diagonally; the upper third is soft black falloff.\nLight: Cool light spilling from an out-of-frame monitor, raking across knuckles and keycaps, strong highlights and deep shadow.\nStyle: Black and white macro photograph, true monochrome, very shallow depth of field, 100mm macro lens, crisp skin texture, fine film grain, cinematic and tactile.\nConstraints: Keycaps are blank with no legends, no text, no logos.",
+    "variants": 2,
+    "options": { "preset": "hq", "size": "3840x2160" }
+  },
+  {
+    "id": "threads-hall",
+    "prompt": "Use: Full-frame 16:9 film still for a cinematic launch video, depicting overwhelming complexity.\nSubject: A vast dark cathedral-scale hall completely filled with tens of thousands of fine white threads and cables, tangled, looping and knotted from floor to ceiling. One small human figure stands at the bottom centre, looking up into the tangle.\nComposition: Symmetrical, low camera, the figure tiny (about 1/20 of frame height) in the lower centre; the tangle fills the whole frame and disappears into darkness above.\nLight: A single shaft of light from high above cuts through faint haze and catches the threads so they glow white against black.\nStyle: Black and white photograph, true monochrome, monumental scale, awe and quiet dread, fine film grain, Roger Deakins lighting.\nConstraints: No text, no logos.",
+    "variants": 2,
+    "options": { "preset": "hq", "size": "3840x2160" }
+  },
+  {
+    "id": "paper-avalanche",
+    "prompt": "Use: Full-frame 16:9 film still for a cinematic launch video, depicting boilerplate overwhelming a person.\nSubject: A small desk in a dark room, buried under towering stacks and avalanches of printed paper pages, stacks leaning to the ceiling, sheets falling through the air, a desk lamp still glowing under the pile and an empty chair pushed back.\nComposition: Desk slightly left of centre; falling sheets frozen mid-air across the frame; deep blacks at the edges.\nLight: One warm-neutral desk lamp (rendered in monochrome) is the only practical source, sheets glowing where it touches them, hard shadows.\nStyle: Black and white photograph, true monochrome, surreal but photoreal, motion frozen, fine film grain.\nConstraints: Pages show only illegible grey texture, no readable text, no logos.",
+    "variants": 2,
+    "options": { "preset": "hq", "size": "3840x2160" }
+  },
+  {
+    "id": "one-thread",
+    "prompt": "Use: Full-frame 16:9 film still for a cinematic launch video, the moment of clarity.\nSubject: A single perfectly taut white thread running horizontally across a pure black void, held between the thumb and index finger of one hand at the left edge of the frame.\nComposition: The thread crosses the exact vertical centre of the frame from the fingertips on the left to beyond the right edge; everything else is empty black.\nLight: A thin soft top light catches only the thread and the fingertips, the thread glowing bright white with a slight halation.\nStyle: Black and white macro photograph, true monochrome, extremely shallow depth of field, calm, minimal, reverent, fine film grain.\nConstraints: No text, no logos.",
+    "variants": 2,
+    "options": { "preset": "hq", "size": "3840x2160" }
+  },
+  {
+    "id": "phone-night",
+    "prompt": "Use: Full-frame 16:9 film still for a cinematic launch video.\nSubject: A smartphone lying face up on a bedside table in a dark bedroom at night, its screen glowing softly; behind it, out of focus, a person sleeps peacefully under a duvet.\nComposition: Phone in the lower left third, sharp; the sleeping person soft and blurred across the right two thirds.\nLight: The phone screen is the only light, a soft cool glow that touches the table edge and the pillow.\nStyle: Black and white photograph, true monochrome, 85mm lens at f/1.2, tender and quiet, fine film grain.\nConstraints: The phone screen is a blank soft glow with no readable text, no notifications text, no logos.",
+    "variants": 2,
+    "options": { "preset": "hq", "size": "3840x2160" }
+  },
+  {
+    "id": "dawn",
+    "prompt": "Use: Full-frame 16:9 film still for a cinematic launch video, resolution and relief after a long night.\nSubject: The same small home-office desk at dawn: a closed laptop, a mug, a pushed-in chair, a plant; low early sunlight pours through a large window and lays long geometric light shapes across the desk and wall. City skyline faintly visible outside.\nComposition: Desk in the lower right, window light falling diagonally from upper left; generous calm negative space.\nLight: Low, soft, golden-hour quality (rendered in monochrome), long shadows, dust motes floating in the beam.\nStyle: Black and white photograph, true monochrome, peaceful, hopeful, fine film grain, quiet cinema.\nConstraints: No text, no logos, no people.",
+    "variants": 2,
+    "options": { "preset": "hq", "size": "3840x2160" }
+  },
+  {
+    "id": "monolith-plain",
+    "prompt": "Use: Full-frame 16:9 finale shot for a cinematic launch video. Image 1 is the exact logo mark; image 2 is the established brand image world (pale concrete sculpture of the mark in dark space).\nSubject: A colossal monolith of the mark from image 1, cast in pale smooth concrete, standing upright in an endless flat dark salt plain at blue hour, tens of metres tall. A small crowd of tiny people stands at its base looking up.\nComposition: Monolith centred, slightly low camera, people tiny at the bottom (about 1/25 of frame height), thin mist along the ground, overcast sky with one break of light behind the monolith.\nGeometry: Preserve the exact silhouette of the mark from image 1: a function-hook f whose crossbar continues as one stroke into the thick diagonal of an x, with a small gap where it crosses the thin diagonal. Do not add or remove strokes.\nStyle: Black and white photograph, true monochrome, monumental, emotional, fine film grain, matching the concrete material of image 2.\nConstraints: No text, no other logos.",
+    "references": ["../../logo/png/effectscript-mark-black-1024.png", "../../key-visuals/monolith.jpg"],
+    "variants": 2,
+    "options": { "preset": "hq", "size": "3840x2160" }
+  }
+]

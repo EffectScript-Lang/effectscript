@@ -29,11 +29,17 @@ def metrics(name):
 def text_path(text, name, size, x=0.0, y=0.0, tracking=0.0, features=None):
     """Return (path data, advance width) for `text` set at `size` px with its
     baseline at y. `tracking` is in em."""
+    if not text:
+        return "", 0.0
     tt, font, upem = _font(name)
     buf = hb.Buffer()
     buf.add_str(text)
     buf.guess_segment_properties()
-    hb.shape(font, buf, features or {"kern": True, "liga": True, "calt": True})
+    if features is None:
+        # code is shown as typed: no |> → ▷ style programming ligatures
+        code = name.startswith("JetBrainsMono")
+        features = {"kern": True, "liga": not code, "calt": not code}
+    hb.shape(font, buf, features)
     glyphs = tt.getGlyphSet()
     order = tt.getGlyphOrder()
     s = size / upem

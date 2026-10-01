@@ -40,5 +40,6 @@ The compiler has no Node dependencies, so it runs in the browser. See the design
 
 ## Status
 
-Experimental. Versions follow Effect's major.minor (`4.0.0-alpha.N` targets `effect@4.0`,
+Experimental. See `../COMPATIBILITY.md` for what is tested, on which host, and the evidence for
+each claim. Versions follow Effect's major.minor (`4.0.0-alpha.N` targets `effect@4.0`,
 ADR-0015).

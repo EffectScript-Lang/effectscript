@@ -79,9 +79,9 @@ def _f_cmds():
     ]
 
 
-def _shared():
+def _shared(start=BAR_START):
     # reversed so every subpath winds the same way as the f (nonzero fill)
-    return list(reversed([(BAR_START, XH), A_TR, A_BR, A_BL, A_IN, (BAR_START, BAR_B)]))
+    return list(reversed([(start, XH), A_TR, A_BR, A_BL, A_IN, (start, BAR_B)]))
 
 
 def _thin(gap):
@@ -95,10 +95,12 @@ def _thin(gap):
     return [list(reversed(upper)), list(reversed(lower))]
 
 
-def path_d(scale=1.0, dx=0.0, dy=0.0, gap=GAP):
+def path_d(scale=1.0, dx=0.0, dy=0.0, gap=GAP, outline=False):
     """SVG path data for the whole mark.
 
-    The transform is p' = (p - bbox origin) * scale + (dx, dy).
+    The transform is p' = (p - bbox origin) * scale + (dx, dy). `outline`
+    starts the crossbar at the stem edge instead of overlapping it, for
+    stroked construction drawings.
     """
 
     def tx(x):
@@ -116,8 +118,53 @@ def path_d(scale=1.0, dx=0.0, dy=0.0, gap=GAP):
             out.append(f"A{r} {r} 0 0 {c[4]} {tx(c[2])} {ty(c[3])}")
         else:
             out.append("Z")
-    for poly in [_shared(), *_thin(gap)]:
+    for poly in [_shared(STEM_R if outline else BAR_START), *_thin(gap)]:
         out.append("M" + "L".join(f"{tx(x)} {ty(y)}" for x, y in poly) + "Z")
+    return "".join(out)
+
+
+def parts_d(scale=1.0, dx=0.0, dy=0.0, gap=GAP):
+    """Path data per stroke, for animation: the f, the shared stroke and the
+    thin diagonal."""
+
+    def tx(x):
+        return _fmt((x - BBOX_X0) * scale + dx)
+
+    def ty(y):
+        return _fmt((y - BBOX_Y0) * scale + dy)
+
+    def poly(p):
+        return "M" + "L".join(f"{tx(x)} {ty(y)}" for x, y in p) + "Z"
+
+    full = path_d(scale, dx, dy, gap)
+    f = full[: full.index("Z") + 1]
+    return {"f": f, "shared": poly(_shared()), "thin": "".join(poly(p) for p in _thin(gap))}
+
+
+# Centrelines used to draw the strokes on in motion (master units).
+F_CENTRELINE = [
+    ("M", 1526, 1008),
+    ("L", 1300, 1008),
+    ("A", 236, 1065, 1245, 0),
+    ("L", 1065, 1728),
+    ("A", 163, 902, 1891, 1),
+    ("L", 790, 1891),
+]
+F_CENTRELINE_LEN = 226 + math.pi / 2 * 236 + 483 + math.pi / 2 * 163 + 112
+SHARED_CENTRELINE = [("M", 1040, 1367), ("L", 1503, 1367), ("L", 2000, 1988)]
+SHARED_CENTRELINE_LEN = 463 + math.hypot(497, 621)
+
+
+def centreline_d(cmds, scale=1.0, dx=0.0, dy=0.0):
+    out = []
+    for c in cmds:
+        x, y = (c[1], c[2]) if c[0] in "ML" else (c[2], c[3])
+        px, py = _fmt((x - BBOX_X0) * scale + dx), _fmt((y - BBOX_Y0) * scale + dy)
+        if c[0] == "A":
+            r = _fmt(c[1] * scale)
+            out.append(f"A{r} {r} 0 0 {c[4]} {px} {py}")
+        else:
+            out.append(f"{c[0]}{px} {py}")
     return "".join(out)
 
 

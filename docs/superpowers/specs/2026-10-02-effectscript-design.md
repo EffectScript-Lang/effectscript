@@ -1133,8 +1133,10 @@ barrels. That keeps `pnpm check`/`lint` meaningful and proves the compiler on re
   TS, then strips types with Vite's bundled transform (oxc/esbuild), returning code and source map.
   It adds `.efx` to `resolve.extensions`. The runtime defaults to `browser` for client builds and
   `node` for SSR/Vitest.
-- **Node:** `effectscript/register` uses `module.registerHooks` and returns
-  `format: "module-typescript"`, so Node's type stripping runs the output. Requires Node ≥ 22.18.
+- **Node:** `effectscript/register` uses `module.registerHooks`. It compiles `.efx`, then runs
+  Node's `stripTypeScriptTypes` in transform mode (enums included), falling back to strip mode
+  where transform mode is unavailable (ADR-0021, ADR-0024). JSX output is rejected (EFX1101).
+  Qualified on Node 24.21.
 
 ### 7.3 Editor and type checking (`@effectscript/language`)
 
@@ -1145,8 +1147,9 @@ barrels. That keeps `pnpm check`/`lint` meaningful and proves the compiler on re
   mapped back to `.efx` positions, the way `vue-tsc` works.
 - TS server plugin (`createLanguageServicePlugin`): gives full IntelliSense in `.efx` and lets
   `.ts` files import `.efx` modules. It decorates syntactic diagnostics with EffectScript compiler
-  diagnostics. When parsing fails, the virtual code is the source verbatim, with the compiler
-  diagnostic shown.
+  diagnostics. When parsing fails mid-edit, the plugin compiles with recovery (ADR-0020): the
+  failing lines are neutralized, the rest compiles, and the original lines are spliced back so
+  completion keeps working. Only if that fails is the virtual code the source verbatim.
 - **`await` guardrails in the editor:**
   - `await` inside `effect` bodies gets its own semantic token (`keyword` with modifier `effect`), so themes color it differently.
   - Hovering an effect `await` shows "Effect bind (`yield*`): runs this effect here and short-circuits on failure".
@@ -1439,11 +1442,11 @@ Each phase ends green: its tests pass, plus `pnpm check` and `pnpm lint` for the
 The order was revised after the plan review (ADR-0016).
 
 1. **Core compiler, language core (§4.1–4.13).** Done (Plan 1).
-2. **Semantic hardening (Plan 2).** Hygienic references (ADR-0009), the `try` contract
+2. **Semantic hardening (Plan 2).** Done. Hygienic references (ADR-0009), the `try` contract
    (ADR-0010), resource lifetimes (ADR-0011), pipeline order (ADR-0012), exact optional fields
    (ADR-0013), service keys (ADR-0014), diagnostics policy (ADR-0017), and behavior tests that
    observe order, cleanup and failure kinds.
-3. **Adoption slice (Plan 3).** A fixture project: `.efx` + `.ts` modules, `efx build` with
+3. **Adoption slice (Plan 3).** Done; see `packages/effectscript/COMPATIBILITY.md`. A fixture project: `.efx` + `.ts` modules, `efx build` with
    graph-aware import rewriting, `efx check` (Volar on the TypeScript 6 JS API), running on Node,
    VS Code IntelliSense including incomplete code, reverse conversion of the supported subset, and a
    packed-package consumer.
