@@ -7,6 +7,7 @@ import { awaitHandlers } from "./await.ts"
 import { configHandlers } from "./config.ts"
 import { effectHandlers } from "./effect.ts"
 import { importRewriteHandlers } from "./imports.ts"
+import { layerHandlers } from "./layer.ts"
 import { mainHandlers } from "./main.ts"
 import { matchHandlers } from "./match.ts"
 import { pipelineHandlers } from "./pipeline.ts"
@@ -50,6 +51,7 @@ export const handlers = registry(
   importRewriteHandlers,
   schemaHandlers,
   configHandlers,
+  layerHandlers,
   serviceHandlers,
   effectHandlers,
   mainHandlers,

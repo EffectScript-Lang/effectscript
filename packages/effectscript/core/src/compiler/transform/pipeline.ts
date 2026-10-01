@@ -59,6 +59,8 @@ const isModuleBinding = (ctx: Ctx, name: string): boolean => {
  * @category utils
  */
 export const knownPipeable = (ctx: Ctx, node: Node, seen: ReadonlySet<string> = new Set()): boolean => {
+  // marked by a construct that wraps the node in a pipeable call (e.g. `Layer.mergeAll(…)`)
+  if (node.efxPipeable === true) return true
   switch (node.type) {
     case "EffectBlock":
       return true
@@ -224,7 +226,8 @@ const simpleTypes = new Set([
 ])
 
 const needsWrapping = (current: Current): boolean =>
-  current.node !== undefined && current.start === current.node.start && !simpleTypes.has(current.node.type)
+  current.node !== undefined && current.start === current.node.start && current.node.efxPipeable !== true &&
+  !simpleTypes.has(current.node.type)
 
 /** Replaces the whitespace + `|>` before `rhs` with `text`, preserving line breaks. */
 const joinStep = (ctx: Ctx, previousEnd: number, op: Range, rhs: Range, text: string): void => {

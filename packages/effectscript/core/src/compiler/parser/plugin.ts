@@ -164,11 +164,13 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsMainStart()) return this.efxParseMain()
       if (this.efxIsWord("schema") && this.efxNextIsNameSameLine()) return this.efxParseSchema()
       if (this.efxIsClassLikeStart()) return this.efxParseClassLike(this.value)
+      if (this.efxIsLayerDeclarationStart()) return this.efxParseLayerDeclaration()
       return super.parseStatement(context, topLevel, exports)
     }
 
     shouldParseExportStatement(): any {
-      return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() || super.shouldParseExportStatement()
+      return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() || this.efxIsLayerDeclarationStart() ||
+        super.shouldParseExportStatement()
     }
 
     parseExportDefaultDeclaration(): any {
@@ -487,6 +489,25 @@ export const efxPlugin = (Base: any): any =>
         node.efxServiceKey = this.parseExprAtom(null, false, false)
       }
       return super.parseClassSuper(node)
+    }
+
+    /** `layer Name = …` (a top-level layer, §4.14). */
+    efxIsLayerDeclarationStart(): boolean {
+      if (!this.efxIsWord("layer") || !this.efxNextIsNameSameLine()) return false
+      const name = this.lookahead()
+      const after = skipSpace(this.input, name.end)
+      return this.input[after] === "=" && this.input[after + 1] !== "=" && this.input[after + 1] !== ">"
+    }
+
+    efxParseLayerDeclaration(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.id = this.parseIdent()
+      this.expect(tt.eq)
+      node.init = this.parseMaybeAssign()
+      this.semicolon()
+      return this.finishNode(node, "LayerDeclaration")
     }
 
     efxIsMainStart(): boolean {

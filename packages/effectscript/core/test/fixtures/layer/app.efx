@@ -1,0 +1,18 @@
+export service Users {
+  effect list(): Array<string>
+  layer = { list: effect () => ["ada"] }
+}
+
+export service Posts {
+  effect count(): number
+  layer = { count: effect () => 1 }
+}
+
+export layer AppLive = Users.layer & Posts.layer
+
+export layer Provided = Users.layer & Posts.layer |> provide(Posts.layer)
+
+export layer Worker = effect {
+  defer log("worker stopped")
+  console.log("worker started")
+}
