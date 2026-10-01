@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest"
 import { toTypeScript } from "effectscript/compiler"
+import { describe, expect, it } from "vitest"
 
 describe("smoke", () => {
   it("returns plain TypeScript unchanged", () => {
