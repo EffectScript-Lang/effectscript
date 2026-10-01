@@ -390,3 +390,42 @@ findings in one pass, each with a failing test first. Record deferred minors her
   comes with the CLI/distribution plan. The consumer step extracts the `npm pack` tarball with `tar`
   instead of `npm install`, so it runs offline. The fixture was written before the test, so the test
   never failed first; its error-injection step proves it detects failures.
+
+## Final review outcome (2026-10-02)
+
+A fresh reviewer (Opus) reported one Critical and nine Important findings, all reproduced. The
+fix pass, one commit per finding:
+
+- **C1:** staging moved out of `node_modules`. It broke emitted declarations.
+- **I1:** `efx check` and the editor report EffectScript compiler errors. Generated-only text has
+  diagnostics anchors.
+- **I2:** `efx check` never emits.
+- **I3:** exact `.efx` positions after import rewrites.
+- **I4:** relatively imported assets (JSON) are copied into staging.
+- **I5:** the same service keys in run, build and the editor (shared `packageInfo`).
+- **I6:** stack traces map to `.efx` (strip mode first, ADR-0026).
+- **I7:** `efx` works without TypeScript, and build explains when TypeScript 6 is missing.
+- **I8:** recovery keeps TSX mode.
+- **I9:** reverse separators skip comments.
+- **I10:** spawned tests run the sources (`EFFECTSCRIPT_DEV=1`).
+- **COMPATIBILITY.md** claims now match their evidence. The reviewer rated this Minor; it was
+  raised to Important under R15.
+- Housekeeping: a second ADR-0019 (the launch film, from another session) was renumbered to
+  ADR-0025.
+
+Deferred minors:
+
+- **Grammar false positives:**
+  - `text.match(/a/)`, `obj.effect(1)` and `effect(1)` get keyword scopes;
+  - a line starting with `error instanceof` or `schema as` gets `storage.type.efx`;
+  - `needs in obj` gets the throws scope.
+- **Test hygiene:**
+  - the tsserver helper never reads stderr and doesn't reject pending requests when the process
+    exits;
+  - `efxTsc.test` runs in committed fixture directories rather than temp copies;
+  - temp directories are created before `afterAll` is registered.
+- ADR-0023 says an unmappable field becomes an `= <schema>` field. The implementation keeps the
+  whole class as TypeScript.
+- The VS Code manifest lacks `contributes.commands` (`effectscript.showCompiledTypeScript`).
+- Under heavy machine load (load average above 20 from another session's rendering), runtime tests
+  hit vitest's 5 s default timeout. The suites pass with `--testTimeout=60000`.
