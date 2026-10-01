@@ -7,7 +7,8 @@
  */
 import type { Node } from "../ast.ts"
 import { type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
-import { ref } from "../names.ts"
+import { diagnosticError } from "../diagnostics.ts"
+import { ref, unused } from "../names.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 
@@ -22,19 +23,34 @@ const describeStatement: Handler = (node, _parent, ctx) => {
     walk(node.body, node, ctx)
     return true
   }
-  ctx.s.update(node.keyword.start, layer.start, `${ref(ctx, vitest, "layer")}(`)
-  ctx.s.update(layer.end, node.body.start, `)(${name}, (it) => `)
+  // nested inside another `describe … with`: chain through the outer `it`, keeping its layer (review C3)
+  const head = ctx.testIt === undefined ? `${ref(ctx, vitest, "layer")}(` : `${ctx.testIt}.layer(`
+  // a fresh name, so a user binding named `it` is never captured (review C2)
+  const param = unused(ctx, "it")
+  ctx.s.update(node.keyword.start, layer.start, head)
+  ctx.s.update(layer.end, node.body.start, `)(${name}, (${param}) => `)
   ctx.s.appendLeft(node.body.end, ")")
   walk(layer, node, ctx)
   // tests inside use the `it` that `layer(…)` passes in
   const previous = ctx.testIt
-  ctx.testIt = "it"
+  ctx.testIt = param
   walk(node.body, node, ctx)
   ctx.testIt = previous
   return true
 }
 
 const testStatement: Handler = (node, _parent, ctx) => {
+  if (node.modifier === "live" && ctx.testIt !== undefined) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX2030",
+        "`test.live` can't run inside `describe … with`: the shared layer's tests have no live mode",
+        node.keyword.start,
+        node.name.start,
+        "move the test out of the block and provide the layer with `|> provide(…)`"
+      )
+    )
+  }
   const it = ctx.testIt ?? ref(ctx, vitest, "it")
   const E = ref(ctx, "effect", "Effect")
   const method = node.modifier === "live"

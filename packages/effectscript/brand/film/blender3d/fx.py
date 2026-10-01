@@ -690,5 +690,9 @@ def finish(scene, shot, args):
             im.file_format, im.color_depth, im.color_mode = "PNG", "8", "RGB"
         scene.render.filepath = os.path.join(outdir, "####")
         scene.render.use_file_extension = True
+        # resumable: frames already on disk are skipped (placeholders mark
+        # frames another process is working on)
+        scene.render.use_overwrite = os.environ.get("RESUME", "") == ""
+        scene.render.use_placeholder = os.environ.get("RESUME", "") != ""
         bpy.ops.render.render(animation=True)
     print(f"[{shot}] render time {time.time() - t0:.1f}s", flush=True)

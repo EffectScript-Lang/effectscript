@@ -67,12 +67,13 @@ def cables(seed=4600):
     knots, anchors = network(rng)
     nodes = np.vstack([knots[:, :3], anchors])
     nk = len(knots)
-    pts, rad, tone = [], [], []
+    pts, rad, tone, kind = [], [], [], []
 
-    def add(curve, r, g):
+    def add(curve, r, g, k=0):
         pts.append(curve)
         rad.append(r)
         tone.append(g)
+        kind.append(k)
 
     # bundles between nodes: each bundle is many cables, fanned at the ends
     for _ in range(1150):
@@ -82,6 +83,8 @@ def cables(seed=4600):
         if len(cand) == 0:
             continue
         j = rng.choice(cand)
+        if max(nodes[i][1], nodes[j][1]) < 24.0 and rng.uniform() < 0.65:
+            continue  # keep the space right above the lens airier
         a, b = nodes[i], nodes[j]
         span = d[j]
         sag = span * rng.uniform(0.08, 0.32)
@@ -113,7 +116,7 @@ def cables(seed=4600):
             z = np.maximum(z, 0.0) + 0.02
             add(np.column_stack([x, y, z]), rng.uniform(0.007, 0.022), rng.uniform(0.0, 1.0))
     # floor coils: random walks lying on the floor, clear of the figure's aisle
-    for _ in range(500):
+    for _ in range(350):
         p = np.array([rng.uniform(-HALL_X, HALL_X), rng.uniform(Y0, Y1), 0.02])
         if abs(p[0]) < 3.0 + 0.04 * p[1]:
             p[0] += np.sign(p[0] + 1e-3) * (3.0 + 0.04 * p[1])
@@ -128,7 +131,7 @@ def cables(seed=4600):
             w += rng.normal(0, 0.4)
             p[:2] += v * 0.45
             p[2] = 0.02 + 0.03 * rng.uniform()
-        add(np.array(c), rng.uniform(0.01, 0.025), rng.uniform(0.0, 1.0))
+        add(np.array(c), rng.uniform(0.01, 0.025), rng.uniform(0.0, 0.35))
     # knot balls: short curves wound tightly round each junction
     for i in range(nk):
         c0, r0 = knots[i, :3], knots[i, 3]
@@ -141,9 +144,9 @@ def cables(seed=4600):
             t = np.linspace(0, rng.uniform(1.2, 2.2) * math.pi, SEG)
             rr = r0 * rng.uniform(0.35, 0.8) * (1 + 0.15 * np.sin(3 * t))
             c = c0 + (np.outer(np.cos(t), u) + np.outer(np.sin(t), v)) * rr[:, None] + np.outer(t / t[-1] - 0.5, axis) * r0 * 0.6
-            add(c, rng.uniform(0.012, 0.03), rng.uniform(0.0, 1.0))
+            add(c, rng.uniform(0.012, 0.03), rng.uniform(0.0, 1.0), 1)
     pts = np.array(pts)
-    return pts, np.array(rad), np.array(tone), knots
+    return pts, np.array(rad), np.array(tone), np.array(kind)
 
 
 # --------------------------------------------------------------------------
@@ -249,10 +252,10 @@ def figure(scene, mat, at=(0.0, FIG_Y, 0.0)):
     x, y, z = at
     add_prim("cyl", (x - 0.09, y, 0.42), (0.075, 0.075, 0.84))  # legs
     add_prim("cyl", (x + 0.09, y, 0.42), (0.075, 0.075, 0.84))
-    add_prim("cone", (x, y, 1.08), (0.25, 0.16, 0.86))  # coat
-    add_prim("cyl", (x, y, 1.45), (0.22, 0.13, 0.12))  # shoulders
-    add_prim("cyl", (x - 0.24, y, 1.08), (0.06, 0.06, 0.66))  # arms
-    add_prim("cyl", (x + 0.24, y, 1.08), (0.06, 0.06, 0.66))
+    add_prim("cone", (x, y, 1.1), (0.2, 0.13, 0.8))  # coat
+    add_prim("sph", (x, y, 1.45), (0.2, 0.12, 0.07))  # shoulders
+    add_prim("cyl", (x - 0.2, y, 1.1), (0.05, 0.05, 0.64), (0, 0.05, 0))  # arms
+    add_prim("cyl", (x + 0.2, y, 1.1), (0.05, 0.05, 0.64), (0, -0.05, 0))
     add_prim("cyl", (x, y, 1.57), (0.05, 0.05, 0.1))  # neck
     add_prim("sph", (x, y, 1.69), (0.1, 0.11, 0.12))  # head
     bpy.ops.object.select_all(action="DESELECT")
@@ -279,12 +282,14 @@ def build():
     e.volumetric_samples = 96
     e.volumetric_shadow_samples = 32
     e.volumetric_light_clamp = 0.0
+    e.shadow_pool_size = "1024"
     e.ray_tracing_options.trace_max_roughness = 0.35
     fx.compositor(scene, bloom=0.45, bloom_size=0.6, threshold=1.5, vignette=0.4)
     fx.world(scene, 0.0)
 
     # haze filling the hall
     haze = box(scene, "Haze", (-HALL_X - 2, -5, 0), (HALL_X + 2, Y1 + 5, HALL_Z + 6), haze_material())
+    haze.visible_shadow = False  # the box hull must not shadow the shaft above it
 
     floor = fx.mesh_object(scene, "Floor", [(-60, -20, 0), (60, -20, 0), (60, 140, 0), (-60, 140, 0)],
                            [(0, 1, 2, 3)], floor_material())
@@ -301,36 +306,43 @@ def build():
     box(scene, "VaultF", (-3.0, -5, HALL_Z + 6), (3.0, FIG_Y + 2.0, HALL_Z + 7), stone)
     box(scene, "VaultB", (-3.0, FIG_Y + 8.0, HALL_Z + 6), (3.0, Y1 + 5, HALL_Z + 7), stone)
 
-    pts, rad, tone, knots = cables()
-    n = len(pts)
-    obj = fx.curves_object(scene, "Cables", pts.reshape(-1, 3), [SEG] * n,
-                           curve_attrs={"rad": rad, "tone": tone, "seed": np.random.default_rng(1).uniform(0, 100, n)})
+    pts, rad, tone, kind = cables()
     g = fx.Graph("GN_Cables")
-    # a very slow sway so the hall is not frozen
+    # a very slow sway so the hall is not frozen (none at floor level)
     F = g.frame()
     pos = g.position()
     nz = g.node("ShaderNodeTexNoise", {"Vector": g.vmath("SCALE", pos, scale=0.05), "W": g.math("MULTIPLY", F, 0.004),
                                        "Scale": 1.0, "Detail": 1.0}, noise_dimensions="4D").outputs["Color"]
     sway = g.vmath("MULTIPLY", g.vmath("SUBTRACT", nz, (0.5, 0.5, 0.5)), (0.25, 0.25, 0.08))
+    zs = g.node("ShaderNodeSeparateXYZ", {"Vector": pos}).outputs[2]
+    sway = g.vmath("SCALE", sway, scale=g.mrange(zs, 0.3, 4.0, 0.0, 1.0))
     moved = g.node("GeometryNodeSetPosition", {"Geometry": g.inp, "Offset": sway}).outputs[0]
     cur = g.node("GeometryNodeSetCurveRadius", {"Curve": moved, "Radius": g.attr("rad")}).outputs[0]
     g.set(g.out, g.node("GeometryNodeSetMaterial", {"Geometry": cur, "Material": cable_material()}).outputs[0])
-    obj.modifiers.new("Cables", "NODES").node_group = g.ng
+    seeds = np.random.default_rng(1).uniform(0, 100, len(pts))
+    # the long cables cast no shadows (their shadow maps would black out the
+    # shaft entirely); the knot balls do, and cut the beam into rays
+    for name, sel, shadow in (("Cables", kind == 0, False), ("Knots", kind == 1, True)):
+        n = int(sel.sum())
+        obj = fx.curves_object(scene, name, pts[sel].reshape(-1, 3), [SEG] * n,
+                               curve_attrs={"rad": rad[sel], "tone": tone[sel], "seed": seeds[sel]})
+        obj.modifiers.new("Cables", "NODES").node_group = g.ng
+        obj.visible_shadow = shadow
 
     figure(scene, figure_material())
 
     # the shaft: one tight spot through the vault opening, landing just
     # behind the figure; volumetric shadows cut it into rays
-    fx.spot(scene, "Shaft", (-1.0, FIG_Y + 5.0, HALL_Z + 30.0), (0.0, FIG_Y + 3.5, 0.0), 1.2e5, 8.5,
-            blend=0.35, radius=0.6, volume=15.0)
+    fx.spot(scene, "Shaft", (-1.0, FIG_Y + 5.0, HALL_Z + 30.0), (0.0, FIG_Y + 3.5, 0.0), 5.0e4, 8.5,
+            blend=0.35, radius=0.6, volume=300.0)
     # glow at the far end of the hall behind the figure (silhouette, floor sheen)
-    fx.spot(scene, "Far", (0.0, Y1 - 2.0, 6.0), (0.0, 20.0, 0.0), 3.0e4, 40, blend=1.0, radius=3.0, volume=0.6)
+    fx.spot(scene, "Far", (0.0, Y1 - 2.0, 9.0), (0.0, 20.0, 0.0), 1.2e4, 40, blend=1.0, radius=6.0, volume=0.6)
     # soft high fill so the upper cables read as pale silhouettes
-    fx.area(scene, "Vault", (0.0, FIG_Y + 10.0, HALL_Z + 2.0), (0.0, FIG_Y + 10.0, 0.0), 1.0e5, size=16.0,
+    fx.area(scene, "Vault", (0.0, FIG_Y + 10.0, HALL_Z + 2.0), (0.0, FIG_Y + 10.0, 0.0), 3.5e4, size=16.0,
             size_y=50.0, volume=0.08, spread=75.0)
     # skylight falling through the vault: dappled light on every cable top
     sun = bpy.data.lights.new("Sky", "SUN")
-    sun.energy = 0.4
+    sun.energy = 0.18
     sun.angle = math.radians(6.0)
     sun.volume_factor = 0.0
     so = bpy.data.objects.new("Sky", sun)

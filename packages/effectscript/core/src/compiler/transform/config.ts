@@ -56,7 +56,10 @@ const configDeclaration: Handler = (node, _parent, ctx) => {
   ctx.s.update(node.efxKeyword.start, node.body.start + 1, `const ${node.id.name} = ${C}.all({`)
   fields.forEach((field, i) => {
     const type: Node | undefined = field.typeAnnotation?.typeAnnotation
-    if (field.type !== "PropertyDefinition" || field.computed || field.static || type === undefined) {
+    if (
+      field.type !== "PropertyDefinition" || field.computed || field.static || field.key.type !== "Identifier" ||
+      type === undefined
+    ) {
       ctx.diagnostics.push(
         diagnosticError("EFX3010", "A `config` field needs a name and a type", field.start, field.end)
       )

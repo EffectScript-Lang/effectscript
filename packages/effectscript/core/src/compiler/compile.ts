@@ -37,8 +37,12 @@ export const toTypeScript = (source: string, options: CompileOptions = {}): Comp
   }
 }
 
+/** The leading comment block (after an optional shebang): the only place directives count (review M9). */
+const leadingComments = (source: string): string =>
+  /^(?:#![^\n]*\n)?(?:\s|\/\/[^\n]*|\/\*[\s\S]*?\*\/)*/.exec(source)![0]
+
 const directive = (source: string, name: string): boolean =>
-  new RegExp(`^\\s*\\/\\/\\s*@efx\\s+${name}\\b`, "m").test(source)
+  new RegExp(`^\\s*\\/\\/\\s*@efx\\s+${name}\\b`, "m").test(leadingComments(source))
 
 /** `// @efx no-prelude`, `// @efx no-ambient`, `// @efx strict` (ADR-0017). */
 const withDirectives = (options: ResolvedOptions, source: string): ResolvedOptions => ({
@@ -50,7 +54,7 @@ const withDirectives = (options: ResolvedOptions, source: string): ResolvedOptio
 
 /** EFX1003: a `// @effect X.Y` header that disagrees with the installed `effect` (§7.6). */
 const headerDiagnostics = (source: string, options: ResolvedOptions): Array<Diagnostic> => {
-  const header = /^\s*\/\/\s*@effect\s+(\d+)\.(\d+)/m.exec(source)
+  const header = /^\s*\/\/\s*@effect\s+(\d+)\.(\d+)/m.exec(leadingComments(source))
   const installed = /^(\d+)\.(\d+)/.exec(options.effectVersion ?? "")
   if (header === null || installed === null) return []
   if (header[1] === installed[1] && header[2] === installed[2]) return []

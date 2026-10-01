@@ -125,7 +125,7 @@ def dust_points(seed=56, count=420):
     y = rng.uniform(-0.19, 0.08, count)
     # mostly below the thread; few in the upper third (text lives there)
     z = np.where(rng.uniform(0, 1, count) < 0.8, rng.uniform(-0.03, 0.001, count), rng.uniform(0.001, 0.01, count))
-    size = np.clip(rng.lognormal(math.log(0.000022), 0.45, count), 0.000008, 0.00007)
+    size = np.clip(rng.lognormal(math.log(0.00004), 0.45, count), 0.000012, 0.00012)
     return np.column_stack([x, y, z]), size
 
 

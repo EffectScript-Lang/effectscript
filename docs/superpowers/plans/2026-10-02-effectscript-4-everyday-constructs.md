@@ -187,3 +187,40 @@ Update:
 
 Run a whole-branch review from the Plan 4 base on the most capable model. Fix Critical/Important
 findings with a failing test first. Record deferred minors here.
+
+## Rulings during execution
+
+- **Task 6:** EFX8002 (`yield` in `effect` code) needs no compiler rule. The parser already
+  rejects it as a syntax error (EFX1001), and the test pins that.
+- **Task 7:** goldens may contain strict *warnings*, because some fixtures intentionally show how
+  discouraged-but-valid code is lowered. The golden test asserts no errors (ADR-0028).
+- **Load:** during this plan, another session's GPU rendering pushed the load average to about 30.
+  Spawn-heavy tests then exceeded their timeouts, though they pass in isolation. Two commits
+  (Tasks 1 and 5) went in before check/lint had finished. Their failures were fixed in the next
+  commit, and every commit since is gated (`pnpm check && pnpm lint && git commit`).
+
+## Final review outcome (2026-10-02)
+
+A fresh reviewer (Opus) found three Critical and three Important issues, all reproduced. Two
+Minors were raised to Important. All are fixed with tests in `test/plan4-review.test.ts`:
+
+- **C1/M7:** `&` merges keep parentheses and comments.
+- **C2:** `describe … with` uses a fresh `it` parameter.
+- **C3:** a nested `describe … with` chains through `it.layer(…)`.
+- **I1:** `test.live` inside `describe … with` is EFX2030.
+- **I2:** no ambient capture inside parameter defaults.
+- **I3:** `process.env` targets in destructuring and `for` heads are writes.
+- **M4 (raised):** a non-identifier `config` key is EFX3010, not a crash.
+- **M9 (raised):** directives and the `@effect` header only count in the leading comment block.
+
+Deferred minors:
+
+- **M1:** capture inside `match` arms and `do` blocks depends on whether a sibling arm awaits.
+- **M2/M3:** `config` doesn't check that a schema name is a value, and a built-in Config name wins
+  over a user schema of the same name.
+- **M5:** `?` together with `= default` in `config` is a type error, not EFX3010.
+- **M6:** `&` merges only at the head of a `layer` initializer.
+- **M8:** `describe … with` accepts only a simple expression.
+- **M10/M11:** EFX8111 and EFX8101 don't check whether `Promise`/`Effect` are shadowed.
+- **M12:** EFX8111 is an error on `.catch`/`.finally`/`.then` of any object.
+- `defer console.log(…)` isn't captured: `defer` takes an Effect.

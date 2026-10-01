@@ -29,10 +29,43 @@ const memberName = (node: Node): string | undefined =>
     ? node.property.value
     : undefined
 
-const enabled = (ctx: Ctx) => ctx.options.ambient && ctx.effect !== undefined
+/** Parameter defaults run before the generator body: no `yield*` there (review I2). */
+const inParameters = (ctx: Ctx, node: Node): boolean => {
+  const params: Array<Node> | undefined = ctx.effect?.node.params
+  if (params === undefined || params.length === 0) return false
+  return node.start >= params[0]!.start && node.end <= params[params.length - 1]!.end
+}
+
+const enabled = (ctx: Ctx, node: Node) => ctx.options.ambient && ctx.effect !== undefined && !inParameters(ctx, node)
+
+/** Marks member expressions that are assignment targets inside a pattern (review I3). */
+const markTargets = (pattern: Node | null | undefined): void => {
+  if (pattern === null || pattern === undefined) return
+  switch (pattern.type) {
+    case "MemberExpression":
+      pattern.efxWriteTarget = true
+      return
+    case "ArrayPattern":
+      for (const element of pattern.elements) markTargets(element)
+      return
+    case "ObjectPattern":
+      for (const property of pattern.properties) {
+        markTargets(property.type === "RestElement" ? property.argument : property.value)
+      }
+      return
+    case "AssignmentPattern":
+      return markTargets(pattern.left)
+    case "RestElement":
+      return markTargets(pattern.argument)
+  }
+}
+
+const assignmentTargets: Handler = (node) => {
+  markTargets(node.left)
+}
 
 const call: Handler = (node, parent, ctx) => {
-  if (!enabled(ctx)) return
+  if (!enabled(ctx, node)) return
   const callee: Node = node.callee
   if (callee.type !== "MemberExpression" || callee.computed || node.optional === true) return
   const name = memberName(callee)
@@ -56,7 +89,7 @@ const call: Handler = (node, parent, ctx) => {
 
 /** `process.env.NAME` in a read position. */
 const member: Handler = (node, parent, ctx) => {
-  if (!enabled(ctx)) return
+  if (!enabled(ctx, node) || node.efxWriteTarget === true) return
   const env: Node = node.object
   if (env.type !== "MemberExpression" || env.computed || memberName(env) !== "env") return
   if (!isFreeGlobal(ctx, env.object, "process")) return
@@ -83,5 +116,8 @@ const member: Handler = (node, parent, ctx) => {
  */
 export const ambientHandlers: HandlerGroup = {
   CallExpression: call,
-  MemberExpression: member
+  MemberExpression: member,
+  AssignmentExpression: assignmentTargets,
+  ForOfStatement: assignmentTargets,
+  ForInStatement: assignmentTargets
 }
