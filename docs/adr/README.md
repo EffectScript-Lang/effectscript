@@ -30,6 +30,12 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0016](0016-harden-then-adoption-slice.md)            | Harden semantics, then prove an adoption slice                | Accepted |
 | [0017](0017-syntactic-vs-checker-diagnostics.md)      | Syntactic diagnostics in the compiler, typed ones in the checker | Accepted |
 | [0018](0018-relative-filenames-in-service-keys.md)    | Relative filenames keep their directories in service keys    | Accepted |
+| [0019](0019-volar-on-typescript-6-js-api.md)          | Editor and checker integration through Volar on the TS 6 JS API | Accepted |
+| [0020](0020-incomplete-code-recovery.md)              | Recover incomplete code by neutralizing failing lines         | Accepted |
+| [0021](0021-node-runtime-register-hooks.md)           | Run `.efx` on Node with `registerHooks` and transform stripping | Accepted |
+| [0022](0022-build-staging-and-typescript-emit.md)     | `efx build` compiles to a staging tree, then TypeScript emits | Accepted |
+| [0023](0023-reverse-compiler-subset.md)               | Ship the reverse compiler for the adoption-slice subset first | Accepted |
+| [0019](0019-launch-film-made-from-code.md)            | The launch film is made from code; generated photos are plates only | Accepted |
 
 ## Template
 
