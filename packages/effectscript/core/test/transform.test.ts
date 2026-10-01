@@ -76,3 +76,22 @@ describe("service keys", () => {
     expect(ts("service Database {\n  effect ping(): void\n}\n")).toContain("()(\"Database\")")
   })
 })
+
+describe("main", () => {
+  it("targets the configured runtime", () => {
+    expect(ts("main { await sleep(1) }\n", { runtime: "bun" })).toBe(
+      "import { BunRuntime, BunServices } from \"@effect/platform-bun\"\nimport { Effect } from \"effect\"\n" +
+        "BunRuntime.runMain(Effect.gen(function*() { yield* Effect.sleep(1) }).pipe(Effect.provide(BunServices.layer)))\n"
+    )
+    expect(ts("main { await sleep(1) }\n", { runtime: "browser" })).toBe(
+      "import { BrowserRuntime } from \"@effect/platform-browser\"\nimport { Effect } from \"effect\"\n" +
+        "BrowserRuntime.runMain(Effect.gen(function*() { yield* Effect.sleep(1) }))\n"
+    )
+  })
+
+  it("scopes main when it uses defer", () => {
+    expect(ts("main {\n  defer log(\"bye\")\n}\n", { runtime: "browser" })).toContain(
+      "}).pipe(Effect.scoped))"
+    )
+  })
+})

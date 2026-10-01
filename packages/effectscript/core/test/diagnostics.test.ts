@@ -109,3 +109,9 @@ describe("service diagnostics", () => {
     expect(codes("service S {\n  effect use(): void\n}\n")).toEqual(["EFX4003"])
   })
 })
+
+describe("main diagnostics", () => {
+  it("EFX6001: only one main per module", () => {
+    expect(codes("main {\n}\nmain {\n}\n")).toEqual(["EFX6001"])
+  })
+})

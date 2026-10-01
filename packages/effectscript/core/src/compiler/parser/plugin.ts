@@ -160,6 +160,7 @@ export const efxPlugin = (Base: any): any =>
     parseStatement(context: unknown, topLevel: unknown, exports: unknown): any {
       if (this.efxIsEffectDeclarationStart()) return this.efxParseEffectDeclaration(false)
       if (this.efxDeferFollows()) return this.efxParseDefer()
+      if (this.efxIsMainStart()) return this.efxParseMain()
       if (this.efxIsWord("schema") && this.efxNextIsNameSameLine()) return this.efxParseSchema()
       if (this.efxIsClassLikeStart()) return this.efxParseClassLike(this.value)
       return super.parseStatement(context, topLevel, exports)
@@ -476,5 +477,21 @@ export const efxPlugin = (Base: any): any =>
         node.efxServiceKey = this.parseExprAtom(null, false, false)
       }
       return super.parseClassSuper(node)
+    }
+
+    efxIsMainStart(): boolean {
+      if (!this.efxIsWord("main")) return false
+      const next = this.lookahead()
+      return next.type === tt.braceL && this.efxSameLine(next)
+    }
+
+    efxParseMain(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.body = this.efxParseAsyncBlock()
+      this.finishNode(node, "MainStatement")
+      this.efxAttachPipes(node)
+      return node
     }
   }

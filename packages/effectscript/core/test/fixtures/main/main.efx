@@ -1,0 +1,9 @@
+declare const program: Effect<void>
+main {
+  await program
+  globalThis.console.log("done")
+} |> provide(Layer.empty)
+
+effect helper() {
+  return 1
+}
