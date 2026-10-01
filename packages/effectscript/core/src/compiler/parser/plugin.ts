@@ -166,6 +166,7 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsClassLikeStart()) return this.efxParseClassLike(this.value)
       if (this.efxIsBindingDeclarationStart("layer")) return this.efxParseBindingDeclaration("LayerDeclaration")
       if (this.efxIsBindingDeclarationStart("atom")) return this.efxParseBindingDeclaration("AtomDeclaration")
+      if (this.efxIsCommandStart()) return this.efxParseCommand()
       if (this.efxIsHttpApiStart("group")) return this.efxParseGroup()
       if (this.efxIsHttpApiStart("api")) return this.efxParseApi()
       if (this.efxIsDescribeStart()) return this.efxParseDescribe()
@@ -176,7 +177,7 @@ export const efxPlugin = (Base: any): any =>
     shouldParseExportStatement(): any {
       return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() ||
         this.efxIsBindingDeclarationStart("layer") || this.efxIsBindingDeclarationStart("atom") ||
-        this.efxIsHttpApiStart("group") || this.efxIsHttpApiStart("api") ||
+        this.efxIsHttpApiStart("group") || this.efxIsHttpApiStart("api") || this.efxIsCommandStart() ||
         super.shouldParseExportStatement()
     }
 
@@ -567,6 +568,38 @@ export const efxPlugin = (Base: any): any =>
         if (this.type !== tt.braceR) this.expect(tt.comma)
       }
       return this.finishNode(node, "ApiDeclaration")
+    }
+
+    /** `command name(…) { … }` (§4.14). */
+    efxIsCommandStart(): boolean {
+      if (!this.efxIsWord("command") || !this.efxNextIsNameSameLine()) return false
+      const name = this.lookahead()
+      return this.input[skipSpace(this.input, name.end)] === "("
+    }
+
+    efxParseCommand(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.id = this.parseIdent()
+      this.expect(tt.parenL)
+      node.params = []
+      while (!this.eat(tt.parenR)) {
+        const param = this.startNode()
+        param.flag = this.type === tt.incDec && this.value === "--"
+        if (param.flag) this.next()
+        param.name = this.parseIdent()
+        param.optional = this.eat(tt.question)
+        this.expect(tt.colon)
+        param.annotation = this.tsInType(() => this.tsParseType())
+        param.value = this.eat(tt.eq) ? this.parseMaybeAssign() : null
+        node.params.push(this.finishNode(param, "CommandParameter"))
+        if (this.type !== tt.parenR) this.expect(tt.comma)
+      }
+      node.body = this.efxParseAsyncBlock()
+      this.finishNode(node, "CommandDeclaration")
+      this.efxAttachPipes(node)
+      return node
     }
 
     /** `impl Api.group { … }` in expression position (§4.14). */

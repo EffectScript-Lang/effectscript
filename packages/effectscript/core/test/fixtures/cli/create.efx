@@ -1,0 +1,13 @@
+import { Schema } from "effect"
+
+const Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))
+
+/** Create a task */
+export command create(
+  /** Task title */ title: NonEmptyString,
+  /** Priority */ --priority: "low" | "normal" | "high" = "normal",
+  /** Assignee email @alias a */ --assignee?: Email,
+  --dryRun: boolean = false,
+) {
+  console.log(`Created "${title}" with ${priority} priority`)
+}

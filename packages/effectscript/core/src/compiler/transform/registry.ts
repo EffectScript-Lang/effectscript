@@ -5,6 +5,7 @@ import type { Handler } from "../context.ts"
 import { ambientHandlers } from "./ambient.ts"
 import { atomHandlers } from "./atom.ts"
 import { awaitHandlers } from "./await.ts"
+import { commandHandlers } from "./command.ts"
 import { configHandlers } from "./config.ts"
 import { effectHandlers } from "./effect.ts"
 import { httpApiHandlers } from "./httpApi.ts"
@@ -59,6 +60,7 @@ export const handlers = registry(
   layerHandlers,
   atomHandlers,
   httpApiHandlers,
+  commandHandlers,
   serviceHandlers,
   effectHandlers,
   mainHandlers,

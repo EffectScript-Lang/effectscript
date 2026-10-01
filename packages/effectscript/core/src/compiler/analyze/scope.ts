@@ -262,6 +262,20 @@ export const analyze = (program: Node): ScopeAnalysis => {
         scope.types.add(node.id.name)
         return visitChildren(node, scope)
       }
+      case "CommandDeclaration": {
+        scope.values.add(node.id.name)
+        bindings.add(node.id)
+        for (const param of node.params) if (param.value !== null) visit(param.value, scope)
+        const fn = makeScope(scope, "function")
+        for (const param of node.params) {
+          fn.values.add(param.name.name)
+          bindings.add(param.name)
+        }
+        scopeOf.set(node.body, fn)
+        visitChildren(node.body, fn)
+        for (const pipe of node.efxPipes ?? []) visit(pipe, scope)
+        return
+      }
       case "GroupDeclaration":
       case "ApiDeclaration": {
         scope.values.add(node.id.name)
