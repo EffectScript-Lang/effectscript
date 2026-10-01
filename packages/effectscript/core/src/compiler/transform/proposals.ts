@@ -36,6 +36,7 @@ const returnCompletion = (ctx: Ctx, node: Node | null | undefined): void => {
   switch (node.type) {
     case "ExpressionStatement":
       ctx.s.appendLeft(node.start, "return ")
+      node.efxCompletion = true // counts as a `return` for control-flow checks (e.g. `try`)
       return
     case "BlockStatement":
       returnCompletion(ctx, node.body[node.body.length - 1])
@@ -43,6 +44,10 @@ const returnCompletion = (ctx: Ctx, node: Node | null | undefined): void => {
     case "IfStatement":
       returnCompletion(ctx, node.consequent)
       returnCompletion(ctx, node.alternate)
+      return
+    case "TryStatement":
+      returnCompletion(ctx, node.block)
+      for (const clause of node.handlers ?? (node.handler ? [node.handler] : [])) returnCompletion(ctx, clause.body)
       return
   }
 }

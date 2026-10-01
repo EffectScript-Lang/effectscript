@@ -1,4 +1,4 @@
-import { Data, Effect } from "effect"
+import { Data, Cause, Effect } from "effect"
 
 class NotFound extends Data.TaggedError("NotFound")<{}> {}
 class Timeout extends Data.TaggedError("Timeout")<{}> {}
@@ -8,7 +8,7 @@ declare const load: (id: string) => Effect.Effect<string, NotFound | Timeout | E
 const withFallback = Effect.fn("withFallback")(function*(id: string) {
   return yield* Effect.gen(function*() {
     return yield* load(id)
-  }).pipe(Effect.catchTags({ NotFound: (e) => Effect.gen(function*() {
+  }).pipe(Effect.catchDefect((defect) => Effect.fail(new Cause.UnknownError(defect))), Effect.catchTags({ NotFound: (e) => Effect.gen(function*() {
     return "missing"
   }), Timeout: (e) => Effect.gen(function*() {
     return "slow"
@@ -30,9 +30,9 @@ const logged = Effect.fn("logged")(function*(id: string) {
 })
 
 const plain = Effect.fn("plain")(function*(json: string) {
-  try {
+  return yield* Effect.gen(function*() {
     return JSON.parse(json) as unknown
-  } catch {
+  }).pipe(Effect.catchDefect((defect) => Effect.fail(new Cause.UnknownError(defect))), Effect.catch(() => Effect.gen(function*() {
     return null
-  }
+  })))
 })

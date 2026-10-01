@@ -27,6 +27,8 @@ export interface ScopeAnalysis {
   readonly scopeOf: Map<Node, Scope>
   readonly constInits: Map<string, Node>
   readonly localErrors: Set<string>
+  /** Module-level class name → its `_tag` (from `error`/`schema` declarations and `Tagged*` superclasses). */
+  readonly localTags: ReadonlyMap<string, string>
   readonly localEffects: Set<string>
   readonly bindings: Set<Node>
   /** Every identifier name in the file, bound or free (for fresh names, ADR-0009). */
@@ -143,6 +145,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
   const scopeOf = new Map<Node, Scope>([[program, module]])
   const constInits = new Map<string, Node>()
   const localErrors = new Set<string>()
+  const localTags = new Map<string, string>()
   const localEffects = new Set<string>()
   const bindings = new Set<Node>()
 
@@ -209,6 +212,10 @@ export const analyze = (program: Node): ScopeAnalysis => {
           scope.values.add(node.id.name)
           scope.types.add(node.id.name)
           if (scope === module && node.efxKind === "error") localErrors.add(node.id.name)
+          if (scope === module) {
+            const tag = classTag(node)
+            if (tag !== undefined) localTags.set(node.id.name, tag)
+          }
         }
         const inner = makeScope(scope, "block")
         scopeOf.set(node, inner)
@@ -249,6 +256,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
         return
       }
       case "SchemaAdtDeclaration": {
+        if (scope === module) { for (const variant of node.variants) localTags.set(variant.id.name, variant.id.name) }
         for (const named of [node, ...node.variants]) {
           scope.values.add(named.id.name)
           scope.types.add(named.id.name)
@@ -320,11 +328,40 @@ export const analyze = (program: Node): ScopeAnalysis => {
     scopeOf,
     constInits,
     localErrors,
+    localTags,
     localEffects,
     bindings,
     identifierNames: collectNames(program),
     innerBound
   }
+}
+
+const taggedConstructors = new Set(["TaggedError", "TaggedClass"])
+
+/** The `_tag` a class declaration gives its instances, when it is syntactically evident. */
+const classTag = (node: Node): string | undefined => {
+  if (node.efxKind === "error" || node.efxKind === "schema") {
+    const field = (node.body.body as Array<Node>).find((m) =>
+      m.type === "PropertyDefinition" && m.key?.type === "Identifier" && m.key.name === "_tag"
+    )
+    const literal = field?.typeAnnotation?.typeAnnotation
+    if (literal?.type === "TSLiteralType" && typeof literal.literal.value === "string") return literal.literal.value
+    return node.efxKind === "error" ? node.id.name : undefined
+  }
+  // `Data.TaggedError("T")<…>` / `Schema.TaggedError<X>()("T", …)`
+  const call: Node | null | undefined = node.superClass
+  if (call?.type !== "CallExpression") return undefined
+  const first = call.arguments[0]
+  if (first?.type !== "Literal" || typeof first.value !== "string") return undefined
+  let callee: Node = call.callee
+  if (callee.type === "CallExpression") callee = callee.callee
+  if (callee.type === "TSInstantiationExpression") callee = callee.expression
+  const name = callee.type === "MemberExpression" && !callee.computed
+    ? callee.property.name
+    : callee.type === "Identifier"
+    ? callee.name
+    : undefined
+  return taggedConstructors.has(name) ? first.value : undefined
 }
 
 const collectNames = (program: Node): Set<string> => {

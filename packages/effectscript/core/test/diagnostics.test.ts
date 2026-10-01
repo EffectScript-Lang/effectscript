@@ -40,10 +40,16 @@ describe("try diagnostics", () => {
       .toEqual(["EFX2021"])
   })
 
-  it("EFX2022: typed catch on a plain try inside effect", () => {
-    expect(codes("effect f() {\n  try {\n    JSON.parse(\"1\")\n  } catch (e: SyntaxError) {}\n}\n")).toEqual([
-      "EFX2022"
-    ])
+  it("EFX2025: a tag already caught by an earlier clause", () => {
+    expect(
+      codes(
+        "effect f(x: Effect.Effect<number>) {\n  try {\n    return await x\n  } catch (e: A) {\n    return 1\n  } catch (e: A | B) {\n    return 2\n  }\n}\n"
+      )
+    ).toEqual(["EFX2025"])
+  })
+
+  it("a typed catch around synchronous code is valid inside effect (ADR-0010)", () => {
+    expect(codes("effect f() {\n  try {\n    JSON.parse(\"1\")\n  } catch (e: UnknownError) {}\n}\n")).toEqual([])
   })
 
   it("EFX2023: untyped catch must be last", () => {

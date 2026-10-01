@@ -39,6 +39,8 @@ const matchExpression: Handler = (node, _parent, ctx) => {
     inline ? arms[0]!.start : brace + 1,
     tagsOnly ? (inline ? ", { " : ", {") : ").pipe("
   )
+  // Closers appended at an arm's end must follow anything the arm body itself appends there.
+  const closers: Array<() => void> = []
   arms.forEach((arm, i) => {
     const binding = bindingText(ctx, arm.pattern)
     const [open, close] = generator
@@ -57,16 +59,17 @@ const matchExpression: Handler = (node, _parent, ctx) => {
     const separator = last ? (!tagsOnly && !hasDefault ? `, ${M}.exhaustive` : "") : ","
     ctx.s.update(arm.start, arm.body.start, head)
     if (arm.end > arm.body.end) ctx.s.update(arm.body.end, arm.end, `${tail}${separator}`)
-    else ctx.s.appendLeft(arm.body.end, `${tail}${separator}`)
+    else closers[i] = () => ctx.s.appendLeft(arm.body.end, `${tail}${separator}`)
   })
   const lastArm = arms[arms.length - 1]!
   if (sameLine(ctx, lastArm.end, node.end - 1)) ctx.s.update(lastArm.end, node.end, tagsOnly ? " })" : ")")
   else ctx.s.update(node.end - 1, node.end, tagsOnly ? "})" : ")")
   walk(node.discriminant, node, ctx)
-  for (const arm of arms) {
+  arms.forEach((arm, i) => {
     if (generator) walkInScopeOf(arm, arm.body, arm, ctx)
     else withEffect(ctx, undefined, () => walkInScopeOf(arm, arm.body, arm, ctx))
-  }
+    closers[i]?.()
+  })
   return true
 }
 
