@@ -193,16 +193,17 @@ def concrete_material():
         d = b.m("MINIMUM", f, b.m("SUBTRACT", 1.0, f))
         return b.mr(b.mul(d, period), width * 0.5, width, 1.0, 0.0, interp="SMOOTHSTEP")
 
-    sh = seam(z, 1.2, 0.035)
-    sv = seam(b.add(u, b.mul(b.m("FLOOR", b.m("DIVIDE", z, 1.2)), 1.2)), 2.4, 0.03)
+    sh = seam(z, 1.5, 0.03)
+    sv = b.mul(seam(b.add(u, b.mul(b.m("FLOOR", b.m("DIVIDE", z, 1.5)), 2.1)), 4.2, 0.025), 0.55)
     seams = b.m("MAXIMUM", sh, sv)
     # tie holes on a 0.6 x 0.6 grid inside each panel
-    hole_g = b.combine(b.m("FRACT", b.m("DIVIDE", b.add(u, 0.3), 0.6)), b.m("FRACT", b.m("DIVIDE", b.add(z, 0.3), 0.6)), 0.0)
-    hd = b.v("LENGTH", b.v("SUBTRACT", hole_g, (0.5, 0.5, 0.0)), out="Value")
-    holes = b.mr(b.mul(hd, 0.6), 0.022, 0.032, 1.0, 0.0)
+    hole_g = b.combine(b.m("FRACT", b.m("DIVIDE", b.add(u, 0.35), 1.05)), b.m("FRACT", b.m("DIVIDE", b.add(z, 0.375), 0.75)), 0.0)
+    hd = b.v("LENGTH", b.v("MULTIPLY", b.v("SUBTRACT", hole_g, (0.5, 0.5, 0.0)), (1.05, 0.75, 0.0)), out="Value")
+    holes = b.mr(hd, 0.02, 0.03, 1.0, 0.0)
     # per-panel tone
-    cell = b.combine(b.m("FLOOR", b.m("DIVIDE", b.add(u, b.mul(b.m("FLOOR", b.m("DIVIDE", z, 1.2)), 1.2)), 2.4)), b.m("FLOOR", b.m("DIVIDE", z, 1.2)), 3.0)
-    panel = b.mr(b.white(cell), 0.0, 1.0, -0.025, 0.025)
+    cell = b.combine(b.m("FLOOR", b.m("DIVIDE", b.add(u, b.mul(b.m("FLOOR", b.m("DIVIDE", z, 1.5)), 2.1)), 4.2)), b.m("FLOOR", b.m("DIVIDE", z, 1.5)), 3.0)
+    lift = b.white(b.combine(b.m("FLOOR", b.m("DIVIDE", z, 1.5)), 1.0, 7.0))
+    panel = b.add(b.mr(b.white(cell), 0.0, 1.0, -0.012, 0.012), b.mr(lift, 0.0, 1.0, -0.025, 0.02))
 
     mottle = b.noise(co, 0.18, 6.0, 0.6)
     blotch = b.noise(co, 1.1, 8.0, 0.62)
@@ -220,14 +221,14 @@ def concrete_material():
     tone = b.add(tone, panel)
     tone = b.add(tone, b.mr(sand, 0.3, 0.7, -0.03, 0.03))
     tone = b.add(tone, b.mr(streak, 0.42, 0.75, 0.0, -0.16))
-    tone = b.add(tone, b.mul(seams, -0.05))
+    tone = b.add(tone, b.mul(seams, -0.035))
     tone = b.add(tone, b.mul(holes, -0.22))
     tone = b.add(tone, b.mul(pores, -0.22))
     tone = b.mixf(b.mul(damp, 0.75), tone, b.mul(tone, 0.42))
 
     rough = b.add(b.mr(mottle, 0.3, 0.7, 0.62, 0.86), b.mul(damp, -0.38))
     height = b.add(b.mul(sand, 0.35), b.mul(blotch, 0.4))
-    height = b.add(height, b.mul(seams, -0.7))
+    height = b.add(height, b.mul(seams, -0.45))
     height = b.add(height, b.mul(holes, -1.5))
     height = b.add(height, b.mul(pores, -0.8))
     nrm = b.bump(height, 0.55, 0.02)
@@ -312,14 +313,14 @@ def person(scene, name, loc, height, yaw, stride, arm, mat, seed):
 
     hip = 0.92
     sx = stride
-    capsule((-0.09, -sx, 0.05), (-0.1, 0.0, hip), 0.055, 0.075)
-    capsule((0.09, sx * 0.6, 0.05), (0.1, 0.0, hip), 0.055, 0.075)
-    capsule((0.0, 0.0, hip - 0.05), (0.0, 0.0, 1.42), 0.15, 0.2)
-    capsule((-0.19, 0.0, 1.4), (0.19, 0.0, 1.4), 0.07, 0.07)
-    capsule((-0.21, 0.0, 1.4), (-0.25, arm, 0.86), 0.05, 0.042)
-    capsule((0.21, 0.0, 1.4), (0.25, -arm * 0.5, 0.86), 0.05, 0.042)
-    capsule((0.0, 0.0, 1.4), (0.0, 0.0, 1.52), 0.055, 0.055)
-    bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=0.105, matrix=Matrix.Translation((0, 0.01, 1.62)))
+    capsule((-0.085, -sx, 0.04), (-0.09, 0.0, hip), 0.045, 0.07)
+    capsule((0.085, sx * 0.6, 0.04), (0.09, 0.0, hip), 0.045, 0.07)
+    capsule((0.0, 0.0, hip - 0.02), (0.0, 0.0, 1.36), 0.13, 0.15)
+    capsule((-0.17, 0.0, 1.38), (0.17, 0.0, 1.38), 0.055, 0.055)
+    capsule((-0.19, 0.0, 1.38), (-0.22, arm, 0.84), 0.042, 0.036)
+    capsule((0.19, 0.0, 1.38), (0.22, -arm * 0.5, 0.84), 0.042, 0.036)
+    capsule((0.0, 0.0, 1.38), (0.0, 0.0, 1.5), 0.045, 0.045)
+    bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=0.1, matrix=Matrix.Translation((0, 0.01, 1.6)))
     bmesh.ops.scale(bm, vec=(s * rng.uniform(0.95, 1.08), s, s), verts=bm.verts)
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
@@ -426,10 +427,11 @@ def cloud_cookie(scene):
 
 
 def build():
-    scene = E.new_scene(FRAMES, samples=48, adaptive=0.03, bounces=(4, 2, 3, 4))
+    scene = E.new_scene(FRAMES, samples=32, adaptive=0.03, bounces=(4, 2, 3, 4))
     c = scene.cycles
     c.volume_bounces = 0
-    c.volume_step_rate = 1.0
+    c.volume_biased = True  # ray marching: ~2x faster than null scattering here
+    c.volume_step_rate = 4.0
     c.volume_max_steps = 256
     E.compositor(scene, bloom=0.22, bloom_size=0.7, threshold=2.5, vignette=0.32, gain=1.0)
     world(scene)

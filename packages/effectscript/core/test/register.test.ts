@@ -14,7 +14,7 @@ const project = (files: Record<string, string>) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "efx-register-"))
   fs.mkdirSync(path.join(dir, "node_modules"))
   fs.symlinkSync(path.join(packages, "effect"), path.join(dir, "node_modules/effect"))
-  fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ type: "module" }))
+  fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name: "app", type: "module" }))
   for (const [name, text] of Object.entries(files)) fs.writeFileSync(path.join(dir, name), text)
   return dir
 }
@@ -40,6 +40,23 @@ describe("effectscript/register (ADR-0021)", () => {
     const result = run(dir, "main.ts")
     expect(result.stderr).not.toMatch(/Error/)
     expect(result.stdout.trim()).toBe("hi ada (3) Green!")
+  }, 120_000)
+
+  it("derives service keys from the package, like efx build (review I5)", () => {
+    const service = (label: string) =>
+      `export service Database {\n  effect name(): string\n  layer = { name: effect () => "${label}" }\n}\n`
+    const dir = project({
+      "a.efx": service("A"),
+      "b.efx": service("B"),
+      "main.ts":
+        "import { Effect, Layer } from \"effect\"\nimport * as A from \"./a.efx\"\nimport * as B from \"./b.efx\"\n" +
+        "const program = Effect.gen(function*() {\n  const a = yield* A.Database\n  const b = yield* B.Database\n  return `${yield* a.name()} ${yield* b.name()}`\n})\n" +
+        "console.log(Effect.runSync(program.pipe(Effect.provide(Layer.mergeAll(A.Database.layer, B.Database.layer)))))\n"
+    })
+    dirs.push(dir)
+    const result = run(dir, "main.ts")
+    expect(result.stderr).not.toMatch(/Error/)
+    expect(result.stdout.trim()).toBe("A B")
   }, 120_000)
 
   it("rejects .efx that compiles to TSX with EFX1101", () => {

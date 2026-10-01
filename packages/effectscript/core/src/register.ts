@@ -12,13 +12,14 @@ import { registerHooks, stripTypeScriptTypes } from "node:module"
 import { fileURLToPath } from "node:url"
 import { toTypeScript } from "./compiler/compile.ts"
 import { formatDiagnostic } from "./compiler/diagnostics.ts"
+import { packageInfo } from "./project.ts"
 
 registerHooks({
   load(url, context, nextLoad) {
     if (!url.startsWith("file:") || !url.endsWith(".efx")) return nextLoad(url, context)
     const filename = fileURLToPath(url)
     const source = fs.readFileSync(filename, "utf8")
-    const result = toTypeScript(source, { filename, runtime: "node" })
+    const result = toTypeScript(source, { filename, runtime: "node", ...packageInfo(filename) })
     const errors = result.diagnostics.filter((d) => d.severity === "error")
     if (errors.length > 0) {
       throw new SyntaxError(errors.map((d) => formatDiagnostic(source, filename, d)).join("\n\n"))

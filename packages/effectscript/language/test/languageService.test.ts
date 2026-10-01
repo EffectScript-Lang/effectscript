@@ -1,3 +1,7 @@
+import { createLanguagePlugin } from "@effectscript/language"
+import * as fs from "node:fs"
+import * as os from "node:os"
+import * as path from "node:path"
 import ts from "typescript"
 import { describe, expect, it } from "vitest"
 import { createHarness } from "./utils/harness.ts"
@@ -26,7 +30,7 @@ describe("language service over .efx", () => {
 
   it("renames across .efx and .ts", () => {
     const locations = service.findRenameLocations(`${dir}/a.efx`, a.indexOf("double"), false, false, {})!
-    expect(locations.map((l) => path(l.fileName)).sort()).toEqual(["a.efx", "b.ts", "b.ts"])
+    expect(locations.map((l) => base(l.fileName)).sort()).toEqual(["a.efx", "b.ts", "b.ts"])
   })
 
   it("hovers and completes inside effect code", () => {
@@ -45,4 +49,23 @@ describe("language service over .efx", () => {
   })
 })
 
-const path = (fileName: string) => fileName.split("/").pop()!
+const base = (fileName: string) => fileName.split("/").pop()!
+
+describe("language plugin options", () => {
+  it("derives service keys from the nearest package.json, like efx build (review I5)", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "efx-plugin-"))
+    try {
+      fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name: "app" }))
+      const source = "export service Database {\n  effect ping(): void\n}\n"
+      const code = createLanguagePlugin(ts).createVirtualCode!(
+        path.join(dir, "src/a.efx"),
+        "effectscript",
+        ts.ScriptSnapshot.fromString(source),
+        { getAssociatedScript: () => undefined }
+      )!
+      expect(code.snapshot.getText(0, code.snapshot.getLength())).toContain("\"app/a/Database\"")
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})

@@ -7,6 +7,7 @@
 import type { CodeMapping, IScriptSnapshot, LanguagePlugin, VirtualCode } from "@volar/language-core"
 import type { TypeScriptServiceScript } from "@volar/typescript"
 import { toTypeScript } from "effectscript/compiler"
+import { packageInfo } from "effectscript/project"
 import type * as ts from "typescript"
 
 /**
@@ -35,7 +36,7 @@ export const createLanguagePlugin = (
   createVirtualCode(fileName, languageId, snapshot) {
     if (languageId !== "effectscript") return undefined
     const source = snapshot.getText(0, snapshot.getLength())
-    const result = toTypeScript(source, { filename: fileName, recover: true })
+    const result = toTypeScript(source, { filename: fileName, recover: true, ...packageInfo(fileName) })
     return {
       id: "root",
       languageId: result.mode === "tsx" ? "typescriptreact" : "typescript",

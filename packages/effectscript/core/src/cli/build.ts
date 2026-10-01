@@ -12,6 +12,7 @@ import { toTypeScript } from "../compiler/compile.ts"
 import { formatDiagnostic } from "../compiler/diagnostics.ts"
 import type { CodeMapping } from "../compiler/options.ts"
 import { type Mode, parse } from "../compiler/parser/parse.ts"
+import { packageInfo } from "../project.ts"
 import type { TypeScript } from "./typescript.ts"
 
 /**
@@ -140,16 +141,12 @@ export const build = (
   const outDir = parsedConfig.options.outDir
   if (outDir === undefined) return { ok: false, errors: ["efx build needs `outDir` in tsconfig.json"], stagingDir }
   const rootDir = parsedConfig.options.rootDir ?? projectDir
-  const packageJson = path.join(projectDir, "package.json")
-  const packageName: string | undefined = fs.existsSync(packageJson)
-    ? JSON.parse(fs.readFileSync(packageJson, "utf8")).name
-    : undefined
 
   // 1. compile the graph
   const compiled = new Map<string, Compiled>()
   for (const file of parsedConfig.fileNames.filter((f) => f.endsWith(".efx"))) {
     const source = fs.readFileSync(file, "utf8")
-    const result = toTypeScript(source, { filename: file, packageName, packageRoot: projectDir, runtime: "node" })
+    const result = toTypeScript(source, { filename: file, runtime: "node", ...packageInfo(file) })
     for (const d of result.diagnostics.filter((d) => d.severity === "error")) {
       errors.push(formatDiagnostic(source, relative(file), d))
     }
