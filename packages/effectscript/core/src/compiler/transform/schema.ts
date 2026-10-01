@@ -42,6 +42,31 @@ const schemaClass: Handler = (node, _parent, ctx) => {
   return true
 }
 
+/** Comments (verbatim) found in `source` between two offsets. */
+const commentsBetween = (source: string, from: number, to: number): Array<string> =>
+  [...source.slice(from, to).matchAll(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g)].map((m) => m[0])
+
+/** `Schema.Struct({ … })` for an alias type literal, keeping member comments (multi-line when present). */
+const aliasSchema = (ctx: Parameters<Handler>[2], type: Node): string => {
+  if (type.type !== "TSTypeLiteral") return typeToSchema(ctx, type)
+  let previous = type.start + 1
+  let hasComments = false
+  const members = (type.members as Array<Node>).map((member) => {
+    const comments = commentsBetween(ctx.source, previous, member.start)
+    previous = member.end
+    if (comments.length > 0) hasComments = true
+    const struct = typeToSchema(ctx, { ...type, members: [member] } as Node)
+    const body = struct.slice("Schema.Struct({ ".length, -" })".length)
+    return { comments, body }
+  })
+  if (!hasComments) return typeToSchema(ctx, type)
+  const lines = members.flatMap(({ body, comments }, i) => [
+    ...comments.map((c) => `  ${c}`),
+    `  ${body}${i === members.length - 1 ? "" : ","}`
+  ])
+  return `Schema.Struct({\n${lines.join("\n")}\n})`
+}
+
 const schemaAlias: Handler = (node, parent, ctx) => {
   ctx.imports.need("effect", "Schema")
   const prefix = parent?.type === "ExportNamedDeclaration" ? "export " : ""
@@ -49,7 +74,7 @@ const schemaAlias: Handler = (node, parent, ctx) => {
   ctx.s.update(
     node.start,
     node.end,
-    `const ${name} = ${typeToSchema(ctx, node.typeAnnotation)}\n${prefix}type ${name} = typeof ${name}.Type`
+    `const ${name} = ${aliasSchema(ctx, node.typeAnnotation)}\n${prefix}type ${name} = typeof ${name}.Type`
   )
   return true
 }
@@ -73,11 +98,17 @@ const schemaAdt: Handler = (node, parent, ctx) => {
     }
     const struct = fields.length === 0 ? "{}" : `{ ${
       fields.map((f) => {
+        if (f.typeAnnotation === undefined || f.typeAnnotation === null) {
+          ctx.diagnostics.push(diagnosticError("EFX3004", "A field needs a type or `= <schema>`", f.start, f.end))
+          return `${f.key.name}: Schema.Unknown`
+        }
         const schema = typeToSchema(ctx, f.typeAnnotation.typeAnnotation)
         return `${f.key.name}: ${f.optional === true ? `Schema.optional(${schema})` : schema}`
       }).join(", ")
     } }`
-    return `${i === 0 ? "" : prefix}class ${variantName} extends Schema.TaggedClass<${variantName}>()(${
+    const from = i === 0 ? node.id.end : (node.variants as Array<Node>)[i - 1]!.end
+    const comments = commentsBetween(ctx.source, from, variant.start).map((c) => `${c}\n`).join("")
+    return `${comments}${i === 0 ? "" : prefix}class ${variantName} extends Schema.TaggedClass<${variantName}>()(${
       JSON.stringify(variantName)
     }, ${struct}) {}`
   })

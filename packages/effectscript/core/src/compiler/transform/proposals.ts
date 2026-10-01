@@ -35,7 +35,7 @@ const returnCompletion = (ctx: Ctx, node: Node | null | undefined): void => {
   if (node === null || node === undefined) return
   switch (node.type) {
     case "ExpressionStatement":
-      ctx.s.appendRight(node.start, "return ")
+      ctx.s.appendLeft(node.start, "return ")
       return
     case "BlockStatement":
       returnCompletion(ctx, node.body[node.body.length - 1])

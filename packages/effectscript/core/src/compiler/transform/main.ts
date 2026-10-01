@@ -61,7 +61,7 @@ const mainStatement: Handler = (node, parent, ctx) => {
   const pipes: Array<Node> = node.efxPipes
   if (pipes.length === 0) {
     const extras = [...(frame.scoped ? ["Effect.scoped"] : []), ...(provide === undefined ? [] : [provide])]
-    ctx.s.prependLeft(node.end, extras.length > 0 ? `).pipe(${extras.join(", ")}))` : "))")
+    ctx.s.appendLeft(node.end, extras.length > 0 ? `).pipe(${extras.join(", ")}))` : "))")
   } else {
     let previousEnd: number = node.end
     pipes.forEach((pipe, i) => {
@@ -75,7 +75,7 @@ const mainStatement: Handler = (node, parent, ctx) => {
       walk(pipe, node, ctx)
       previousEnd = pipe.end
     })
-    ctx.s.prependLeft(previousEnd, `${provide === undefined ? "" : `, ${provide}`}))`)
+    ctx.s.appendLeft(previousEnd, `${provide === undefined ? "" : `, ${provide}`}))`)
   }
   const [start, end] = lineRange(ctx.source, { type: "MainStatement", start: node.start, end: lastEnd(node) })
   if (ctx.source.slice(end).trim() !== "") {

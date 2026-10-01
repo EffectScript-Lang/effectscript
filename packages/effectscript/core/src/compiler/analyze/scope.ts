@@ -252,6 +252,16 @@ export const analyze = (program: Node): ScopeAnalysis => {
         }
         return
       }
+      case "MatchExpression": {
+        visit(node.discriminant, scope)
+        for (const arm of node.arms as Array<Node>) {
+          const inner = makeScope(scope, "block")
+          scopeOf.set(arm, inner)
+          for (const name of patternNames(arm.pattern?.binding, [], bindings)) inner.values.add(name)
+          visit(arm.body, inner)
+        }
+        return
+      }
       case "TSConditionalType": {
         visit(node.checkType, scope)
         visit(node.extendsType, scope)

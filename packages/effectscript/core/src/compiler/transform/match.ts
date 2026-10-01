@@ -6,7 +6,7 @@
  */
 import type { Node } from "../ast.ts"
 import { type Ctx, type Handler, withEffect } from "../context.ts"
-import { walk } from "../walk.ts"
+import { walk, walkInScopeOf } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 import { isEffectful } from "./try.ts"
 
@@ -63,8 +63,8 @@ const matchExpression: Handler = (node, _parent, ctx) => {
   else ctx.s.update(node.end - 1, node.end, tagsOnly ? "})" : ")")
   walk(node.discriminant, node, ctx)
   for (const arm of arms) {
-    if (generator) walk(arm.body, arm, ctx)
-    else withEffect(ctx, undefined, () => walk(arm.body, arm, ctx))
+    if (generator) walkInScopeOf(arm, arm.body, arm, ctx)
+    else withEffect(ctx, undefined, () => walkInScopeOf(arm, arm.body, arm, ctx))
   }
   return true
 }

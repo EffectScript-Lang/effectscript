@@ -50,7 +50,9 @@ export const emitImports = (ctx: {
   const lines: Array<string> = []
   const modules = [...ctx.imports.entries.keys()].sort()
   for (const module of modules) {
-    const names = [...ctx.imports.entries.get(module)!].filter((name) => isValueFree(ctx.analysis.module, name)).sort()
+    const names = [...ctx.imports.entries.get(module)!]
+      .filter((name) => isValueFree(ctx.analysis.module, name) && !upgradeTypeOnly(ctx, module, name))
+      .sort()
     if (names.length === 0) continue
     const existing = ctx.analysis.program.body.find((statement: Node) =>
       statement.type === "ImportDeclaration" && statement.source.value === module && statement.importKind !== "type" &&
@@ -70,4 +72,35 @@ export const emitImports = (ctx: {
   } else {
     ctx.s.prepend(text)
   }
+}
+
+/**
+ * If `name` is already imported from `module` as type-only, turn that into a value import (keeping the
+ * other specifiers type-only) and report success.
+ */
+const upgradeTypeOnly = (
+  ctx: { readonly source: string; readonly s: MagicString; readonly analysis: ScopeAnalysis },
+  module: string,
+  name: string
+): boolean => {
+  for (const statement of ctx.analysis.program.body as Array<Node>) {
+    if (statement.type !== "ImportDeclaration" || statement.source.value !== module) continue
+    const specifier: Node | undefined = statement.specifiers.find((s: Node) =>
+      s.type === "ImportSpecifier" && s.local.name === name
+    )
+    if (specifier === undefined) continue
+    if (statement.importKind === "type") {
+      const typeKeyword = ctx.source.indexOf("type", statement.start + "import".length)
+      ctx.s.remove(typeKeyword, ctx.source.indexOf("{", typeKeyword))
+      for (const other of statement.specifiers as Array<Node>) {
+        if (other !== specifier) ctx.s.appendRight(other.start, "type ")
+      }
+      return true
+    }
+    if (specifier.importKind === "type") {
+      ctx.s.remove(specifier.start, specifier.imported.start)
+      return true
+    }
+  }
+  return false
 }

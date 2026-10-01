@@ -65,7 +65,7 @@ const identifier: Handler = (node, parent, ctx) => {
     ctx.effect !== undefined && parent?.type === "AwaitExpression" && parent.argument === node &&
     isServiceTag(node.name)
   ) {
-    ctx.s.appendLeft(node.end, `.${node.name}`)
+    ctx.s.prependLeft(node.end, `.${node.name}`)
   }
 }
 

@@ -44,7 +44,7 @@ export const attachPipesAsArguments = (ctx: Ctx, node: Node, end: number, leadin
   const pipes: Array<Node> = node.efxPipes ?? []
   const ops: Array<{ readonly start: number; readonly end: number }> = node.efxPipeOps ?? []
   if (pipes.length === 0) {
-    ctx.s.prependLeft(end, `${leading})`)
+    ctx.s.appendLeft(end, `${leading})`)
     return
   }
   let previousEnd = end
@@ -64,7 +64,7 @@ export const attachPipesAsArguments = (ctx: Ctx, node: Node, end: number, leadin
     walk(pipe, node, ctx)
     previousEnd = pipe.end
   })
-  ctx.s.prependLeft(previousEnd, ")")
+  ctx.s.appendLeft(previousEnd, ")")
 }
 
 /**
@@ -121,9 +121,9 @@ const effectBlock: Handler = (node, parent, ctx) => {
   withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
   if (frame.scoped && !frame.layerConstructor) {
     ctx.s.appendRight(node.start, "Effect.scoped(")
-    ctx.s.prependLeft(node.end, "))")
+    ctx.s.appendLeft(node.end, "))")
   } else {
-    ctx.s.prependLeft(node.end, ")")
+    ctx.s.appendLeft(node.end, ")")
   }
   return true
 }
@@ -159,7 +159,7 @@ const effectArrow: Handler = (node, _parent, ctx) => {
   const frame = makeFrame(node, "arrow")
   withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walkChildren(node, ctx)))
   const close = frame.scoped ? ", Effect.scoped)" : ")"
-  ctx.s.prependLeft(node.end, expressionBody ? ` }${close}` : close)
+  ctx.s.appendLeft(node.end, expressionBody ? ` }${close}` : close)
   return true
 }
 
@@ -184,7 +184,7 @@ const effectProperty: Handler = (node, _parent, ctx) => {
   if (node.computed) walk(node.key, node, ctx)
   const frame = makeFrame(fn, "method")
   withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(fn, node, ctx)))
-  ctx.s.prependLeft(fn.end, frame.scoped ? ", Effect.scoped)" : ")")
+  ctx.s.appendLeft(fn.end, frame.scoped ? ", Effect.scoped)" : ")")
   return true
 }
 

@@ -19,7 +19,7 @@ const hack = Effect.map(getUserName("4"), (name) => name.trim())
 
 const twice = pipe(21, ($) => $ + $)
 
-const mixed = pipe(Effect.map(loadUser("5").pipe(Effect.orDie), (s) => s.length), Effect.asVoid)
+const mixed = loadUser("5").pipe(Effect.orDie, ($) => Effect.map($, (s) => s.length), Effect.asVoid)
 
 const awaited = Effect.fn("awaited")(function*() {
   return yield* loadUser("6").pipe(Effect.orElseSucceed(() => "none"))

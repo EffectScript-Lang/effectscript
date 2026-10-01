@@ -280,7 +280,7 @@ return yield* Effect.gen(function*() { return yield* load(id) }).pipe(
 | `catch (e: A \| B)`                              | `Effect.catchTag(["A", "B"], …)`                             |
 | Several typed clauses, each a single tag         | one `Effect.catchTags({ A: …, B: … })`                       |
 | Several typed clauses, some unions               | sequential `Effect.catchTag(…)` calls in source order       |
-| A final untyped clause after typed ones          | appended `Effect.catch(…)`                                   |
+| A final untyped clause after typed ones          | the `orElse` argument of the last `catchTags`/`catchTag`     |
 | `finally { … }`                                  | appended `Effect.ensuring(Effect.gen(…))`                    |
 
 Rules:
@@ -293,8 +293,10 @@ Rules:
   `return yield* …`. If no path does, emit `yield* …;`. Anything mixed is an error (**EFX2020**,
   with a refactoring hint). `break`/`continue` that cross the `try` boundary, and `return` in
   `finally`, are errors (**EFX2021**).
-- Semantics note (documented): a failure raised inside a typed handler can be caught by a later
-  untyped clause. This is Effect's handler semantics, not JS's.
+- Semantics: a final untyped clause after typed clauses compiles to the `orElse` argument of
+  `Effect.catchTags`/`Effect.catchTag`, so a failure raised inside a typed clause propagates and is not
+  caught by a sibling clause, as in JavaScript. With several union-typed clauses compiled to sequential
+  `catchTag` calls, a later typed clause can still see an earlier clause's failure.
 
 ### 4.5 Bare Effect types
 
@@ -474,8 +476,9 @@ Rules:
   - Otherwise → `pipe(a, f, g)`, with `pipe` imported automatically. This is always correct.
 - **Hack style** (the proposal as currently specified): a right-hand side containing the topic `%`
   substitutes the left-hand side. For example, `user |> Effect.map(%, f)` → `Effect.map(user, f)`.
-  - The value is inlined if the right-hand side has exactly one `%` and everything evaluated before
-    it is side-effect-free (identifiers, member reads, literals, function expressions).
+  - The value is inlined only for the first step after the head, when the right-hand side has exactly
+    one `%`, everything evaluated before it is side-effect-free, and `%` is evaluated exactly once
+    (not inside a function, a short-circuit operand, a conditional branch or an optional chain).
   - Otherwise the step becomes the function `($) => rhs` inside the surrounding `pipe(…)`, which
     preserves evaluation order.
   - A `%` outside a pipeline right-hand side is a syntax error.

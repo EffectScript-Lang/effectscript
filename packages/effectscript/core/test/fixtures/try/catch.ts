@@ -12,7 +12,7 @@ const withFallback = Effect.fn("withFallback")(function*(id: string) {
     return "missing"
   }), Timeout: (e) => Effect.gen(function*() {
     return "slow"
-  }) }), Effect.catch((e) => Effect.gen(function*() {
+  }) }, (e) => Effect.gen(function*() {
     return `failed: ${String(e)}`
   })))
 })

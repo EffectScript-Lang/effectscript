@@ -99,7 +99,8 @@ export const efxPlugin = (Base: any): any =>
 
     efxNextIsNameSameLine(): boolean {
       const next = this.lookahead()
-      return next.type === tt.name && this.efxSameLine(next)
+      // `error as Error`, `effect satisfies T` are expressions, not declarations
+      return next.type === tt.name && this.efxSameLine(next) && next.value !== "as" && next.value !== "satisfies"
     }
 
     efxIsEffectDeclarationStart(): boolean {
@@ -215,16 +216,19 @@ export const efxPlugin = (Base: any): any =>
       const arrowStart = this.start
       state.arrowStarts.add(arrowStart)
       let arrow: any
-      if (this.type === tt.parenL) {
-        arrow = this.parseParenAndDistinguishExpression(true, false)
-      } else {
-        const start = this.start
-        const startLoc = this.startLoc
-        const param = this.parseIdent(false)
-        this.expect(tt.arrow)
-        arrow = this.parseArrowExpression(this.startNodeAt(start, startLoc), [param], true, false)
+      try {
+        if (this.type === tt.parenL) {
+          arrow = this.parseParenAndDistinguishExpression(true, false)
+        } else {
+          const start = this.start
+          const startLoc = this.startLoc
+          const param = this.parseIdent(false)
+          this.expect(tt.arrow)
+          arrow = this.parseArrowExpression(this.startNodeAt(start, startLoc), [param], true, false)
+        }
+      } finally {
+        state.arrowStarts.delete(arrowStart)
       }
-      state.arrowStarts.delete(arrowStart)
       if (arrow.type !== "ArrowFunctionExpression") {
         this.raise(keyword.start, "Expected an arrow function after `effect`")
       }
@@ -243,7 +247,11 @@ export const efxPlugin = (Base: any): any =>
         const next = this.lookahead()
         if (this.efxSameLine(next)) {
           if (next.type === tt.braceL) return this.efxParseEffectBlock()
-          if (next.type === tt.parenL && this.efxIsParenArrowAhead(next.start)) return this.efxParseEffectArrow()
+          if (next.type === tt.parenL && this.efxIsParenArrowAhead(next.start)) {
+            // Speculative: `flag ? effect(1) : (n) => n` is a call to a function named `effect`.
+            const attempt = this.tryParse(() => this.efxParseEffectArrow())
+            if (attempt.error === null && attempt.node !== null) return attempt.node
+          }
           if (next.type === tt.name && this.input.startsWith("=>", skipSpace(this.input, next.end))) {
             return this.efxParseEffectArrow()
           }
@@ -363,7 +371,7 @@ export const efxPlugin = (Base: any): any =>
       const next = this.lookahead()
       if (!this.efxSameLine(next)) return false
       return next.type === tt.braceL || next.type === tt.name || next.type === tt._new || next.type === tt._this ||
-        next.type === tt.string || next.type === tt.backQuote || next.type === tt._void
+        next.type === tt.string || next.type === tt._void
     }
 
     efxParseDefer(): any {

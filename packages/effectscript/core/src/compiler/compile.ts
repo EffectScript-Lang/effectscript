@@ -4,6 +4,7 @@
 import { MagicString } from "magic-string"
 import { analyze } from "./analyze/scope.ts"
 import type { Ctx } from "./context.ts"
+import { diagnosticError } from "./diagnostics.ts"
 import { emitImports, makeImportSet } from "./imports.ts"
 import { fullFeatures, toCodeMappings } from "./mappings.ts"
 import { type CompileOptions, type CompileResult, resolveOptions, type SourceMapV3 } from "./options.ts"
@@ -39,8 +40,23 @@ export const toTypeScript = (source: string, options: CompileOptions = {}): Comp
     service: undefined,
     namespace: "Effect"
   }
-  walk(parsed.program, undefined, ctx)
-  emitImports(ctx)
+  try {
+    walk(parsed.program, undefined, ctx)
+    emitImports(ctx)
+  } catch (error) {
+    // The compiler runs on every keystroke in editors: report, never throw.
+    const message = error instanceof Error ? error.message : String(error)
+    return {
+      code: "",
+      mode: parsed.mode,
+      map: undefined,
+      mappings: [],
+      diagnostics: [
+        ...ctx.diagnostics,
+        diagnosticError("EFX1000", `Internal compiler error: ${message}`, 0, Math.min(1, source.length))
+      ]
+    }
+  }
   const code = s.toString()
   const changed = s.hasChanged()
   const map: SourceMapV3 | undefined = resolved.sourceMap

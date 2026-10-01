@@ -79,11 +79,35 @@ const accessor = (ctx: Ctx, name: string, member: Node): string => {
   const typeParameters = signature.typeParameters
     ? ctx.s.slice(signature.typeParameters.start, signature.typeParameters.end)
     : ""
-  const params = (signature.params as Array<Node>).map((p) => ctx.s.slice(p.start, p.end)).join(", ")
-  const args = (signature.params as Array<Node>).map((p) =>
-    p.type === "RestElement" ? `...${p.argument.name}` : p.type === "AssignmentPattern" ? p.left.name : p.name
-  ).join(", ")
-  return `  static readonly ${key} = ${typeParameters}(${params}) => ${name}.use((_) => _.${key}(${args}))\n`
+  const params: Array<string> = []
+  const args: Array<string> = []
+  ;(signature.params as Array<Node>).forEach((p, i) => {
+    const annotation = (node: Node): string =>
+      node.typeAnnotation ? ctx.s.slice(node.typeAnnotation.start, node.typeAnnotation.end) : ""
+    if (p.type === "Identifier") {
+      params.push(ctx.s.slice(p.start, p.end))
+      args.push(p.name)
+    } else if (p.type === "RestElement") {
+      const argName = p.argument.type === "Identifier" ? p.argument.name : `_a${i}`
+      params.push(`...${argName}${annotation(p.argument)}${annotation(p)}`)
+      args.push(`...${argName}`)
+    } else if (p.type === "AssignmentPattern" && p.left.type === "Identifier") {
+      params.push(ctx.s.slice(p.start, p.end))
+      args.push(p.left.name)
+    } else {
+      // destructuring patterns: forward a generated name, keeping the annotation
+      const pattern = p.type === "AssignmentPattern" ? p.left : p
+      params.push(
+        `_a${i}${annotation(pattern)}${
+          p.type === "AssignmentPattern" ? ` = ${ctx.s.slice(p.right.start, p.right.end)}` : ""
+        }`
+      )
+      args.push(`_a${i}`)
+    }
+  })
+  return `  static readonly ${key} = ${typeParameters}(${params.join(", ")}) => ${name}.use((_) => _.${key}(${
+    args.join(", ")
+  }))\n`
 }
 
 const service: Handler = (node, _parent, ctx) => {

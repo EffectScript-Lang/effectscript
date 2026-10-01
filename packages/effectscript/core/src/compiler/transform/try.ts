@@ -196,20 +196,30 @@ const tryStatement: Handler = (node, _parent, ctx) => {
 
   const typedClauses = clauses.filter((c) => tagsOf(c) !== undefined)
   const grouped = typedClauses.length > 1 && typedClauses.every((c) => tagsOf(c)!.length === 1)
+  // A final untyped clause after typed ones becomes `orElse`, so failures raised inside a typed
+  // clause propagate instead of being caught by a sibling clause (JavaScript semantics).
+  const last = clauses[clauses.length - 1]
+  const orElse = typedClauses.length > 0 && last !== undefined && tagsOf(last) === undefined
+  const lastTyped = typedClauses[typedClauses.length - 1]
   const parts: Array<Part> = clauses.map((clause) => {
     const tags = tagsOf(clause)
     const handler = `(${paramText(ctx, clause)}) => ${gen}`
-    if (tags === undefined) return { bodyStart: clause.body.start, open: `Effect.catch(${handler}`, close: "))" }
+    if (tags === undefined) {
+      return orElse
+        ? { bodyStart: clause.body.start, open: handler, close: "))" }
+        : { bodyStart: clause.body.start, open: `Effect.catch(${handler}`, close: "))" }
+    }
+    const keepOpen = orElse && clause === lastTyped
     if (grouped) {
       const index = typedClauses.indexOf(clause)
       return {
         bodyStart: clause.body.start,
         open: `${index === 0 ? "Effect.catchTags({ " : ""}${tags[0]}: ${handler}`,
-        close: index === typedClauses.length - 1 ? ") })" : ")"
+        close: index === typedClauses.length - 1 ? (keepOpen ? ") }" : ") })") : ")"
       }
     }
     const tag = tags.length === 1 ? JSON.stringify(tags[0]) : `[${tags.map((t) => JSON.stringify(t)).join(", ")}]`
-    return { bodyStart: clause.body.start, open: `Effect.catchTag(${tag}, ${handler}`, close: "))" }
+    return { bodyStart: clause.body.start, open: `Effect.catchTag(${tag}, ${handler}`, close: keepOpen ? ")" : "))" }
   })
   if (node.finalizer !== null) {
     parts.push({ bodyStart: node.finalizer.start, open: `Effect.ensuring(${gen}`, close: "))" })
