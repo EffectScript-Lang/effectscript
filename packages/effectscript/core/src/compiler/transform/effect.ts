@@ -8,6 +8,7 @@ import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "..
 import { diagnosticError } from "../diagnostics.ts"
 import { skipSpace } from "../parser/scan.ts"
 import { walk, walkChildren } from "../walk.ts"
+import { topicsOf } from "./pipeline.ts"
 import type { HandlerGroup } from "./registry.ts"
 import { rewriteReturnType } from "./returnType.ts"
 
@@ -49,6 +50,17 @@ export const attachPipesAsArguments = (ctx: Ctx, node: Node, end: number, leadin
   let previousEnd = end
   pipes.forEach((pipe, i) => {
     removePipeOp(ctx, previousEnd, ops[i]!, i === 0 ? `${leading},` : ",")
+    if (topicsOf(pipe).length > 0) {
+      ctx.diagnostics.push(
+        diagnosticError(
+          "EFX5001",
+          "Hack-style `%` is not allowed in declaration pipes",
+          pipe.start,
+          pipe.end,
+          "pipes after a declaration must be functions, like `retry(…)`"
+        )
+      )
+    }
     walk(pipe, node, ctx)
     previousEnd = pipe.end
   })

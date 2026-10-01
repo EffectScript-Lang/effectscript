@@ -1,0 +1,25 @@
+declare const getUserName: (id: string) => Effect.Effect<string, Error>
+
+effect loadUser(id: string) {
+  return await getUserName(id)
+}
+
+const program = effect {
+  return await loadUser("1")
+} |> Effect.retry({ times: 3 }) |> Effect.orElseSucceed(() => "anonymous")
+
+const viaLocal = loadUser("2")
+  |> Effect.timeout("1 second")
+  |> Effect.orDie
+
+const viaPipe = getUserName("3") |> Effect.map((name) => name.length)
+
+const hack = getUserName("4") |> Effect.map(%, (name) => name.trim())
+
+const twice = 21 |> % + %
+
+const mixed = loadUser("5") |> Effect.orDie |> Effect.map(%, (s) => s.length) |> Effect.asVoid
+
+effect awaited() {
+  return await loadUser("6") |> Effect.orElseSucceed(() => "none")
+}

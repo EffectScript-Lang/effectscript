@@ -27,6 +27,7 @@ export interface ScopeAnalysis {
   readonly scopeOf: Map<Node, Scope>
   readonly constInits: Map<string, Node>
   readonly localErrors: Set<string>
+  readonly localEffects: Set<string>
 }
 
 const makeScope = (parent: Scope | undefined, kind: Scope["kind"]): Scope => ({
@@ -122,6 +123,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
   const scopeOf = new Map<Node, Scope>([[program, module]])
   const constInits = new Map<string, Node>()
   const localErrors = new Set<string>()
+  const localEffects = new Set<string>()
 
   const visitChildren = (node: Node, scope: Scope): void => {
     for (const child of children(node)) visit(child, scope)
@@ -130,6 +132,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
   const visitFunction = (node: Node, scope: Scope): void => {
     if (node.type === "FunctionDeclaration" || node.type === "TSDeclareFunction") {
       if (node.id) scope.values.add(node.id.name)
+      if (scope === module && node.efx?.kind === "declaration" && node.id) localEffects.add(node.id.name)
     }
     const fn = makeScope(scope, "function")
     scopeOf.set(node, fn)
@@ -227,5 +230,5 @@ export const analyze = (program: Node): ScopeAnalysis => {
   }
 
   for (const statement of program.body) visit(statement, module)
-  return { program, module, scopeOf, constInits, localErrors }
+  return { program, module, scopeOf, constInits, localErrors, localEffects }
 }

@@ -79,3 +79,9 @@ describe("proposal diagnostics", () => {
     expect(codes("function f() {\n  const x = do {\n    return 1\n  }\n}\n")).toEqual(["EFX7001"])
   })
 })
+
+describe("pipeline diagnostics", () => {
+  it("EFX5001: Hack topic in effect declaration pipes", () => {
+    expect(codes("effect f() {\n  return 1\n} |> g(%)\n")).toEqual(["EFX5001"])
+  })
+})

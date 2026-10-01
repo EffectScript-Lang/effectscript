@@ -151,3 +151,18 @@ describe("defer", () => {
     expect(program.body[2].type).toBe("ExpressionStatement")
   })
 })
+
+describe("pipelines and await", () => {
+  it("await applies to the whole pipeline", () => {
+    const { program } = ok("effect f() {\n  return await a |> g |> h\n}\n")
+    const argument = program.body[0].body.body[0].argument
+    expect(argument.type).toBe("AwaitExpression")
+    expect(argument.argument.type).toBe("PipelineExpression")
+  })
+
+  it("parses % as a topic only inside a pipeline right-hand side", () => {
+    const { program } = ok("const a = x |> f(%, 1)\nconst b = 7 % 2\n")
+    expect(program.body[0].declarations[0].init.right.arguments[0].type).toBe("TopicReference")
+    expect(program.body[1].declarations[0].init.operator).toBe("%")
+  })
+})

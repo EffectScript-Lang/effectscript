@@ -134,9 +134,12 @@ export const efxPlugin = (Base: any): any =>
         this.next()
         const start = this.start
         const startLoc = this.startLoc
+        const state = this.efxState()
+        state.pipeDepth++
         pipes.push(
           this.parseExprOp(this.parseMaybeUnary(null, false, false, false), start, startLoc, pipelineToken.binop, false)
         )
+        state.pipeDepth--
       }
       node.efxPipes = pipes
       node.efxPipeOps = ops
@@ -253,6 +256,11 @@ export const efxPlugin = (Base: any): any =>
         node.body = this.parseBlock()
         return this.finishNode(node, "DoExpression")
       }
+      if (this.type === tt.modulo && this.efxState().pipeDepth > 0) {
+        const node = this.startNode()
+        this.next()
+        return this.finishNode(node, "TopicReference")
+      }
       return super.parseExprAtom(refDestructuringErrors, forInit, forNew)
     }
 
@@ -348,5 +356,35 @@ export const efxPlugin = (Base: any): any =>
       node.argument = this.type === tt.braceL ? this.parseBlock() : this.parseExpression()
       this.semicolon()
       return this.finishNode(node, "DeferStatement")
+    }
+
+    // `await x |> f |> g` awaits the whole pipeline.
+    parseAwait(forInit: boolean): any {
+      const node = super.parseAwait(forInit)
+      if (this.type !== pipelineToken) return node
+      let left = node.argument
+      const state = this.efxState()
+      while (this.type === pipelineToken) {
+        const op = { start: this.start, end: this.end }
+        this.next()
+        state.pipeDepth++
+        const rightStart = this.start
+        const rightStartLoc = this.startLoc
+        const right = this.parseExprOp(
+          this.parseMaybeUnary(null, false, false, forInit),
+          rightStart,
+          rightStartLoc,
+          pipelineToken.binop,
+          forInit
+        )
+        state.pipeDepth--
+        const pipe = this.startNodeAt(left.start, left.loc.start)
+        pipe.left = left
+        pipe.right = right
+        pipe.op = op
+        left = this.finishNode(pipe, "PipelineExpression")
+      }
+      node.argument = left
+      return this.finishNode(node, "AwaitExpression")
     }
   }
