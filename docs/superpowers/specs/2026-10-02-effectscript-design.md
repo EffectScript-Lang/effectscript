@@ -721,7 +721,7 @@ export const UsersHandlers = impl Api.users {
 
 ```ts
 export class UsersApi extends HttpApiGroup.make("users").add(
-  HttpApiEndpoint.get("list", "/", { query: { search: Schema.optional(Schema.String) }, success: Schema.Array(User) }),
+  HttpApiEndpoint.get("list", "/", { query: { search: Schema.optionalKey(Schema.String) }, success: Schema.Array(User) }),
   HttpApiEndpoint.get("getById", "/:id", { params: { id: UserId }, success: User, error: UserNotFound }),
   HttpApiEndpoint.post("create", "/", { payload: NewUser, success: User })
 ).middleware(Authorization) {}
@@ -742,7 +742,10 @@ export const UsersHandlers = HttpApiBuilder.group(Api, "users", Effect.fn("Api.u
 - **Name strings:** the identifier string is optional. It defaults to the camelCase name with a
   trailing `Api`/`Group` removed (`UsersApi` → `"users"`).
 - **`impl` bodies** are `effect` bodies. Their top-level `return { … }` is wrapped in
-  `handlers.handleAll(…)`.
+  `handlers.handleAll(…)`. `effect` methods inside are spanned `Api.group.method`, and `impl` pipes
+  resolve in the `Layer` namespace.
+- `del` lowers to `HttpApiEndpoint.delete`. Several errors (`throws A | B`) become `error: [A, B]`.
+  Optional section fields are `Schema.optionalKey` (ADR-0013).
 
 #### `command` (CLI, `effect/cli`)
 
@@ -868,11 +871,11 @@ with `// @efx no-ambient` or project-wide with `ambient: false`.
   `impl` handler (`"Api.group.endpoint"`), and every `command` handler (`"command"`).
 - **Structured logs everywhere:** `console.*` in `effect` becomes Effect logging, with span and fiber
   context (§4.15).
-- **Telemetry with no code:** with `observability: "otlp"` (set by `efx init`), `main` provides an
-  OTLP tracer and logger layer. That layer is emitted as idiomatic `Layer.unwrap(Effect.gen(…))`
-  code: it reads `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_SERVICE_NAME` through `Config`, and falls
-  back to `Layer.empty` when the endpoint is unset. Set one environment variable and every `effect` in
-  the app is traced.
+- **Telemetry with no code:** with `observability: "otlp"` (option or `// @efx observability otlp`),
+  `main` provides
+  `Otlp.layerFromConfig().pipe(Layer.provide([FetchHttpClient.layer, OtlpSerialization.layerJson]))`.
+  It reads the standard `OTEL_*` variables and is a no-op when no endpoint is configured
+  (ADR-0029).
 
 ### 4.17 Strict mode (stricter than TypeScript)
 
@@ -1462,8 +1465,8 @@ The order was revised after the plan review (ADR-0016).
    packed-package consumer.
 4. **Everyday constructs (Plan 4).** Done: `config`, top-level `layer`, `test`/`describe`, ambient
    capture, and syntactic strict mode (ADR-0027, ADR-0028).
-5. **Library DSLs and telemetry (Plan 5).** `api`/`group`/`impl`, `command`, `atom`, and the OTLP
-   layer for `main` (§4.14, §4.16).
+5. **Library DSLs and telemetry (Plan 5).** Done: `api`/`group`/`impl`, `command`, `atom`, and the
+   OTLP layer for `main` (§4.14, §4.16, ADR-0029).
 6. **Full reverse compiler:** §6 shapes and blockers, and the round-trip contract (§6.4).
 7. **CLI, integrations and distribution:** the rest of `efx`, the Bun and Vite plugins, the
    standalone binary, the Homebrew tap, the install script, `setup`/`doctor`/`convert --ai`, and
