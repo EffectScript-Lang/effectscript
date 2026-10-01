@@ -39,3 +39,31 @@ describe("effect expressions", () => {
       )
   })
 })
+
+describe("prelude", () => {
+  it("adds no imports when nothing from the prelude is used", () => {
+    const source = "export const a = [1].map((n) => n)\nexport const r = fetch(\"/\")\nexport const s = String(1)\n"
+    expect(ts(source)).toBe(source)
+  })
+
+  it("respects the no-prelude directive", () => {
+    const source = "// @efx no-prelude\nexport const a = succeed(1)\n"
+    expect(ts(source)).toBe(source)
+  })
+
+  it("keeps shadowed names", () => {
+    const source = "const succeed = (n: number) => n\nexport const a = succeed(1)\n"
+    expect(ts(source)).toBe(source)
+  })
+
+  it("expands shorthand builtins", () => {
+    expect(ts("export const api = { retry }\n")).toBe(
+      "import { Effect } from \"effect\"\nexport const api = { retry: Effect.retry }\n"
+    )
+  })
+
+  it("imports a module referenced only in types", () => {
+    expect(ts("export declare const x: Stream.Stream<number>\n"))
+      .toBe("import { Stream } from \"effect\"\nexport declare const x: Stream.Stream<number>\n")
+  })
+})

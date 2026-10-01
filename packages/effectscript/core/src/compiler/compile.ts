@@ -18,7 +18,8 @@ import { walk } from "./walk.ts"
  * @category compiler
  */
 export const toTypeScript = (source: string, options: CompileOptions = {}): CompileResult => {
-  const resolved = resolveOptions(options)
+  const base = resolveOptions(options)
+  const resolved = /^\s*\/\/\s*@efx\s+no-prelude\b/m.test(source) ? { ...base, prelude: false } : base
   const parsed = parse(source)
   if (parsed._tag === "Failure") {
     return { code: "", mode: "ts", map: undefined, mappings: [], diagnostics: parsed.diagnostics }

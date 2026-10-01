@@ -37,7 +37,8 @@
   },
   "scripts": {
     "build": "tsc -b tsconfig.json",
-    "check": "tsc -b tsconfig.json"
+    "check": "tsc -b tsconfig.json",
+    "codegen": "node scripts/generate-prelude.ts && dprint fmt src/compiler/prelude/tables.ts"
   },
   "dependencies": {
     "@sveltejs/acorn-typescript": "^1.0.13",
