@@ -290,6 +290,18 @@ export const efxPlugin = (Base: any): any =>
     }
 
     parseClassElement(constructorAllowsSuper: boolean): any {
+      const kinds = this.efxState().classKinds
+      if (kinds[kinds.length - 1] === "service" && this.efxIsWord("layer")) {
+        const next = this.lookahead()
+        if (next.type === tt.name && this.efxSameLine(next)) {
+          const keyword = { start: this.start, end: this.end }
+          this.next()
+          const element = super.parseClassElement(constructorAllowsSuper)
+          element.efxLayer = { keyword }
+          element.start = keyword.start
+          return element
+        }
+      }
       if (this.efxIsMethodAhead()) {
         const keyword = { start: this.start, end: this.end }
         this.value = "async"
@@ -456,5 +468,13 @@ export const efxPlugin = (Base: any): any =>
       node.typeAnnotation = this.tsInType(() => this.tsParseType())
       this.semicolon()
       return this.finishNode(node, "SchemaAliasDeclaration")
+    }
+
+    parseClassSuper(node: any): any {
+      if (node.efxKind === "service" && this.efxIsWord("as")) {
+        this.next()
+        node.efxServiceKey = this.parseExprAtom(null, false, false)
+      }
+      return super.parseClassSuper(node)
     }
   }

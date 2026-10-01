@@ -95,3 +95,17 @@ describe("schema diagnostics", () => {
     expect(codes("schema A extends B {\n  x: string\n}\n")).toEqual(["EFX3002"])
   })
 })
+
+describe("service diagnostics", () => {
+  it("EFX4001: effect members need a return type", () => {
+    expect(codes("service S {\n  effect f()\n}\n")).toEqual(["EFX4001"])
+  })
+
+  it("EFX4002: unsupported members", () => {
+    expect(codes("service S {\n  helper() { return 1 }\n}\n")).toEqual(["EFX4002"])
+  })
+
+  it("EFX4003: accessor names that clash with Context.Service statics", () => {
+    expect(codes("service S {\n  effect use(): void\n}\n")).toEqual(["EFX4003"])
+  })
+})

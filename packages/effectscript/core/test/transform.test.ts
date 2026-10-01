@@ -67,3 +67,12 @@ describe("prelude", () => {
       .toBe("import { Stream } from \"effect\"\nexport declare const x: Stream.Stream<number>\n")
   })
 })
+
+describe("service keys", () => {
+  it("derives keys from package and path, and honors `as`", () => {
+    const opts = { packageName: "acme", filename: "src/db/Database.efx" }
+    expect(ts("service Database {\n  effect ping(): void\n}\n", opts)).toContain("()(\"acme/db/Database\")")
+    expect(ts("service Database as \"custom/Db\" {\n  effect ping(): void\n}\n", opts)).toContain("()(\"custom/Db\")")
+    expect(ts("service Database {\n  effect ping(): void\n}\n")).toContain("()(\"Database\")")
+  })
+})

@@ -100,4 +100,24 @@ describe("runtime", () => {
     `)
     expect(mod.values).toEqual(["ok", "missing:x"])
   })
+
+  it("services provide layers and static accessors", async () => {
+    const mod = await runCompiled(`
+      import { Effect } from "effect"
+      service Greeter {
+        effect greet(name: string): string
+        layer = effect {
+          return { effect greet(name: string) { return \`hi \${name}\` } }
+        }
+        layer test = { greet: effect (name: string) => \`test \${name}\` }
+      }
+      effect run() {
+        return await Greeter.greet("ada")
+      }
+      export const live = Effect.runSync(run().pipe(Effect.provide(Greeter.layer)))
+      export const test = Effect.runSync(run().pipe(Effect.provide(Greeter.layerTest)))
+    `)
+    expect(mod.live).toBe("hi ada")
+    expect(mod.test).toBe("test ada")
+  })
 })

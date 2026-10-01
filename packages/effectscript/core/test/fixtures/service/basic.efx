@@ -1,0 +1,37 @@
+error UserNotFound { id: string }
+
+schema User {
+  id: string
+  name: string
+}
+
+declare const SqlLive: Layer<never>
+
+export service Users {
+  effect find(id: string): User throws UserNotFound
+  effect list(): ReadonlyArray<User>
+  readonly size: number
+
+  layer = effect {
+    const cache = new Map<string, User>()
+    defer Effect.log("users layer released")
+    return {
+      size: 0,
+      effect find(id: string) {
+        return cache.get(id) ?? throw new UserNotFound({ id })
+      },
+      list: effect () => [...cache.values()]
+    }
+  } |> provide(SqlLive)
+
+  layer test = {
+    size: 1,
+    find: effect (id: string) => new User({ id, name: "Test" }),
+    list: effect () => []
+  }
+}
+
+export effect firstName(id: string) {
+  const user = await Users.find(id)
+  return user.name
+}
