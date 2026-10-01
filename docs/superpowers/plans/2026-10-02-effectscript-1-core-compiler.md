@@ -704,7 +704,7 @@ const tt = acorn.tokTypes
  */
 export const pipelineToken = new acorn.TokenType("|>", { beforeExpr: true, binop: 0.5 })
 
-const lineBreak = /[\n\r  ]/
+const lineBreak = /[\n\r\u2028\u2029]/
 
 interface EfxState {
   pipeDepth: number

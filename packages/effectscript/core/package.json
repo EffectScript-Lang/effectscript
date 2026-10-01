@@ -14,7 +14,9 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
-    "./compiler": "./src/compiler/index.ts"
+    "./compiler": "./src/compiler/index.ts",
+    "./*": "./src/*.ts",
+    "./index": null
   },
   "files": [
     "src/**/*.ts",
@@ -28,7 +30,9 @@
     "exports": {
       "./package.json": "./package.json",
       ".": "./dist/index.js",
-      "./compiler": "./dist/compiler/index.js"
+      "./compiler": "./dist/compiler/index.js",
+      "./*": "./dist/*.js",
+      "./index": null
     }
   },
   "scripts": {
