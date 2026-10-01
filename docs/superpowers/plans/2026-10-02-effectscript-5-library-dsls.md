@@ -100,3 +100,32 @@ Update spec §4.14/§4.16 per the decisions above, plus the README and COMPATIBI
 
 Run a fresh whole-branch review and fix Critical/Important findings with a failing test first.
 Record deferred minors here.
+
+## Final review outcome (2026-10-02)
+
+A fresh reviewer (Opus) found no Critical issues, four Important ones and nine Minor ones, all
+reproduced. Fixed, with tests in `test/plan5-review.test.ts`:
+
+- **I1:** `command` bodies with `defer`/`using` are `Effect.scoped`.
+- **I2:** every return of an `impl` body goes through `handleAll`.
+- **I3:** `?` with a default is EFX9001.
+- **I4:** JSDoc extraction stops at its own `*/`.
+- **M5 (raised):** a non-property section member is EFX9002, not a compiler crash.
+
+Diagnostic area 9 (library constructs) was added to spec §12.
+
+Deferred minors:
+
+- **Group diagnostics:** an unknown method gives a generic EFX1001, and unknown section keys pass
+  through.
+- **Command types:** a positional `boolean` and numeric literal unions produce code that doesn't
+  type-check (TypeScript reports it).
+- Keyword flag names (`--new`, `--delete`) can't be declared.
+- `defaultIdentifier` with uppercase acronyms (`APIGroup` → `"aPI"`).
+- **Spans:** `effect` arrows used as `impl` handlers get no span, and non-handler helpers get
+  endpoint-like span names.
+- The position of `middleware` in a `group` and comments inside `group`/`api` bodies are not
+  preserved.
+- `impl /* comment */ Api.g { … }` doesn't parse.
+- **`command` naming:** a default without a type gives a generic error, `HTTPPort` →
+  `--httpport`, and command names aren't kebab-cased.

@@ -5,6 +5,7 @@
  */
 import type { Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
+import { diagnosticError } from "../diagnostics.ts"
 import { ref } from "../names.ts"
 import { typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
@@ -27,7 +28,8 @@ const jsdocBefore = (
 ): { description: string; alias?: string } | undefined => {
   const gap = source.slice(from, end)
   // the last `/**` in the gap: earlier doc comments belong to earlier declarations
-  const match = /^\/\*\*([\s\S]*?)\*\/[\s,]*$/.exec(gap.slice(Math.max(0, gap.lastIndexOf("/**"))))
+  // stop at the comment's own `*/` (review I4)
+  const match = /^\/\*\*((?:(?!\*\/)[\s\S])*)\*\/[\s,]*$/.exec(gap.slice(Math.max(0, gap.lastIndexOf("/**"))))
   if (match === null) return undefined
   const text = match[1]!.split("\n").map((line) => line.replace(/^\s*\*?\s?/, "")).join(" ")
   const alias = /@alias\s+(\S+)/.exec(text)?.[1]
@@ -55,7 +57,17 @@ const parameter = (ctx: Ctx, param: Node, previousEnd: number): string => {
     base = `${kind}.String(${cliName})`
     steps.push(`${kind}.withSchema(${typeToSchema(ctx, type)})`)
   }
-  if (param.optional) steps.push(`${kind}.optional`)
+  if (param.optional && param.value !== null) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX9001",
+        "A parameter can't be both optional (`?`) and have a default",
+        param.start,
+        param.end,
+        "drop `?`: a parameter with a default is never missing"
+      )
+    )
+  } else if (param.optional) steps.push(`${kind}.optional`)
   if (param.value !== null) steps.push(`${kind}.withDefault(${slice(param.value)})`)
   const doc = jsdocBefore(ctx.source, previousEnd, param.start)
   if (doc?.alias !== undefined) steps.push(`${kind}.withAlias(${JSON.stringify(doc.alias)})`)
@@ -80,8 +92,10 @@ const commandDeclaration: Handler = (node, parent, ctx) => {
       entries.length === 0 ? "{}" : `{\n${entries.join(",\n")}\n}`
     }, ${E}.fn(${JSON.stringify(name)})(function*(${bindings === "" ? "" : `{ ${bindings} }`}) `
   )
-  ctx.s.appendLeft(node.body.end, "))")
-  withEffect(ctx, makeFrame(node, "block", true), () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
+  // the handler is an ordinary effect function: `defer`/`using` make it scoped (review I1)
+  const frame = makeFrame(node, "block")
+  withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
+  ctx.s.appendLeft(node.body.end, frame.scoped ? `, ${E}.scoped))` : "))")
   const start = parent?.type === "ExportNamedDeclaration" ? parent.start : node.start
   const doc = jsdocBefore(ctx.source, 0, start)
   const description = doc !== undefined && doc.description !== ""

@@ -1436,7 +1436,8 @@ implementation.
 ## 12. Diagnostics
 
 Codes have the form `EFX<area><nn>`. Areas: 1 = parse, internal errors and configuration, 2 = `effect`,
-3 = schema, 4 = service, 5 = pipe, 6 = main, 7 = proposals, 8 = strict rules.
+3 = schema, 4 = service, 5 = pipe, 6 = main, 7 = proposals, 8 = strict rules, 9 = library constructs
+(`command`, `group`/`api`/`impl`).
 
 The compiler reports syntactic diagnostics; rules that need types run in the checker (language
 service and `efx check`). Heuristic rules say so in their message. A compile fails only when a

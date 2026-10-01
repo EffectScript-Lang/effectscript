@@ -3,8 +3,9 @@
  *
  * @since 4.0.0
  */
-import type { Node } from "../ast.ts"
+import { children, type Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
+import { diagnosticError } from "../diagnostics.ts"
 import { ref, unused } from "../names.ts"
 import { optionalField, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
@@ -23,10 +24,30 @@ const identifierText = (ctx: Ctx, node: Node): string =>
     ? JSON.stringify(defaultIdentifier(node.id.name))
     : ctx.source.slice(node.identifier.start, node.identifier.end)
 
+/** Return statements of a body, not crossing into nested functions or classes. */
+const implReturns = (node: Node, out: Array<Node> = []): Array<Node> => {
+  if (node.type === "ReturnStatement") out.push(node)
+  if (/Function|Class/.test(node.type) || node.efx !== undefined) return out
+  for (const child of children(node)) implReturns(child, out)
+  return out
+}
+
 /** A section type: a type literal becomes a field map, anything else a schema. */
 const sectionSchema = (ctx: Ctx, type: Node): string => {
   if (type.type !== "TSTypeLiteral") return typeToSchema(ctx, type)
   const fields = (type.members as Array<Node>).map((member) => {
+    if (member.type !== "TSPropertySignature" || member.typeAnnotation === undefined) {
+      ctx.diagnostics.push(
+        diagnosticError(
+          "EFX9002",
+          "Endpoint sections take named fields only",
+          member.start,
+          member.end,
+          "write `name: Type` fields, or use a schema: `(query: MyQuery)`"
+        )
+      )
+      return "_: Schema.Never"
+    }
     const key = member.key.type === "Identifier" ? member.key.name : ctx.source.slice(member.key.start, member.key.end)
     const fieldType: Node = member.typeAnnotation.typeAnnotation
     return `${key}: ${member.optional === true ? optionalField(ctx, fieldType) : typeToSchema(ctx, fieldType)}`
@@ -96,11 +117,11 @@ const implExpression: Handler = (node, _parent, ctx) => {
     })(function*(${handlers}) `
   )
   ctx.s.appendLeft(node.body.end, "))")
-  for (const statement of node.body.body as Array<Node>) {
-    if (statement.type === "ReturnStatement" && statement.argument?.type === "ObjectExpression") {
-      ctx.s.appendRight(statement.argument.start, `${handlers}.handleAll(`)
-      ctx.s.prependLeft(statement.argument.end, ")")
-    }
+  // every return of the impl body hands its handlers to `handleAll` (review I2)
+  for (const statement of implReturns(node.body)) {
+    if (statement.argument === null) continue
+    ctx.s.appendRight(statement.argument.start, `${handlers}.handleAll(`)
+    ctx.s.prependLeft(statement.argument.end, ")")
   }
   node.efxPipeable = true
   node.efxStepNamespace = "Layer"

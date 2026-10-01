@@ -1,15 +1,7 @@
 import { toTypeScript } from "effectscript/compiler"
 import { describe, expect, it } from "vitest"
+import { httpTestPrelude } from "./utils/http.ts"
 import { runCompiled } from "./utils/run.ts"
-
-export const httpTestPrelude = `
-  import { Effect, FileSystem, Layer, Path } from "effect"
-  import { Etag, HttpPlatform } from "effect/http"
-  import { HttpApiBuilder, HttpApiTest } from "effect/http-api"
-  const TestServices = Layer.mergeAll(Path.layer, Etag.layerWeak, HttpPlatform.layer).pipe(
-    Layer.provideMerge(FileSystem.layerNoop({}))
-  )
-`
 
 describe("group / api (§4.14)", () => {
   it("compiles endpoint lines to HttpApiEndpoint calls", () => {
