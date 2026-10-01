@@ -5,6 +5,7 @@
  */
 import type { Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
+import { ref } from "../names.ts"
 import { isBareType, isServiceTag, resolveType, resolveValue } from "../prelude/resolve.ts"
 import type { HandlerGroup } from "./registry.ts"
 
@@ -57,11 +58,15 @@ const identifier: Handler = (node, parent, ctx) => {
   if (!isValueReference(ctx, node, parent)) return
   const resolution = resolveValue(ctx, node.name)
   if (resolution === undefined) return
-  ctx.imports.need(resolution.module, resolution.importName)
   if (resolution.prefix !== "") {
+    // a builtin's qualifier (`retry` → `Effect.retry`) is compiler-owned (ADR-0009)
+    const prefix = `${ref(ctx, resolution.module, resolution.importName)}.`
     const shorthand = parent?.type === "Property" && parent.shorthand === true && parent.value === node
-    ctx.s.appendRight(node.start, shorthand ? `${node.name}: ${resolution.prefix}` : resolution.prefix)
-  } else if (
+    ctx.s.appendRight(node.start, shorthand ? `${node.name}: ${prefix}` : prefix)
+    return
+  }
+  ctx.imports.need(resolution.module, resolution.importName)
+  if (
     ctx.effect !== undefined && parent?.type === "AwaitExpression" && parent.argument === node &&
     isServiceTag(node.name)
   ) {

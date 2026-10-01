@@ -6,6 +6,7 @@
  */
 import type { Node } from "../ast.ts"
 import { type Ctx, type Handler, withEffect } from "../context.ts"
+import { ref } from "../names.ts"
 import { walk, walkInScopeOf } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 import { isEffectful } from "./try.ts"
@@ -21,10 +22,10 @@ const sameLine = (ctx: Ctx, from: number, to: number): boolean => !ctx.source.sl
 
 const matchExpression: Handler = (node, _parent, ctx) => {
   const arms: Array<Node> = node.arms
-  ctx.imports.need("effect", "Match")
+  const M = ref(ctx, "effect", "Match")
   const generator = ctx.effect !== undefined && arms.some((arm) => isEffectful(arm.body))
+  const E = generator ? ref(ctx, "effect", "Effect") : ""
   if (generator) {
-    ctx.imports.need("effect", "Effect")
     ctx.s.appendRight(node.start, "(yield* ")
     ctx.s.prependLeft(node.end, ")")
   }
@@ -32,7 +33,7 @@ const matchExpression: Handler = (node, _parent, ctx) => {
   const hasDefault = arms.some((arm) => arm.pattern === null)
   const brace = ctx.source.indexOf("{", node.discriminant.end)
   const inline = sameLine(ctx, node.discriminant.end, arms[0]!.start)
-  ctx.s.update(node.start, node.discriminant.start, tagsOnly ? "Match.valueTags(" : "Match.value(")
+  ctx.s.update(node.start, node.discriminant.start, tagsOnly ? `${M}.valueTags(` : `${M}.value(`)
   ctx.s.update(
     node.discriminant.end,
     inline ? arms[0]!.start : brace + 1,
@@ -41,19 +42,19 @@ const matchExpression: Handler = (node, _parent, ctx) => {
   arms.forEach((arm, i) => {
     const binding = bindingText(ctx, arm.pattern)
     const [open, close] = generator
-      ? [`(${binding}) => Effect.gen(function*() { return `, " })"]
+      ? [`(${binding}) => ${E}.gen(function*() { return `, " })"]
       : [`(${binding}) => `, ""]
     const pattern: Node | null = arm.pattern
     const head = tagsOnly
       ? `${tagName(pattern!.tag)}: ${open}`
       : pattern === null
-      ? `Match.orElse(${open}`
+      ? `${M}.orElse(${open}`
       : pattern.type === "TagPattern"
-      ? `Match.tag(${JSON.stringify(tagName(pattern.tag))}, ${open}`
-      : `Match.when(${ctx.source.slice(pattern.value.start, pattern.value.end)}, ${open}`
+      ? `${M}.tag(${JSON.stringify(tagName(pattern.tag))}, ${open}`
+      : `${M}.when(${ctx.source.slice(pattern.value.start, pattern.value.end)}, ${open}`
     const tail = tagsOnly ? close : `${close})`
     const last = i === arms.length - 1
-    const separator = last ? (!tagsOnly && !hasDefault ? ", Match.exhaustive" : "") : ","
+    const separator = last ? (!tagsOnly && !hasDefault ? `, ${M}.exhaustive` : "") : ","
     ctx.s.update(arm.start, arm.body.start, head)
     if (arm.end > arm.body.end) ctx.s.update(arm.body.end, arm.end, `${tail}${separator}`)
     else ctx.s.appendLeft(arm.body.end, `${tail}${separator}`)

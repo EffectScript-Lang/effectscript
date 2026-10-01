@@ -6,6 +6,7 @@
 import type { Node } from "../ast.ts"
 import { type Ctx, type Handler, withNamespace } from "../context.ts"
 import { diagnosticError, diagnosticWarning } from "../diagnostics.ts"
+import { ref } from "../names.ts"
 import { serviceKey } from "../serviceKey.ts"
 import { walk } from "../walk.ts"
 import { moveMembersAfter } from "./classLike.ts"
@@ -57,14 +58,12 @@ const rewriteLayer = (ctx: Ctx, member: Node, name: string): void => {
   ctx.s.update(member.start, member.value.start, `static readonly ${layerName(member)} = `)
   const head = pipelineHead(member.value)
   if (head.type === "EffectBlock") {
-    ctx.imports.need("effect", "Layer")
     head.efxLayerConstructor = true
-    ctx.s.appendRight(head.start, `Layer.effect(${name}, `)
+    ctx.s.appendRight(head.start, `${ref(ctx, "effect", "Layer")}.effect(${name}, `)
     ctx.s.prependLeft(head.end, ")")
     wrapReturnedObjects(ctx, head, name)
   } else if (head.type === "ObjectExpression") {
-    ctx.imports.need("effect", "Layer")
-    ctx.s.appendRight(head.start, `Layer.succeed(${name}, ${name}.of(`)
+    ctx.s.appendRight(head.start, `${ref(ctx, "effect", "Layer")}.succeed(${name}, ${name}.of(`)
     ctx.s.prependLeft(head.end, "))")
   }
   const previous = ctx.service
@@ -112,11 +111,10 @@ const accessor = (ctx: Ctx, name: string, member: Node): string => {
 
 const service: Handler = (node, _parent, ctx) => {
   if (node.efxKind !== "service") return
-  ctx.imports.need("effect", "Context")
   const name: string = node.id.name
   const key = node.efxServiceKey?.value ?? serviceKey(ctx.options, name)
   ctx.s.update(node.efxKeyword.start, node.efxKeyword.end, "class")
-  ctx.s.update(node.id.end, node.body.start, ` extends Context.Service<${name}, `)
+  ctx.s.update(node.id.end, node.body.start, ` extends ${ref(ctx, "effect", "Context")}.Service<${name}, `)
 
   const layers: Array<Node> = []
   const effects: Array<Node> = []
@@ -137,7 +135,7 @@ const service: Handler = (node, _parent, ctx) => {
         continue
       }
       ctx.s.remove(member.efx.keyword.start, member.key.start)
-      rewriteReturnType(ctx, member.value.returnType, "Effect.Effect")
+      rewriteReturnType(ctx, member.value.returnType, "Effect")
       for (const child of [...member.value.params, member.value.returnType]) walk(child, member.value, ctx)
       effects.push(member)
     } else if (

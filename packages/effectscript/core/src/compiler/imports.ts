@@ -1,12 +1,13 @@
 /**
  * Import bookkeeping: generated code and prelude identifiers call `need`. Only names that were
  * needed *and* are not already bound in the module are emitted, so files never gain unused imports.
- * Names are merged into an existing `import { … } from "<module>"` when there is one.
+ * Names are merged into an existing `import { … } from "<module>"` when there is one. Compiler-owned
+ * references may be aliased (`Effect as Effect$`, ADR-0009).
  *
  * @since 0.1.0
  */
 import type { MagicString } from "magic-string"
-import { isValueFree, type ScopeAnalysis } from "./analyze/scope.ts"
+import type { ScopeAnalysis } from "./analyze/scope.ts"
 import type { Node } from "./ast.ts"
 
 /**
@@ -14,8 +15,13 @@ import type { Node } from "./ast.ts"
  * @category models
  */
 export interface ImportSet {
-  readonly need: (module: string, name: string) => void
-  readonly entries: ReadonlyMap<string, ReadonlySet<string>>
+  /** Imports `imported` from `module` under `local` (default: the same name). */
+  readonly need: (module: string, imported: string, local?: string) => void
+  /** Turns an existing type-only import specifier into a value import. */
+  readonly upgrade: (statement: Node, specifier: Node) => void
+  /** module → local → imported */
+  readonly entries: ReadonlyMap<string, ReadonlyMap<string, string>>
+  readonly upgrades: ReadonlyMap<Node, Node>
 }
 
 /**
@@ -23,16 +29,21 @@ export interface ImportSet {
  * @category constructors
  */
 export const makeImportSet = (): ImportSet => {
-  const entries = new Map<string, Set<string>>()
+  const entries = new Map<string, Map<string, string>>()
+  const upgrades = new Map<Node, Node>()
   return {
     entries,
-    need: (module, name) => {
+    upgrades,
+    need: (module, imported, local = imported) => {
       let names = entries.get(module)
       if (names === undefined) {
-        names = new Set()
+        names = new Map()
         entries.set(module, names)
       }
-      names.add(name)
+      names.set(local, imported)
+    },
+    upgrade: (statement, specifier) => {
+      if (statement.importKind === "type" || specifier.importKind === "type") upgrades.set(specifier, statement)
     }
   }
 }
@@ -47,21 +58,27 @@ export const emitImports = (ctx: {
   readonly imports: ImportSet
   readonly analysis: ScopeAnalysis
 }): void => {
+  for (const [specifier, statement] of ctx.imports.upgrades) upgradeTypeOnly(ctx, statement, specifier)
   const lines: Array<string> = []
   const modules = [...ctx.imports.entries.keys()].sort()
   for (const module of modules) {
-    const names = [...ctx.imports.entries.get(module)!]
-      .filter((name) => isValueFree(ctx.analysis.module, name) && !upgradeTypeOnly(ctx, module, name))
-      .sort()
-    if (names.length === 0) continue
+    const specifiers = [...ctx.imports.entries.get(module)!]
+      .filter(([local]) => !ctx.analysis.module.values.has(local))
+      .sort(([localA, importedA], [localB, importedB]) =>
+        importedA === importedB ?
+          compare(localA === importedA ? "" : localA, localB === importedB ? "" : localB) :
+          compare(importedA, importedB)
+      )
+      .map(([local, imported]) => (local === imported ? imported : `${imported} as ${local}`))
+    if (specifiers.length === 0) continue
     const existing = ctx.analysis.program.body.find((statement: Node) =>
       statement.type === "ImportDeclaration" && statement.source.value === module && statement.importKind !== "type" &&
       statement.specifiers.length > 0 && statement.specifiers.every((s: Node) => s.type === "ImportSpecifier")
     )
     if (existing !== undefined) {
-      ctx.s.appendLeft(existing.specifiers.at(-1).end, `, ${names.join(", ")}`)
+      ctx.s.appendLeft(existing.specifiers.at(-1).end, `, ${specifiers.join(", ")}`)
     } else {
-      lines.push(`import { ${names.join(", ")} } from "${module}"`)
+      lines.push(`import { ${specifiers.join(", ")} } from "${module}"`)
     }
   }
   if (lines.length === 0) return
@@ -74,33 +91,21 @@ export const emitImports = (ctx: {
   }
 }
 
-/**
- * If `name` is already imported from `module` as type-only, turn that into a value import (keeping the
- * other specifiers type-only) and report success.
- */
+const compare = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
+
+/** Turns `specifier` (type-only by itself or through its statement) into a value import. */
 const upgradeTypeOnly = (
-  ctx: { readonly source: string; readonly s: MagicString; readonly analysis: ScopeAnalysis },
-  module: string,
-  name: string
-): boolean => {
-  for (const statement of ctx.analysis.program.body as Array<Node>) {
-    if (statement.type !== "ImportDeclaration" || statement.source.value !== module) continue
-    const specifier: Node | undefined = statement.specifiers.find((s: Node) =>
-      s.type === "ImportSpecifier" && s.local.name === name
-    )
-    if (specifier === undefined) continue
-    if (statement.importKind === "type") {
-      const typeKeyword = ctx.source.indexOf("type", statement.start + "import".length)
-      ctx.s.remove(typeKeyword, ctx.source.indexOf("{", typeKeyword))
-      for (const other of statement.specifiers as Array<Node>) {
-        if (other !== specifier) ctx.s.appendRight(other.start, "type ")
-      }
-      return true
+  ctx: { readonly source: string; readonly s: MagicString },
+  statement: Node,
+  specifier: Node
+): void => {
+  if (statement.importKind === "type") {
+    const typeKeyword = ctx.source.indexOf("type", statement.start + "import".length)
+    ctx.s.remove(typeKeyword, ctx.source.indexOf("{", typeKeyword))
+    for (const other of statement.specifiers as Array<Node>) {
+      if (other !== specifier) ctx.s.appendRight(other.start, "type ")
     }
-    if (specifier.importKind === "type") {
-      ctx.s.remove(specifier.start, specifier.imported.start)
-      return true
-    }
+  } else if (specifier.importKind === "type") {
+    ctx.s.remove(specifier.start, specifier.imported.start)
   }
-  return false
 }

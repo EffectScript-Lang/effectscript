@@ -29,6 +29,10 @@ export interface ScopeAnalysis {
   readonly localErrors: Set<string>
   readonly localEffects: Set<string>
   readonly bindings: Set<Node>
+  /** Every identifier name in the file, bound or free (for fresh names, ADR-0009). */
+  readonly identifierNames: ReadonlySet<string>
+  /** Names bound (in either namespace) in any scope other than the module scope. */
+  readonly innerBound: ReadonlySet<string>
 }
 
 const makeScope = (parent: Scope | undefined, kind: Scope["kind"]): Scope => ({
@@ -303,5 +307,36 @@ export const analyze = (program: Node): ScopeAnalysis => {
   }
 
   for (const statement of program.body) visit(statement, module)
-  return { program, module, scopeOf, constInits, localErrors, localEffects, bindings }
+
+  const innerBound = new Set<string>()
+  for (const scope of new Set(scopeOf.values())) {
+    if (scope === module) continue
+    for (const name of scope.values) innerBound.add(name)
+    for (const name of scope.types) innerBound.add(name)
+  }
+  return {
+    program,
+    module,
+    scopeOf,
+    constInits,
+    localErrors,
+    localEffects,
+    bindings,
+    identifierNames: collectNames(program),
+    innerBound
+  }
+}
+
+const collectNames = (program: Node): Set<string> => {
+  const names = new Set<string>()
+  const visit = (node: Node): void => {
+    if ((node.type === "Identifier" || node.type === "JSXIdentifier") && typeof node.name === "string") {
+      names.add(node.name)
+    } else if (node.type === "TSTypeParameter" && typeof node.name === "string") {
+      names.add(node.name)
+    }
+    for (const child of children(node)) visit(child)
+  }
+  visit(program)
+  return names
 }

@@ -35,6 +35,8 @@ export const toTypeScript = (source: string, options: CompileOptions = {}): Comp
     diagnostics: [],
     imports: makeImportSet(),
     handlers,
+    refs: new Map(),
+    generatedNames: new Set(),
     scope: analysis.module,
     effect: undefined,
     service: undefined,

@@ -4,9 +4,9 @@
  *
  * @since 0.1.0
  */
-import { isValueFree } from "../analyze/scope.ts"
 import { children, type Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
+import { ref, unused } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
@@ -183,11 +183,6 @@ const simpleTypes = new Set([
 const needsWrapping = (current: Current): boolean =>
   current.node !== undefined && current.start === current.node.start && !simpleTypes.has(current.node.type)
 
-const freshName = (ctx: Ctx): string => {
-  for (const name of ["$", "$$", "$$$"]) if (isValueFree(ctx.scope, name)) return name
-  return "$topic"
-}
-
 /** Replaces the whitespace + `|>` before `rhs` with `text`, preserving line breaks. */
 const joinStep = (ctx: Ctx, previousEnd: number, op: Range, rhs: Range, text: string): void => {
   if (ctx.source.slice(previousEnd, op.start).includes("\n")) {
@@ -205,13 +200,13 @@ const applyGroup = (ctx: Ctx, current: Current, group: ReadonlyArray<Step>): voi
       ctx.s.prependLeft(current.end, ")")
     }
   } else {
-    ctx.s.appendRight(current.start, `${pipeName(ctx)}(`)
+    ctx.s.appendRight(current.start, `${ref(ctx, "effect", "pipe")}(`)
   }
   let previousEnd = current.end
   group.forEach((step, i) => {
     const rhs = outer(ctx, step.rhs)
     if (step.topics.length > 0) {
-      const name = freshName(ctx)
+      const name = unused(ctx, "$")
       ctx.s.appendRight(rhs.start, `(${name}) => `)
       for (const topic of step.topics) ctx.s.update(topic.start, topic.end, name)
     }
@@ -230,21 +225,6 @@ const inline = (ctx: Ctx, current: Current, step: Step): void => {
   ctx.s.remove(current.end, outer(ctx, step.rhs).start)
   ctx.s.remove(topic.start, topic.end)
   ctx.s.move(current.start, current.end, topic.start)
-}
-
-/** `pipe`, or an alias when a local binding shadows it at this site. */
-const pipeName = (ctx: Ctx): string => {
-  const bound = !isValueFree(ctx.scope, "pipe")
-  const imported = ctx.analysis.program.body.some((s: Node) =>
-    s.type === "ImportDeclaration" && s.source.value === "effect" &&
-    s.specifiers.some((spec: Node) => spec.local.name === "pipe" && spec.importKind !== "type")
-  )
-  if (!bound || imported) {
-    ctx.imports.need("effect", "pipe")
-    return "pipe"
-  }
-  ctx.imports.need("effect", "pipe as pipe$")
-  return "pipe$"
 }
 
 const pipeline: Handler = (node, _parent, ctx) => {

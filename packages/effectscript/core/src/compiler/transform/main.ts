@@ -7,6 +7,7 @@
 import type { Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
+import { ref } from "../names.ts"
 import type { Runtime } from "../options.ts"
 import { walk } from "../walk.ts"
 import { lineRange } from "./classLike.ts"
@@ -51,16 +52,16 @@ const mainStatement: Handler = (node, parent, ctx) => {
     )
   }
   const target = runtimes[ctx.options.runtime]
-  ctx.imports.need("effect", "Effect")
-  ctx.imports.need(target.module, target.runtime)
-  if (target.services !== undefined) ctx.imports.need(target.module, target.services)
-  ctx.s.update(node.start, node.body.start, `${target.runtime}.runMain(Effect.gen(function*() `)
+  const E = ref(ctx, "effect", "Effect")
+  const runtime = ref(ctx, target.module, target.runtime)
+  const services = target.services === undefined ? undefined : ref(ctx, target.module, target.services)
+  ctx.s.update(node.start, node.body.start, `${runtime}.runMain(${E}.gen(function*() `)
   const frame = makeFrame(node, "main")
   withEffect(ctx, frame, () => walk(node.body, node, ctx))
-  const provide = target.services === undefined ? undefined : `Effect.provide(${target.services}.layer)`
+  const provide = services === undefined ? undefined : `${E}.provide(${services}.layer)`
   const pipes: Array<Node> = node.efxPipes
   if (pipes.length === 0) {
-    const extras = [...(frame.scoped ? ["Effect.scoped"] : []), ...(provide === undefined ? [] : [provide])]
+    const extras = [...(frame.scoped ? [`${E}.scoped`] : []), ...(provide === undefined ? [] : [provide])]
     ctx.s.appendLeft(node.end, extras.length > 0 ? `).pipe(${extras.join(", ")}))` : "))")
   } else {
     let previousEnd: number = node.end
@@ -70,7 +71,7 @@ const mainStatement: Handler = (node, parent, ctx) => {
         previousEnd,
         node.efxPipeOps[i],
         pipe.start,
-        i === 0 ? `).pipe(${frame.scoped ? "Effect.scoped, " : ""}` : ","
+        i === 0 ? `).pipe(${frame.scoped ? `${E}.scoped, ` : ""}` : ","
       )
       walk(pipe, node, ctx)
       previousEnd = pipe.end

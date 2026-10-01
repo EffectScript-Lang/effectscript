@@ -7,18 +7,19 @@ import { isTypeFree } from "../analyze/scope.ts"
 import type { Node } from "../ast.ts"
 import type { Ctx } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
+import { ref } from "../names.ts"
 
 const keywords: Record<string, string> = {
-  TSStringKeyword: "Schema.String",
-  TSNumberKeyword: "Schema.Number",
-  TSBooleanKeyword: "Schema.Boolean",
-  TSBigIntKeyword: "Schema.BigInt",
-  TSUnknownKeyword: "Schema.Unknown",
-  TSAnyKeyword: "Schema.Any",
-  TSNeverKeyword: "Schema.Never",
-  TSNullKeyword: "Schema.Null",
-  TSUndefinedKeyword: "Schema.Undefined",
-  TSVoidKeyword: "Schema.Void"
+  TSStringKeyword: "String",
+  TSNumberKeyword: "Number",
+  TSBooleanKeyword: "Boolean",
+  TSBigIntKeyword: "BigInt",
+  TSUnknownKeyword: "Unknown",
+  TSAnyKeyword: "Any",
+  TSNeverKeyword: "Never",
+  TSNullKeyword: "Null",
+  TSUndefinedKeyword: "Undefined",
+  TSVoidKeyword: "Void"
 }
 const vocabulary = new Set([
   "BigDecimal",
@@ -42,6 +43,14 @@ const unary: Record<string, string> = {
 }
 const binary: Record<string, string> = { Record: "Record", Map: "ReadonlyMap", ReadonlyMap: "ReadonlyMap" }
 
+/**
+ * `Schema.<member>`, through the file's hygienic `Schema` reference (ADR-0009).
+ *
+ * @since 0.1.0
+ * @category schema
+ */
+export const schemaRef = (ctx: Ctx, member: string): string => `${ref(ctx, "effect", "Schema")}.${member}`
+
 const typeArgs = (node: Node): Array<Node> => (node.typeArguments ?? node.typeParameters)?.params ?? []
 const slice = (ctx: Ctx, node: Node): string => ctx.source.slice(node.start, node.end)
 
@@ -55,7 +64,7 @@ const unsupported = (ctx: Ctx, node: Node): string => {
       "write the field as `name = <Schema expression>`"
     )
   )
-  return "Schema.Unknown"
+  return schemaRef(ctx, "Unknown")
 }
 
 const union = (ctx: Ctx, types: ReadonlyArray<Node>): string => {
@@ -66,22 +75,22 @@ const union = (ctx: Ctx, types: ReadonlyArray<Node>): string => {
   const hasUndefined = types.some(isUndefined)
   if (rest.length === 0) {
     return hasNull && hasUndefined
-      ? "Schema.Union([Schema.Null, Schema.Undefined])"
+      ? `${schemaRef(ctx, "Union")}([${schemaRef(ctx, "Null")}, ${schemaRef(ctx, "Undefined")}])`
       : hasNull
-      ? "Schema.Null"
-      : "Schema.Undefined"
+      ? schemaRef(ctx, "Null")
+      : schemaRef(ctx, "Undefined")
   }
   const inner = rest.length === 1
     ? typeToSchema(ctx, rest[0]!)
     : rest.every((t) => t.type === "TSLiteralType")
-    ? `Schema.Literals([${rest.map((t) => slice(ctx, t.literal)).join(", ")}])`
-    : `Schema.Union([${rest.map((t) => typeToSchema(ctx, t)).join(", ")}])`
+    ? `${schemaRef(ctx, "Literals")}([${rest.map((t) => slice(ctx, t.literal)).join(", ")}])`
+    : `${schemaRef(ctx, "Union")}([${rest.map((t) => typeToSchema(ctx, t)).join(", ")}])`
   return hasNull && hasUndefined
-    ? `Schema.NullishOr(${inner})`
+    ? `${schemaRef(ctx, "NullishOr")}(${inner})`
     : hasNull
-    ? `Schema.NullOr(${inner})`
+    ? `${schemaRef(ctx, "NullOr")}(${inner})`
     : hasUndefined
-    ? `Schema.UndefinedOr(${inner})`
+    ? `${schemaRef(ctx, "UndefinedOr")}(${inner})`
     : inner
 }
 
@@ -89,7 +98,7 @@ const member = (ctx: Ctx, node: Node): string => {
   if (node.type !== "TSPropertySignature" || node.typeAnnotation === undefined) return unsupported(ctx, node)
   const key = node.key.type === "Identifier" ? node.key.name : slice(ctx, node.key)
   const schema = typeToSchema(ctx, node.typeAnnotation.typeAnnotation)
-  return `${key}: ${node.optional === true ? `Schema.optional(${schema})` : schema}`
+  return `${key}: ${node.optional === true ? `${schemaRef(ctx, "optional")}(${schema})` : schema}`
 }
 
 /**
@@ -98,20 +107,20 @@ const member = (ctx: Ctx, node: Node): string => {
  */
 export const typeToSchema = (ctx: Ctx, node: Node): string => {
   const keyword = keywords[node.type]
-  if (keyword !== undefined) return keyword
+  if (keyword !== undefined) return schemaRef(ctx, keyword)
   switch (node.type) {
     case "TSLiteralType":
-      return `Schema.Literal(${slice(ctx, node.literal)})`
+      return `${schemaRef(ctx, "Literal")}(${slice(ctx, node.literal)})`
     case "TSArrayType":
-      return `Schema.Array(${typeToSchema(ctx, node.elementType)})`
+      return `${schemaRef(ctx, "Array")}(${typeToSchema(ctx, node.elementType)})`
     case "TSParenthesizedType":
       return typeToSchema(ctx, node.typeAnnotation)
     case "TSTypeOperator":
       return node.operator === "readonly" ? typeToSchema(ctx, node.typeAnnotation) : unsupported(ctx, node)
     case "TSTupleType":
-      return `Schema.Tuple([${node.elementTypes.map((t: Node) => typeToSchema(ctx, t)).join(", ")}])`
+      return `${schemaRef(ctx, "Tuple")}([${node.elementTypes.map((t: Node) => typeToSchema(ctx, t)).join(", ")}])`
     case "TSTypeLiteral":
-      return `Schema.Struct({ ${node.members.map((m: Node) => member(ctx, m)).join(", ")} })`
+      return `${schemaRef(ctx, "Struct")}({ ${node.members.map((m: Node) => member(ctx, m)).join(", ")} })`
     case "TSUnionType":
       return union(ctx, node.types)
     case "TSIntersectionType": {
@@ -121,19 +130,19 @@ export const typeToSchema = (ctx: Ctx, node: Node): string => {
       const others = node.types.filter((t: Node) => t !== brand)
       const literal = brand !== undefined ? typeArgs(brand)[0] : undefined
       if (brand === undefined || others.length !== 1 || literal?.type !== "TSLiteralType") return unsupported(ctx, node)
-      return `${typeToSchema(ctx, others[0]!)}.pipe(Schema.brand(${slice(ctx, literal.literal)}))`
+      return `${typeToSchema(ctx, others[0]!)}.pipe(${schemaRef(ctx, "brand")}(${slice(ctx, literal.literal)}))`
     }
     case "TSTypeReference": {
       const args = typeArgs(node)
       const name: string | undefined = node.typeName.type === "Identifier" ? node.typeName.name : undefined
       if (name !== undefined && isTypeFree(ctx.scope, name)) {
-        if (args.length === 0 && vocabulary.has(name)) return `Schema.${name}`
-        if (args.length === 0 && name === "Defect") return "Schema.Defect()"
+        if (args.length === 0 && vocabulary.has(name)) return schemaRef(ctx, name)
+        if (args.length === 0 && name === "Defect") return `${schemaRef(ctx, "Defect")}()`
         if (args.length === 1 && unary[name] !== undefined) {
-          return `Schema.${unary[name]}(${typeToSchema(ctx, args[0]!)})`
+          return `${schemaRef(ctx, unary[name]!)}(${typeToSchema(ctx, args[0]!)})`
         }
         if (args.length === 2 && binary[name] !== undefined) {
-          return `Schema.${binary[name]}(${typeToSchema(ctx, args[0]!)}, ${typeToSchema(ctx, args[1]!)})`
+          return `${schemaRef(ctx, binary[name]!)}(${typeToSchema(ctx, args[0]!)}, ${typeToSchema(ctx, args[1]!)})`
         }
       }
       if (args.length > 0) return unsupported(ctx, node)

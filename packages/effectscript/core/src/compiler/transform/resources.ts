@@ -6,6 +6,7 @@
 import { children, containsThis, type Node } from "../ast.ts"
 import { type Handler, withEffect } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
+import { ref } from "../names.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 import { findCrossingJump } from "./try.ts"
@@ -18,13 +19,13 @@ const deferStatement: Handler = (node, _parent, ctx) => {
     return true
   }
   ctx.effect.scoped = true
-  ctx.imports.need("effect", "Effect")
+  const E = ref(ctx, "effect", "Effect")
   const argument: Node = node.argument
   if (argument.type === "BlockStatement") {
-    ctx.s.update(node.start, argument.start, "yield* Effect.addFinalizer(() => Effect.sync(() => ")
+    ctx.s.update(node.start, argument.start, `yield* ${E}.addFinalizer(() => ${E}.sync(() => `)
     ctx.s.appendLeft(argument.end, "))")
   } else {
-    ctx.s.update(node.start, argument.start, "yield* Effect.addFinalizer(() => ")
+    ctx.s.update(node.start, argument.start, `yield* ${E}.addFinalizer(() => `)
     ctx.s.appendLeft(argument.end, ")")
   }
   withEffect(ctx, undefined, () => walk(argument, node, ctx))
@@ -78,12 +79,11 @@ const forAwait: Handler = (node, _parent, ctx) => {
       )
     )
   }
-  ctx.imports.need("effect", "Effect")
-  ctx.imports.need("effect", "Stream")
-  const gen = `Effect.gen(${containsThis(node.body) ? "{ self: this }, " : ""}function*() `
+  const E = ref(ctx, "effect", "Effect")
+  const gen = `${E}.gen(${containsThis(node.body) ? "{ self: this }, " : ""}function*() `
   const id: Node = left.declarations[0].id
   ctx.s.remove(left.start, id.start)
-  ctx.s.update(node.start, left.start, "yield* Stream.runForEach(")
+  ctx.s.update(node.start, left.start, `yield* ${ref(ctx, "effect", "Stream")}.runForEach(`)
   ctx.s.move(node.right.start, node.right.end, left.start)
   ctx.s.appendRight(left.start, ", (")
   ctx.s.update(left.end, node.right.start, `) => ${gen}`)

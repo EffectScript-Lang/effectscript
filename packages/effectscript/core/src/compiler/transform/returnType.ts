@@ -5,18 +5,20 @@
  */
 import type { Node } from "../ast.ts"
 import type { Ctx } from "../context.ts"
+import { ref } from "../names.ts"
 import type { HandlerGroup } from "./registry.ts"
 
 /**
+ * `member` is the path inside the `Effect` namespace (`"fn.Return"` or `"Effect"`).
+ *
  * @since 0.1.0
  * @category transforms
  */
-export const rewriteReturnType = (ctx: Ctx, annotation: Node | null | undefined, wrapper: string): void => {
+export const rewriteReturnType = (ctx: Ctx, annotation: Node | null | undefined, member: string): void => {
   if (annotation === null || annotation === undefined || annotation.typeAnnotation === undefined) return
   annotation.efxHandled = true
   const success: Node = annotation.typeAnnotation
-  ctx.imports.need("effect", "Effect")
-  ctx.s.appendRight(success.start, `${wrapper}<`)
+  ctx.s.appendRight(success.start, `${ref(ctx, "effect", "Effect")}.${member}<`)
   let end: number = success.end
   if (annotation.efxThrows !== undefined) {
     ctx.s.update(success.end, annotation.efxThrowsKeyword.end, ",")
@@ -39,6 +41,6 @@ export const returnTypeHandlers: HandlerGroup = {
   TSTypeAnnotation: (node, _parent, ctx) => {
     if (node.efxHandled === true) return
     if (node.efxThrows === undefined && node.efxNeeds === undefined) return
-    rewriteReturnType(ctx, node, "Effect.Effect")
+    rewriteReturnType(ctx, node, "Effect")
   }
 }

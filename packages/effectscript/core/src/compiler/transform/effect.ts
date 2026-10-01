@@ -6,6 +6,7 @@
 import { containsThis, type Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
+import { ref } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
 import { walk, walkChildren } from "../walk.ts"
 import { topicsOf } from "./pipeline.ts"
@@ -85,8 +86,8 @@ const effectDeclaration: Handler = (node, parent, ctx) => {
   const name: string = node.id.name
   const exportDefault = node.efx.exportDefault === true
   const keyword: { start: number; end: number } = node.efx.keyword
-  const head = `const ${name} = Effect.fn(${JSON.stringify(spanName(ctx, name))})(function*`
-  ctx.imports.need("effect", "Effect")
+  const E = ref(ctx, "effect", "Effect")
+  const head = `const ${name} = ${E}.fn(${JSON.stringify(spanName(ctx, name))})(function*`
   const start = exportDefault ? parent!.start : keyword.start
   if (/^\s*$/.test(ctx.source.slice(keyword.end, node.id.start))) {
     ctx.s.update(start, node.id.end, head)
@@ -94,10 +95,10 @@ const effectDeclaration: Handler = (node, parent, ctx) => {
     ctx.s.update(start, keyword.end, head)
     ctx.s.remove(node.id.start, node.id.end)
   }
-  rewriteReturnType(ctx, node.returnType, "Effect.fn.Return")
+  rewriteReturnType(ctx, node.returnType, "fn.Return")
   const frame = makeFrame(node, "declaration")
   withEffect(ctx, frame, () => walkChildren(node, ctx, new Set([node.id, ...(node.efxPipes ?? [])])))
-  attachPipesAsArguments(ctx, node, node.end, frame.scoped ? ", Effect.scoped" : "")
+  attachPipesAsArguments(ctx, node, node.end, frame.scoped ? `, ${E}.scoped` : "")
   if (exportDefault) ctx.s.appendLeft(lastEnd(node), `\nexport default ${name}`)
   return true
 }
@@ -114,13 +115,13 @@ const effectBlock: Handler = (node, parent, ctx) => {
       )
     )
   }
-  ctx.imports.need("effect", "Effect")
-  const head = containsThis(node.body) ? "Effect.gen({ self: this }, function*() " : "Effect.gen(function*() "
+  const E = ref(ctx, "effect", "Effect")
+  const head = containsThis(node.body) ? `${E}.gen({ self: this }, function*() ` : `${E}.gen(function*() `
   ctx.s.update(node.start, node.body.start, head)
   const frame = makeFrame(node, "block", node.efxLayerConstructor === true)
   withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
   if (frame.scoped && !frame.layerConstructor) {
-    ctx.s.appendRight(node.start, "Effect.scoped(")
+    ctx.s.appendRight(node.start, `${E}.scoped(`)
     ctx.s.appendLeft(node.end, "))")
   } else {
     ctx.s.appendLeft(node.end, ")")
@@ -142,15 +143,15 @@ const effectArrow: Handler = (node, _parent, ctx) => {
       )
     )
   }
-  ctx.imports.need("effect", "Effect")
+  const E = ref(ctx, "effect", "Effect")
   const params: Array<Node> = node.params
   if (ctx.source[skipSpace(ctx.source, keyword.end)] === "(") {
-    ctx.s.update(keyword.start, node.start, "Effect.fnUntraced(function*")
+    ctx.s.update(keyword.start, node.start, `${E}.fnUntraced(function*`)
   } else {
-    ctx.s.update(keyword.start, params[0]!.start, "Effect.fnUntraced(function*(")
+    ctx.s.update(keyword.start, params[0]!.start, `${E}.fnUntraced(function*(`)
     ctx.s.appendLeft(params[0]!.end, ")")
   }
-  rewriteReturnType(ctx, node.returnType, "Effect.fn.Return")
+  rewriteReturnType(ctx, node.returnType, "fn.Return")
   const searchFrom: number = node.returnType?.end ?? (params.length > 0 ? params[params.length - 1]!.end : node.start)
   const arrow = ctx.source.indexOf("=>", searchFrom)
   const expressionBody = node.body.type !== "BlockStatement"
@@ -158,7 +159,7 @@ const effectArrow: Handler = (node, _parent, ctx) => {
   else ctx.s.remove(arrow, node.body.start)
   const frame = makeFrame(node, "arrow")
   withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walkChildren(node, ctx)))
-  const close = frame.scoped ? ", Effect.scoped)" : ")"
+  const close = frame.scoped ? `, ${E}.scoped)` : ")"
   ctx.s.appendLeft(node.end, expressionBody ? ` }${close}` : close)
   return true
 }
@@ -166,7 +167,7 @@ const effectArrow: Handler = (node, _parent, ctx) => {
 const effectProperty: Handler = (node, _parent, ctx) => {
   if (node.efxMethod !== true) return
   const fn: Node = node.value
-  ctx.imports.need("effect", "Effect")
+  const E = ref(ctx, "effect", "Effect")
   const keyStart = node.computed ? ctx.source.lastIndexOf("[", node.key.start) : node.key.start
   ctx.s.remove(fn.efx.keyword.start, keyStart)
   const name: string | undefined = node.computed
@@ -177,14 +178,14 @@ const effectProperty: Handler = (node, _parent, ctx) => {
   ctx.s.appendRight(
     fn.start,
     name === undefined
-      ? ": Effect.fnUntraced(function*"
-      : `: Effect.fn(${JSON.stringify(spanName(ctx, name))})(function*`
+      ? `: ${E}.fnUntraced(function*`
+      : `: ${E}.fn(${JSON.stringify(spanName(ctx, name))})(function*`
   )
-  rewriteReturnType(ctx, fn.returnType, "Effect.fn.Return")
+  rewriteReturnType(ctx, fn.returnType, "fn.Return")
   if (node.computed) walk(node.key, node, ctx)
   const frame = makeFrame(fn, "method")
   withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(fn, node, ctx)))
-  ctx.s.appendLeft(fn.end, frame.scoped ? ", Effect.scoped)" : ")")
+  ctx.s.appendLeft(fn.end, frame.scoped ? `, ${E}.scoped)` : ")")
   return true
 }
 

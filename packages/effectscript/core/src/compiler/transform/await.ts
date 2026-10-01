@@ -6,6 +6,7 @@
  */
 import type { Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
+import { ref } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
 import type { HandlerGroup } from "./registry.ts"
 
@@ -69,8 +70,7 @@ const awaitExpression: Handler = (node, parent, ctx) => {
   parenthesizeIfNeeded(ctx, node, parent)
   const argument: Node = node.argument
   if (argument.type === "ArrayExpression" || argument.type === "ObjectExpression") {
-    ctx.imports.need("effect", "Effect")
-    ctx.s.update(node.start, argument.start, "yield* Effect.all(")
+    ctx.s.update(node.start, argument.start, `yield* ${ref(ctx, "effect", "Effect")}.all(`)
     ctx.s.prependLeft(argument.end, ", { concurrency: \"unbounded\" })")
   } else {
     ctx.s.update(node.start, node.start + 5, "yield*")
@@ -86,8 +86,7 @@ const throwStatement: Handler = (node, _parent, ctx) => {
   ) {
     ctx.s.update(node.start, node.start + 5, "return yield*")
   } else {
-    ctx.imports.need("effect", "Effect")
-    ctx.s.update(node.start, argument.start, "return yield* Effect.fail(")
+    ctx.s.update(node.start, argument.start, `return yield* ${ref(ctx, "effect", "Effect")}.fail(`)
     ctx.s.prependLeft(argument.end, ")")
   }
 }

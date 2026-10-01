@@ -6,7 +6,7 @@
 import type { Node } from "../ast.ts"
 import { type Ctx, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
-import { typeToSchema } from "../schema/mapping.ts"
+import { schemaRef, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
 
 /**
@@ -77,7 +77,7 @@ export const rewriteField = (ctx: Ctx, field: Node, isLast: boolean): void => {
     const type: Node = field.typeAnnotation.typeAnnotation
     let schema = typeToSchema(ctx, type)
     if (field.optional === true) {
-      schema = `Schema.optional(${schema})`
+      schema = `${schemaRef(ctx, "optional")}(${schema})`
       const question = ctx.source.indexOf("?", field.key.end)
       ctx.s.remove(question, question + 1)
     }

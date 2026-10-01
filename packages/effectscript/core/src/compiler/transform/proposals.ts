@@ -6,6 +6,7 @@
 import { containsThis, type Node } from "../ast.ts"
 import { type Ctx, type Handler, withEffect } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
+import { ref } from "../names.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 import { containsAtLevel, findCrossingJump, isEffectful } from "./try.ts"
@@ -24,8 +25,7 @@ const throwExpression: Handler = (node, _parent, ctx) => {
     ctx.s.update(node.start, node.start + 5, "(yield*")
     ctx.s.appendLeft(argument.end, ")")
   } else {
-    ctx.imports.need("effect", "Effect")
-    ctx.s.update(node.start, argument.start, "(yield* Effect.fail(")
+    ctx.s.update(node.start, argument.start, `(yield* ${ref(ctx, "effect", "Effect")}.fail(`)
     ctx.s.appendLeft(argument.end, "))")
   }
 }
@@ -63,11 +63,10 @@ const doExpression: Handler = (node, _parent, ctx) => {
   }
   returnCompletion(ctx, node.body)
   if (ctx.effect !== undefined && isEffectful(node.body)) {
-    ctx.imports.need("effect", "Effect")
     ctx.s.update(
       node.start,
       node.body.start,
-      `(yield* Effect.gen(${containsThis(node.body) ? "{ self: this }, " : ""}function*() `
+      `(yield* ${ref(ctx, "effect", "Effect")}.gen(${containsThis(node.body) ? "{ self: this }, " : ""}function*() `
     )
     ctx.s.appendLeft(node.end, "))")
     walk(node.body, node, ctx)

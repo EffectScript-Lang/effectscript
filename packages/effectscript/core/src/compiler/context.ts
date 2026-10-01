@@ -39,6 +39,10 @@ export interface Ctx {
   readonly diagnostics: Array<Diagnostic>
   readonly imports: ImportSet
   readonly handlers: ReadonlyMap<string, ReadonlyArray<Handler>>
+  /** `module\0export` → local name for compiler-owned references (ADR-0009). */
+  readonly refs: Map<string, string>
+  /** Names handed out by `fresh`. */
+  readonly generatedNames: Set<string>
   scope: Scope
   effect: EffectFrame | undefined
   service: string | undefined

@@ -7,6 +7,7 @@
 import { children, containsThis, type Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
+import { ref } from "../names.ts"
 import { walk, walkInScopeOf } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 
@@ -190,8 +191,8 @@ const tryStatement: Handler = (node, _parent, ctx) => {
     )
   }
 
-  ctx.imports.need("effect", "Effect")
-  const gen = `Effect.gen(${containsThis(node) ? "{ self: this }, " : ""}function*() `
+  const E = ref(ctx, "effect", "Effect")
+  const gen = `${E}.gen(${containsThis(node) ? "{ self: this }, " : ""}function*() `
   ctx.s.update(node.start, node.block.start, `${anyReturn && allExit ? "return " : ""}yield* ${gen}`)
 
   const typedClauses = clauses.filter((c) => tagsOf(c) !== undefined)
@@ -207,22 +208,22 @@ const tryStatement: Handler = (node, _parent, ctx) => {
     if (tags === undefined) {
       return orElse
         ? { bodyStart: clause.body.start, open: handler, close: "))" }
-        : { bodyStart: clause.body.start, open: `Effect.catch(${handler}`, close: "))" }
+        : { bodyStart: clause.body.start, open: `${E}.catch(${handler}`, close: "))" }
     }
     const keepOpen = orElse && clause === lastTyped
     if (grouped) {
       const index = typedClauses.indexOf(clause)
       return {
         bodyStart: clause.body.start,
-        open: `${index === 0 ? "Effect.catchTags({ " : ""}${tags[0]}: ${handler}`,
+        open: `${index === 0 ? `${E}.catchTags({ ` : ""}${tags[0]}: ${handler}`,
         close: index === typedClauses.length - 1 ? (keepOpen ? ") }" : ") })") : ")"
       }
     }
     const tag = tags.length === 1 ? JSON.stringify(tags[0]) : `[${tags.map((t) => JSON.stringify(t)).join(", ")}]`
-    return { bodyStart: clause.body.start, open: `Effect.catchTag(${tag}, ${handler}`, close: keepOpen ? ")" : "))" }
+    return { bodyStart: clause.body.start, open: `${E}.catchTag(${tag}, ${handler}`, close: keepOpen ? ")" : "))" }
   })
   if (node.finalizer !== null) {
-    parts.push({ bodyStart: node.finalizer.start, open: `Effect.ensuring(${gen}`, close: "))" })
+    parts.push({ bodyStart: node.finalizer.start, open: `${E}.ensuring(${gen}`, close: "))" })
   }
   const ends: Array<number> = [node.block.end, ...clauses.map((c) => c.body.end as number)]
   parts.forEach((part, i) => {

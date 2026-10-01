@@ -6,7 +6,7 @@
 import type { Node } from "../ast.ts"
 import type { Handler } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
-import { typeToSchema } from "../schema/mapping.ts"
+import { schemaRef, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
 import { fieldsOf, moveMembersAfter, removeLine, rewriteField } from "./classLike.ts"
 import type { HandlerGroup } from "./registry.ts"
@@ -24,16 +24,15 @@ const schemaClass: Handler = (node, _parent, ctx) => {
     )
     return true
   }
-  ctx.imports.need("effect", "Schema")
   const name: string = node.id.name
   const { fields, members, tag } = fieldsOf(node)
   const tagName = tagValue(tag)
   ctx.s.update(node.efxKeyword.start, node.efxKeyword.end, "class")
   const header = node.efxKind === "error"
-    ? `Schema.TaggedError<${name}>()(${JSON.stringify(tagName ?? name)}, `
+    ? `${schemaRef(ctx, "TaggedError")}<${name}>()(${JSON.stringify(tagName ?? name)}, `
     : tagName !== undefined
-    ? `Schema.TaggedClass<${name}>()(${JSON.stringify(tagName)}, `
-    : `Schema.Class<${name}>(${JSON.stringify(name)})(`
+    ? `${schemaRef(ctx, "TaggedClass")}<${name}>()(${JSON.stringify(tagName)}, `
+    : `${schemaRef(ctx, "Class")}<${name}>(${JSON.stringify(name)})(`
   ctx.s.update(node.id.end, node.body.start, ` extends ${header}`)
   if (tag !== undefined) removeLine(ctx, tag)
   fields.forEach((field, i) => rewriteField(ctx, field, i === fields.length - 1))
@@ -56,7 +55,7 @@ const aliasSchema = (ctx: Parameters<Handler>[2], type: Node): string => {
     previous = member.end
     if (comments.length > 0) hasComments = true
     const struct = typeToSchema(ctx, { ...type, members: [member] } as Node)
-    const body = struct.slice("Schema.Struct({ ".length, -" })".length)
+    const body = struct.slice(`${schemaRef(ctx, "Struct")}({ `.length, -" })".length)
     return { comments, body }
   })
   if (!hasComments) return typeToSchema(ctx, type)
@@ -64,11 +63,10 @@ const aliasSchema = (ctx: Parameters<Handler>[2], type: Node): string => {
     ...comments.map((c) => `  ${c}`),
     `  ${body}${i === members.length - 1 ? "" : ","}`
   ])
-  return `Schema.Struct({\n${lines.join("\n")}\n})`
+  return `${schemaRef(ctx, "Struct")}({\n${lines.join("\n")}\n})`
 }
 
 const schemaAlias: Handler = (node, parent, ctx) => {
-  ctx.imports.need("effect", "Schema")
   const prefix = parent?.type === "ExportNamedDeclaration" ? "export " : ""
   const name: string = node.id.name
   ctx.s.update(
@@ -80,7 +78,6 @@ const schemaAlias: Handler = (node, parent, ctx) => {
 }
 
 const schemaAdt: Handler = (node, parent, ctx) => {
-  ctx.imports.need("effect", "Schema")
   const prefix = parent?.type === "ExportNamedDeclaration" ? "export " : ""
   const lines = (node.variants as Array<Node>).map((variant, i) => {
     const variantName: string = variant.id.name
@@ -100,21 +97,23 @@ const schemaAdt: Handler = (node, parent, ctx) => {
       fields.map((f) => {
         if (f.typeAnnotation === undefined || f.typeAnnotation === null) {
           ctx.diagnostics.push(diagnosticError("EFX3004", "A field needs a type or `= <schema>`", f.start, f.end))
-          return `${f.key.name}: Schema.Unknown`
+          return `${f.key.name}: ${schemaRef(ctx, "Unknown")}`
         }
         const schema = typeToSchema(ctx, f.typeAnnotation.typeAnnotation)
-        return `${f.key.name}: ${f.optional === true ? `Schema.optional(${schema})` : schema}`
+        return `${f.key.name}: ${f.optional === true ? `${schemaRef(ctx, "optional")}(${schema})` : schema}`
       }).join(", ")
     } }`
     const from = i === 0 ? node.id.end : (node.variants as Array<Node>)[i - 1]!.end
     const comments = commentsBetween(ctx.source, from, variant.start).map((c) => `${c}\n`).join("")
-    return `${comments}${i === 0 ? "" : prefix}class ${variantName} extends Schema.TaggedClass<${variantName}>()(${
-      JSON.stringify(variantName)
-    }, ${struct}) {}`
+    return `${comments}${i === 0 ? "" : prefix}class ${variantName} extends ${
+      schemaRef(ctx, "TaggedClass")
+    }<${variantName}>()(${JSON.stringify(variantName)}, ${struct}) {}`
   })
   const name: string = node.id.name
   lines.push(
-    `${prefix}const ${name} = Schema.Union([${(node.variants as Array<Node>).map((v) => v.id.name).join(", ")}])`
+    `${prefix}const ${name} = ${schemaRef(ctx, "Union")}([${
+      (node.variants as Array<Node>).map((v) => v.id.name).join(", ")
+    }])`
   )
   lines.push(`${prefix}type ${name} = typeof ${name}.Type`)
   ctx.s.update(node.start, node.end, lines.join("\n"))
