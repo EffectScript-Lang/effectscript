@@ -9,7 +9,8 @@ const packages = path.resolve(packageDir, "../..")
 
 const a =
   "export effect double(n: number): number {\n  const x = await succeed(n)\n  return x * 2\n}\nexport schema User { name: string }\n"
-const b = "import { double, User } from \"./a.efx\"\nexport const r = double(2)\nexport const u = new User({ name: \"ada\" })\n"
+const b =
+  "import { double, User } from \"./a.efx\"\nexport const r = double(2)\nexport const u = new User({ name: \"ada\" })\n"
 
 const lineOffset = (text: string, index: number) => {
   const before = text.slice(0, index).split("\n")

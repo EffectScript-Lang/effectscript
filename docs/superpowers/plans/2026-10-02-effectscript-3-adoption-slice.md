@@ -384,3 +384,9 @@ findings in one pass, each with a failing test first. Record deferred minors her
   `effect/unstable/cli` with `.efx` handlers (spec §7.1). The dogfooded CLI arrives with the full
   CLI/distribution plan. Cost if wrong: one rewrite of `src/cli/main.ts`. Staging lives in
   `node_modules/.cache/effectscript/build`, so it is never packed with `dist/`.
+- **Task 8:** the adoption fixture lives at `packages/effectscript/language/test/fixtures/adoption/`
+  instead of `packages/effectscript/examples/adoption/`. It is test evidence, not a runnable example,
+  and this location keeps it out of the workspace, lint and type-check globs. The examples package
+  comes with the CLI/distribution plan. The consumer step extracts the `npm pack` tarball with `tar`
+  instead of `npm install`, so it runs offline. The fixture was written before the test, so the test
+  never failed first; its error-injection step proves it detects failures.

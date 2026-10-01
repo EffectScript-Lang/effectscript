@@ -4,7 +4,8 @@ import { createHarness } from "./utils/harness.ts"
 
 const a =
   "export effect double(n: number): number {\n  const x = await succeed(n)\n  return x * 2\n}\nexport schema User { name: string }\n"
-const b = "import { double, User } from \"./a.efx\"\nexport const r = double(2)\nexport const u = new User({ name: 1 })\n"
+const b =
+  "import { double, User } from \"./a.efx\"\nexport const r = double(2)\nexport const u = new User({ name: 1 })\n"
 
 describe("language service over .efx", () => {
   const { dir, service } = createHarness({ "a.efx": a, "b.ts": b })

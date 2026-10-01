@@ -1,0 +1,23 @@
+export error UserNotFound { id: string }
+
+export schema User {
+  id: string
+  name: string
+}
+
+const users = new Map([["1", new User({ id: "1", name: "Ada" })]])
+
+export effect findUser(id: string): User throws UserNotFound {
+  const user = users.get(id)
+  if (user === undefined) throw new UserNotFound({ id })
+  return user
+}
+
+export effect describeUser(id: string): string {
+  try {
+    const user = await findUser(id)
+    return `${user.name} (${user.id})`
+  } catch (e: UserNotFound) {
+    return `missing ${e.id}`
+  }
+}
