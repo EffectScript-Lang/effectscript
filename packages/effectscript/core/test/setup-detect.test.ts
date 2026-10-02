@@ -10,7 +10,11 @@ const env = (files: ReadonlyArray<string>, options: Partial<SetupEnv> = {}): Set
     path: ["/usr/bin", "/home/u/.local/bin"],
     vars: {},
     exists: (p) => set.has(p) || [...set].some((f) => f.startsWith(`${p}/`)),
-    entries: (dir) => [...new Set([...set].filter((f) => f.startsWith(`${dir}/`)).map((f) => f.slice(dir.length + 1).split("/")[0]!))],
+    entries: (
+      dir
+    ) => [
+      ...new Set([...set].filter((f) => f.startsWith(`${dir}/`)).map((f) => f.slice(dir.length + 1).split("/")[0]!))
+    ],
     ...options
   }
 }
@@ -48,7 +52,15 @@ describe("efx setup detection (Plan 15 Task 1, ADR-0052)", () => {
   })
 
   it("finds coding agents by their CLI or their home directory, with their skills directory", () => {
-    const found = detect(env(["/usr/bin/claude", "/home/u/.codex/config.toml", "/home/u/.gemini/settings.json", "/home/u/.config/opencode/opencode.json", "/home/u/.cursor/argv.json"]))
+    const found = detect(
+      env([
+        "/usr/bin/claude",
+        "/home/u/.codex/config.toml",
+        "/home/u/.gemini/settings.json",
+        "/home/u/.config/opencode/opencode.json",
+        "/home/u/.cursor/argv.json"
+      ])
+    )
     expect(found.filter((d) => d.kind === "agent").map((d) => [d.id, d.skillsDir])).toEqual([
       ["claude", "/home/u/.claude/skills"],
       ["codex", "/home/u/.codex/skills"],

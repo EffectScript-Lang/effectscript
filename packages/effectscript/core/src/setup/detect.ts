@@ -53,7 +53,8 @@ export interface Detected {
   readonly evidence: string
 }
 
-const join = (env: SetupEnv, ...parts: Array<string>) => (env.platform === "win32" ? path.win32 : path.posix).join(...parts)
+const join = (env: SetupEnv, ...parts: Array<string>) =>
+  (env.platform === "win32" ? path.win32 : path.posix).join(...parts)
 
 /** A CLI on PATH (`.exe`/`.cmd` on Windows). */
 const which = (env: SetupEnv, name: string): string | undefined => {
@@ -106,18 +107,36 @@ export const detect = (env: SetupEnv): Array<Detected> => {
   }
   const nvim = which(env, "nvim")
   if (nvim !== undefined) {
-    found.push({ kind: "editor", id: "neovim", name: "Neovim", cli: nvim, configDir: join(env, configHome(env, "LOCALAPPDATA"), "nvim"), evidence: nvim })
+    found.push({
+      kind: "editor",
+      id: "neovim",
+      name: "Neovim",
+      cli: nvim,
+      configDir: join(env, configHome(env, "LOCALAPPDATA"), "nvim"),
+      evidence: nvim
+    })
   }
   const hx = which(env, "hx") ?? which(env, "helix")
   if (hx !== undefined) {
-    found.push({ kind: "editor", id: "helix", name: "Helix", cli: hx, configDir: join(env, configHome(env, "APPDATA"), "helix"), evidence: hx })
+    found.push({
+      kind: "editor",
+      id: "helix",
+      name: "Helix",
+      cli: hx,
+      configDir: join(env, configHome(env, "APPDATA"), "helix"),
+      evidence: hx
+    })
   }
   const zed = which(env, "zed") ?? app(env, "Zed.app", "Contents/MacOS/zed")
   if (zed !== undefined) found.push({ kind: "editor", id: "zed", name: "Zed", cli: zed, evidence: zed })
   const ides = env.platform === "darwin"
-    ? ["/Applications", join(env, env.home, "Applications")].flatMap((dir) => env.entries(dir)).filter((e) => jetbrains.test(e))
+    ? ["/Applications", join(env, env.home, "Applications")].flatMap((dir) => env.entries(dir)).filter((e) =>
+      jetbrains.test(e)
+    )
     : []
-  if (ides.length > 0) found.push({ kind: "editor", id: "jetbrains", name: "JetBrains IDEs", evidence: ides.join(", ") })
+  if (ides.length > 0) {
+    found.push({ kind: "editor", id: "jetbrains", name: "JetBrains IDEs", evidence: ides.join(", ") })
+  }
 
   const agent = (id: Detected["id"], name: string, command: string | undefined, home: string) => {
     const cli = command === undefined ? undefined : which(env, command)
