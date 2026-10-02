@@ -1245,7 +1245,19 @@ Gaps that dogfooding found in the constructs, and how the CLI works around them:
   - Hovering an effect `await` shows "Effect bind (`yield*`): runs this effect here and short-circuits on failure".
   - TS errors caused by awaiting a Promise inside `effect` are rewritten into "Cannot `await` a Promise inside `effect` — use `await tryPromise(() => …)`".
 - `efx-language-server`: the standalone LSP (`@volar/language-server` +
-  `volar-service-typescript`) for Neovim, Zed, and others.
+  `volar-service-typescript`) for Neovim, Helix, Zed and others (ADR-0040).
+  - EffectScript's own results are added by wrapping each project's language service, so they
+    stay in `.efx` positions: compiler diagnostics, the bind hover, and bind semantic tokens
+    (`keyword` + `effect`).
+  - **TypeScript 6:** the `tsdk` option, else the workspace's, else the server's own.
+  - **`efx lsp`:** runs the project's server (npm), or the one in the standalone binary with its
+    bundled TypeScript.
+  - Neovim and Helix configs are in the language package README.
+- **The guardrails' source** (ADR-0039): the compiler's `CompileResult.binds` lists every `await`
+  lowered to `yield*`.
+  - **TS server plugin:** quick info and semantic diagnostics are proxied.
+  - **VS Code:** binds are decorated with the theme color `effectscript.effectAwait`, because
+    TypeScript's semantic tokens have no keyword type.
 
 ### 7.4 VS Code extension
 
@@ -1258,6 +1270,13 @@ Gaps that dogfooding found in the constructs, and how the CLI works around them:
   mode), so no separate server is needed in VS Code.
 - Commands: **Show Compiled TypeScript** (a live side-by-side virtual document), **Convert File to
   EffectScript**, and **Convert File to TypeScript**.
+  - The conversions are one undoable `WorkspaceEdit` that also rewrites importers, and the
+    touched files are saved.
+  - A conversion whose target exists is refused (ADR-0041).
+- **Packaging** (`scripts/package.ts`): `out/extension.cjs`, and the TS plugin as a CommonJS pack
+  in `node_modules/@effectscript/language`, so it runs on VS Code ^1.95's Node without
+  `require(esm)`. Icons come from `brand/icons/editor`.
+- **Tested:** the `.vsix` is tested end to end in VS Code 1.138, in a throwaway profile.
 
 ---
 
@@ -1577,8 +1596,9 @@ The order was revised after the plan review (ADR-0016).
    - **7c (Plan 10):** the standalone binary, Homebrew, the install script and the release
      workflow.
    - **Plan 10b** (after phases 8 and 9, ADR-0038): `setup`, `convert --ai` and `skill`.
-8. **Language tooling completion:** the language server for other editors, and VS Code commands
-   and grammar polish.
+8. **Language tooling completion (Plan 11):** the language server for other editors (`efx lsp`),
+   the `await` guardrails in every editor, and the VS Code commands and `.vsix`
+   (ADR-0039–0041).
 9. **AI skill:** `SKILL.md` + references, generated syntax reference, and `efx skill`.
 10. **Site:** VS Code-style before/after gallery, Monaco two-way playground, and the narrative
    sections. Every claim links to evidence (review R15).

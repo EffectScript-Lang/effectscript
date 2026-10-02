@@ -166,3 +166,37 @@
 - COMPATIBILITY rows.
 - The language package README (editor setup).
 - This plan's execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Language server results:** Volar 2.4 calls service plugins only on the compiled TypeScript of
+  a file with generated code. EffectScript's results are therefore added by wrapping each
+  project's `LanguageService` (`withEffectScript`), in source positions. A capability-only plugin
+  declares the token legend.
+- **The npm `efx lsp`** resolves `@effectscript/language` only from the project, by walking
+  `node_modules`. `languageBin` (also used by `efx check`) now walks too, because
+  `require.resolve` follows pnpm's `NODE_PATH`.
+- **The binary embeds TypeScript's `lib/`:** `typescript.js` and 107 `lib.*.d.ts` files, about
+  15 MB, added through file imports and unpacked to `<cache>/typescript-<version>/lib`. The
+  server needs the lib files on disk.
+- **Editors:**
+  - **Helix:** the TypeScript grammar plus `; inherits: typescript` queries, verified with
+    `hx --health` in a temp config.
+  - **Zed:** needs an extension (later).
+  - **Neovim:** tested headless with the documented `vim.lsp.config`.
+- **VS Code extension:**
+  - **Plugin pack:** it keeps the name `@effectscript/language` and is the staged manifest's only
+    dependency. vsce runs without `--no-dependencies`, which drops `node_modules` before
+    `.vscodeignore` applies.
+  - **Module format:** the package is `"type": "module"`, with `main` at `out/extension.cjs`.
+  - **Saving:** conversions save the files they touch. The end-to-end run found a renamed file
+    whose new text was unsaved.
+  - **`vsce-sign`:** `allowBuilds` has `@vscode/vsce-sign: false`, because its signing binary is
+    needed only to publish.
+- **Version coverage:** VS Code 1.95 itself wasn't run, because that would mean downloading it.
+  Its constraint, Node without `require(esm)`, is tested directly. The full editor run passes on
+  the installed VS Code 1.138.
