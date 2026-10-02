@@ -61,3 +61,24 @@ reads `plugin/*.lua` from its config, and Helix reads `languages.toml` plus quer
 - **Copy the skill into every agent:** five copies to keep in step. Links keep one.
 - **Edit `init.lua`:** risky on hand-written configs. A file in `plugin/` loads automatically.
 - **Bare `efx` in editor configs:** editors often run with a different PATH than the shell.
+
+## The AI pass (`efx convert --ai`)
+
+- **The agent:** after the mechanical pass and its verification, `--ai` runs the user's own
+  coding agent non-interactively, one converted file at a time, on the files that still have
+  "stays TypeScript" notes. The agent is `--agent claude|codex|gemini|opencode`, or the first one
+  on PATH:
+  - `claude -p … --permission-mode acceptEdits`
+  - `codex exec --full-auto …`
+  - `gemini -p … --yolo`
+  - `opencode run …`
+- **The prompt** names the file, lists the notes with their line numbers, points at a temporary
+  copy of the skill, and asks for edits to that file only.
+- **Keep or revert:**
+  - Edits to any other file are undone, and new files are removed, by comparing the files git
+    sees before and after.
+  - The file's edit is kept only if the agent exits 0 within `--timeout` seconds (default 300),
+    the file compiles without errors, and the project verifies (ADR-0033). Otherwise the file is
+    restored.
+- **Nothing leaves the machine** except through the agent the user installed and configured. With
+  no agent installed, the mechanical conversion stands and `efx` says so.

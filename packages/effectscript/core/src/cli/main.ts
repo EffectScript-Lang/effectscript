@@ -137,16 +137,30 @@ export const convert = pipe(
       test: Flag.String("test").pipe(
         Flag.optional,
         Flag.withDescription("The test command (default: npm test, when there is a test script)")
-      )
+      ),
+      ai: Flag.Boolean("ai").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription(
+          "Then let your coding agent convert what was left as TypeScript, keeping only edits that verify"
+        )
+      ),
+      agent: Flag.String("agent").pipe(
+        Flag.optional,
+        Flag.withDescription("The agent for --ai: claude, codex, gemini or opencode (default: the first installed)")
+      ),
+      timeout: Flag.Int("timeout").pipe(Flag.withDefault(300), Flag.withDescription("Seconds the agent gets per file"))
     },
-    Effect.fnUntraced(function*({ paths, write, explain, force, noVerify, test }) {
+    Effect.fnUntraced(function*({ paths, write, explain, force, noVerify, test, ai, agent, timeout }) {
       const code = convertProject(process.cwd(), {
         paths,
         write,
         explain,
         force,
         verify: !noVerify,
-        test: test._tag === "Some" ? test.value : undefined
+        test: test._tag === "Some" ? test.value : undefined,
+        ai,
+        agent: agent._tag === "Some" ? agent.value : undefined,
+        timeout
       }, {
         out: (line) => process.stdout.write(`${line}\n`),
         err: (line) => process.stderr.write(`${line}\n`)

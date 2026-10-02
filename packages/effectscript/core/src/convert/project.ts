@@ -10,6 +10,7 @@ import * as path from "node:path"
 import { languageBin, runCheck } from "../cli/check.ts"
 import { lineColumn } from "../compiler/diagnostics.ts"
 import { packageInfo } from "../project.ts"
+import { aiPass, findAgent } from "./ai.ts"
 import { type ConversionPlan, planConversion } from "./plan.ts"
 
 /**
@@ -24,6 +25,11 @@ export interface ConvertCommandOptions {
   readonly verify: boolean
   /** The test command (default: `npm test` when package.json has a test script). */
   readonly test: string | undefined
+  /** After the mechanical pass, let a local coding agent convert what was left (ADR-0052). */
+  readonly ai?: boolean | undefined
+  readonly agent?: string | undefined
+  /** Seconds the agent gets per file. */
+  readonly timeout?: number | undefined
 }
 
 /**
@@ -187,7 +193,11 @@ export const convertProject = (cwd: string, options: ConvertCommandOptions, io: 
   const full = planConversion(files, planOptions)
   report(full, files, options, io)
   if (!options.write) {
-    io.out("Dry run: rerun with --write to convert on a new branch")
+    io.out(
+      options.ai === true
+        ? "--ai needs --write: rerun with --write --ai"
+        : "Dry run: rerun with --write to convert on a new branch"
+    )
     return 0
   }
   if (full.renames.length === 0) return 0
@@ -240,6 +250,25 @@ export const convertProject = (cwd: string, options: ConvertCommandOptions, io: 
     gitIn(cwd, ["branch", "-D", branch])
     io.out("Nothing could be converted while keeping the project green")
     return 0
+  }
+  if (options.ai === true) {
+    const agent = findAgent(options.agent)
+    const targets = plan.renames.filter((r) => r.notes.length > 0).map((r) => ({
+      file: r.to,
+      notes: r.notes.map((note) => `line ${lineColumn(files.get(r.from)!, note.start).line}: ${note.message}`)
+    }))
+    if (agent === undefined) {
+      io.err(
+        `efx convert --ai: no coding agent found on PATH${
+          options.agent === undefined ? " (claude, codex, gemini, opencode)" : ` (${options.agent})`
+        }; the mechanical conversion stands`
+      )
+    } else if (targets.length === 0) {
+      io.out("AI pass: nothing was left as TypeScript")
+    } else {
+      const { kept, reverted } = aiPass(cwd, targets, agent, verify, options.timeout ?? 300, io)
+      io.out(`AI pass: kept ${kept} edit(s), reverted ${reverted}`)
+    }
   }
   io.out(`Converted ${plan.renames.length} file(s) on branch ${branch}: review with git status and git diff`)
   return 0
