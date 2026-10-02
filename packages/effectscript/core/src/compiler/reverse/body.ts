@@ -30,9 +30,7 @@ export type Visit = (node: Node, parent: Node | undefined, generator: boolean) =
 export const isBuiltin = (ctx: ReverseCtx, name: string): boolean => {
   if (ctx.effect !== "Effect" || !ctx.options.prelude) return false
   if (excludedNames.has(name) || preludeModules.has(name) || preludeFunctions.has(name)) return false
-  if (!namespaceExports.get("Effect")!.has(name)) return false
-  const { innerBound, module } = ctx.analysis
-  return !innerBound.has(name) && !module.values.has(name) && !module.types.has(name)
+  return namespaceExports.get("Effect")!.has(name) && isFree(ctx, name)
 }
 
 /**
@@ -53,8 +51,25 @@ const formNames = new Set(["fn", "fnUntraced", "gen"])
  * @category reverse
  */
 export const unqualify = (ctx: ReverseCtx, node: Node): void => {
-  if (!isMember(node, ctx.effect) || node.optional === true || formNames.has(node.property.name)) return
+  if (node.type !== "MemberExpression" || node.optional === true) return
+  if (ctx.namespace === "Layer") {
+    // in a layer, a bare name resolves to `Layer.name` (spec §4.14)
+    if (!isMember(node, ctx.layer)) return
+    const name: string = node.property.name
+    if (
+      ctx.options.prelude && !excludedNames.has(name) && namespaceExports.get("Layer")!.has(name) && isFree(ctx, name)
+    ) {
+      ctx.s.remove(node.start, node.property.start)
+    }
+    return
+  }
+  if (!isMember(node, ctx.effect) || formNames.has(node.property.name)) return
   if (isBuiltin(ctx, node.property.name)) ctx.s.remove(node.start, node.property.start)
+}
+
+const isFree = (ctx: ReverseCtx, name: string): boolean => {
+  const { innerBound, module } = ctx.analysis
+  return !innerBound.has(name) && !module.values.has(name) && !module.types.has(name)
 }
 
 /**

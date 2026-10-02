@@ -16,7 +16,8 @@ import {
   replaceKeepingComments,
   type ReverseCtx,
   separatorComma,
-  slice
+  slice,
+  within
 } from "./context.ts"
 import { isMember } from "./origin.ts"
 import { convertPipe, isPlainStep } from "./pipes.ts"
@@ -29,20 +30,28 @@ import { hasFinalizer, inFrame } from "./resources.ts"
  * @since 4.0.0
  * @category reverse
  */
-export const convertReturnType = (ctx: ReverseCtx, annotation: Node | null | undefined): void => {
+export const convertReturnType = (
+  ctx: ReverseCtx,
+  annotation: Node | null | undefined,
+  member: "fn.Return" | "Effect" = "fn.Return"
+): boolean => {
   const type: Node | undefined = annotation?.typeAnnotation
-  if (type?.type !== "TSTypeReference") return
+  if (type?.type !== "TSTypeReference") return false
   const name: Node = type.typeName
-  const isReturn = name.type === "TSQualifiedName" && name.right.name === "Return" &&
-    name.left.type === "TSQualifiedName" && name.left.right.name === "fn" &&
-    name.left.left.type === "Identifier" && name.left.left.name === ctx.effect
-  if (!isReturn) return
+  const isReturn = member === "fn.Return"
+    ? name.type === "TSQualifiedName" && name.right.name === "Return" &&
+      name.left.type === "TSQualifiedName" && name.left.right.name === "fn" &&
+      name.left.left.type === "Identifier" && name.left.left.name === ctx.effect
+    : name.type === "TSQualifiedName" && name.right.name === "Effect" && name.left.type === "Identifier" &&
+      name.left.name === ctx.effect
+  if (!isReturn) return false
   const [success, error, requirements]: Array<Node> = (type.typeArguments ?? type.typeParameters)?.params ?? []
-  if (success === undefined) return
+  if (success === undefined) return false
   const omitError = error === undefined || (requirements !== undefined && error.type === "TSNeverKeyword")
   const throws = omitError ? "" : ` throws ${slice(ctx, error)}`
   const needs = requirements === undefined ? "" : ` needs ${slice(ctx, requirements)}`
   ctx.s.update(type.start, type.end, `${slice(ctx, success)}${throws}${needs}`)
+  return true
 }
 
 /** `const f = Effect.fn(…)` statements converted to `effect` declarations. */
@@ -77,7 +86,9 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
   const scope = isScope(ctx, allPipes[0]) && hasFinalizer(ctx, fn.body) ? allPipes[0] : undefined
   const pipes = scope === undefined ? allPipes : allPipes.slice(1)
   const span: Node | undefined = head.arguments[0]
-  if (span?.type !== "Literal" || span.value !== name) {
+  // inside a service layer the forward compiler names it `Svc.name`
+  const expected = ctx.service === undefined ? name : `${ctx.service}.${name}`
+  if (span?.type !== "Literal" || span.value !== expected) {
     note(
       ctx,
       statement,
@@ -112,7 +123,7 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
   }
   removeKeepingComments(ctx, previous.end, call.end)
   for (const param of fn.params) visit(param, fn, false)
-  inFrame(ctx, scope !== undefined, () => visit(fn.body, fn, true))
+  within(ctx, "Effect", () => inFrame(ctx, scope !== undefined, () => visit(fn.body, fn, true)))
   return true
 }
 
@@ -138,7 +149,7 @@ const convertGen = (ctx: ReverseCtx, call: Node, parent: Node | undefined, visit
   }
   replaceKeepingComments(ctx, call.start, shape.fn.body.start, "effect ")
   removeKeepingComments(ctx, shape.fn.body.end, call.end)
-  inFrame(ctx, false, () => visit(shape.fn.body, shape.fn, true))
+  within(ctx, "Effect", () => inFrame(ctx, false, () => visit(shape.fn.body, shape.fn, true)))
   return true
 }
 
@@ -163,6 +174,11 @@ const convertUntraced = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => 
   if (blocked(ctx, call, "`Effect.fnUntraced`", fn, "arrow")) return false
   replaceKeepingComments(ctx, call.start, paramsOpen(ctx, fn), "effect ")
   convertReturnType(ctx, fn.returnType)
+  within(ctx, "Effect", () => untracedBody(ctx, call, fn, args.scoped, visit))
+  return true
+}
+
+const untracedBody = (ctx: ReverseCtx, call: Node, fn: Node, scoped: boolean, visit: Visit): void => {
   for (const param of fn.params) visit(param, fn, false)
   const body: Node = fn.body
   const only: Node | undefined = body.body.length === 1 ? body.body[0] : undefined
@@ -173,13 +189,12 @@ const convertUntraced = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => 
   if (expression) {
     ctx.s.update(body.start, value!.start, "=> ")
     ctx.s.remove(value!.end, body.end)
-    inFrame(ctx, args.scoped, () => visit(value!, only, true))
+    inFrame(ctx, scoped, () => visit(value!, only, true))
   } else {
     ctx.s.appendLeft(body.start, "=> ")
-    inFrame(ctx, args.scoped, () => visit(body, fn, true))
+    inFrame(ctx, scoped, () => visit(body, fn, true))
   }
   removeKeepingComments(ctx, body.end, call.end)
-  return true
 }
 
 const propertyName = (key: Node): string | undefined =>
@@ -202,7 +217,8 @@ const convertProperty = (ctx: ReverseCtx, property: Node, visit: Visit): boolean
     if (head.type !== "CallExpression" || !isMember(head.callee, ctx.effect, "fn")) return false
     const name = propertyName(property.key)
     const span: Node | undefined = head.arguments[0]
-    if (head.arguments.length !== 1 || span?.type !== "Literal" || span.value !== name) return false
+    const expected = ctx.service === undefined ? name : `${ctx.service}.${name}`
+    if (head.arguments.length !== 1 || span?.type !== "Literal" || span.value !== expected) return false
     keyEnd = property.key.end
   }
   if (blocked(ctx, property, "this method", fn, "method")) return false
@@ -210,8 +226,10 @@ const convertProperty = (ctx: ReverseCtx, property: Node, visit: Visit): boolean
   replaceKeepingComments(ctx, keyEnd, paramsOpen(ctx, fn), "")
   if (property.computed) visit(property.key, property, false)
   convertReturnType(ctx, fn.returnType)
-  for (const param of fn.params) visit(param, fn, false)
-  inFrame(ctx, args.scoped, () => visit(fn.body, fn, true))
+  within(ctx, "Effect", () => {
+    for (const param of fn.params) visit(param, fn, false)
+    inFrame(ctx, args.scoped, () => visit(fn.body, fn, true))
+  })
   removeKeepingComments(ctx, fn.end, call.end)
   return true
 }
@@ -243,7 +261,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     if (node.type === "Property" && convertProperty(ctx, node, visit)) return
     if (node.type === "CallExpression" && convertScopedGen(ctx, node, parent)) {
       const shape = genShape(ctx, node.arguments[0], parent) as { readonly fn: Node }
-      inFrame(ctx, true, () => visit(shape.fn.body, shape.fn, true))
+      within(ctx, "Effect", () => inFrame(ctx, true, () => visit(shape.fn.body, shape.fn, true)))
       return
     }
     if (

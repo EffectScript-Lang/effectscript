@@ -7,31 +7,28 @@ schema User {
 
 declare const SqlLive: Layer<never>
 
-export class Users extends Context.Service<Users, {
-  find(id: string): Effect<User, UserNotFound>
-  list(): Effect<ReadonlyArray<User>>
+export service Users {
+  effect find(id: string): User throws UserNotFound
+  effect list(): ReadonlyArray<User>
   readonly size: number
 
-}>()("fixtures/service/basic/Users") {
-  static readonly layer = Layer.effect(Users, effect {
+  layer = effect {
     const cache = new Map<string, User>()
-    await addFinalizer(() => log("users layer released"))
-    return Users.of({
+    defer log("users layer released")
+    return {
       size: 0,
-      find: Effect.fn("Users.find")(function*(id: string) {
-        return cache.get(id) ?? (yield* new UserNotFound({ id }))
-      }),
+      effect find(id: string) {
+        return cache.get(id) ?? throw new UserNotFound({ id })
+      },
       list: effect () => [...cache.values()]
-    })
-  }).pipe(Layer.provide(SqlLive))
+    }
+  } |> provide(SqlLive)
 
-  static readonly layerTest = Layer.succeed(Users, Users.of({
+  layer test = {
     size: 1,
     find: effect (id: string) => new User({ id, name: "Test" }),
     list: effect () => []
-  }))
-  static readonly find = (id: string) => Users.use((_) => _.find(id))
-  static readonly list = () => Users.use((_) => _.list())
+  }
 }
 
 export effect firstName(id: string) {

@@ -17,6 +17,7 @@ import { makeVisit, visitProgram } from "./effects.ts"
 import { applyPrelude } from "./imports.ts"
 import { importedLocal } from "./origin.ts"
 import { topicsRoundTrip } from "./pipes.ts"
+import { convertService } from "./service.ts"
 
 export type { ConvertNote, ConvertOptions } from "./context.ts"
 
@@ -69,6 +70,7 @@ const convert = (source: string, options: ConvertOptions, tryDisabled: boolean):
     comments: parsed.comments,
     effect: importedLocal(analysis, "effect", "Effect"),
     schema: importedLocal(analysis, "effect", "Schema"),
+    layer: importedLocal(analysis, "effect", "Layer"),
     errors: new Set(),
     effectCandidates: new Set(),
     effects: new Set(),
@@ -76,7 +78,9 @@ const convert = (source: string, options: ConvertOptions, tryDisabled: boolean):
     topics: false,
     deferAllowed: false,
     binders: new Set(),
-    tryDisabled
+    tryDisabled,
+    namespace: "Effect",
+    service: undefined
   }
   if (ctx.effect === undefined && ctx.schema === undefined) return { code: source, notes: [] }
   // classes first: bodies need to know which classes become `error` declarations
@@ -103,7 +107,14 @@ const convert = (source: string, options: ConvertOptions, tryDisabled: boolean):
   }
   ctx.topics = topicsRoundTrip(ctx)
   const topLevel = new Set((parsed.program.body as Array<Node>).flatMap((top) => [top, top.declaration]))
-  visitProgram(ctx, parsed.program, makeVisit(ctx, (cls, visit) => topLevel.has(cls) && convertClass(ctx, cls, visit)))
+  visitProgram(
+    ctx,
+    parsed.program,
+    makeVisit(
+      ctx,
+      (cls, visit) => topLevel.has(cls) && (convertService(ctx, cls, visit) || convertClass(ctx, cls, visit))
+    )
+  )
   if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, true)
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
   return { code: applyPrelude(ctx.s.toString(), options), notes: ctx.notes }

@@ -49,6 +49,7 @@ export interface ReverseCtx {
   /** Local names of `Effect` / `Schema` imported from `effect` (ADR-0009). */
   readonly effect: string | undefined
   readonly schema: string | undefined
+  readonly layer: string | undefined
   /** Classes this conversion turns into `error` declarations (the forward `localErrors`). */
   readonly errors: Set<string>
   /** Module consts that may become pipe-less `effect` declarations (for the strict blockers). */
@@ -67,6 +68,10 @@ export interface ReverseCtx {
   readonly binders: Set<Node>
   /** Set on the rerun when that check fails. */
   readonly tryDisabled: boolean
+  /** The namespace the forward compiler resolves bare builtins in at the visited position. */
+  namespace: "Effect" | "Layer"
+  /** The service whose layer is being visited: its `effect` members are named `Svc.member`. */
+  service: string | undefined
 }
 
 /**
@@ -179,4 +184,24 @@ export const separatorComma = (ctx: ReverseCtx, from: number, to: number): numbe
     else if (ctx.source[i] === ",") return i
   }
   return -1
+}
+
+/**
+ * Runs `f` with the forward namespace (and optionally the service) set for the visited code.
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const within = (
+  ctx: ReverseCtx,
+  namespace: ReverseCtx["namespace"],
+  f: () => void,
+  service: string | undefined = ctx.service
+): void => {
+  const previous = [ctx.namespace, ctx.service] as const
+  ctx.namespace = namespace
+  ctx.service = service
+  f()
+  ctx.namespace = previous[0]
+  ctx.service = previous[1]
 }

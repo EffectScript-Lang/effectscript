@@ -24,13 +24,11 @@ export class SystemApi extends HttpApiGroup.make("system").add(
 
 export class Api extends HttpApi.make("api").add(UsersApi, SystemApi) {}
 
-export class Users extends Context.Service<Users, {
-  find(id: string): Effect<User, UserNotFound>
-}>()("fixtures/http/api/Users") {
-  static readonly layer = Layer.succeed(Users, Users.of({
+export service Users {
+  effect find(id: string): User throws UserNotFound
+  layer = {
     find: effect (id: string) => id === "1" ? new User({ id, name: "Ada" }) : throw new UserNotFound({ id })
-  }))
-  static readonly find = (id: string) => Users.use((_) => _.find(id))
+  }
 }
 
 export const UsersHandlers = HttpApiBuilder.group(Api, "users", Effect.fn("Api.users")(function*(handlers) {
