@@ -11,6 +11,7 @@ import { Effect, pipe, Runtime, Schema } from "effect"
 import { Argument, Command, Flag } from "effect/cli"
 import { convertProject } from "../convert/project.ts"
 import { check as checkProject } from "./check.ts"
+import { doctor as checkSetup } from "./doctor.ts"
 import { initProject } from "./init.ts"
 import { buildProject, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
@@ -159,10 +160,19 @@ export const init = Command.make(
   })
 ).pipe(Command.withDescription("Set up this project for EffectScript"))
 
+/** Report what is installed and configured for EffectScript, and what is missing */
+export const doctor = Command.make(
+  "doctor",
+  {},
+  Effect.fn("doctor")(function*() {
+    yield* exitWith(checkSetup(process.cwd(), (line) => process.stdout.write(`${line}\n`)))
+  })
+).pipe(Command.withDescription("Report what is installed and configured for EffectScript, and what is missing"))
+
 export const efx = pipe(
   Command.make("efx"),
   Command.withDescription("EffectScript: TypeScript with Effect as native syntax"),
-  Command.withSubcommands([build, check, run, print, convert, init])
+  Command.withSubcommands([build, check, run, print, convert, init, doctor])
 )
 
 NodeRuntime.runMain(

@@ -11,6 +11,7 @@ import { check as checkProject } from "./check.ts"
 import { buildProject, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
 import { convertProject } from "../convert/project.ts"
+import { doctor as checkSetup } from "./doctor.ts"
 import { initProject } from "./init.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
@@ -94,9 +95,14 @@ export command init() {
   await exitWith(initProject(process.cwd(), (line) => process.stdout.write(`${line}\n`)))
 }
 
+/** Report what is installed and configured for EffectScript, and what is missing */
+export command doctor() {
+  await exitWith(checkSetup(process.cwd(), (line) => process.stdout.write(`${line}\n`)))
+}
+
 export const efx = Command.make("efx")
   |> Command.withDescription("EffectScript: TypeScript with Effect as native syntax")
-  |> Command.withSubcommands([build, check, run, print, convert, init])
+  |> Command.withSubcommands([build, check, run, print, convert, init, doctor])
 
 main {
   // without a command, show the help
