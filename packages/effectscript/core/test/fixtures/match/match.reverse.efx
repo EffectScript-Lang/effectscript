@@ -6,16 +6,16 @@ declare const shape: Shape
 declare const status: "active" | "banned" | "pending"
 declare const scale: (n: number) => Effect<number>
 
-export const area = Match.valueTags(shape, {
-  Circle: ({ radius }) => Math.PI * radius ** 2,
-  Square: ({ side }) => side ** 2
-})
+export const area = match (shape) {
+  when Circle({ radius }): Math.PI * radius ** 2
+  when Square({ side }): side ** 2
+}
 
-export const label = Match.value(status).pipe(Match.when("active", () => "✓"), Match.when("banned", () => "✗"), Match.orElse(() => "?"))
+export const label = match (status) { when "active": "✓"; when "banned": "✗"; default: "?" }
 
 export effect scaled() {
-  return (await Match.valueTags(shape, {
-    Circle: (c) => effect { return await scale(c.radius) },
-    Square: () => effect { return 0 }
-  }))
+  return match (shape) {
+    when Circle(c): await scale(c.radius)
+    when Square: 0
+  }
 }

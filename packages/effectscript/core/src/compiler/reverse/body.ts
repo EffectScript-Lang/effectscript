@@ -8,6 +8,7 @@ import type { Node } from "../ast.ts"
 import { excludedNames, namespaceExports, preludeFunctions, preludeModules } from "../prelude/tables.ts"
 import { isParenthesized } from "../transform/await.ts"
 import { commentsIn, note, type ReverseCtx } from "./context.ts"
+import { convertMatch, matchShape } from "./match.ts"
 import { isMember } from "./origin.ts"
 import { convertFinalizer } from "./resources.ts"
 import { convertTry } from "./try.ts"
@@ -151,6 +152,11 @@ export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node |
   if (node.type !== "YieldExpression" || !node.delegate) return false
   const argument: Node = node.argument
   const parens = parenRange(ctx, node)
+  // `(yield* Match…(… Effect.gen(…) …))` → `match (…) { … }` with awaiting arms
+  if (parens !== undefined) {
+    const shape = matchShape(ctx, argument, true)
+    if (shape !== undefined && convertMatch(ctx, shape, [parens.open, parens.close + 1], visit)) return true
+  }
   // `(yield* Effect.fail(e))` in expression position → the throw expression
   const statement = parent?.type === "ReturnStatement" || parent?.type === "ExpressionStatement"
   const error = parens !== undefined && !statement ? failure(ctx, argument) : undefined

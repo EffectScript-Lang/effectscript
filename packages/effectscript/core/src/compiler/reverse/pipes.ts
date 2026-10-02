@@ -52,7 +52,14 @@ const positions = new Set([
   "ExportDefaultDeclaration"
 ])
 
-const inPosition = (call: Node, parent: Node | undefined): boolean => {
+/**
+ * Whether an expression at this position can be replaced by a lower-precedence EffectScript form
+ * (a pipeline, a `match`) without changing how the code parses.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const inPosition = (call: Node, parent: Node | undefined): boolean => {
   if (parent === undefined || !positions.has(parent.type)) return false
   switch (parent.type) {
     case "AssignmentExpression":

@@ -19,8 +19,9 @@ import {
   slice,
   within
 } from "./context.ts"
+import { convertMatch, matchShape } from "./match.ts"
 import { isMember } from "./origin.ts"
-import { convertPipe, isPlainStep } from "./pipes.ts"
+import { convertPipe, inPosition, isPlainStep } from "./pipes.ts"
 import { hasFinalizer, inFrame } from "./resources.ts"
 
 /**
@@ -259,6 +260,10 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     }
     if (node.type === "ClassDeclaration" && convertClass(node, visit)) return
     if (node.type === "Property" && convertProperty(ctx, node, visit)) return
+    if (node.type === "CallExpression" && inPosition(node, parent)) {
+      const shape = matchShape(ctx, node, false)
+      if (shape !== undefined && convertMatch(ctx, shape, [node.start, node.end], visit)) return
+    }
     if (node.type === "CallExpression" && convertScopedGen(ctx, node, parent)) {
       const shape = genShape(ctx, node.arguments[0], parent) as { readonly fn: Node }
       within(ctx, "Effect", () => inFrame(ctx, true, () => visit(shape.fn.body, shape.fn, true)))
