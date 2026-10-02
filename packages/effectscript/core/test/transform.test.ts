@@ -14,6 +14,19 @@ describe("effect expressions", () => {
       .toBe("import { Effect } from \"effect\"\nconst single = Effect.fnUntraced(function*(n) { return n * 2 })\n")
   })
 
+  it("keeps the value of a body on the next line (ASI after return)", () => {
+    expect(ts("const f = effect (n: number) =>\n  await succeed(n)\n"))
+      .toBe(
+        "import { Effect } from \"effect\"\nconst f = Effect.fnUntraced(function*(n: number) { return (\n  yield* Effect.succeed(n)) })\n"
+      )
+    expect(ts("const g = effect () => // a comment\n  1\n"))
+      .toBe(
+        "import { Effect } from \"effect\"\nconst g = Effect.fnUntraced(function*() { return ( // a comment\n  1) })\n"
+      )
+    expect(ts("const h = effect () =>\n  ({ a: 1 })\n"))
+      .toBe("import { Effect } from \"effect\"\nconst h = Effect.fnUntraced(function*() { return (\n  ({ a: 1 })) })\n")
+  })
+
   it("compiles parenthesized object bodies", () => {
     expect(ts("const f = effect () => ({ a: 1 })\n"))
       .toBe("import { Effect } from \"effect\"\nconst f = Effect.fnUntraced(function*() { return ({ a: 1 }) })\n")

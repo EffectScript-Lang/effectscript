@@ -157,12 +157,14 @@ const effectArrow: Handler = (node, _parent, ctx) => {
   const searchFrom: number = node.returnType?.end ?? (params.length > 0 ? params[params.length - 1]!.end : node.start)
   const arrow = ctx.source.indexOf("=>", searchFrom)
   const expressionBody = node.body.type !== "BlockStatement"
-  if (expressionBody) ctx.s.update(arrow, arrow + 2, "{ return")
+  // a body on the next line would end the `return` (ASI): parenthesize it
+  const wrap = expressionBody && ctx.source.slice(arrow + 2, node.body.start).includes("\n")
+  if (expressionBody) ctx.s.update(arrow, arrow + 2, wrap ? "{ return (" : "{ return")
   else ctx.s.remove(arrow, node.body.start)
   const frame = makeFrame(node, "arrow")
   withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walkChildren(node, ctx)))
   const close = frame.scoped ? `, ${E}.scoped)` : ")"
-  ctx.s.appendLeft(node.end, expressionBody ? ` }${close}` : close)
+  ctx.s.appendLeft(node.end, expressionBody ? `${wrap ? ")" : ""} }${close}` : close)
   return true
 }
 
