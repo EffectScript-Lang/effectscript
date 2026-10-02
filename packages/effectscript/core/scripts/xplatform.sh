@@ -25,12 +25,26 @@ check() { # name, command…
     echo "ok      $name: $(grep "ran 42" <<<"$out")"
   else
     echo "FAILED  $name"
+    # shellcheck disable=SC2001 # indent every line
     sed 's/^/        /' <<<"$out"
     failed=1
   fi
 }
 
 smoke='efx --version && efx print app.efx >/dev/null && efx run app.efx --flag'
+# install.sh against the packaged release (scripts/standalone.ts package), served over HTTP
+install='sh /install.sh && ~/.effectscript/bin/efx run app.efx --flag'
+port=""
+if [ -f "$bin/SHASUMS256.txt" ] && command -v python3 >/dev/null; then
+  mkdir -p "$work/release/latest/download"
+  cp "$bin"/efx-*.tar.gz "$bin"/efx-*.zip "$bin/SHASUMS256.txt" "$work/release/latest/download/" 2>/dev/null || true
+  port=$((20000 + RANDOM % 10000))
+  python3 -m http.server "$port" --bind 0.0.0.0 --directory "$work/release" >/dev/null 2>&1 &
+  server=$!
+  disown "$server"
+  trap 'kill "$server" 2>/dev/null; rm -rf "$work"' EXIT
+  sleep 1
+fi
 
 if command -v docker >/dev/null && docker info >/dev/null 2>&1; then
   while read -r platform image target; do
@@ -40,6 +54,13 @@ if command -v docker >/dev/null && docker info >/dev/null 2>&1; then
     case "$target" in *-musl) setup="apk add -q libstdc++ libgcc >/dev/null && " ;; esac
     check "$target on $image ($platform)" docker run --rm --platform "$platform" \
       -v "$bin/efx-$target:/usr/local/bin/efx:ro" -v "$work:/app" -w /app "$image" sh -c "$setup$smoke"
+    if [ -n "$port" ]; then
+      # Debian and Ubuntu images ship neither curl nor wget; Alpine has busybox wget
+      case "$image" in debian* | ubuntu*) setup="apt-get update -qq && apt-get install -qq -y curl >/dev/null && " ;; esac
+      check "install.sh on $image ($platform)" docker run --rm --platform "$platform" \
+        -e EFX_DOWNLOAD_BASE="http://host.docker.internal:$port" \
+        -v "$root/distribution/install.sh:/install.sh:ro" -v "$work:/app" -w /app "$image" sh -c "$setup$install"
+    fi
   done <<'EOF'
 linux/arm64 debian:bookworm-slim linux-arm64
 linux/amd64 debian:bookworm-slim linux-x64

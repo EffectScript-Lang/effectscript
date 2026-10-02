@@ -49,6 +49,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0035](0035-import-efx-with-its-extension.md) | Import `.efx` modules with their extension | Accepted |
 | [0036](0036-github-coordinates-under-effectscript-lang.md) | GitHub coordinates live under the EffectScript-Lang organization | Accepted |
 | [0037](0037-standalone-binary-runs-on-its-own-bun.md) | The standalone binary runs programs on its own Bun | Accepted |
+| [0038](0038-install-channels-and-plan-10b.md) | Install channels, release assets, and moving `setup`/`--ai`/`skill` to Plan 10b | Accepted |
 
 ## Template
 
