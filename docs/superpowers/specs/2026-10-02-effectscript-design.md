@@ -1206,6 +1206,16 @@ Gaps that dogfooding found in the constructs, and how the CLI works around them:
 
 ### 7.2 Runtime integrations
 
+**Status (Plan 9):**
+
+- **Implemented:** the Bun plugin and preload, the Vite plugin, and the examples package.
+- **Bun:** run `.efx` entries directly (`bun ./x.efx`). `bun run` treats an unknown extension as a
+  script name. Bun 1.4's runtime `onResolve` fires only for entry points, so the plugin rewrites
+  extensionless `.efx` imports inside `.efx` modules when it loads them. `.ts` importers write
+  `./x.efx`.
+- **Vite:** two plugins, compile and then strip types with Vite's `transformWithOxc`. Vite's
+  built-in oxc plugin only matches `.ts`/`.tsx`/`.jsx`/`.mts` ids.
+
 - **Bun:** `effectscript/bun` exports a `BunPlugin` (`onLoad` filter `/\.efx$/` → `{ contents,
   loader: "ts" | "tsx" }`, runtime `bun`) and a `preload` entry for `bunfig.toml`, so `bun run
   x.efx` and `bun test` work. The plugin also resolves extensionless imports that point to `.efx`.

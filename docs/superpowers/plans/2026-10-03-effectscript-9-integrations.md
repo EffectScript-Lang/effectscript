@@ -91,3 +91,22 @@ can run on it (ADR-0034). A private examples package proves all three paths.
 
 - Spec §7.2 status, COMPATIBILITY rows (Bun, Vite/Vitest), the README of the examples, and this
   plan's execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Task 1 (Bun):** Bun 1.4's runtime `onResolve` fires only for entry points. So extensionless
+  `.efx` imports resolve from `.efx` importers, rewritten in `onLoad`, and `.ts` importers write
+  `./x.efx`. Bun runs `.efx` entries directly, because `bun run` treats them as script names.
+- **Task 2 (`efx run`):** the `@effect/platform-bun` check walks `node_modules` instead of using
+  `require.resolve`. Package managers set `NODE_PATH` for scripts, which made every project look
+  Bun-ready.
+- **Task 3 (Vite):** two plugins (compile, then `transformWithOxc`) rather than returning
+  `moduleType`. `vite:oxc` only matches `.ts`/`.tsx`/`.jsx`/`.mts` ids, and separate transforms
+  let Vite chain the source maps.
+- **Task 4 (examples):** a library (`users.efx`) and an entry (`main.efx`), because importing a
+  module that has a `main` block runs the program. The root package gains `effectscript` as a dev
+  dependency for the Vitest project's plugin.
