@@ -5,7 +5,9 @@
  *
  * @since 4.0.0
  */
+import type { ScopeAnalysis } from "../analyze/scope.ts"
 import { children, containsThis, type Node } from "../ast.ts"
+import type { ResolvedOptions } from "../options.ts"
 import { isMember } from "./origin.ts"
 
 const functions = new Set(["FunctionDeclaration", "FunctionExpression", "ArrowFunctionExpression"])
@@ -45,19 +47,27 @@ const isGlobalMember = (node: Node, object: string, property?: string): boolean 
   node.type === "MemberExpression" && !node.computed && node.object.type === "Identifier" &&
   node.object.name === object && (property === undefined || node.property.name === property)
 
-/** Conservative mirror of the forward ambient capture (spec §4.15), ignoring bindings. */
-const isAmbient = (node: Node): boolean => {
+/** Mirror of the forward ambient capture (spec §4.15): globals that no declaration shadows. */
+const isAmbient = (info: StrictInfo, node: Node): boolean => {
+  if (!info.options.ambient) return false
+  const free = (name: string) => isGlobalFree(info.analysis, name)
   if (node.type === "CallExpression" && node.callee.type === "MemberExpression" && !node.callee.computed) {
     const callee: Node = node.callee
-    if (isGlobalMember(callee, "console") && consoleMethods.has(callee.property.name)) return true
-    if (
-      node.arguments.length === 0 && (isGlobalMember(callee, "Date", "now") || isGlobalMember(callee, "Math", "random"))
-    ) {
-      return true
-    }
+    if (isGlobalMember(callee, "console") && consoleMethods.has(callee.property.name)) return free("console")
+    if (node.arguments.length === 0 && isGlobalMember(callee, "Date", "now")) return free("Date")
+    if (node.arguments.length === 0 && isGlobalMember(callee, "Math", "random")) return free("Math")
   }
-  return node.type === "MemberExpression" && isGlobalMember(node.object, "process", "env")
+  return node.type === "MemberExpression" && isGlobalMember(node.object, "process", "env") && free("process")
 }
+
+/**
+ * Whether no declaration in the module binds `name` (conservative: any scope counts).
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const isGlobalFree = (analysis: ScopeAnalysis, name: string): boolean =>
+  !analysis.innerBound.has(name) && !analysis.module.values.has(name) && !analysis.module.types.has(name)
 
 /**
  * What the strict rules that are errors inside `effect` code need to know (spec §4.17).
@@ -68,6 +78,8 @@ const isAmbient = (node: Node): boolean => {
 export interface StrictInfo {
   /** The local name of `Effect`. */
   readonly effect: string | undefined
+  readonly analysis: ScopeAnalysis
+  readonly options: ResolvedOptions
   /** Module consts that may become pipe-less `effect` declarations (a superset of `localEffects`). */
   readonly effectCandidates: ReadonlySet<string>
 }
@@ -133,7 +145,7 @@ export const blocker = (
   if (atLevel(body, (n) => n.type === "VariableDeclaration" && /using/.test(n.kind))) {
     return "a `using` declaration inside it would acquire a scoped resource (ADR-0011)"
   }
-  const ambient = atLevel(body, isAmbient)
+  const ambient = atLevel(body, (n) => isAmbient(info, n))
   if (ambient !== undefined) {
     return `\`${
       ambient.type === "CallExpression"

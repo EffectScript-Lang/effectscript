@@ -24,7 +24,7 @@ effect logged(id: string) {
   } catch (e: NotFound | Timeout) {
     result = e._tag
   } finally {
-    await log("done")
+    console.log("done")
   }
   return result
 }

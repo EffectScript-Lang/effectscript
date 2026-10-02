@@ -1,10 +1,10 @@
 export effect report(name: string) {
-  await log("hello", name)
-  await logWarning("careful")
-  const startedAt = await Clock.currentTimeMillis
-  const jitter = await Random.next * 10
-  const region = await Config.String("REGION").pipe(Config.withDefault(undefined)) ?? "eu"
-  return { startedAt, jitter, region, debug: await Config.String("DEBUG").pipe(Config.withDefault(undefined)) }
+  console.log("hello", name)
+  console.warn("careful")
+  const startedAt = Date.now()
+  const jitter = Math.random() * 10
+  const region = process.env.REGION ?? "eu"
+  return { startedAt, jitter, region, debug: process.env.DEBUG }
 }
 
 export function plain() {

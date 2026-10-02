@@ -98,7 +98,11 @@ const convert = (
     source,
     s: new MagicString(source),
     analysis,
-    options: resolveOptions(options),
+    // the forward compiler honors `// @efx no-ambient` in the leading comments
+    options: {
+      ...resolveOptions(options),
+      ...(/^\s*\/\/\s*@efx\s+no-ambient\b/m.test(leadingComments(source)) ? { ambient: false } : {})
+    },
     comments: parsed.comments,
     effect: importedLocal(analysis, "effect", "Effect"),
     schema: importedLocal(analysis, "effect", "Schema"),

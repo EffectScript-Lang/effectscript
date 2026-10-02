@@ -7,6 +7,7 @@
 import type { Node } from "../ast.ts"
 import { excludedNames, namespaceExports, preludeFunctions, preludeModules } from "../prelude/tables.ts"
 import { isParenthesized } from "../transform/await.ts"
+import { convertAmbient } from "./ambient.ts"
 import { commentsIn, removeKeepingComments, type ReverseCtx } from "./context.ts"
 import { convertMatch, matchShape } from "./match.ts"
 import { isMember } from "./origin.ts"
@@ -143,6 +144,7 @@ export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node |
     return true
   }
   if (node.type !== "YieldExpression" || !node.delegate) return false
+  if (convertAmbient(ctx, node, parent, visit)) return true
   const argument: Node = node.argument
   const parens = parenRange(ctx, node)
   // `(yield* Match…(… Effect.gen(…) …))` → `match (…) { … }` with awaiting arms
