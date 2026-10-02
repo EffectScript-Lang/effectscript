@@ -81,8 +81,11 @@ export effect transfer(from: AccountId, to: AccountId, amount: Money): Receipt t
 
 ### 2.2 Examples
 
-- **Runnable examples.** Every fenced code block with the language tag `efx` is a runnable
-  example. Fences in other languages are only displayed.
+- **Runnable examples.** A fenced code block is a runnable example when the first word of its info
+  string is `efx`. Fences in other languages are only displayed.
+- **`ignore`.** A fence whose info string also has the word `ignore` (` ```efx ignore `) is
+  highlighted as EffectScript but not run, the same as Rust's `ignore`. Use it for illustrative
+  fragments.
 - **Titles.** An example's title is the last paragraph before the fence, without a trailing `:`.
   If there is none, the title is `example N`.
 - **Body.** The body is an `effect` body: `await` binds effects, and the prelude applies.
@@ -94,6 +97,8 @@ export effect transfer(from: AccountId, to: AccountId, amount: Money): Receipt t
     `assert.deepStrictEqual` so the message carries a diff.
   - `await e // => throws Name` is allowed only on an `await` expression statement. It runs
     `Effect.exit(e)` and passes when the result is a failure whose error has `_tag === "Name"`.
+  - `await e // => dies` is allowed only on an `await` expression statement. It passes when `e`
+    dies with a defect, not a typed failure. A defect is a bug, so it never appears in `throws`.
 - **Positions.** A `// =>` anywhere else is diagnostic EFX9302 or EFX9303.
 
 ### 2.3 Running doctests
@@ -286,7 +291,7 @@ its config and has no option to change that, so a root-level Blume would overwri
 | --- | --- | --- | --- |
 | EFX9301 | error | An `efx` example doesn't parse | `efx docs`, `?doctest` |
 | EFX9302 | error | `// =>` not on an expression statement or a single `const` | `efx docs`, `?doctest` |
-| EFX9303 | error | `// => throws` not on an `await` expression statement | `efx docs`, `?doctest` |
+| EFX9303 | error | `// => throws`/`// => dies` not on an `await` expression statement | `efx docs`, `?doctest` |
 | EFX9304 | error | A `doctest` path that isn't relative or doesn't end in `.efx`/`.ts` | compiler |
 | EFX9305 | warning | A target file of a `doctest` that has no `efx` examples | `?doctest` |
 | EFX9307 | error | A `doctest` target that has a `main` block (importing it would run the program) | `?doctest` |
@@ -314,3 +319,10 @@ pay nothing for docs. Doc diagnostics come from `efx docs` and from loading a `?
 - Inferring A/E/R that aren't written, and showing doc diagnostics in the editor.
 - A public JSON doc model (ADR-0043).
 - Contracts, property tests and proofs, which are later rungs of the trust ladder (main spec §14).
+- Proposed for later, from the dreamlang and Bend2 research
+  (`docs/research/2026-10-03-dreamlang-bend2-inspiration.md`):
+  - `efx test --update`, to fill in or rewrite `// =>` values the way inline snapshots work.
+  - ` ```efx compile_fail ` examples that assert a diagnostic.
+  - `requires`/`ensures` rows in the facts table, once contracts exist.
+  - `efx docs --json` and JSON diagnostics for agents.
+  - Superset-safe typed holes.

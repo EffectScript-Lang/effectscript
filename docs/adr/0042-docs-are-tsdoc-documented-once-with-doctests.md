@@ -47,6 +47,9 @@ can parse, and Elixir's results.
     are deeply and strictly equal. This matches `@effect/doctest`.
   - `await e // => throws Name` passes when the effect `e` fails with an error whose `_tag` is
     `Name`.
+  - `await e // => dies` passes when `e` dies with a defect. This keeps bugs separate from typed
+    failures, the same distinction Effect makes.
+  - ` ```efx ignore ` fences are highlighted but not run.
 - **Doctests are opted in from a test file.** `doctest "./transfer.efx"` turns each example into
   one `it.effect` test. `doctest "./transfer.efx" with Ledger.layerTest` provides the
   dependencies. This mirrors Elixir's `doctest MyModule` inside an ExUnit case.
