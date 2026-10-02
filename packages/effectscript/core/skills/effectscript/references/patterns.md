@@ -171,6 +171,29 @@ describe "with a shared layer" with Users.layerTest {
 }
 ```
 
+Test bodies run like `it.effect` from `@effect/vitest`. They get a test clock and a test console:
+
+- `await sleep(…)` waits on the test clock. Advance it with `TestClock.adjust`, from
+  `effect/testing`.
+- `console.log` output goes to the test console. Use `test.live "…" { … }` for the real clock and
+  console.
+
+```efx
+import { TestClock } from "effect/testing"
+
+describe "timeouts" {
+  test "fires after a minute of test time" {
+    const fiber = await forkChild(sleep("1 minute") |> as("done"))
+    await TestClock.adjust("1 minute")
+    expect(await Fiber.join(fiber)).toBe("done")
+  }
+
+  test.live "uses the real clock" {
+    expect(Date.now()).toBeGreaterThan(0)
+  }
+}
+```
+
 ## HTTP APIs
 
 `group` declares endpoints, `api` collects groups, and `impl` implements a group with typed
@@ -202,6 +225,36 @@ export const TodosHandlers = impl Api.todos {
 }
 ```
 
+Serve it by turning the API into routes and the routes into a server:
+
+```efx
+import { NodeHttpServer } from "@effect/platform-node"
+import { createServer } from "node:http"
+
+export schema Todo {
+  id: string
+  title: string
+}
+
+export group TodosApi {
+  get list "/": Todo[]
+}
+
+export api Api { TodosApi }
+
+export const TodosHandlers = impl Api.todos {
+  return { list: () => succeed([new Todo({ id: "1", title: "Write docs" })]) }
+}
+
+export layer ApiRoutes = HttpApiBuilder.layer(Api) |> provide(TodosHandlers)
+
+export layer ServerLive = HttpRouter.serve(ApiRoutes) |> provide(NodeHttpServer.layer(createServer, { port: 3000 }))
+
+main {
+  await Layer.launch(ServerLive)
+}
+```
+
 ## CLIs
 
 A `command` declares its arguments and flags in the signature. Doc comments become the help text.
@@ -214,6 +267,25 @@ export command greet(
 ) {
   const text = `Hello, ${name}`
   console.log(shout ? text.toUpperCase() : text)
+}
+```
+
+Run it from `main`. Inside `effect` code `console.log` is Effect logging, which adds a timestamp
+and a level, so a CLI that prints to stdout opts out with `// @efx no-ambient` and writes plain
+output:
+
+```efx
+// @efx no-ambient
+
+/** Say hello */
+export command hello(
+  /** Who to greet */ name: string,
+) {
+  process.stdout.write(`Hello, ${name}\n`)
+}
+
+main {
+  await Command.runWith(hello, { version: "1.0.0" })(process.argv.slice(2))
 }
 ```
 
@@ -292,3 +364,13 @@ export service Http {
   }
 }
 ```
+
+## Names the constructs generate
+
+| You write                                        | You use                                                         |
+| ------------------------------------------------ | --------------------------------------------------------------- |
+| `group TodosApi { … }` in `api Api { TodosApi }` | `impl Api.todos { … }` (the group name, camelCase, minus `Api`) |
+| `layer test = …` in `service Users`              | `Users.layerTest` (`layer = …` is `Users.layer`)                |
+| `config AppConfig { databaseUrl: Redacted }`     | the environment variable `DATABASE_URL`                         |
+| `command greet(--dryRun: boolean)`               | the flag `--dry-run`                                            |
+| `effect find(…)` in `service Users`              | the span `"Users.find"`                                         |

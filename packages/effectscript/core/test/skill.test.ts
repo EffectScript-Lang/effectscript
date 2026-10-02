@@ -8,7 +8,11 @@ import { typecheck } from "./utils/typecheck.ts"
 const root = path.join(import.meta.dirname, "..")
 const skill = path.join(root, "skills/effectscript")
 const read = (file: string) => fs.readFileSync(path.join(skill, file), "utf8")
-const fences = (markdown: string) => [...markdown.matchAll(/^```efx\n([\s\S]*?)^```$/gm)].map((m) => m[1]!)
+/** `efx` fences, indented ones (inside list items) included, with the indentation removed. */
+const fences = (markdown: string) =>
+  [...markdown.matchAll(/^( *)```efx\n([\s\S]*?)^\1```$/gm)].map((m) =>
+    m[2]!.split("\n").map((line) => line.slice(m[1]!.length)).join("\n")
+  )
 
 describe("the generated skill references (Plan 14 Task 1, ADR-0051)", () => {
   it("are up to date (pnpm codegen)", () => {
@@ -43,12 +47,14 @@ describe("the hand-written skill (Plan 14 Task 2, ADR-0051)", () => {
     const files = new Map<string, string>()
     for (const file of handWritten) {
       fences(read(file)).forEach((code, i) => {
-        const result = toTypeScript(code, { filename: "example.efx" })
-        expect(result.diagnostics.filter((d) => d.severity === "error"), `${file} #${i}:\n${code}`).toEqual([])
+        // good examples are clean even in strict mode: no errors and no warnings (review I7)
+        const result = toTypeScript(code, { filename: "example.efx", strict: true })
+        expect(result.diagnostics, `${file} #${i}:\n${code}`).toEqual([])
         files.set(`skill-${file.replace(/\W/g, "-")}-${i}.ts`, result.code)
       })
     }
-    expect(files.size).toBeGreaterThan(15)
+    expect(files.size).toBeGreaterThan(20)
+    expect([...files.keys()].filter((f) => f.startsWith("skill-SKILL-md")).length).toBeGreaterThan(0)
     expect(typecheck(files)).toEqual([])
   }, 180_000)
 
@@ -64,8 +70,8 @@ describe("the hand-written skill (Plan 14 Task 2, ADR-0051)", () => {
     expect(wrong).toBeGreaterThan(2)
   })
 
-  it("links only to files inside the skill", () => {
-    for (const file of handWritten) {
+  it("links only to files inside the skill, or to the web (review I2)", () => {
+    for (const file of [...handWritten, "references/syntax.md", "references/effect-docs.md"]) {
       for (const [, target] of read(file).matchAll(/\]\(([^)#]+)\)/g)) {
         expect(
           target!.startsWith("http") || fs.existsSync(path.join(skill, path.dirname(file), target!)),

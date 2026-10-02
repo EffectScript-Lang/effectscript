@@ -65,12 +65,19 @@ Inside `effect` code, every `try` compiles to Effect error handling:
 - **A handler that fails** passes its failure up; the other clauses never see it.
 
 ```efx
-export effect parse(json: string) {
+// a plain function: its exceptions are defects inside `effect` code
+const parsePort = (text: string): number => {
+  const port = Number(text)
+  if (!Number.isInteger(port)) throw new Error(`not a port: ${text}`)
+  return port
+}
+
+export effect port(text: string) {
   try {
-    return JSON.parse(json) as unknown
+    return parsePort(text)
   } catch (e) {
-    console.warn(`not JSON: ${String(e)}`)
-    return null
+    console.warn(`using the default port: ${String(e)}`)
+    return 3000
   }
 }
 ```
@@ -101,8 +108,91 @@ later, so order doesn't matter there.
 
 `await`, `throw`, `defer` and the ambient forms (`console.log`, `Date.now()`) apply to the `effect`
 body itself, not to nested `function`s or arrows. Inside `.map((x) => …)`, `console.log` is plain
-JavaScript again. To run effects per item, use `forEach(items, effect (x) => …)` or `await` the
-array of effects.
+JavaScript again. To run effects per item, use `await forEach(items, (x) => load(x))`.
+
+## `await` runs an array literal, not an array
+
+`await [a, b]` is `all([a, b])`: both run at once and you get both results. That only works on an
+array _literal_. An array built at runtime is iterated by `yield*`. Its effects run one at a time,
+and the result is `undefined`. EFX8112 warns about the common forms (`.map`, `.flatMap`,
+`.filter`, `Array.from`).
+
+```efx wrong EFX8112
+declare const load: (id: string) => Effect<number>
+
+export effect sizes(ids: ReadonlyArray<string>) {
+  return await ids.map(load)
+}
+```
+
+```efx
+declare const load: (id: string) => Effect<number>
+
+export effect sizes(ids: ReadonlyArray<string>) {
+  return await forEach(ids, load, { concurrency: "unbounded" })
+}
+```
+
+## A `try` returns on every path or on none
+
+Inside `effect` code, a `try` becomes an expression, so either every path through `try` and
+`catch` ends in `return`/`throw`, or none does (EFX2020). Assign to a variable instead of
+returning early from one branch.
+
+```efx wrong EFX2020
+declare const load: Effect<number>
+
+export effect value() {
+  try {
+    const n = await load
+    if (n > 1) return n
+  } catch (e) {
+    return 0
+  }
+  return 1
+}
+```
+
+```efx
+declare const load: Effect<number>
+
+export effect value() {
+  let n = 1
+  try {
+    n = await load
+  } catch (e) {
+    n = 0
+  }
+  return n
+}
+```
+
+## `for await` can't `break` or `return`
+
+`for await` runs `Stream.runForEach`, so `continue` works (it ends this item), but `break`,
+`return` and labeled jumps are errors (EFX2010). To stop early, limit the stream first:
+`stream |> Stream.take(10)` or `Stream.takeWhile(…)`.
+
+```efx wrong EFX2010
+export effect first(numbers: Stream<number>) {
+  for await (const n of numbers) {
+    if (n > 10) break
+  }
+}
+```
+
+## `effect` methods belong to objects and services, not classes
+
+`effect` class methods are on the roadmap (EFX2002). Use a `service`, an object literal with
+`effect` methods, or a class field holding an `effect` arrow.
+
+```efx wrong EFX2002
+class Cart {
+  effect total() {
+    return 1
+  }
+}
+```
 
 ## `using x = await …` only at the top of an `effect`
 

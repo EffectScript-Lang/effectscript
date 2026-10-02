@@ -45,13 +45,66 @@ export const skillFiles = (): ReadonlyArray<readonly [string, string]> => {
   return files
 }
 
-/** Whether `dir` holds an EffectScript skill, so replacing it loses nothing of the user's. */
-const isOurs = (dir: string): boolean => {
+/**
+ * Whether `dir` holds an EffectScript skill (its `SKILL.md` is ours).
+ *
+ * @since 4.0.0
+ * @category skill
+ */
+export const isEffectScriptSkill = (dir: string): boolean => {
   try {
     return /^name:\s*effectscript\s*$/m.test(fs.readFileSync(path.join(dir, "SKILL.md"), "utf8"))
   } catch {
     return false
   }
+}
+
+/** What an install wrote, so the next one removes only its own files (review I3). */
+const manifest = ".efx-skill.json"
+
+const installed = (dir: string): ReadonlyArray<string> => {
+  try {
+    const files: unknown = JSON.parse(fs.readFileSync(path.join(dir, manifest), "utf8")).files
+    return Array.isArray(files) ? files.filter((f): f is string => typeof f === "string") : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Writes the skill into `dir`: removes the files a previous install wrote that the new version no
+ * longer has, writes the new ones, and records them. Nothing else in `dir` is touched.
+ *
+ * @since 4.0.0
+ * @category skill
+ */
+export const writeSkill = (dir: string, files: ReadonlyArray<readonly [string, string]>): void => {
+  const root = path.resolve(dir)
+  const inside = (file: string) => {
+    const full = path.resolve(root, file)
+    return full.startsWith(`${root}${path.sep}`) ? full : undefined
+  }
+  const next = new Set(files.map(([file]) => file))
+  for (const file of installed(root)) {
+    const full = inside(file)
+    if (full !== undefined && !next.has(file)) fs.rmSync(full, { force: true })
+  }
+  for (const [file, content] of files) {
+    const full = inside(file)
+    if (full === undefined) continue
+    fs.mkdirSync(path.dirname(full), { recursive: true })
+    fs.writeFileSync(full, content)
+  }
+  fs.writeFileSync(path.join(root, manifest), `${JSON.stringify({ files: [...next] }, null, 2)}\n`)
+}
+
+/** Why `target` must never receive the skill (the project, home, their ancestors, a repository). */
+const unsafe = (target: string, options: SkillOptions): string | undefined => {
+  const within = (child: string) => child === target || child.startsWith(`${target}${path.sep}`)
+  if (within(path.resolve(options.cwd))) return "it is the working directory or one of its parents"
+  if (within(path.resolve(options.home))) return "it is the home directory or one of its parents"
+  if (fs.existsSync(path.join(target, ".git"))) return "it is a git repository"
+  return undefined
 }
 
 /**
@@ -68,15 +121,20 @@ export const installSkill = (
   const target = options.dir !== undefined
     ? path.resolve(options.cwd, options.dir)
     : path.join(options.global ? options.home : options.cwd, ".claude", "skills", "effectscript")
-  if (fs.existsSync(target) && fs.readdirSync(target).length > 0 && !isOurs(target) && !options.force) {
-    err(`${target} exists and isn't the EffectScript skill: pass --force to replace it`)
+  const why = unsafe(target, options)
+  if (why !== undefined) {
+    err(`efx won't install the skill into ${target}: ${why}`)
     return 1
   }
-  fs.rmSync(target, { recursive: true, force: true })
-  for (const [file, content] of skillFiles()) {
-    fs.mkdirSync(path.dirname(path.join(target, file)), { recursive: true })
-    fs.writeFileSync(path.join(target, file), content)
+  if (fs.existsSync(path.join(target, "SKILL.md")) && !isEffectScriptSkill(target) && !options.force) {
+    err(`${target} holds another skill: pass --force to write the EffectScript skill's files there anyway`)
+    return 1
   }
+  if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) {
+    err(`${target} is a file`)
+    return 1
+  }
+  writeSkill(target, skillFiles())
   out(`Installed the EffectScript skill in ${target}`)
   return 0
 }

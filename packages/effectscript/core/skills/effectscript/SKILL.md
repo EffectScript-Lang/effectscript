@@ -16,8 +16,9 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
 2. **Write `.efx`.** Import other `.efx` modules with their extension: `import { x } from "./x.efx"`.
 3. **See what it means:** `efx print src/x.efx` prints the TypeScript it compiles to. When unsure
    what a form does, print it.
-4. **Verify:** `efx check` type-checks `.efx` and `.ts` together. Then run the tests
-   (`vitest` with `effectscript/vite`, or `efx run`).
+4. **Verify:** `efx check` type-checks `.efx` and `.ts` together. Run the tests with the project's
+   runner: `vitest` with the `effectscript/vite` plugin, or `bun test` with the
+   `effectscript/bun-preload` preload. `efx run src/main.efx` runs a program.
 5. **Convert:** `efx print src/x.ts` prints the EffectScript of a TypeScript file.
    `efx convert --write` converts a project on a new git branch and keeps it green.
 
@@ -27,6 +28,12 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
   (it is `yield*`), `throw` fails with a typed error, and `console.log` logs through Effect.
 
   ```efx
+  error UserNotFound { id: string }
+
+  service Users {
+    effect find(id: string): { name: string } throws UserNotFound
+  }
+
   export effect greet(id: string): string throws UserNotFound needs Users {
     const user = await Users.find(id)
     console.log(`greeting ${user.name}`)
@@ -43,23 +50,25 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
   inside `effect` code.
 - **Compose with `|>`.** Effect's combinators are builtins when the name is free:
   `getUser(id) |> retry({ times: 3 }) |> timeout("5 seconds")`.
-- **Run effects concurrently:** `const [a, b] = await [loadA, loadB]`.
+- **Run effects concurrently:** `const [a, b] = await [loadA, loadB]` (an array _literal_). For
+  a computed list use `await all(effects)` or `await forEach(items, (x) => load(x))`; `await
+  xs.map(f)` doesn't do what it looks like (EFX8112).
 - **Handle errors with `try`:** `catch (e: NotFound)` catches by tag, and a final untyped `catch`
   catches the rest, defects included.
 - **Clean up resources with `defer`** (Go-style, in reverse order) and `using x = await acquire`.
 
 ## `async` ↔ `effect`
 
-| `async` TypeScript                | EffectScript                                          |
-| --------------------------------- | ----------------------------------------------------- |
-| `async function f() {}`           | `effect f() {}`                                       |
-| `await promise`                   | `await effect` (an effect, never a Promise)           |
-| `await somePromiseApi()`          | `await tryPromise(() => somePromiseApi())`            |
-| `throw new Error("x")`            | `throw new MyError({ … })` with `error MyError { … }` |
-| `try` / `catch (e)` / `finally`   | the same, plus typed clauses `catch (e: NotFound)`    |
-| `Promise.all([a, b])`             | `await [a, b]`                                        |
-| `for await (const x of iterable)` | `for await (const x of stream)` over a `Stream`       |
-| `using x = …` / `try … finally`   | `using x = await acquire` / `defer release`           |
+| `async` TypeScript                | EffectScript                                                                       |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `async function f() {}`           | `effect f() {}`                                                                    |
+| `await promise`                   | `await effect` (an effect, never a Promise)                                        |
+| `await somePromiseApi()`          | `await tryPromise(() => somePromiseApi())`: create the Promise inside the function |
+| `throw new Error("x")`            | `throw new MyError({ … })` with `error MyError { … }`                              |
+| `try` / `catch (e)` / `finally`   | the same, plus typed clauses `catch (e: NotFound)`                                 |
+| `Promise.all([a, b])`             | `await [a, b]`                                                                     |
+| `for await (const x of iterable)` | `for await (const x of stream)` over a `Stream`                                    |
+| `using x = …` / `try … finally`   | `using x = await acquire` / `defer release`                                        |
 
 The real difference is **laziness**. A Promise starts when it is created. An effect is a
 description that runs only when it is `await`ed in `effect` code, or run by `main` or a test.
@@ -74,9 +83,9 @@ Calling `save(user)` without `await` does nothing. `efx check` reports it as a f
 | Inline effect code                     | `effect { … }` (not `Effect.gen`)                                            |
 | Dependencies are services              | `service Users { effect find(id: string): User }` and `await Users.find(id)` |
 | Failures are typed errors              | `error NotFound { id: string }` and `throw new NotFound({ id })`             |
-| Parse, don't validate                  | a `schema`, decoded with `Schema.decodeUnknown(User)(input)`                 |
+| Parse, don't validate                  | a `schema`, decoded with `Schema.decodeUnknownEffect(User)(input)`           |
 | Configuration                          | `config AppConfig { port: Port = 3000 }`                                     |
-| Promises and callbacks at the boundary | `await tryPromise(() => p)` once, in a service implementation                |
+| Promises and callbacks at the boundary | `await tryPromise(() => makePromise())` once, in a service implementation    |
 | Tests                                  | `test "…" { … }` inside `describe "…" { … }`                                 |
 | One runtime entry point                | `main { … } \|> provide(AppLive)`                                            |
 

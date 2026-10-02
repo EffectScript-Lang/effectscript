@@ -63,3 +63,25 @@ surfaced two such mistakes before they shipped:
   catches them.
 - **Install for every agent now:** each agent's skill location and format needs the per-agent
   detection that `efx setup` is designed for.
+
+## Amendment 1 (Plan 14 final review)
+
+- **Installs are safe:** a manifest (`.efx-skill.json`) records what `efx skill` and `efx setup`
+  wrote.
+  - An update removes only those files. It never deletes recursively and keeps files the user
+    added.
+  - `--force` only allows writing the skill's files next to another skill's `SKILL.md`.
+  - The working directory, the home directory, their ancestors, and git repositories are refused
+    as targets, even with `--force`.
+- **Good examples are strict-clean:** every `efx` block, including indented ones in `SKILL.md`,
+  compiles with no diagnostic at all under strict mode, and type-checks.
+- **Links in `effect-docs.md`** point at the examples on GitHub (ADR-0036), and the link check
+  covers the generated files too.
+- **New content:**
+  - `await` on a runtime array (EFX8112, ADR-0053);
+  - `try` paths (EFX2020), `for await` limits (EFX2010), `effect` class methods (EFX2002);
+  - the test clock and console, and `test.live`;
+  - running a `command` from `main` with `// @efx no-ambient`;
+  - serving an `api`;
+  - the names constructs generate.
+- **Size:** the skill is about 85 KB (72 KB before this review), not 110 KB.

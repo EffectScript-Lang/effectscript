@@ -911,9 +911,10 @@ applies the fixes:
 | EFX8105 | `setTimeout`/`setInterval` inside `effect` (use `Effect.sleep`/`Schedule`)                         |
 | EFX8106 | `fetch` inside `effect` (use `HttpClient`)                                                        |
 | EFX8107 | `Promise.all/race/allSettled` inside `effect` (use `await [..]` / `all` / `race`)                  |
-| EFX8108 | `JSON.parse` inside `effect` (decode with `schema` + `Schema.decodeUnknown`)                       |
+| EFX8108 | `JSON.parse` inside `effect` (decode with `schema` + `Schema.decodeUnknownEffect`)                 |
 | EFX8109 | `new Date()` inside `effect` (use `DateTime.now`)                                                |
 | EFX8110 | `T \| null` / `T \| undefined` in `service` member signatures (prefer `Option<T>`)                 |
+| EFX8112 | `await` on an array built at runtime (`xs.map(…)`, `Array.from(…)`): its effects run one by one and the result is `undefined`; use `await all(…)`/`forEach` (ADR-0053) |
 
 Type-level strictness:
 

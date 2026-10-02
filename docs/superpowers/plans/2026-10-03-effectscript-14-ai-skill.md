@@ -121,3 +121,30 @@ it. It contains:
   tree. The repository-wide gates run again at the end.
 - **`main.efx` is shared** with the living-docs session (Plan 12). `skill` was added after its
   `docs` command, coordinated by message.
+
+**Final review** (fresh Opus reviewer): 1 Critical, 7 Important. One fix pass, test first.
+
+- **Fixed:**
+  - **C1:** the skill advised `await` on a computed array, which silently gives `undefined`. It
+    now teaches `all`/`forEach`, and the compiler warns: EFX8112 (ADR-0053).
+  - **I1:** `Schema.decodeUnknownEffect` replaces the non-existent `decodeUnknown`, in the skill
+    and in spec §4.17.
+  - **I2:** generated links point at GitHub, and the link test covers the generated files.
+  - **I3:** installs work from a manifest. They never delete recursively, and they refuse the
+    working directory, home, their ancestors, and repositories. `efx setup` shares the helper.
+  - **I4:** pitfalls cover EFX2020, EFX2010 and EFX2002.
+  - **I5:** testing covers the test clock and console, and `test.live`.
+  - **I6:** running a `command`, serving an `api`, `// @efx no-ambient`, and the generated names.
+  - **I7:** good examples must be strict-clean, so the `JSON.parse` example is replaced.
+  - **Two minors, re-graded Important:** `SKILL.md`'s indented examples were never tested. A lone
+    `\r` or U+2028/U+2029 still left an `effect` arrow returning `undefined`.
+- The reviewer's probe wrote into the repository root by accident (`afile/`, `.claude/skills`).
+  Both were removed, and `.claude/` holds only `launch.json`.
+
+**Deferred minors:**
+
+- `--global` together with `--dir` silently ignores `--global`.
+- The binary embeds every file in the skill directory; npm ships only `*.md`.
+- Spec §8 mentions `match` in `SKILL.md`, SQL in the patterns, and TEA examples (§4.18); none are
+  written yet.
+- `syntax.md` headings cite spec § numbers that an installed skill can't resolve.

@@ -158,7 +158,7 @@ const effectArrow: Handler = (node, _parent, ctx) => {
   const arrow = ctx.source.indexOf("=>", searchFrom)
   const expressionBody = node.body.type !== "BlockStatement"
   // a body on the next line would end the `return` (ASI): parenthesize it
-  const wrap = expressionBody && ctx.source.slice(arrow + 2, node.body.start).includes("\n")
+  const wrap = expressionBody && /[\n\r\u2028\u2029]/.test(ctx.source.slice(arrow + 2, node.body.start))
   if (expressionBody) ctx.s.update(arrow, arrow + 2, wrap ? "{ return (" : "{ return")
   else ctx.s.remove(arrow, node.body.start)
   const frame = makeFrame(node, "arrow")

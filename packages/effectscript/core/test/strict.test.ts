@@ -55,6 +55,11 @@ describe("strict warnings (§4.17, ADR-0028)", () => {
     toTypeScript(source).diagnostics.filter((d) => d.severity === "warning").map((d) => d.code)
 
   it.each([
+    ["EFX8112", "effect f(xs: Array<Effect.Effect<number>>) {\n  return await xs.map((x) => x)\n}\n"],
+    [
+      "EFX8112",
+      "effect f(ids: Array<string>, load: (id: string) => Effect.Effect<number>) {\n  const all = await ids.map(load)\n  return all\n}\n"
+    ],
     ["EFX8101", "import { Effect } from \"effect\"\nexport const g = Effect.gen(function*() {\n  return 1\n})\n"],
     ["EFX8102", "effect f() {\n  const load = async () => 1\n  return load\n}\n"],
     ["EFX8103", "effect f() {\n  throw new Error(\"boom\")\n}\n"],

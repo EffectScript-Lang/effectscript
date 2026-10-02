@@ -23,6 +23,11 @@ describe("effect expressions", () => {
       .toBe(
         "import { Effect } from \"effect\"\nconst g = Effect.fnUntraced(function*() { return ( // a comment\n  1) })\n"
       )
+    for (const lineBreak of ["\r\n", "\r", "\u2028", "\u2029"]) {
+      expect(ts(`const k = effect () =>${lineBreak}  1\n`), JSON.stringify(lineBreak)).toContain(
+        `{ return (${lineBreak}  1) }`
+      )
+    }
     expect(ts("const h = effect () =>\n  ({ a: 1 })\n"))
       .toBe("import { Effect } from \"effect\"\nconst h = Effect.fnUntraced(function*() { return (\n  ({ a: 1 })) })\n")
   })

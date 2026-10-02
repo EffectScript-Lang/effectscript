@@ -7,6 +7,7 @@
  */
 import * as fs from "node:fs"
 import * as path from "node:path"
+import { isEffectScriptSkill, writeSkill } from "../cli/skill.ts"
 import type { Detected } from "./detect.ts"
 
 /**
@@ -51,13 +52,7 @@ export interface PlanOptions {
 const marker = "efx setup"
 const extensionId = "effectscript.effectscript-vscode"
 
-const isOurSkill = (dir: string): boolean => {
-  try {
-    return /^name:\s*effectscript\s*$/m.test(fs.readFileSync(path.join(dir, "SKILL.md"), "utf8"))
-  } catch {
-    return false
-  }
-}
+const isOurSkill = isEffectScriptSkill
 
 const sameFiles = (dir: string, files: PlanOptions["skill"]): boolean =>
   files.every(([file, content]) => {
@@ -67,14 +62,6 @@ const sameFiles = (dir: string, files: PlanOptions["skill"]): boolean =>
       return false
     }
   })
-
-const writeFiles = (dir: string, files: PlanOptions["skill"]) => {
-  fs.rmSync(dir, { recursive: true, force: true })
-  for (const [file, content] of files) {
-    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true })
-    fs.writeFileSync(path.join(dir, file), content)
-  }
-}
 
 const attempt = (f: () => Outcome): Outcome => {
   try {
@@ -101,7 +88,7 @@ const skillActions = (agents: ReadonlyArray<Detected>, options: PlanOptions): Ar
           if (sameFiles(shared, options.skill) && fs.readdirSync(shared).length > 0) {
             return { status: "skipped", detail: "already installed" }
           }
-          writeFiles(shared, options.skill)
+          writeSkill(shared, options.skill)
           return { status: "done", detail: shared }
         })
     },
@@ -119,17 +106,20 @@ const skillActions = (agents: ReadonlyArray<Detected>, options: PlanOptions): Ar
             if (stat !== undefined && !isOurSkill(link)) {
               return { status: "skipped", detail: `${link} exists and isn't the EffectScript skill` }
             }
-            if (stat !== undefined && !stat.isSymbolicLink() && sameFiles(link, options.skill)) {
-              return { status: "skipped", detail: "already installed" }
+            if (stat !== undefined && !stat.isSymbolicLink()) {
+              // an earlier copy of ours: update it in place, keeping anything the user added
+              if (sameFiles(link, options.skill)) return { status: "skipped", detail: "already installed" }
+              writeSkill(link, options.skill)
+              return { status: "done", detail: `${link} (updated copy)` }
             }
-            fs.rmSync(link, { recursive: true, force: true })
+            if (stat?.isSymbolicLink() === true) fs.unlinkSync(link)
             fs.mkdirSync(agent.skillsDir!, { recursive: true })
             try {
               symlink(shared, link)
               return { status: "done", detail: `${link} → ${shared}` }
             } catch {
               // no links (Windows without developer mode): a copy
-              writeFiles(link, options.skill)
+              writeSkill(link, options.skill)
               return { status: "done", detail: `${link} (a copy)` }
             }
           })

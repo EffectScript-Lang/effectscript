@@ -2,7 +2,10 @@ import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
+
+// every test starts several efx processes
+vi.setConfig({ testTimeout: 60_000 })
 
 const efx = path.join(import.meta.dirname, "../bin/efx.js")
 const source = path.join(import.meta.dirname, "../skills/effectscript")
@@ -25,7 +28,7 @@ export const tree = (dir: string): Record<string, string> => {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const full = path.join(d, e.name)
       if (e.isDirectory()) walk(full)
-      else out[path.relative(dir, full)] = fs.readFileSync(full, "utf8")
+      else if (e.name !== ".efx-skill.json") out[path.relative(dir, full)] = fs.readFileSync(full, "utf8")
     }
   }
   walk(dir)
@@ -55,13 +58,42 @@ describe("efx skill (Plan 14 Task 3, ADR-0051)", () => {
     expect(tree(dir)).toEqual(tree(source))
   })
 
-  it("updates its own install, removing files the new version no longer has", () => {
+  it("updates its own install: removes files it installed that are gone, keeps files the user added (review I3)", () => {
     const project = temp()
     run([], project)
-    const stale = path.join(project, ".claude/skills/effectscript/references/old.md")
-    fs.writeFileSync(stale, "old\n")
+    const dir = path.join(project, ".claude/skills/effectscript")
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, ".efx-skill.json"), "utf8"))
+    fs.writeFileSync(path.join(dir, "references/old.md"), "old\n")
+    fs.writeFileSync(
+      path.join(dir, ".efx-skill.json"),
+      JSON.stringify({ files: [...manifest.files, "references/old.md"] })
+    )
+    fs.writeFileSync(path.join(dir, "NOTES.md"), "mine\n")
     expect(run([], project).status).toBe(0)
-    expect(fs.existsSync(stale)).toBe(false)
+    expect(fs.existsSync(path.join(dir, "references/old.md"))).toBe(false)
+    expect(fs.readFileSync(path.join(dir, "NOTES.md"), "utf8")).toBe("mine\n")
+  })
+
+  it("never deletes what it didn't install, even with --force (review I3)", () => {
+    const project = temp()
+    const skills = path.join(project, ".claude/skills")
+    fs.mkdirSync(path.join(skills, "other"), { recursive: true })
+    fs.writeFileSync(path.join(skills, "other/SKILL.md"), "---\nname: other\n---\n")
+    fs.writeFileSync(path.join(skills, "SKILL.md"), "---\nname: something-else\n---\n")
+    expect(run(["--dir", skills, "--force"], project).status).toBe(0)
+    expect(fs.readFileSync(path.join(skills, "other/SKILL.md"), "utf8")).toContain("name: other")
+  })
+
+  it("refuses the project, home, their ancestors and git repositories as targets (review I3)", () => {
+    const project = temp()
+    fs.mkdirSync(path.join(project, ".git"))
+    fs.writeFileSync(path.join(project, "keep.txt"), "x\n")
+    for (const dir of [".", "..", project]) {
+      const result = run(["--dir", dir, "--force"], project)
+      expect(result.status, dir).toBe(1)
+      expect(result.stderr).toMatch(/won't install the skill into/)
+    }
+    expect(fs.readFileSync(path.join(project, "keep.txt"), "utf8")).toBe("x\n")
   })
 
   it("refuses to replace a directory that isn't the EffectScript skill, unless --force", () => {

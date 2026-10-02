@@ -124,7 +124,24 @@ const isVisiblePromise = (ctx: Ctx, node: Node): boolean => {
   return false
 }
 
+/** `xs.map(…)`, `xs.flatMap(…)`, `xs.filter(…)` or `Array.from(…)`: an array, not an effect (EFX8112). */
+const isArrayBuilt = (node: Node): boolean =>
+  node.type === "CallExpression" && node.callee.type === "MemberExpression" && !node.callee.computed &&
+  (["map", "flatMap", "filter"].includes(node.callee.property.name) ||
+    (node.callee.object.type === "Identifier" && node.callee.object.name === "Array" &&
+      node.callee.property.name === "from"))
+
 const promiseAwait: Handler = (node, _parent, ctx) => {
+  if (ctx.effect !== undefined && isArrayBuilt(node.argument)) {
+    // `yield*` over an array runs its effects one by one and evaluates to `undefined`
+    warn(
+      ctx,
+      "EFX8112",
+      "`await` on an array: its effects run one by one, and the result is `undefined`",
+      node,
+      "use `await all(xs)` or `await forEach(items, (x) => …)`; only an array literal `await [a, b]` runs as `all`"
+    )
+  }
   if (ctx.effect === undefined || !isVisiblePromise(ctx, node.argument)) return
   ctx.diagnostics.push(
     diagnosticError(
