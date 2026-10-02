@@ -1,0 +1,17 @@
+/**
+ * Accounts and money.
+ *
+ * @module
+ */
+
+/** An amount of money in whole cents. */
+export schema Money = Int & Brand<"Money">
+
+/** An account id. */
+export schema AccountId = string & Brand<"AccountId">
+
+/** No account has this id. */
+export error AccountNotFound { id: AccountId }
+
+/** An account has less money than the transfer needs. */
+export error InsufficientFunds { needed: Money; available: Money }

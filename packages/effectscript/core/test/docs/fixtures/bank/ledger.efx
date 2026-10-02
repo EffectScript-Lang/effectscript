@@ -1,0 +1,8 @@
+import { AccountId, AccountNotFound, Money } from "./accounts.efx"
+
+/** The store of balances. */
+export service Ledger {
+  /** The balance of one account. */
+  effect balance(id: AccountId): Money throws AccountNotFound
+  layer test = { balance: effect (id) => Money.make(100) }
+}

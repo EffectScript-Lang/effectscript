@@ -1,0 +1,6 @@
+/**
+ * A tiny bank.
+ *
+ * @module
+ */
+export { transfer } from "./transfer.efx"

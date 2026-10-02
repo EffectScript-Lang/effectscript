@@ -1,0 +1,31 @@
+/**
+ * Bank transfers between accounts.
+ *
+ * @module
+ */
+import { AccountId, AccountNotFound, InsufficientFunds, Money } from "./accounts.efx"
+import { Ledger } from "./ledger.efx"
+
+/** Proof that a transfer happened. */
+export schema Receipt {
+  /** The amount moved. */
+  amount: Money
+}
+
+/**
+ * Moves money between two accounts.
+ *
+ * Both balances change, or neither does.
+ *
+ * Moving money:
+ *
+ * ```efx
+ * const receipt = await transfer(AccountId.make("a"), AccountId.make("b"), Money.make(30))
+ * receipt.amount // => 30
+ * ```
+ *
+ * @since 1.2.0
+ */
+export effect transfer(from: AccountId, to: AccountId, amount: Money): Receipt throws InsufficientFunds | AccountNotFound needs Ledger {
+  return new Receipt({ amount })
+}
