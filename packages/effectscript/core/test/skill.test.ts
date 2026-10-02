@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { describe, expect, it } from "vitest"
+import { typecheck } from "./utils/typecheck.ts"
 
 const root = path.join(import.meta.dirname, "..")
 const skill = path.join(root, "skills/effectscript")
@@ -23,7 +24,7 @@ describe("the generated skill references (Plan 14 Task 1, ADR-0051)", () => {
     const dirs = fs.readdirSync(path.join(root, "test/fixtures"), { withFileTypes: true })
       .filter((d) => d.isDirectory()).map((d) => d.name)
     for (const dir of dirs) expect(syntax, dir).toContain(`<!-- fixtures/${dir} -->`)
-  })
+  }, 60_000)
 
   it("show code that compiles", () => {
     for (const file of ["references/syntax.md", "references/effect-docs.md"]) {
@@ -32,5 +33,50 @@ describe("the generated skill references (Plan 14 Task 1, ADR-0051)", () => {
         expect(errors, `${file}:\n${code}`).toEqual([])
       }
     }
+  }, 60_000)
+})
+
+const handWritten = ["SKILL.md", "references/patterns.md", "references/pitfalls.md"]
+
+describe("the hand-written skill (Plan 14 Task 2, ADR-0051)", () => {
+  it("only shows good code that compiles and type-checks against effect", () => {
+    const files = new Map<string, string>()
+    for (const file of handWritten) {
+      fences(read(file)).forEach((code, i) => {
+        const result = toTypeScript(code, { filename: "example.efx" })
+        expect(result.diagnostics.filter((d) => d.severity === "error"), `${file} #${i}:\n${code}`).toEqual([])
+        files.set(`skill-${file.replace(/\W/g, "-")}-${i}.ts`, result.code)
+      })
+    }
+    expect(files.size).toBeGreaterThan(15)
+    expect(typecheck(files)).toEqual([])
+  }, 180_000)
+
+  it("shows each mistake with the diagnostic it names", () => {
+    let wrong = 0
+    for (const file of handWritten) {
+      for (const [, code, body] of read(file).matchAll(/^```efx wrong (EFX\d+)\n([\s\S]*?)^```$/gm)) {
+        wrong++
+        const codes = toTypeScript(body!, { filename: "example.efx", strict: true }).diagnostics.map((d) => d.code)
+        expect(codes, `${file}:\n${body}`).toContain(code)
+      }
+    }
+    expect(wrong).toBeGreaterThan(2)
+  })
+
+  it("links only to files inside the skill", () => {
+    for (const file of handWritten) {
+      for (const [, target] of read(file).matchAll(/\]\(([^)#]+)\)/g)) {
+        expect(
+          target!.startsWith("http") || fs.existsSync(path.join(skill, path.dirname(file), target!)),
+          `${file} → ${target}`
+        )
+          .toBe(true)
+      }
+    }
+  })
+
+  it("has the frontmatter agents load skills by", () => {
+    expect(read("SKILL.md")).toMatch(/^---\nname: effectscript\ndescription: .*\.efx.*\n---\n/)
   })
 })

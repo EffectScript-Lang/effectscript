@@ -7,6 +7,7 @@
  *   or the skill test fails.
  * - `effect-docs.md`: Effect's agent guide in EffectScript (`@effectscript/docs`, ADR-0050).
  */
+import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
 
@@ -85,7 +86,18 @@ const effectDocs = (): string => {
   ].join("\n")
 }
 
-const files = new Map([["syntax.md", syntax()], ["effect-docs.md", effectDocs()]])
+/** dprint-formatted, as `pnpm lint` keeps every markdown file in the repository. */
+const formatted = (file: string, text: string): string => {
+  const result = spawnSync("pnpm", ["exec", "dprint", "fmt", "--stdin", `skills/effectscript/references/${file}`], {
+    input: text,
+    encoding: "utf8",
+    cwd: root
+  })
+  if (result.status !== 0) throw new Error(`dprint failed on ${file}: ${result.stderr}`)
+  return result.stdout
+}
+
+const files = new Map([["syntax.md", syntax()], ["effect-docs.md", effectDocs()]].map(([f, t]) => [f!, formatted(f!, t!)]))
 if (process.argv.includes("--check")) {
   for (const [file, text] of files) {
     const target = path.join(references, file)
