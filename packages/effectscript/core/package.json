@@ -30,6 +30,7 @@
     "./index": null
   },
   "files": [
+    "grammars/*.json",
     "bin/**/*.js",
     "src/**/*.ts",
     "dist/**/*.js",

@@ -44,7 +44,64 @@ export const withPlugin = (text: string): string | undefined => {
   }${text.slice(target.start + 1).replace(/^[ \t]*(?=\S)/, empty ? "" : "\n")}`
 }
 
-const scripts: ReadonlyArray<readonly [string, string]> = [["check", "efx check"], ["build:efx", "efx build"]]
+const scripts: ReadonlyArray<readonly [string, string]> = [
+  ["check", "efx check"],
+  ["build:efx", "efx build"],
+  ["docs", "efx docs"],
+  ["docs:dev", "efx docs && cd docs && blume dev"],
+  ["docs:build", "efx docs && cd docs && blume build"]
+]
+
+/** The Blume site lives in `docs/`: Blume always builds into `dist/` next to its config (ADR-0043). */
+const blumeConfig = (title: string): string =>
+  `import { defineConfig } from "blume"\nimport { effectscript } from "effectscript/blume"\n\n` +
+  `export default defineConfig({\n  title: ${JSON.stringify(title)},\n` +
+  `  content: { root: ".", exclude: ["**/_*", "**/.*", "dist/**", "node_modules/**"] },\n` +
+  `  integrations: [effectscript()]\n})\n`
+
+const docsHome = (title: string, description: string | undefined): string =>
+  `---\ntitle: ${JSON.stringify(title)}\n${
+    description === undefined ? "" : `description: ${JSON.stringify(description)}\n`
+  }---\n\n` +
+  `${description === undefined ? "" : `${description}\n\n`}` +
+  `See the [API reference](./api/).\n`
+
+const ignored = ["docs/api/", "docs/.blume/", "docs/dist/"]
+
+/** Adds the Blume site to `docs/` and its outputs to `.gitignore`, never overwriting. */
+const setUpDocs = (
+  cwd: string,
+  pkg: { readonly name?: unknown; readonly description?: unknown } | undefined,
+  out: (line: string) => void
+): boolean => {
+  let changed = false
+  const title = typeof pkg?.name === "string" ? pkg.name : path.basename(cwd)
+  const description = typeof pkg?.description === "string" && pkg.description !== "" ? pkg.description : undefined
+  const docs = path.join(cwd, "docs")
+  const config = path.join(docs, "blume.config.ts")
+  if (!fs.existsSync(config)) {
+    fs.mkdirSync(docs, { recursive: true })
+    fs.writeFileSync(config, blumeConfig(title))
+    out("docs/blume.config.ts: added a Blume site (efx docs writes the API pages to docs/api)")
+    changed = true
+  }
+  if (!fs.existsSync(path.join(docs, "index.md")) && !fs.existsSync(path.join(docs, "index.mdx"))) {
+    fs.writeFileSync(path.join(docs, "index.md"), docsHome(title, description))
+    out("docs/index.md: added the docs home page")
+    changed = true
+  }
+  const gitignore = path.join(cwd, ".gitignore")
+  const text = fs.existsSync(gitignore) ? fs.readFileSync(gitignore, "utf8") : ""
+  const lines = new Set(text.split(/\r?\n/).map((line) => line.trim()))
+  const missing = ignored.filter((entry) => !lines.has(entry))
+  if (missing.length > 0) {
+    const prefix = text === "" || text.endsWith("\n") ? text : `${text}\n`
+    fs.writeFileSync(gitignore, `${prefix}${missing.join("\n")}\n`)
+    out(`.gitignore: added ${missing.join(", ")}`)
+    changed = true
+  }
+  return changed
+}
 
 /**
  * Runs `efx init` in `cwd`. Returns the exit code.
@@ -75,7 +132,13 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
   let missing: Array<string> = []
   if (fs.existsSync(pkgPath)) {
     const text = fs.readFileSync(pkgPath, "utf8")
-    let pkg: { scripts?: Record<string, string>; dependencies?: object; devDependencies?: object }
+    let pkg: {
+      name?: unknown
+      description?: unknown
+      scripts?: Record<string, string>
+      dependencies?: object
+      devDependencies?: object
+    }
     try {
       pkg = JSON.parse(text)
     } catch {
@@ -91,7 +154,8 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
       changed = true
     }
     const deps: Record<string, unknown> = { ...pkg.dependencies, ...pkg.devDependencies }
-    missing = ["effectscript", plugin, "typescript"].filter((name) => deps[name] === undefined)
+    missing = ["effectscript", plugin, "typescript", "blume"].filter((name) => deps[name] === undefined)
+    if (setUpDocs(cwd, pkg, out)) changed = true
   }
   if (!changed) out("This project is already set up for EffectScript")
   if (missing.length > 0) {

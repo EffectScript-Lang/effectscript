@@ -62,4 +62,30 @@ describe("efx init (Plan 8 Task 5)", () => {
     expect([read(dir, "tsconfig.json"), read(dir, "package.json")]).toEqual(once)
     expect(again.stdout).toContain("already")
   })
+
+  it("sets up Blume in docs/ without overwriting anything", () => {
+    const dir = project({
+      "tsconfig.json": "{}\n",
+      "package.json":
+        "{\n  \"name\": \"bank\",\n  \"description\": \"A bank.\",\n  \"scripts\": {\n    \"docs\": \"mine\"\n  }\n}\n",
+      ".gitignore": "node_modules/\ndocs/dist/\n"
+    })
+    expect(init(dir).status).toBe(0)
+    const config = read(dir, "docs/blume.config.ts")
+    expect(config).toContain("import { effectscript } from \"effectscript/blume\"")
+    expect(config).toContain("title: \"bank\"")
+    expect(config).toContain(
+      "content: { root: \".\", exclude: [\"**/_*\", \"**/.*\", \"dist/**\", \"node_modules/**\"] }"
+    )
+    expect(read(dir, "docs/index.md")).toContain("A bank.")
+    const pkg = JSON.parse(read(dir, "package.json"))
+    expect(pkg.scripts.docs).toBe("mine")
+    expect(pkg.scripts["docs:build"]).toBe("efx docs && cd docs && blume build")
+    expect(pkg.scripts["docs:dev"]).toBe("efx docs && cd docs && blume dev")
+    expect(read(dir, ".gitignore")).toBe("node_modules/\ndocs/dist/\ndocs/api/\ndocs/.blume/\n")
+    fs.writeFileSync(path.join(dir, "docs/blume.config.ts"), "// mine\n")
+    expect(init(dir).status).toBe(0)
+    expect(read(dir, "docs/blume.config.ts")).toBe("// mine\n")
+    expect(init(dir).stdout).toContain("blume")
+  })
 })
