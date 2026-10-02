@@ -16,6 +16,7 @@ import { doctor as checkSetup } from "./doctor.ts"
 import { initProject } from "./init.ts"
 import { lsp as runLanguageServer } from "./lsp.ts"
 import { installSkill } from "./skill.ts"
+import { setup as runSetup } from "./setup.ts"
 import { homedir } from "node:os"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
@@ -139,9 +140,35 @@ export const skill = Command.make("skill", {
   await exitWith(code)
 }) |> Command.withDescription("Install the EffectScript skill for coding agents")
 
+/** Set up the editors and coding agents on this machine for EffectScript */
+export const setup = Command.make("setup", {
+  yes: Flag.Boolean("yes").pipe(Flag.withAlias("y"), Flag.withDefault(false), Flag.withDescription("Apply everything without asking")),
+  dryRun: Flag.Boolean("dry-run").pipe(Flag.withDefault(false), Flag.withDescription("Only list what would be done")),
+  project: Flag.Boolean("project").pipe(Flag.withDefault(false), Flag.withDescription("Install the agent skill into this project (.claude/skills, .agents/skills)")),
+  only: Flag.String("only").pipe(Flag.optional, Flag.withDescription("Only these, comma-separated: claude,codex,cursor-agent,gemini,opencode,vscode,cursor,windsurf,vscodium,neovim,helix,zed,jetbrains")),
+  vsix: Flag.String("vsix").pipe(Flag.optional, Flag.withDescription("The EffectScript .vsix to install in VS Code-family editors"))
+}, effect ({ yes, dryRun, project, only, vsix }) => {
+  const code = await promise(() =>
+    runSetup(
+      {
+        cwd: process.cwd(),
+        home: homedir(),
+        yes,
+        dryRun,
+        project,
+        only: only._tag === "Some" ? only.value.split(",").map((s) => s.trim()) : undefined,
+        vsix: vsix._tag === "Some" ? vsix.value : undefined
+      },
+      (line) => process.stdout.write(`${line}\n`),
+      (line) => process.stderr.write(`${line}\n`)
+    )
+  )
+  await exitWith(code)
+}) |> Command.withDescription("Set up the editors and coding agents on this machine for EffectScript")
+
 export const efx = Command.make("efx")
   |> Command.withDescription("EffectScript: TypeScript with Effect as native syntax")
-  |> Command.withSubcommands([build, check, run, print, convert, docs, init, doctor, lsp, skill])
+  |> Command.withSubcommands([build, check, run, print, convert, docs, init, doctor, lsp, skill, setup])
 
 main {
   // without a command, show the help; `run`/`check` pass their arguments through (ADR-0033)

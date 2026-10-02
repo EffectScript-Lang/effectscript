@@ -20,6 +20,8 @@ export interface StandaloneHost {
   readonly preload: string
   /** The bundled language server, as JavaScript (ADR-0040). */
   readonly languageServer: string
+  /** The VS Code extension's embedded `.vsix` path, for `efx setup` (ADR-0052). */
+  readonly vsix?: string
   /** The agent skill's files, `[relative path, content]` (ADR-0051). */
   readonly skill?: ReadonlyArray<readonly [string, string]>
   /** TypeScript 6 for the language server: `lib/` file names and their embedded paths. */

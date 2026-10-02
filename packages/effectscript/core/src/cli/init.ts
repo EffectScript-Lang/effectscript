@@ -161,6 +161,6 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
   if (missing.length > 0) {
     out(`Install: npm i -D ${missing.map((name) => (name === "typescript" ? "typescript@6" : name)).join(" ")}`)
   }
-  out("Next: efx convert (preview converting this project to EffectScript)")
+  out("Next: efx setup (your editors and coding agents), then efx convert (preview converting this project)")
   return 0
 }

@@ -54,7 +54,8 @@ ${asset("linux-x64")}
   def caveats
     <<~EOS
       Start using EffectScript in a project:
-        efx init      # editor plugin and scripts
+        efx setup     # your editors and coding agents, once per machine
+        efx init      # editor plugin and scripts, in a project
         efx convert   # convert the project's TypeScript (on a new git branch)
     EOS
   end

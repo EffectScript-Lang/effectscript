@@ -146,13 +146,31 @@ describe.skipIf(!hasBun)("the standalone binary (Plan 10 Task 3, ADR-0037)", () 
     const tree = (d: string): Record<string, string> =>
       Object.fromEntries(
         (fs.readdirSync(d, { recursive: true, withFileTypes: true }) as Array<fs.Dirent>)
-          .filter((e) => e.isFile())
+          .filter((e) => e.isFile() && e.name !== ".efx-skill.json")
           .map((e) => {
             const full = path.join(e.parentPath, e.name)
             return [path.relative(d, full), fs.readFileSync(full, "utf8")]
           })
       )
     expect(tree(dir)).toEqual(tree(path.join(root, "skills/effectscript")))
+  })
+
+  it("installs its embedded .vsix with efx setup (ADR-0052)", () => {
+    const home = fs.mkdtempSync(path.join(work, "home-"))
+    const bin = path.join(home, "bin")
+    fs.mkdirSync(bin)
+    fs.writeFileSync(path.join(bin, "code"), `#!/bin/sh\necho "$@" >> "${home}/code.log"\n`, { mode: 0o755 })
+    const result = spawnSync(binary, ["setup", "--yes", "--only", "vscode"], {
+      cwd: home,
+      encoding: "utf8",
+      env: { HOME: home, PATH: `${bin}:/usr/bin:/bin`, XDG_CACHE_HOME: path.join(home, "cache") }
+    })
+    expect(result.status, result.stderr).toBe(0)
+    const install = fs.readFileSync(path.join(home, "code.log"), "utf8").split("\n").find((l) =>
+      l.startsWith("--install-extension")
+    )!
+    const vsix = install.replace("--install-extension ", "")
+    expect(fs.readFileSync(vsix).subarray(0, 2).toString()).toBe("PK")
   })
 
   it("packages archives with matching checksums", () => {

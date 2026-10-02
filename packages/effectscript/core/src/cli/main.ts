@@ -18,6 +18,7 @@ import { initProject } from "./init.ts"
 import { lsp as runLanguageServer } from "./lsp.ts"
 import { buildProject, passthrough, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
+import { setup as runSetup } from "./setup.ts"
 import { installSkill } from "./skill.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
@@ -250,10 +251,63 @@ export const skill = pipe(
   Command.withDescription("Install the EffectScript skill for coding agents")
 )
 
+/** Set up the editors and coding agents on this machine for EffectScript */
+export const setup = pipe(
+  Command.make(
+    "setup",
+    {
+      yes: Flag.Boolean("yes").pipe(
+        Flag.withAlias("y"),
+        Flag.withDefault(false),
+        Flag.withDescription("Apply everything without asking")
+      ),
+      dryRun: Flag.Boolean("dry-run").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Only list what would be done")
+      ),
+      project: Flag.Boolean("project").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Install the agent skill into this project (.claude/skills, .agents/skills)")
+      ),
+      only: Flag.String("only").pipe(
+        Flag.optional,
+        Flag.withDescription(
+          "Only these, comma-separated: claude,codex,cursor-agent,gemini,opencode,vscode,cursor,windsurf,vscodium,neovim,helix,zed,jetbrains"
+        )
+      ),
+      vsix: Flag.String("vsix").pipe(
+        Flag.optional,
+        Flag.withDescription("The EffectScript .vsix to install in VS Code-family editors")
+      )
+    },
+    Effect.fnUntraced(function*({ yes, dryRun, project, only, vsix }) {
+      const code = yield* Effect.promise(() =>
+        runSetup(
+          {
+            cwd: process.cwd(),
+            home: homedir(),
+            yes,
+            dryRun,
+            project,
+            only: only._tag === "Some"
+              ? only.value.split(",").map((s) => s.trim())
+              : undefined,
+            vsix: vsix._tag === "Some" ? vsix.value : undefined
+          },
+          (line) => process.stdout.write(`${line}\n`),
+          (line) => process.stderr.write(`${line}\n`)
+        )
+      )
+      yield* exitWith(code)
+    })
+  ),
+  Command.withDescription("Set up the editors and coding agents on this machine for EffectScript")
+)
+
 export const efx = pipe(
   Command.make("efx"),
   Command.withDescription("EffectScript: TypeScript with Effect as native syntax"),
-  Command.withSubcommands([build, check, run, print, convert, docs, init, doctor, lsp, skill])
+  Command.withSubcommands([build, check, run, print, convert, docs, init, doctor, lsp, skill, setup])
 )
 
 NodeRuntime.runMain(
