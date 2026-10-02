@@ -13,7 +13,7 @@ const scan = (code: string) => {
   return out
 }
 
-describe("convertBlock (Plan 12 Task 1, ADR-0042)", () => {
+describe("convertBlock (Plan 13 Task 1, ADR-0050)", () => {
   it("re-sugars Effect code and round-trips it", () => {
     const block = convertBlock(effectCode)
     expect(block.changed).toBe(true)
@@ -28,7 +28,7 @@ describe("convertBlock (Plan 12 Task 1, ADR-0042)", () => {
   })
 })
 
-describe("convertMarkdown (Plan 12 Task 1)", () => {
+describe("convertMarkdown (Plan 13 Task 1)", () => {
   it("rewrites ts, typescript and tsx fences, keeping info strings and everything else", () => {
     const md = [
       "# Title with `inline` code",
@@ -92,7 +92,7 @@ describe("convertMarkdown (Plan 12 Task 1)", () => {
   })
 })
 
-describe("jsdocExamples (Plan 12 Task 1)", () => {
+describe("jsdocExamples (Plan 13 Task 1)", () => {
   const source = [
     "/**",
     " * The module.",
@@ -155,7 +155,7 @@ describe("jsdocExamples (Plan 12 Task 1)", () => {
   })
 })
 
-describe("tokens (Plan 12 Task 1)", () => {
+describe("tokens (Plan 13 Task 1)", () => {
   it("counts scanner tokens, not characters", () => {
     expect(tokens("const a = 1 // comment\n")).toBe(4)
     expect(tokens("export effect f() {\n  return await g()\n}\n")).toBe(12)

@@ -1,4 +1,4 @@
-# EffectScript Plan 12: The Effect docs in EffectScript
+# EffectScript Plan 13: The Effect docs in EffectScript
 
 > **For agentic workers:** execute task by task with TDD. Decisions are recorded in `docs/adr/`.
 > Gate every commit: `pnpm check && pnpm lint && git commit …`.
@@ -39,7 +39,7 @@ TypeScript ↔ EffectScript corpus.
 **Spec:** §0 (evidence for the pitch), §6 (reverse compiler), §8 (skill references), §9 (site
 content).
 
-**Decisions:** ADR-0042 (new) for the corpus, its layout and freshness. Builds on ADR-0030
+**Decisions:** ADR-0050 (new) for the corpus, its layout and freshness. Builds on ADR-0030
 (conversion safety), ADR-0031 and ADR-0015 (release automation regenerates).
 
 ## Global Constraints
@@ -77,7 +77,7 @@ content).
 - **Tests:** each Review Focus 1–3 case, and a round trip on every changed block of a fixture
   (`toTypeScript(efx)` is token-equal to the original).
 
-### Task 2: The generator and `content/` (ADR-0042)
+### Task 2: The generator and `content/` (ADR-0050)
 
 - `scripts/generate.ts [--check]`, which writes:
   - `ai-docs/**`;

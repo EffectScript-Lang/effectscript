@@ -1,5 +1,5 @@
 /**
- * Translating Effect's docs to EffectScript (ADR-0042): code blocks through the reverse compiler,
+ * Translating Effect's docs to EffectScript (ADR-0050): code blocks through the reverse compiler,
  * markdown fences, and JSDoc examples. Pure, so the generator and its tests share it.
  *
  * @since 4.0.0
