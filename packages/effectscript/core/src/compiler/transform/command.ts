@@ -17,11 +17,21 @@ const nativeTypes: Record<string, string> = {
 }
 const nativeNames = new Set(["Int", "Finite", "Date", "Redacted"])
 
-/** `dryRun` → `dry-run`. */
-const kebab = (name: string): string => name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase()
+/**
+ * `dryRun` → `dry-run`.
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const kebab = (name: string): string => name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase()
 
-/** The JSDoc comment that ends right before `end` (only whitespace or a separator in between). */
-const jsdocBefore = (
+/**
+ * The JSDoc comment that ends right before `end` (only whitespace or a separator in between).
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const jsdocBefore = (
   source: string,
   from: number,
   end: number

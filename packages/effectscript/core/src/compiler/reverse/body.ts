@@ -57,7 +57,11 @@ export const unqualify = (ctx: ReverseCtx, node: Node): void => {
   if (node.type !== "MemberExpression" || node.optional === true) return
   if (ctx.namespace !== "Effect") {
     // in a `layer` or `atom`, a bare name resolves to `Layer.name` / `Atom.name` (spec §4.14)
-    const local = ctx.namespace === "Layer" ? ctx.layer : importedLocal(ctx.analysis, "effect/reactivity", "Atom")
+    const local = ctx.namespace === "Layer"
+      ? ctx.layer
+      : ctx.namespace === "Atom"
+      ? importedLocal(ctx.analysis, "effect/reactivity", "Atom")
+      : importedLocal(ctx.analysis, "effect/cli", "Command")
     if (!isMember(node, local)) return
     const name: string = node.property.name
     const exports = namespaceExports.get(ctx.namespace)!
