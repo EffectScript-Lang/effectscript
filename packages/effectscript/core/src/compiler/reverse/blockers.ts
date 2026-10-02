@@ -5,7 +5,8 @@
  *
  * @since 4.0.0
  */
-import { children, type Node } from "../ast.ts"
+import { children, containsThis, type Node } from "../ast.ts"
+import { isMember } from "./origin.ts"
 
 const functions = new Set(["FunctionDeclaration", "FunctionExpression", "ArrowFunctionExpression"])
 const classes = new Set(["ClassDeclaration", "ClassExpression"])
@@ -67,8 +68,8 @@ const isAmbient = (node: Node): boolean => {
 export interface StrictInfo {
   /** The local name of `Effect`. */
   readonly effect: string | undefined
-  /** Module-level bindings that become pipe-less `effect` declarations (the forward `localEffects`). */
-  readonly effects: ReadonlySet<string>
+  /** Module consts that may become pipe-less `effect` declarations (a superset of `localEffects`). */
+  readonly effectCandidates: ReadonlySet<string>
 }
 
 const runners = new Set(["runPromise", "runSync", "runFork", "runCallback", "runPromiseExit", "runSyncExit"])
@@ -86,7 +87,7 @@ const strictError = (info: StrictInfo, node: Node): string | undefined => {
     const member = effectMember(info, callee)
     if (
       (member !== undefined && !/^(is|run)[A-Z]/.test(member)) ||
-      (callee.type === "Identifier" && info.effects.has(callee.name))
+      (callee.type === "Identifier" && info.effectCandidates.has(callee.name))
     ) {
       return "an effect created but not yielded would be an error inside `effect` code (EFX8001)"
     }
@@ -149,4 +150,74 @@ export const blocker = (
     return "`this` would change meaning in an `effect` arrow"
   }
   return undefined
+}
+
+/**
+ * @since 4.0.0
+ * @category reverse
+ */
+export const isGenerator = (node: Node | undefined): boolean =>
+  node?.type === "FunctionExpression" && node.generator === true && node.async !== true && node.id === null
+
+/**
+ * `Effect.gen(…)` → `effect {…}` applies: the generator, or why not (`undefined` when `call` isn't
+ * `Effect.gen` at all).
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const genShape = (
+  info: StrictInfo,
+  call: Node,
+  parent: Node | undefined
+): { readonly fn: Node } | { readonly reason: string } | undefined => {
+  if (!isMember(call.callee, info.effect, "gen")) return undefined
+  const args: Array<Node> = call.arguments
+  const fn = args[args.length - 1]
+  if (args.length < 1 || args.length > 2 || !isGenerator(fn) || fn!.params.length > 0 || fn!.returnType) {
+    return undefined
+  }
+  const self = args.length === 2 ? args[0]! : undefined
+  if (
+    self !== undefined && !(self.type === "ObjectExpression" && self.properties.length === 1 &&
+      self.properties[0].key?.name === "self" && self.properties[0].value.type === "ThisExpression")
+  ) return undefined
+  // an `effect { … }` statement is an error (EFX2003): the effect would never run
+  if (parent?.type === "ExpressionStatement") return { reason: "as a statement, its effect is never used" }
+  if ((self !== undefined) !== containsThis(fn!.body)) {
+    return { reason: "`{ self: this }` doesn't match its use of `this`" }
+  }
+  const reason = blocker(fn!, "block", info)
+  return reason === undefined ? { fn: fn! } : { reason }
+}
+
+/**
+ * `const f = Effect.fn("f")(function*…)` that becomes a pipe-less `effect` declaration (the forward
+ * `localEffects`). Without `checkBlockers`, the shape alone (the candidates).
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const effectDeclarationName = (
+  info: StrictInfo,
+  statement: Node,
+  checkBlockers: boolean
+): string | undefined => {
+  if (statement.type !== "VariableDeclaration" || statement.kind !== "const" || statement.declarations.length !== 1) {
+    return undefined
+  }
+  const declarator: Node = statement.declarations[0]
+  const call: Node | null = declarator.init
+  if (declarator.id.type !== "Identifier" || declarator.id.typeAnnotation || call?.type !== "CallExpression") {
+    return undefined
+  }
+  const head: Node = call.callee
+  if (head.type !== "CallExpression" || !isMember(head.callee, info.effect, "fn") || call.arguments.length !== 1) {
+    return undefined
+  }
+  const span: Node | undefined = head.arguments[0]
+  if (head.arguments.length !== 1 || span?.type !== "Literal" || span.value !== declarator.id.name) return undefined
+  const fn: Node = call.arguments[0]
+  if (!isGenerator(fn)) return undefined
+  return !checkBlockers || blocker(fn, "declaration", info) === undefined ? declarator.id.name : undefined
 }

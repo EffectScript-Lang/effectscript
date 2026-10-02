@@ -51,9 +51,13 @@ export interface ReverseCtx {
   readonly schema: string | undefined
   /** Classes this conversion turns into `error` declarations (the forward `localErrors`). */
   readonly errors: Set<string>
+  /** Module consts that may become pipe-less `effect` declarations (for the strict blockers). */
+  readonly effectCandidates: Set<string>
   /** Module consts that become pipe-less `effect` declarations (the forward `localEffects`). */
   readonly effects: Set<string>
   readonly notes: Array<ConvertNote>
+  /** Whether `($) => …` pipe steps become `%` steps (see `topicsRoundTrip`). */
+  topics: boolean
 }
 
 /**

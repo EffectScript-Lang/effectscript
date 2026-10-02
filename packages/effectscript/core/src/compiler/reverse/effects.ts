@@ -4,8 +4,8 @@
  *
  * @since 4.0.0
  */
-import { children, containsThis, type Node } from "../ast.ts"
-import { blocker } from "./blockers.ts"
+import { children, type Node } from "../ast.ts"
+import { blocker, genShape, isGenerator } from "./blockers.ts"
 import { convertGeneratorNode, unqualify, type Visit } from "./body.ts"
 import {
   commaToPipe,
@@ -18,13 +18,7 @@ import {
   slice
 } from "./context.ts"
 import { isMember } from "./origin.ts"
-
-/**
- * @since 4.0.0
- * @category reverse
- */
-export const isGenerator = (node: Node | undefined): boolean =>
-  node?.type === "FunctionExpression" && node.generator === true && node.async !== true && node.id === null
+import { convertPipe, isPlainStep } from "./pipes.ts"
 
 /**
  * `: Effect.fn.Return<A, E, R>` → `: A throws E needs R`. An explicit `never` error stays (`throws
@@ -92,6 +86,10 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
     note(ctx, statement, `\`${name}\` stays TypeScript: it passes span options`)
     return false
   }
+  if (!pipes.every((pipe, i) => isPlainStep(pipe, i === pipes.length - 1))) {
+    note(ctx, statement, `\`${name}\` stays TypeScript: a pipe step wouldn't read the same after \`|>\``)
+    return false
+  }
   if (blocked(ctx, statement, `\`${name}\``, fn, "declaration")) return false
   // the text between `function*` and `(` stays: the forward compiler keeps it after the name
   replaceHoistingComments(ctx, statement.start, ctx.source.indexOf("*", fn.start) + 1, `effect ${name}`, outerStart)
@@ -109,30 +107,17 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
   return true
 }
 
-const isSelfThis = (ctx: ReverseCtx, node: Node): boolean =>
-  node.type === "ObjectExpression" && /^\{\s*self:\s*this\s*\}$/.test(slice(ctx, node))
-
 /** `Effect.gen(function*() {…})` / `Effect.gen({ self: this }, function*() {…})` → `effect {…}`. */
 const convertGen = (ctx: ReverseCtx, call: Node, parent: Node | undefined, visit: Visit): boolean => {
-  if (!isMember(call.callee, ctx.effect, "gen")) return false
-  // an `effect { … }` statement is an error (EFX2003): the effect would never run
-  if (parent?.type === "ExpressionStatement") {
-    note(ctx, call, "`Effect.gen` stays TypeScript: as a statement, its effect is never used")
+  const shape = genShape(ctx, call, parent)
+  if (shape === undefined) return false
+  if ("reason" in shape) {
+    note(ctx, call, `\`Effect.gen\` stays TypeScript: ${shape.reason}`)
     return false
   }
-  const args: Array<Node> = call.arguments
-  const fn = args[args.length - 1]
-  if (args.length < 1 || args.length > 2 || !isGenerator(fn) || fn!.params.length > 0 || fn!.returnType) return false
-  const self = args.length === 2 ? args[0]! : undefined
-  if (self !== undefined && !isSelfThis(ctx, self)) return false
-  if ((self !== undefined) !== containsThis(fn!.body)) {
-    note(ctx, call, "`Effect.gen` stays TypeScript: `{ self: this }` doesn't match its use of `this`")
-    return false
-  }
-  if (blocked(ctx, call, "`Effect.gen`", fn!, "block")) return false
-  replaceKeepingComments(ctx, call.start, fn!.body.start, "effect ")
-  removeKeepingComments(ctx, fn!.body.end, call.end)
-  visit(fn!.body, fn, true)
+  replaceKeepingComments(ctx, call.start, shape.fn.body.start, "effect ")
+  removeKeepingComments(ctx, shape.fn.body.end, call.end)
+  visit(shape.fn.body, shape.fn, true)
   return true
 }
 
@@ -221,7 +206,11 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node) => boolean)
     }
     if (node.type === "ClassDeclaration" && convertClass(node)) return
     if (node.type === "Property" && convertProperty(ctx, node, visit)) return
-    if (node.type === "CallExpression" && (convertGen(ctx, node, parent, visit) || convertUntraced(ctx, node, visit))) {
+    if (
+      node.type === "CallExpression" &&
+      (convertPipe(ctx, node, parent, visit) || convertGen(ctx, node, parent, visit) ||
+        convertUntraced(ctx, node, visit))
+    ) {
       return
     }
     if (generator && scopes.has(node.type)) {

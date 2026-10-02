@@ -11,7 +11,7 @@ describe("Users", () => {
   it.effect("finds a user", () => effect {
     const user = await Users.find("1")
     assert.strictEqual(user, "user-1")
-  }.pipe(provide(Users.layerTest)))
+  } |> provide(Users.layerTest))
 
   it.effect("scopes resources to the test", () => effect {
     const value = await acquireRelease(succeed(1), () => Effect.void)

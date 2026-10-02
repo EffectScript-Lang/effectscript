@@ -8,31 +8,31 @@ declare const load: (id: string) => Effect<string, NotFound | Timeout | Error>
 effect withFallback(id: string) {
   return await effect {
     return await load(id)
-  }.pipe(catchDefect((defect) => fail(new Cause.UnknownError(defect))), catchTags({ NotFound: (e) => effect {
+  } |> catchDefect((defect) => fail(new Cause.UnknownError(defect))) |> catchTags({ NotFound: (e) => effect {
     return "missing"
   }, Timeout: (e) => effect {
     return "slow"
   } }, (e) => effect {
     return `failed: ${String(e)}`
-  }))
+  })
 }
 
 effect logged(id: string) {
   let result = "none"
   await effect {
     result = await load(id)
-  }.pipe(catchTag(["NotFound", "Timeout"], (e) => effect {
+  } |> catchTag(["NotFound", "Timeout"], (e) => effect {
     result = e._tag
-  }), ensuring(effect {
+  }) |> ensuring(effect {
     await log("done")
-  }))
+  })
   return result
 }
 
 effect plain(json: string) {
   return await effect {
     return JSON.parse(json) as unknown
-  }.pipe(catchDefect((defect) => fail(new Cause.UnknownError(defect))), Effect.catch(() => effect {
+  } |> catchDefect((defect) => fail(new Cause.UnknownError(defect))) |> Effect.catch(() => effect {
     return null
-  }))
+  })
 }

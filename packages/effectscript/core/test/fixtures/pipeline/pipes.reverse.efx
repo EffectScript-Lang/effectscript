@@ -6,20 +6,20 @@ effect loadUser(id: string) {
 
 const program = effect {
   return await loadUser("1")
-}.pipe(retry({ times: 3 }), orElseSucceed(() => "anonymous"))
+} |> retry({ times: 3 }) |> orElseSucceed(() => "anonymous")
 
-const viaLocal = loadUser("2").pipe(
-  timeout("1 second"),
-  orDie)
+const viaLocal = loadUser("2")
+  |> timeout("1 second")
+  |> orDie
 
-const viaPipe = pipe(getUserName("3"), map((name) => name.length))
+const viaPipe = getUserName("3") |> map((name) => name.length)
 
 const hack = map(getUserName("4"), (name) => name.trim())
 
-const twice = pipe(21, ($) => $ + $)
+const twice = 21 |> % + %
 
-const mixed = loadUser("5").pipe(orDie, ($) => map($, (s) => s.length), asVoid)
+const mixed = loadUser("5") |> orDie |> map(%, (s) => s.length) |> asVoid
 
 effect awaited() {
-  return await loadUser("6").pipe(orElseSucceed(() => "none"))
+  return await loadUser("6") |> orElseSucceed(() => "none")
 }

@@ -231,10 +231,13 @@ const needsWrapping = (current: Current): boolean =>
   current.node !== undefined && current.start === current.node.start && current.node.efxPipeable !== true &&
   !simpleTypes.has(current.node.type)
 
-/** Replaces the whitespace + `|>` before `rhs` with `text`, preserving line breaks. */
+/**
+ * Replaces the whitespace + `|>` before `rhs` with `text`, preserving line breaks. The text goes
+ * after whatever the previous item appends at its end (an `effect { … }` head's closing `)`).
+ */
 const joinStep = (ctx: Ctx, previousEnd: number, op: Range, rhs: Range, text: string): void => {
   if (ctx.source.slice(previousEnd, op.start).includes("\n")) {
-    ctx.s.appendLeft(previousEnd, text)
+    ctx.s.appendRight(previousEnd, text)
     ctx.s.remove(op.start, ctx.source[op.end] === " " ? op.end + 1 : op.end)
   } else {
     ctx.s.update(previousEnd, rhs.start, text === "," ? ", " : text)

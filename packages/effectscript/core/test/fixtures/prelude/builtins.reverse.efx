@@ -1,7 +1,7 @@
 declare const fetchUser: (id: string) => Effect<string, Error>
 
 export effect profile(id: string): string throws Error {
-  const name = await pipe(fetchUser(id), Effect.retry({ times: 2 }), orElseSucceed(() => "anonymous"))
+  const name = await fetchUser(id) |> Effect.retry({ times: 2 }) |> orElseSucceed(() => "anonymous")
   await sleep("10 millis")
   const [a, b] = await all([succeed(1), succeed(2)])
   return `${name}:${a + b}`

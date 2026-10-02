@@ -10,11 +10,13 @@ import { analyze } from "../analyze/scope.ts"
 import type { Node } from "../ast.ts"
 import { resolveOptions } from "../options.ts"
 import { parse } from "../parser/parse.ts"
+import { effectDeclarationName } from "./blockers.ts"
 import { classShape, convertClass } from "./classes.ts"
 import type { ConvertNote, ConvertOptions, ReverseCtx } from "./context.ts"
 import { makeVisit, visitProgram } from "./effects.ts"
 import { applyPrelude } from "./imports.ts"
-import { importedLocal, isMember } from "./origin.ts"
+import { importedLocal } from "./origin.ts"
+import { topicsRoundTrip } from "./pipes.ts"
 
 export type { ConvertNote, ConvertOptions } from "./context.ts"
 
@@ -49,8 +51,10 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
     effect: importedLocal(analysis, "effect", "Effect"),
     schema: importedLocal(analysis, "effect", "Schema"),
     errors: new Set(),
+    effectCandidates: new Set(),
     effects: new Set(),
-    notes: []
+    notes: [],
+    topics: false
   }
   if (ctx.effect === undefined && ctx.schema === undefined) return { code: source, notes: [] }
   // classes first: bodies need to know which classes become `error` declarations
@@ -60,18 +64,22 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
       const shape = classShape(ctx, statement, false)
       if (shape?.keyword === "error") ctx.errors.add(shape.name)
     }
-    // conservative: any module const initialized by `Effect.fn(…)(…)` without pipes
-    const declarator: Node | undefined = statement.type === "VariableDeclaration"
-      ? statement.declarations[0]
-      : undefined
-    const init: Node | undefined = declarator?.init ?? undefined
-    if (
-      declarator?.id.type === "Identifier" && init?.type === "CallExpression" && init.arguments.length === 1 &&
-      init.callee.type === "CallExpression" && isMember(init.callee.callee, ctx.effect, "fn")
-    ) {
-      ctx.effects.add(declarator.id.name)
-    }
   }
+  // pipe-less `effect` declarations (the forward `localEffects`): every candidate feeds the
+  // floating-effect blocker, then the ones that convert are known before any pipe is converted
+  const statements = (parsed.program.body as Array<Node>).map((top) =>
+    top.type === "ExportNamedDeclaration" && top.declaration !== null ? top.declaration : top
+  )
+  const loose = { effect: ctx.effect, effectCandidates: new Set<string>() }
+  for (const statement of statements) {
+    const name = effectDeclarationName(loose, statement, false)
+    if (name !== undefined) ctx.effectCandidates.add(name)
+  }
+  for (const statement of statements) {
+    const name = effectDeclarationName(ctx, statement, true)
+    if (name !== undefined) ctx.effects.add(name)
+  }
+  ctx.topics = topicsRoundTrip(ctx)
   const topLevel = new Set((parsed.program.body as Array<Node>).flatMap((top) => [top, top.declaration]))
   visitProgram(ctx, parsed.program, makeVisit(ctx, (cls) => topLevel.has(cls) && convertClass(ctx, cls)))
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }

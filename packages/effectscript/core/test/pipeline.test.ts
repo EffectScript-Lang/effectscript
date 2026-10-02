@@ -40,3 +40,15 @@ describe("ADR-0012: pipelines evaluate the head first", () => {
     expect(code).toContain("pipe(f(), String)")
   })
 })
+
+describe("multi-line pipelines after an effect block (Plan 6 Task 4)", () => {
+  it("closes the block before `.pipe(` when `|>` starts a line", () => {
+    const { code, diagnostics } = toTypeScript(
+      "export const p = effect {\n  return 1\n}\n  // why\n  |> retry({ times: 2 })\n  |> orDie\n"
+    )
+    expect(diagnostics).toEqual([])
+    expect(code).toContain(
+      "export const p = Effect.gen(function*() {\n  return 1\n}).pipe(\n  // why\n  Effect.retry({ times: 2 }),\n  Effect.orDie)\n"
+    )
+  })
+})
