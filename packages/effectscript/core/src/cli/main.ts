@@ -10,7 +10,7 @@ import { NodeRuntime, NodeServices } from "@effect/platform-node"
 import { Effect, pipe, Runtime, Schema } from "effect"
 import { Argument, Command, Flag } from "effect/cli"
 import { check as checkProject } from "./check.ts"
-import { buildProject, version } from "./project.ts"
+import { buildProject, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
@@ -44,6 +44,24 @@ export const build = Command.make(
     yield* exitWith(yield* Effect.promise(() => buildProject(project)))
   })
 ).pipe(Command.withDescription("Compile .efx files to JavaScript and declarations"))
+
+/** Print a file converted to TypeScript or EffectScript */
+export const print = Command.make(
+  "print",
+  {
+    file: Argument.String("file").pipe(Argument.withDescription("The file to convert")),
+    to: Flag.Literals("to", ["ts", "efx"]).pipe(
+      Flag.optional,
+      Flag.withDescription("What to print: ts or efx (default: the other language)")
+    )
+  },
+  Effect.fn("print")(function*({ file, to }) {
+    const printed = printFile(file, to._tag === "Some" ? to.value : undefined)
+    process.stdout.write(printed.output)
+    for (const message of printed.messages) process.stderr.write(`${message}\n`)
+    yield* exitWith(printed.ok ? 0 : 1)
+  })
+).pipe(Command.withDescription("Print a file converted to TypeScript or EffectScript"))
 
 // `check` and `run` forward arguments after `--`: the `command` construct has no variadic form yet
 
@@ -88,7 +106,7 @@ export const run = pipe(
 export const efx = pipe(
   Command.make("efx"),
   Command.withDescription("EffectScript: TypeScript with Effect as native syntax"),
-  Command.withSubcommands([build, check, run])
+  Command.withSubcommands([build, check, run, print])
 )
 
 NodeRuntime.runMain(

@@ -36,3 +36,26 @@ describe("efx CLI (Plan 8 Task 2)", () => {
     expect(result.status).toBe(3)
   })
 })
+
+describe("efx print (Plan 8 Task 3)", () => {
+  const dir = fs.mkdtempSync(path.join(import.meta.dirname, "../.efx-print-"))
+  fs.writeFileSync(path.join(dir, "a.efx"), "export effect double(n: number) {\n  return n * 2\n}\n")
+  fs.writeFileSync(
+    path.join(dir, "b.ts"),
+    "import { Effect } from \"effect\"\nexport const double = Effect.fn(\"double\")(function*(n: number) {\n  return n * 2\n})\n"
+  )
+
+  it("prints .efx as TypeScript and .ts as EffectScript by default", () => {
+    expect(run(["print", path.join(dir, "a.efx")]).stdout).toContain("Effect.fn(\"double\")")
+    expect(run(["print", path.join(dir, "b.ts")]).stdout).toBe("export effect double(n: number) {\n  return n * 2\n}\n")
+  })
+
+  it("follows --to", () => {
+    expect(run(["print", path.join(dir, "b.ts"), "--to", "ts"]).stdout).toContain("Effect.fn(\"double\")")
+  })
+
+  it("fails on a missing file", () => {
+    expect(run(["print", path.join(dir, "missing.efx")]).status).toBe(1)
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+})

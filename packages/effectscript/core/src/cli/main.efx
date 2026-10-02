@@ -8,7 +8,7 @@
 import { Runtime } from "effect"
 import { Argument, Command, Flag } from "effect/cli"
 import { check as checkProject } from "./check.ts"
-import { buildProject, version } from "./project.ts"
+import { buildProject, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
@@ -34,6 +34,17 @@ export command build(
   await exitWith(await promise(() => buildProject(project)))
 }
 
+/** Print a file converted to TypeScript or EffectScript */
+export command print(
+  /** The file to convert */ file: string,
+  /** What to print: ts or efx (default: the other language) */ --to?: "ts" | "efx",
+) {
+  const printed = printFile(file, to._tag === "Some" ? to.value : undefined)
+  process.stdout.write(printed.output)
+  for (const message of printed.messages) process.stderr.write(`${message}\n`)
+  await exitWith(printed.ok ? 0 : 1)
+}
+
 // `check` and `run` forward arguments after `--`: the `command` construct has no variadic form yet
 
 /** Type-check the project, .efx files included */
@@ -55,7 +66,7 @@ export const run = Command.make("run", {
 
 export const efx = Command.make("efx")
   |> Command.withDescription("EffectScript: TypeScript with Effect as native syntax")
-  |> Command.withSubcommands([build, check, run])
+  |> Command.withSubcommands([build, check, run, print])
 
 main {
   // without a command, show the help
