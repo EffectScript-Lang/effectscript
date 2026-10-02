@@ -12,6 +12,7 @@ import * as path from "node:path"
 import { toTypeScript } from "./compiler/compile.ts"
 import { formatDiagnostic } from "./compiler/diagnostics.ts"
 import type { Runtime } from "./compiler/options.ts"
+import { doctestSource } from "./docs/doctest.ts"
 import { packageInfo } from "./project.ts"
 
 /**
@@ -29,6 +30,7 @@ export interface VitePlugin {
       readonly use: (handler: (req: { url?: string }, res: unknown, next: () => void) => void) => void
     }
   }) => void
+  readonly load?: (id: string) => string | undefined
   readonly transform?: (
     this: { readonly environment?: { readonly config?: { readonly consumer?: string } } },
     code: string,
@@ -49,13 +51,26 @@ export interface VitePluginOptions {
 const defaultExtensions = [".mjs", ".js", ".mts", ".ts", ".jsx", ".tsx", ".json"]
 const assetQuery = /[?&](raw|url|inline|worker|sharedworker)\b/
 
-/** The `.efx` file of a module id, or `undefined` (other files, asset queries). */
+const doctestQuery = /\?doctest$/
+
+/** The `.efx`/`.ts` file whose examples a `…?doctest` id asks for (docs spec §2.3), or `undefined`. */
+const doctestTarget = (id: string): string | undefined =>
+  !id.startsWith("\0") && /\.(efx|ts)\?doctest$/.test(id) ? id.replace(doctestQuery, "") : undefined
+
+/**
+ * The `.efx` module of an id, or `undefined` (other files, asset queries). A `?doctest` module is
+ * EffectScript whatever its target's extension, so it keeps its query.
+ */
 const efxFile = (id: string): string | undefined => {
   // asset queries and virtual modules (`\0…`) are someone else's
   if (assetQuery.test(id) || id.startsWith("\0")) return undefined
+  if (doctestTarget(id) !== undefined) return id
   const file = id.replace(/[?#].*$/, "")
   return file.endsWith(".efx") ? file : undefined
 }
+
+/** The file on disk behind an `efxFile` result. */
+const diskFile = (file: string): string => file.replace(doctestQuery, "")
 
 /** Compiled modules waiting for the type-stripping step, by `.efx` file. */
 const compiled = new Map<string, "ts" | "tsx">()
@@ -83,21 +98,34 @@ export const efx = (options: VitePluginOptions = {}): [VitePlugin, VitePlugin] =
         next()
       })
     },
+    // `x.efx?doctest`: the examples of x.efx as a test module (docs spec §2.3), compiled below
+    load(id) {
+      const target = doctestTarget(id)
+      if (target === undefined) return undefined
+      const source = fs.readFileSync(target, "utf8")
+      const result = doctestSource(target, source)
+      const errors = result.diagnostics.filter((d) => d.severity === "error")
+      if (errors.length > 0) {
+        const filename = path.relative(process.cwd(), target)
+        throw new Error(errors.map((d) => formatDiagnostic(source, filename, d)).join("\n"))
+      }
+      return result.code
+    },
     async transform(code, id, transformOptions) {
       const file = efxFile(id)
       if (file === undefined) return undefined
       const server = transformOptions?.ssr === true || this.environment?.config?.consumer === "server"
-      const filename = path.relative(process.cwd(), file)
+      const filename = path.relative(process.cwd(), diskFile(file))
       const result = toTypeScript(code, {
         filename,
         runtime: server ? "node" : options.clientRuntime ?? "browser",
-        ...packageInfo(file)
+        ...packageInfo(diskFile(file))
       })
       const errors = result.diagnostics.filter((d) => d.severity === "error")
       if (errors.length > 0) throw new Error(errors.map((d) => formatDiagnostic(code, filename, d)).join("\n"))
       compiled.set(file, result.mode)
       // Vite resolves map sources against the module's own directory
-      const map = result.map === undefined ? undefined : { ...result.map, sources: [path.basename(file)] }
+      const map = result.map === undefined ? undefined : { ...result.map, sources: [path.basename(diskFile(file))] }
       return { code: result.code, map }
     }
   },
@@ -107,9 +135,10 @@ export const efx = (options: VitePluginOptions = {}): [VitePlugin, VitePlugin] =
     async transform(code, id) {
       const file = efxFile(id)
       const mode = file === undefined ? undefined : compiled.get(file)
-      if (file === undefined || mode === undefined || !fs.existsSync(file)) return undefined
+      if (file === undefined || mode === undefined || !fs.existsSync(diskFile(file))) return undefined
       const { transformWithOxc } = await import("vite")
-      const result = await transformWithOxc(code, `${file}.${mode}`, { lang: mode, sourcemap: true })
+      const name = file === diskFile(file) ? `${file}.${mode}` : `${diskFile(file)}.doctest.${mode}`
+      const result = await transformWithOxc(code, name, { lang: mode, sourcemap: true })
       return { code: result.code, map: result.map }
     }
   }

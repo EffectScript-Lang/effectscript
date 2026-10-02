@@ -936,6 +936,7 @@ the roadmap.
 | `effect`              | Followed on the same line by an identifier (declaration), `{` (block), or arrow parameters followed by `=>` (arrow; speculative parse with `effect` falling back to an identifier) |
 | `schema` `error` `service` `group` `api` `command` `config` `atom` `layer` | Statement position (optionally after `export`), followed on the same line by an identifier |
 | `test` `describe` (+ `.live/.skip/.only`) | Statement position, followed on the same line by a string literal |
+| `doctest`         | Statement position, followed on the same line by a string literal (docs spec §2.3)      |
 | `impl`            | Expression position, followed on the same line by `Ident.ident {`                        |
 | `main`            | Statement position, followed by `{` on the same line                                     |
 | `defer`           | Statement position inside `effect`, followed by an expression on the same line              |

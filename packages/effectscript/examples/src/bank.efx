@@ -1,0 +1,31 @@
+/**
+ * A tiny bank, documented with runnable examples (Plan 12).
+ *
+ * @module
+ */
+
+/** An amount of money in whole cents. */
+export schema Money = Int & Brand<"Money">
+
+/** An account has less money than a withdrawal needs. */
+export error InsufficientFunds { needed: Money; available: Money }
+
+/**
+ * Takes money out of a balance.
+ *
+ * Within the balance:
+ *
+ * ```efx
+ * await withdraw(Money.make(100), Money.make(30)) // => 70
+ * ```
+ *
+ * More than the balance:
+ *
+ * ```efx
+ * await withdraw(Money.make(10), Money.make(30)) // => throws InsufficientFunds
+ * ```
+ */
+export effect withdraw(balance: Money, amount: Money): Money throws InsufficientFunds {
+  if (amount > balance) throw new InsufficientFunds({ needed: amount, available: balance })
+  return Money.make(balance - amount)
+}

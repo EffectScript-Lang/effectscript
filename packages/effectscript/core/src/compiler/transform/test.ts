@@ -8,7 +8,7 @@
 import type { Node } from "../ast.ts"
 import { type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
-import { ref, unused } from "../names.ts"
+import { fresh, ref, unused } from "../names.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
 
@@ -84,11 +84,47 @@ const testStatement: Handler = (node, _parent, ctx) => {
   return true
 }
 
+/** `doctest "./x.efx" [with layer]` → the examples of `./x.efx?doctest` as tests (docs spec §2.3). */
+const doctestStatement: Handler = (node, _parent, ctx) => {
+  const target: string = node.path.value
+  if (typeof target !== "string" || !/^\.\.?\//.test(target) || !/\.(efx|ts)$/.test(target)) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX9304",
+        "`doctest` needs a relative path to a .efx or .ts file",
+        node.path.start,
+        node.path.end,
+        "for example doctest \"../src/bank.efx\""
+      )
+    )
+    return true
+  }
+  const local = fresh(ctx, "doctest")
+  ctx.imports.need(`${target}?doctest`, "default", local)
+  const name = JSON.stringify(`doctest ${target}`)
+  const layer: Node | null = node.layer
+  const end = ctx.source[node.end - 1] === ";" ? node.end - 1 : node.end
+  if (layer === null) {
+    const it = ctx.testIt ?? ref(ctx, vitest, "it")
+    ctx.s.update(node.keyword.start, end, `${ref(ctx, vitest, "describe")}(${name}, () => ${local}(${it}))`)
+    return true
+  }
+  const head = ctx.testIt === undefined ? `${ref(ctx, vitest, "layer")}(` : `${ctx.testIt}.layer(`
+  const param = unused(ctx, "it")
+  ctx.s.update(node.keyword.start, layer.start, head)
+  const tail = `)(${name}, (${param}) => ${local}(${param}))`
+  if (layer.end < end) ctx.s.update(layer.end, end, tail)
+  else ctx.s.appendLeft(layer.end, tail)
+  walk(layer, node, ctx)
+  return true
+}
+
 /**
  * @since 4.0.0
  * @category handlers
  */
 export const testHandlers: HandlerGroup = {
   DescribeStatement: describeStatement,
-  TestStatement: testStatement
+  TestStatement: testStatement,
+  DoctestStatement: doctestStatement
 }

@@ -1,0 +1,10 @@
+/**
+ * Doubles a number.
+ *
+ * Wrong on purpose:
+ *
+ * ```efx
+ * double(2) // => 5
+ * ```
+ */
+export const double = (n: number) => n * 2

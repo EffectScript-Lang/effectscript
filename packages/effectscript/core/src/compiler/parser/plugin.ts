@@ -171,6 +171,7 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsHttpApiStart("api")) return this.efxParseApi()
       if (this.efxIsDescribeStart()) return this.efxParseDescribe()
       if (this.efxIsTestStart()) return this.efxParseTest()
+      if (this.efxIsDoctestStart()) return this.efxParseDoctest()
       return super.parseStatement(context, topLevel, exports)
     }
 
@@ -647,6 +648,27 @@ export const efxPlugin = (Base: any): any =>
       }
       node.body = this.parseBlock()
       return this.finishNode(node, "DescribeStatement")
+    }
+
+    /** `doctest "path" [with layer]` (docs spec §2.3, ADR-0042). */
+    efxIsDoctestStart(): boolean {
+      if (!this.efxIsWord("doctest")) return false
+      const next = this.lookahead()
+      return next.type === tt.string && this.efxSameLine(next)
+    }
+
+    efxParseDoctest(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.path = this.parseExprAtom(null, false, false)
+      node.layer = null
+      if (this.type === tt._with) {
+        this.next()
+        node.layer = this.parseExprSubscripts(null, false)
+      }
+      this.semicolon()
+      return this.finishNode(node, "DoctestStatement")
     }
 
     /** `test[.live|.skip|.only] "name" { … }` (§4.14). */
