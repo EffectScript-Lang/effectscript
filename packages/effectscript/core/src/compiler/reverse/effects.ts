@@ -21,6 +21,7 @@ import {
   slice,
   within
 } from "./context.ts"
+import { convertLayer } from "./layer.ts"
 import { convertMain } from "./main.ts"
 import { convertMatch, matchShape } from "./match.ts"
 import { isMember } from "./origin.ts"
@@ -291,7 +292,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     if (
       node.type === "VariableDeclaration" &&
       (parent?.type === "Program" || parent?.type === "ExportNamedDeclaration") &&
-      convertConfig(ctx, node, visit)
+      (convertConfig(ctx, node, visit) || convertLayer(ctx, node, visit))
     ) {
       return
     }

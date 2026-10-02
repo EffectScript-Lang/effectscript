@@ -8,11 +8,11 @@ export service Posts {
   layer = { count: effect () => 1 }
 }
 
-export const AppLive = Layer.mergeAll(Users.layer, Posts.layer)
+export layer AppLive = Users.layer & Posts.layer
 
-export const Provided = Layer.mergeAll(Users.layer, Posts.layer).pipe(Layer.provide(Posts.layer))
+export layer Provided = Users.layer & Posts.layer |> provide(Posts.layer)
 
-export const Worker = Layer.effectDiscard(effect {
-  await addFinalizer(() => log("worker stopped"))
+export layer Worker = effect {
+  defer log("worker stopped")
   console.log("worker started")
-})
+}

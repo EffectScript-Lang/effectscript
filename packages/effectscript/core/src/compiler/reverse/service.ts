@@ -275,8 +275,13 @@ const layerPlan = (ctx: ReverseCtx, name: string, value: Node): ((visit: Visit) 
   return () => {}
 }
 
-/** `.pipe(a, b)` after a layer constructor → `|> a |> b`, resolving in the `Layer` namespace. */
-const layerPipes = (ctx: ReverseCtx, pipe: Node, head: Node, visit: Visit): void => {
+/**
+ * `.pipe(a, b)` after a layer constructor → `|> a |> b`, resolving in the `Layer` namespace.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const layerPipes = (ctx: ReverseCtx, pipe: Node, head: Node, visit: Visit): void => {
   const args: Array<Node> = pipe.arguments
   const open = ctx.source.indexOf("(", pipe.callee.property.end)
   const dot = ctx.source.lastIndexOf(".", pipe.callee.property.start)
