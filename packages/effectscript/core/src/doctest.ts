@@ -4,13 +4,13 @@
  *
  * @since 4.0.0
  */
-import * as assert from "node:assert"
-import { isDeepStrictEqual, inspect } from "node:util"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Exit from "effect/Exit"
 import * as Result from "effect/Result"
+import * as assert from "node:assert"
+import { inspect, isDeepStrictEqual } from "node:util"
 
 /**
  * Passes when `Equal.equals` or deep strict equality holds; otherwise fails with a diff.
@@ -37,9 +37,17 @@ export const failsWith = <A, E, R>(self: Effect.Effect<A, E, R>, tag: string): E
         assert.fail(`expected a failure with ${tag}, but the effect succeeded with ${inspect(exit.value)}`)
       }
       const error = Cause.findError(exit.cause)
-      if (Result.isFailure(error)) assert.fail(`expected a failure with ${tag}, but the effect died:\n${Cause.pretty(exit.cause)}`)
+      if (Result.isFailure(error)) {
+        assert.fail(`expected a failure with ${tag}, but the effect died:\n${Cause.pretty(exit.cause)}`)
+      }
       const actual = (error.success as { readonly _tag?: unknown } | null)?._tag
-      if (actual !== tag) assert.fail(`expected a failure with ${tag}, but it failed with ${typeof actual === "string" ? actual : inspect(error.success)}`)
+      if (actual !== tag) {
+        assert.fail(
+          `expected a failure with ${tag}, but it failed with ${
+            typeof actual === "string" ? actual : inspect(error.success)
+          }`
+        )
+      }
     }))
 
 /**

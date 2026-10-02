@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest"
 import { parse } from "effectscript/compiler/parser/parse"
 import { jsdocBefore } from "effectscript/compiler/transform/command"
 import { docCommentBefore, isModuleDoc, parseDocComment } from "effectscript/docs/comment"
+import { describe, expect, it } from "vitest"
 
 const doc = (source: string) => {
   const start = source.indexOf("/**")

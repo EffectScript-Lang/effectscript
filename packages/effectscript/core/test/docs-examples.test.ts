@@ -1,8 +1,8 @@
 import { Data, Effect } from "effect"
-import { describe, expect, it } from "vitest"
 import { parseDocComment } from "effectscript/docs/comment"
 import { rewriteExample } from "effectscript/docs/examples"
 import { assertDoc, dies, failsWith } from "effectscript/doctest"
+import { describe, expect, it } from "vitest"
 
 const example = (code: string) => {
   const source = `/**\n * \`\`\`efx\n${code.split("\n").map((l) => ` * ${l}`).join("\n")}\n * \`\`\`\n */`
@@ -11,17 +11,25 @@ const example = (code: string) => {
 const rewrite = (code: string) => {
   const { example: e, source } = example(code)
   const r = rewriteExample(e)
-  return { lines: r.lines, codes: r.diagnostics.map((d) => d.code), at: r.diagnostics.map((d) => source.slice(d.start, d.end)) }
+  return {
+    lines: r.lines,
+    codes: r.diagnostics.map((d) => d.code),
+    at: r.diagnostics.map((d) => source.slice(d.start, d.end))
+  }
 }
 
 describe("rewriteExample", () => {
   it("wraps expression statements", () => {
     expect(rewrite("f(1) // => 2").lines).toEqual(["$efxDoctest.assertDoc(f(1), (2)) // => 2"])
-    expect(rewrite("await g() // => { a: 1 }").lines).toEqual(["$efxDoctest.assertDoc(await g(), ({ a: 1 })) // => { a: 1 }"])
+    expect(rewrite("await g() // => { a: 1 }").lines).toEqual([
+      "$efxDoctest.assertDoc(await g(), ({ a: 1 })) // => { a: 1 }"
+    ])
   })
 
   it("checks a const after it is declared", () => {
-    expect(rewrite("const x = await g() // => 3").lines).toEqual(["const x = await g(); $efxDoctest.assertDoc(x, (3)) // => 3"])
+    expect(rewrite("const x = await g() // => 3").lines).toEqual([
+      "const x = await g(); $efxDoctest.assertDoc(x, (3)) // => 3"
+    ])
   })
 
   it("asserts defects", () => {
@@ -36,7 +44,12 @@ describe("rewriteExample", () => {
   })
 
   it("keeps the line count for multi-line statements", () => {
-    expect(rewrite("f(\n  1\n) // => 1\nconst y = 2").lines).toEqual(["$efxDoctest.assertDoc(f(", "  1", "), (1)) // => 1", "const y = 2"])
+    expect(rewrite("f(\n  1\n) // => 1\nconst y = 2").lines).toEqual([
+      "$efxDoctest.assertDoc(f(",
+      "  1",
+      "), (1)) // => 1",
+      "const y = 2"
+    ])
   })
 
   it("reports misplaced assertions with source positions", () => {

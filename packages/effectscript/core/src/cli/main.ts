@@ -11,6 +11,7 @@ import { Effect, pipe, Runtime, Schema } from "effect"
 import { Argument, Command, Flag } from "effect/cli"
 import { convertProject } from "../convert/project.ts"
 import { check as checkProject } from "./check.ts"
+import { docsProject } from "./docs.ts"
 import { doctor as checkSetup } from "./doctor.ts"
 import { initProject } from "./init.ts"
 import { lsp as runLanguageServer } from "./lsp.ts"
@@ -153,6 +154,38 @@ export const convert = pipe(
   Command.withDescription("Convert TypeScript files with Effect to EffectScript")
 )
 
+/** Generate API docs (Markdown for Blume) from doc comments (docs spec §3) */
+export const docs = pipe(
+  Command.make(
+    "docs",
+    {
+      paths: Argument.String("paths").pipe(
+        Argument.variadic(),
+        Argument.withDescription("Files or directories (default: src)")
+      ),
+      out: Flag.String("out").pipe(
+        Flag.withDefault("docs/api"),
+        Flag.withDescription("Where to write the pages (replaced on each run)")
+      ),
+      check: Flag.Boolean("check").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Only report problems; write nothing")
+      ),
+      strict: Flag.Boolean("strict").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Fail on warnings, and flag tags that repeat the signature")
+      )
+    },
+    Effect.fnUntraced(function*({ paths, out, check, strict }) {
+      yield* exitWith(docsProject(process.cwd(), { paths, out, check, strict }, {
+        out: (line) => process.stdout.write(`${line}\n`),
+        err: (line) => process.stderr.write(`${line}\n`)
+      }))
+    })
+  ),
+  Command.withDescription("Generate API docs from doc comments")
+)
+
 /** Set up this project for EffectScript */
 export const init = Command.make(
   "init",
@@ -191,7 +224,7 @@ export const lsp = pipe(
 export const efx = pipe(
   Command.make("efx"),
   Command.withDescription("EffectScript: TypeScript with Effect as native syntax"),
-  Command.withSubcommands([build, check, run, print, convert, init, doctor, lsp])
+  Command.withSubcommands([build, check, run, print, convert, docs, init, doctor, lsp])
 )
 
 NodeRuntime.runMain(
