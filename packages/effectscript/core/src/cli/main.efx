@@ -10,6 +10,7 @@ import { Argument, Command, Flag } from "effect/cli"
 import { check as checkProject } from "./check.ts"
 import { buildProject, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
+import { convertProject } from "../convert/project.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
 export error ExitCode {
@@ -64,9 +65,32 @@ export const run = Command.make("run", {
   await exitWith(runFile([file, ...args]))
 }) |> Command.withDescription("Run a .efx or .ts file")
 
+/** Convert TypeScript files with Effect to EffectScript (spec §7.5) */
+export const convert = Command.make("convert", {
+  paths: Argument.String("paths").pipe(Argument.variadic(), Argument.withDescription("Files or directories (default: the whole project)")),
+  write: Flag.Boolean("write").pipe(Flag.withDefault(false), Flag.withDescription("Convert on a new branch, effectscript/convert (default: only report)")),
+  explain: Flag.Boolean("explain").pipe(Flag.withDefault(false), Flag.withDescription("Show what stays TypeScript, and why")),
+  force: Flag.Boolean("force").pipe(Flag.withDefault(false), Flag.withDescription("Allow uncommitted changes")),
+  noVerify: Flag.Boolean("no-verify").pipe(Flag.withDefault(false), Flag.withDescription("Skip efx check and the tests after converting")),
+  test: Flag.String("test").pipe(Flag.optional, Flag.withDescription("The test command (default: npm test, when there is a test script)"))
+}, effect ({ paths, write, explain, force, noVerify, test }) => {
+  const code = convertProject(process.cwd(), {
+    paths,
+    write,
+    explain,
+    force,
+    verify: !noVerify,
+    test: test._tag === "Some" ? test.value : undefined
+  }, {
+    out: (line) => process.stdout.write(`${line}\n`),
+    err: (line) => process.stderr.write(`${line}\n`)
+  })
+  await exitWith(code)
+}) |> Command.withDescription("Convert TypeScript files with Effect to EffectScript")
+
 export const efx = Command.make("efx")
   |> Command.withDescription("EffectScript: TypeScript with Effect as native syntax")
-  |> Command.withSubcommands([build, check, run, print])
+  |> Command.withSubcommands([build, check, run, print, convert])
 
 main {
   // without a command, show the help
