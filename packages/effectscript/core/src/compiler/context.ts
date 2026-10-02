@@ -6,7 +6,7 @@ import type { Scope, ScopeAnalysis } from "./analyze/scope.ts"
 import type { Node } from "./ast.ts"
 import type { Diagnostic } from "./diagnostics.ts"
 import type { ImportSet } from "./imports.ts"
-import type { ResolvedOptions } from "./options.ts"
+import type { ResolvedOptions, SourceRange } from "./options.ts"
 
 /**
  * Returning `true` means "I visited the children myself".
@@ -37,6 +37,8 @@ export interface Ctx {
   readonly options: ResolvedOptions
   readonly analysis: ScopeAnalysis
   readonly diagnostics: Array<Diagnostic>
+  /** Effect binds: `await` keywords lowered to `yield*` (ADR-0039). */
+  readonly binds: Array<SourceRange>
   readonly imports: ImportSet
   readonly handlers: ReadonlyMap<string, ReadonlyArray<Handler>>
   /** `module\0export` → local name for compiler-owned references (ADR-0009). */

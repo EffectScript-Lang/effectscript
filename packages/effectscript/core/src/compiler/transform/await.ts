@@ -68,6 +68,7 @@ export const parenthesizeIfNeeded = (ctx: Ctx, node: Node, parent: Node | undefi
 const awaitExpression: Handler = (node, parent, ctx) => {
   if (ctx.effect === undefined) return
   parenthesizeIfNeeded(ctx, node, parent)
+  ctx.binds.push({ start: node.start, end: node.start + 5 })
   const argument: Node = node.argument
   if (argument.type === "ArrayExpression" || argument.type === "ObjectExpression") {
     ctx.s.update(node.start, argument.start, `yield* ${ref(ctx, "effect", "Effect")}.all(`)

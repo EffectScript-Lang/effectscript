@@ -127,4 +127,18 @@ export interface CompileResult {
   readonly diagnostics: ReadonlyArray<Diagnostic>
   /** With `recover`: whether failing lines were neutralized to produce `code` (ADR-0020). */
   readonly recovered?: boolean | undefined
+  /**
+   * The source range of each `await` keyword that became `yield*` (an effect bind), in source
+   * order. Editors use it for the `await` guardrails (ADR-0006, ADR-0039).
+   */
+  readonly binds: ReadonlyArray<SourceRange>
+}
+
+/**
+ * @since 4.0.0
+ * @category models
+ */
+export interface SourceRange {
+  readonly start: number
+  readonly end: number
 }

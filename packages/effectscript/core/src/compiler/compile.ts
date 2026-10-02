@@ -115,14 +115,15 @@ const recover = (source: string, resolved: ResolvedOptions, parseError: Diagnost
     map: undefined,
     mappings: [{ sourceOffsets: [0], generatedOffsets: [0], lengths: [source.length], data: fullFeatures }],
     diagnostics: [parseError],
-    recovered: false
+    recovered: false,
+    binds: []
   }
 }
 
 const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): CompileResult => {
   const parsed = parse(source, { mode })
   if (parsed._tag === "Failure") {
-    return { code: "", mode: "ts", map: undefined, mappings: [], diagnostics: parsed.diagnostics }
+    return { code: "", mode: "ts", map: undefined, mappings: [], diagnostics: parsed.diagnostics, binds: [] }
   }
   const s = new MagicString(source)
   const analysis = analyze(parsed.program)
@@ -132,6 +133,7 @@ const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): Co
     options: resolved,
     analysis,
     diagnostics: [],
+    binds: [],
     imports: makeImportSet(),
     handlers,
     refs: new Map(),
@@ -157,7 +159,8 @@ const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): Co
       diagnostics: [
         ...ctx.diagnostics,
         diagnosticError("EFX1000", `Internal compiler error: ${message}`, 0, Math.min(1, source.length))
-      ]
+      ],
+      binds: []
     }
   }
   const code = s.toString()
@@ -172,6 +175,7 @@ const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): Co
     mappings: changed
       ? toCodeMappings(s, source, code)
       : [{ sourceOffsets: [0], generatedOffsets: [0], lengths: [source.length], data: fullFeatures }],
-    diagnostics: ctx.diagnostics
+    diagnostics: ctx.diagnostics,
+    binds: ctx.binds.sort((a, b) => a.start - b.start)
   }
 }
