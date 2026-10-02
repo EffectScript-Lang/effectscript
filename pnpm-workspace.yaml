@@ -15,6 +15,7 @@ verifyDepsBeforeRun: error
 enableGlobalVirtualStore: false
 
 allowBuilds:
+  '@vscode/vsce-sign': false
   core-js: false
   cpu-features: false
   dprint: false

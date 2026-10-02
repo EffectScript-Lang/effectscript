@@ -134,6 +134,7 @@ export default defineConfig({
       }),
       ...project("effectscript", "packages/effectscript/core"),
       ...project("@effectscript/language", "packages/effectscript/language"),
+      ...project("@effectscript/vscode", "packages/effectscript/vscode"),
       ...project("@effectscript/examples", "packages/effectscript/examples", true, { plugins: [efx()] }, undefined, [
         "test/**/*.test.{ts,efx}"
       ]),

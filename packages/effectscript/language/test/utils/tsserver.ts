@@ -4,9 +4,12 @@ import { createRequire } from "node:module"
 const require = createRequire(import.meta.url)
 
 /** A real TypeScript 6 tsserver process speaking the JSON protocol over stdio. */
-export const startTsserver = (options: { readonly probeLocation: string; readonly cwd: string }) => {
+export const startTsserver = (
+  options: { readonly probeLocation: string; readonly cwd: string; readonly nodeArgs?: ReadonlyArray<string> }
+) => {
   const tsserver = require.resolve("typescript/lib/tsserver.js")
   const child: ChildProcess = spawn(process.execPath, [
+    ...(options.nodeArgs ?? []),
     tsserver,
     "--disableAutomaticTypingAcquisition",
     "--globalPlugins",

@@ -42,3 +42,6 @@ opencode.json
 
 # EffectScript standalone binaries (packages/effectscript/core/scripts/standalone.ts)
 dist-bin/
+
+# EffectScript VS Code packages (packages/effectscript/vscode/scripts/package.ts)
+*.vsix

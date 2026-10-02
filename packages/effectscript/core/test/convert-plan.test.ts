@@ -1,4 +1,4 @@
-import { planConversion } from "effectscript/convert/plan"
+import { planConversion, retargetImports } from "effectscript/convert/plan"
 import { describe, expect, it } from "vitest"
 
 const effectFile =
@@ -56,5 +56,32 @@ describe("efx convert planner (Plan 8 Task 4)", () => {
       {}
     )
     expect(plan.renames.find((r) => r.from === "src/b.ts")!.code).toContain("from \"./a.efx\"")
+  })
+})
+
+describe("retargetImports (Plan 11 Task 5, ADR-0041)", () => {
+  it("points every importer of a converted file at its new name", () => {
+    const files = new Map([
+      ["src/a.efx", "export const a = 1\n"],
+      ["src/b.ts", "import { a } from \"./a.efx\"\nexport { a as c } from './a.efx'\nconst d = import(\"./a.efx\")\n"],
+      ["test/t.ts", "import { a } from \"../src/a.efx\"\n"],
+      ["src/other.ts", "import { x } from \"./x.efx\"\n"]
+    ])
+    expect(retargetImports(files, "src/a.efx", "src/a.ts")).toEqual([
+      {
+        file: "src/b.ts",
+        code: "import { a } from \"./a.ts\"\nexport { a as c } from './a.ts'\nconst d = import(\"./a.ts\")\n"
+      },
+      { file: "test/t.ts", code: "import { a } from \"../src/a.ts\"\n" }
+    ])
+  })
+
+  it("leaves the converted file and node_modules alone", () => {
+    const files = new Map([
+      ["a.efx", "import { b } from \"./b.efx\"\n"],
+      ["b.efx", "import { a } from \"./a.efx\"\n"],
+      ["node_modules/p/index.ts", "import { a } from \"../../a.efx\"\n"]
+    ])
+    expect(retargetImports(files, "a.efx", "a.ts")).toEqual([{ file: "b.efx", code: "import { a } from \"./a.ts\"\n" }])
   })
 })

@@ -75,7 +75,9 @@ const join = (dir: string, spec: string): string => {
 /** The project file a relative specifier resolves to, the way TypeScript's bundler resolution would. */
 const resolve = (from: string, spec: string, exists: (file: string) => boolean): string | undefined => {
   const base = join(dirname(from), spec)
-  const candidates = /\.(js|jsx|mjs)$/.test(spec)
+  const candidates = spec.endsWith(".efx")
+    ? [base]
+    : /\.(js|jsx|mjs)$/.test(spec)
     ? [base.replace(/\.(js|jsx|mjs)$/, ".ts"), base.replace(/\.(js|jsx|mjs)$/, ".tsx")]
     : /\.tsx?$/.test(spec)
     ? [base]
@@ -194,4 +196,28 @@ export const planConversion = (files: ReadonlyMap<string, string>, options: Plan
     if (code !== source) edits.push({ file, code })
   }
   return { renames, edits, skipped }
+}
+
+/**
+ * The edits that point every importer of `from` (project-relative) at `to`, for a single-file
+ * conversion such as the editor's Convert File to TypeScript. The converted file itself and
+ * `node_modules` are left alone.
+ *
+ * @since 4.0.0
+ * @category convert
+ */
+export const retargetImports = (
+  files: ReadonlyMap<string, string>,
+  from: string,
+  to: string
+): Array<{ readonly file: string; readonly code: string }> => {
+  const exists = (file: string) => files.has(file)
+  const renamed = new Map([[from, to]])
+  const edits: Array<{ file: string; code: string }> = []
+  for (const [file, source] of [...files].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    if (file === from || !/\.(tsx?|efx|mts|cts|jsx?|mjs|cjs)$/.test(file) || file.includes("node_modules/")) continue
+    const code = rewrite(source, file, file, renamed, exists)
+    if (code !== source) edits.push({ file, code })
+  }
+  return edits
 }

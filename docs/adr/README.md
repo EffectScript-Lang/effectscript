@@ -52,6 +52,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0038](0038-install-channels-and-plan-10b.md) | Install channels, release assets, and moving `setup`/`--ai`/`skill` to Plan 10b | Accepted |
 | [0039](0039-await-guardrails-in-the-editor.md) | The `await` guardrails in the editor | Accepted |
 | [0040](0040-standalone-language-server-and-efx-lsp.md) | A standalone language server, run by `efx lsp` | Accepted |
+| [0041](0041-vscode-extension-packaging-and-commands.md) | VS Code extension packaging and commands | Accepted |
 
 ## Template
 

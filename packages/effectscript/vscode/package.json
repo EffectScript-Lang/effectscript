@@ -4,8 +4,10 @@
   "description": "EffectScript (.efx): TypeScript with Effect as native syntax",
   "version": "4.0.0-alpha.0",
   "private": true,
+  "type": "module",
   "publisher": "effectscript",
   "license": "MIT",
+  "icon": "images/extension-icon-128.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/EffectScript-Lang/effect-lang.git",
@@ -14,14 +16,32 @@
   "engines": {
     "vscode": "^1.95.0"
   },
-  "categories": ["Programming Languages"],
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./out/extension.cjs",
+  "activationEvents": [
+    "onLanguage:effectscript"
+  ],
+  "scripts": {
+    "package": "node scripts/package.ts"
+  },
   "contributes": {
     "languages": [
       {
         "id": "effectscript",
-        "aliases": ["EffectScript", "efx"],
-        "extensions": [".efx"],
-        "configuration": "./language-configuration.json"
+        "aliases": [
+          "EffectScript",
+          "efx"
+        ],
+        "extensions": [
+          ".efx"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/file-efx-light.svg",
+          "dark": "./images/file-efx-dark.svg"
+        }
       }
     ],
     "grammars": [
@@ -36,18 +56,97 @@
       {
         "scopeName": "effectscript.injection",
         "path": "./syntaxes/effectscript.injection.tmLanguage.json",
-        "injectTo": ["source.efx"]
+        "injectTo": [
+          "source.efx"
+        ]
       }
     ],
     "typescriptServerPlugins": [
       {
         "name": "@effectscript/language",
         "enableForWorkspaceTypeScriptVersions": true,
-        "languages": ["effectscript"]
+        "languages": [
+          "effectscript"
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "effectscript.showCompiledTypeScript",
+        "title": "Show Compiled TypeScript",
+        "category": "EffectScript",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "effectscript.convertToEffectScript",
+        "title": "Convert File to EffectScript",
+        "category": "EffectScript"
+      },
+      {
+        "command": "effectscript.convertToTypeScript",
+        "title": "Convert File to TypeScript",
+        "category": "EffectScript"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "effectscript.showCompiledTypeScript",
+          "when": "editorLangId == effectscript"
+        },
+        {
+          "command": "effectscript.convertToEffectScript",
+          "when": "resourceExtname == .ts || resourceExtname == .tsx"
+        },
+        {
+          "command": "effectscript.convertToTypeScript",
+          "when": "resourceExtname == .efx"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "effectscript.showCompiledTypeScript",
+          "when": "editorLangId == effectscript",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "effectscript.convertToEffectScript",
+          "when": "resourceExtname == .ts || resourceExtname == .tsx",
+          "group": "7_modification"
+        },
+        {
+          "command": "effectscript.convertToTypeScript",
+          "when": "resourceExtname == .efx",
+          "group": "7_modification"
+        }
+      ]
+    },
+    "colors": [
+      {
+        "id": "effectscript.effectAwait",
+        "description": "An `await` inside `effect` code: an effect bind (`yield*`)",
+        "defaults": {
+          "dark": "#C586C0",
+          "light": "#AF00DB",
+          "highContrast": "#C586C0",
+          "highContrastLight": "#AF00DB"
+        }
       }
     ]
   },
   "dependencies": {
     "@effectscript/language": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/vscode": "~1.95.0",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.0.0",
+    "effectscript": "workspace:^",
+    "esbuild": "0.28.2",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
   }
 }
