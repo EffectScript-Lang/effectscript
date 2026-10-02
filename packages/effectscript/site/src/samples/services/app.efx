@@ -1,0 +1,23 @@
+export schema User {
+  id: string
+  name: string
+}
+
+export service Database {
+  effect query(sql: string): ReadonlyArray<User>
+  layer test = { query: effect (sql: string) => [new User({ id: "1", name: "Ada" })] }
+}
+
+export service Users {
+  effect all(): ReadonlyArray<User>
+
+  layer = effect {
+    const db = await Database
+    return { all: effect () => await db.query("select * from users") }
+  }
+}
+
+export effect names(): ReadonlyArray<string> needs Users {
+  const users = await Users.all()
+  return users.map((u) => u.name)
+}

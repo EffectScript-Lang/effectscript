@@ -1,0 +1,10 @@
+declare const openFile: (path: string) => Effect<{ readonly read: Effect<string>; readonly close: Effect<void> }>
+declare const connect: (url: string) => Effect<{ readonly send: (text: string) => Effect<void>; readonly close: Effect<void> }>
+
+export effect upload(path: string, url: string) {
+  const file = await openFile(path)
+  defer file.close
+  const socket = await connect(url)
+  defer socket.close
+  await socket.send(await file.read)
+}

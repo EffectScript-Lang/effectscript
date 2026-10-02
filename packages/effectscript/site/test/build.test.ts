@@ -85,3 +85,21 @@ describe("the generated docs (Plan 16 Task 2, ADR-0054)", () => {
     expect(broken.slice(0, 20)).toEqual([])
   })
 })
+
+describe("the landing page (Plan 16 Task 3, ADR-0054)", () => {
+  it("shows all ten scenarios, each pane with its exact token count", async () => {
+    const { gallery } = await import("@effectscript/site/data/gallery")
+    const page = read("index.html")
+    for (const scenario of gallery()) {
+      expect(page).toContain(`id="scenario-${scenario.id}"`)
+      for (const pane of scenario.panes) expect(page).toContain(`data-count="${pane.tokens}"`)
+    }
+    expect(text("index.html")).toMatch(/\d+% fewer tokens/)
+    expect(text("index.html")).toContain("o200k_base")
+  })
+
+  it("credits @gunta85 in the hero, after the playground and in the footer", () => {
+    expect(read("index.html").match(/x\.com\/gunta85/g)!.length).toBeGreaterThanOrEqual(2)
+    expect(read("playground/index.html")).toContain("Follow @gunta85")
+  })
+})

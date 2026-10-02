@@ -1,11 +1,14 @@
-/** Starting points for the playground. The gallery (Plan 16 Task 3) adds its scenarios. */
+/** Starting points for the playground: a few small ones, then every gallery scenario. */
+import { scenarios } from "../samples/index.ts"
+
+const samples = import.meta.glob<string>("../samples/*/app.efx", { query: "?raw", import: "default", eager: true })
 export interface Preset {
   readonly id: string
   readonly title: string
   readonly code: string
 }
 
-export const presets: ReadonlyArray<Preset> = [
+const base: ReadonlyArray<Preset> = [
   {
     id: "hello",
     title: "Effect functions",
@@ -58,4 +61,13 @@ export effect profile(id: string) {
 }
 `
   }
+]
+
+export const presets: ReadonlyArray<Preset> = [
+  ...base,
+  ...scenarios.map(({ id, title }) => ({
+    id: `gallery-${id}`,
+    title: `Gallery: ${title}`,
+    code: samples[`../samples/${id}/app.efx`]!
+  }))
 ]

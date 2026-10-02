@@ -1,0 +1,11 @@
+export config AppConfig {
+  port: Port = 3000
+  databaseUrl: Redacted
+  logLevel: LogLevel = "Info"
+  workers: Int = 4
+}
+
+export effect describeServer() {
+  const config = await AppConfig
+  return `port ${config.port} with ${config.workers} workers`
+}

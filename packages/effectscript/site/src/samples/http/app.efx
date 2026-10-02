@@ -1,0 +1,23 @@
+export schema Todo {
+  id: string
+  title: string
+}
+
+export error TodoNotFound { id: string }
+
+export group TodosApi {
+  get list "/": Todo[]
+  get byId "/:id" (params: { id: string }): Todo throws TodoNotFound
+}
+
+export api Api { TodosApi }
+
+export const TodosHandlers = impl Api.todos {
+  const todos = new Map([["1", new Todo({ id: "1", title: "Write docs" })]])
+  return {
+    list: () => succeed([...todos.values()]),
+    effect byId({ params }) {
+      return todos.get(params.id) ?? throw new TodoNotFound({ id: params.id })
+    }
+  }
+}

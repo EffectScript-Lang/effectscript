@@ -1,0 +1,14 @@
+export schema Email = string & Brand<"Email">
+
+export schema Signup {
+  email: Email
+  name: string
+  age = Int.check(isGreaterThan(17))
+  plan: "free" | "pro"
+}
+
+export effect register(body: unknown) {
+  const signup = await Schema.decodeUnknownEffect(Signup)(body)
+  console.log(`welcome, ${signup.name}`)
+  return signup
+}

@@ -1,0 +1,19 @@
+export error UserNotFound { id: string }
+
+export schema User {
+  id: string
+  name: string
+}
+
+declare const fetchUser: (id: string) => Effect<User, UserNotFound>
+
+export effect loadUser(id: string): User throws UserNotFound {
+  try {
+    return await fetchUser(id)
+      |> timeout("2 seconds")
+      |> retry({ times: 3, while: (e) => e._tag === "TimeoutError" })
+  } catch (e: Cause.TimeoutError) {
+    console.warn("gave up after 3 timeouts")
+    return new User({ id, name: "guest" })
+  }
+}

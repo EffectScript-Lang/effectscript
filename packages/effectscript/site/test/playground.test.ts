@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest"
 import { compile, createTracker, decodeHash, encodeHash, maxSource } from "@effectscript/site/playground/protocol"
+import { describe, expect, it } from "vitest"
 
 describe("the playground protocol (Plan 16 Task 4, ADR-0054)", () => {
   it("compiles EffectScript to TypeScript, with diagnostics at line and column", () => {

@@ -1,9 +1,169 @@
 ---
+import CodeWindow from "../components/CodeWindow.astro"
+import Follow from "../components/Follow.astro"
+import Header from "../components/Header.astro"
+import { corpusTotals } from "../data/corpus.ts"
+import { gallery, saving } from "../data/gallery.ts"
 import Base from "../layouts/Base.astro"
+import { highlight } from "../lib/highlight.ts"
+
+const scenarios = gallery()
+const totals = scenarios.reduce(
+  (sum, s) => ({ plain: sum.plain + s.panes[0].tokens, effect: sum.effect + s.panes[1].tokens, efx: sum.efx + s.panes[2].tokens }),
+  { plain: 0, effect: 0, efx: 0 }
+)
+const hero = scenarios.find((s) => s.id === "services")!
+const corpus = corpusTotals()
+
+import { constructs } from "../data/constructs.ts"
+const highlighted = await Promise.all(constructs.map(async (c) => ({ ...c, html: await highlight(c.code, "efx") })))
+const install = await highlight("curl -fsSL https://effectscript.dev/install | sh\nefx setup     # editors and coding agents\nefx init      # in a project\nefx convert --write --ai", "efx")
 ---
 
-<Base title="EffectScript: All of Effect. None of the ceremony." description="EffectScript is TypeScript with Effect as native syntax.">
-  <main class="mx-auto max-w-6xl px-4 py-24">
-    <h1 class="headline-fade font-display text-5xl font-bold tracking-tight">All of Effect. None of the ceremony.</h1>
+<Base title="EffectScript: All of Effect. None of the ceremony." description="EffectScript is TypeScript with Effect as native syntax: typed errors, services and retries without the ceremony, compiled to idiomatic Effect TypeScript.">
+  <Header />
+  <main>
+    <section class="relative overflow-hidden border-b border-line">
+      <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#27272a55_1px,transparent_1px),linear-gradient(to_bottom,#27272a55_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"></div>
+      <div class="relative mx-auto max-w-7xl px-4 pt-20 pb-16 sm:pt-28">
+        <p class="label">// TypeScript, with Effect as syntax</p>
+        <h1 class="headline-fade mt-4 max-w-4xl font-display text-5xl font-bold tracking-[-0.025em] sm:text-7xl">All of Effect. None of the ceremony.</h1>
+        <p class="mt-6 max-w-2xl text-lg text-subtle">
+          Effect is the right foundation for serious TypeScript, and its ceremony is the most common complaint about it. EffectScript makes Effect the language: write <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, and get typed errors, services, retries and tracing, compiled to the idiomatic Effect TypeScript you would write by hand.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install/">Get started</a>
+          <a class="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:bg-tile" href="/playground/">Open the playground</a>
+          <a class="rounded-md px-5 py-2.5 text-sm font-medium text-subtle hover:text-white" href="https://x.com/gunta85">Follow @gunta85 →</a>
+        </div>
+        <div class="mt-14">
+          <CodeWindow title={`${hero.panes[2].name}: ${saving(hero.panes[1].tokens, hero.panes[2].tokens)}% fewer tokens than the same Effect TypeScript`} panes={[hero.panes[1], hero.panes[2]]} />
+        </div>
+      </div>
+    </section>
+
+    <section class="border-b border-line">
+      <dl class="mx-auto grid max-w-7xl gap-px bg-line sm:grid-cols-3">
+        <div class="bg-ink px-4 py-8">
+          <dt class="label">vs Effect TypeScript</dt>
+          <dd class="mt-2 font-display text-4xl font-bold">{saving(totals.effect, totals.efx)}% fewer tokens</dd>
+          <dd class="mt-1 text-sm text-subtle">{totals.effect} → {totals.efx} across the ten scenarios below</dd>
+        </div>
+        <div class="bg-ink px-4 py-8">
+          <dt class="label">vs plain TypeScript</dt>
+          <dd class="mt-2 font-display text-4xl font-bold">{saving(totals.plain, totals.efx)}% fewer tokens</dd>
+          <dd class="mt-1 text-sm text-subtle">with typed errors, services and retries the plain version doesn't have</dd>
+        </div>
+        <div class="bg-ink px-4 py-8">
+          <dt class="label">Effect's own docs, converted</dt>
+          <dd class="mt-2 font-display text-4xl font-bold">{corpus.examples.toLocaleString("en-US")} examples</dd>
+          <dd class="mt-1 text-sm text-subtle">{corpus.resugared.toLocaleString("en-US")} re-sugared, {corpus.saved} fewer tokens, each compiling back to the original</dd>
+        </div>
+      </dl>
+      <p class="mx-auto max-w-7xl px-4 pb-6 text-xs text-muted">Tokens are counted with the GPT-4o tokenizer (o200k_base) on the exact code shown, when this site is built.</p>
+    </section>
+
+    <section id="gallery" class="mx-auto max-w-7xl px-4 py-20" data-gallery data-show-tokens="false">
+      <p class="label">// the same program, three ways</p>
+      <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">Plain TypeScript. Effect TypeScript. EffectScript.</h2>
+      <p class="mt-4 max-w-3xl text-subtle">The Effect TypeScript in the middle is not written by hand: it is the EffectScript on the right, compiled when this page was built. Every sample type-checks against Effect.</p>
+      <div class="mt-8 flex flex-wrap items-center gap-2" role="tablist" aria-label="Scenarios">
+        {scenarios.map((s, i) => (
+          <button type="button" role="tab" class="scenario-tab rounded-full border border-line px-3 py-1 text-sm text-subtle aria-selected:border-white aria-selected:text-white" aria-selected={i === 0 ? "true" : "false"} aria-controls={`scenario-${s.id}`} data-scenario={s.id}>{s.title}</button>
+        ))}
+        <label class="ml-auto flex cursor-pointer items-center gap-2 text-sm text-subtle">
+          <input type="checkbox" class="token-toggle accent-white" /> Show tokens
+        </label>
+      </div>
+      <div class="mt-6">
+        {scenarios.map((s, i) => (
+          <div id={`scenario-${s.id}`} role="tabpanel" class="scenario" hidden={i !== 0} data-scenario-panel={s.id}>
+            <CodeWindow title={`${s.title}: ${saving(s.panes[1].tokens, s.panes[2].tokens)}% fewer tokens than Effect TypeScript, ${saving(s.panes[0].tokens, s.panes[2].tokens)}% fewer than plain`} panes={s.panes} />
+          </div>
+        ))}
+      </div>
+      <p class="mt-6 text-sm text-subtle">Try any of them in the <a class="text-white underline decoration-line underline-offset-4" href="/playground/">playground</a>: edit either side and watch the other follow.</p>
+    </section>
+
+    <section class="border-y border-line bg-tile/40">
+      <div class="mx-auto grid max-w-7xl gap-12 px-4 py-20 lg:grid-cols-2">
+        <div>
+          <p class="label">// stricter than TypeScript, ready for agents</p>
+          <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">One canonical way to write each thing.</h2>
+          <p class="mt-4 text-subtle">Fewer tokens is only half of it. EffectScript gives people and coding agents fewer ways to be wrong.</p>
+        </div>
+        <ul class="grid gap-4 text-sm">
+          <li class="rounded-lg border border-line bg-ink p-4"><strong class="text-white">Effects you can see.</strong> <span class="text-subtle"><code>throws</code> and <code>needs</code> put errors and dependencies in the signature, and the type checker holds the code to them.</span></li>
+          <li class="rounded-lg border border-line bg-ink p-4"><strong class="text-white">Mistakes caught where they're written.</strong> <span class="text-subtle">An effect created and never run, a Promise awaited inside <code>effect</code>, an array of effects awaited one by one: strict rules flag each with a fix.</span></li>
+          <li class="rounded-lg border border-line bg-ink p-4"><strong class="text-white">A skill for your agent.</strong> <span class="text-subtle"><code>efx setup</code> gives Claude Code, Codex, Cursor, Gemini CLI and opencode the EffectScript skill, with every example type-checked.</span></li>
+          <li class="rounded-lg border border-line bg-ink p-4"><strong class="text-white">Docs agents can read.</strong> <span class="text-subtle"><a class="underline decoration-line underline-offset-4" href="/llms.txt">llms.txt</a>, and Effect's own guide with every example in EffectScript.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 py-20">
+      <p class="label">// Effect's libraries, as language</p>
+      <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">Tests, HTTP, CLIs, config. Built in.</h2>
+      <div class="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {highlighted.map((c) => (
+          <article class="flex min-w-0 flex-col rounded-xl border border-line bg-tile/50 p-5">
+            <h3 class="font-mono text-sm text-white">{c.name}</h3>
+            <p class="mt-1 text-sm text-subtle">{c.what}</p>
+            <pre class="mt-4 overflow-x-auto rounded-md bg-[#1e1e1e] p-3 text-[12px] leading-[1.6]"><code set:html={c.html} /></pre>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="border-y border-line">
+      <div class="mx-auto max-w-7xl px-4 py-20">
+        <p class="label">// zero risk</p>
+        <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">Every TypeScript file is already EffectScript.</h2>
+        <div class="mt-10 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-2 lg:grid-cols-4">
+          <div class="bg-ink p-5"><h3 class="font-medium">A superset</h3><p class="mt-2 text-sm text-subtle">Rename <code>.ts</code> to <code>.efx</code> and nothing changes. Use the new syntax where it helps.</p></div>
+          <div class="bg-ink p-5"><h3 class="font-medium">Two-way</h3><p class="mt-2 text-sm text-subtle"><code>efx convert</code> turns Effect TypeScript into EffectScript, and every <code>.efx</code> compiles back to plain TypeScript. Leave any time.</p></div>
+          <div class="bg-ink p-5"><h3 class="font-medium">Mixed projects</h3><p class="mt-2 text-sm text-subtle"><code>.ts</code> imports <code>.efx</code> and back, with full IntelliSense in VS Code and any LSP editor.</p></div>
+          <div class="bg-ink p-5"><h3 class="font-medium">Your tools</h3><p class="mt-2 text-sm text-subtle">tsc, Vite, Vitest, Bun, Node, Astro, VS Code, Neovim, Helix. No new runtime: the output is Effect.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 py-20">
+      <p class="label">// roadmap · future work, not shipped</p>
+      <h2 class="headline-fade mt-3 font-display text-3xl font-bold tracking-tight">Where it goes next</h2>
+      <ul class="mt-6 grid gap-3 text-sm text-subtle sm:grid-cols-2">
+        <li class="rounded-lg border border-dashed border-line p-4">Proofs: checked properties with Lean 4 or Bend2 behind the same syntax.</li>
+        <li class="rounded-lg border border-dashed border-line p-4">Infrastructure as constructs, on Alchemy.</li>
+        <li class="rounded-lg border border-dashed border-line p-4">Output shaped for ahead-of-time compilers.</li>
+        <li class="rounded-lg border border-dashed border-line p-4">Lint rules that read EffectScript directly, in oxlint.</li>
+      </ul>
+    </section>
+
+    <section class="border-t border-line bg-tile/40">
+      <div class="mx-auto max-w-7xl px-4 py-20">
+        <h2 class="headline-fade font-display text-4xl font-bold tracking-tight">Start in a minute.</h2>
+        <pre class="mt-8 max-w-2xl min-w-0 overflow-x-auto rounded-lg border border-line bg-[#1e1e1e] p-4 text-[13px] leading-[1.7]"><code set:html={install} /></pre>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install/">Read the docs</a>
+          <a class="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:bg-tile" href="/playground/">Open the playground</a>
+        </div>
+        <Follow />
+      </div>
+    </section>
   </main>
 </Base>
+
+<script>
+  for (const gallery of document.querySelectorAll<HTMLElement>("[data-gallery]")) {
+    const tabs = [...gallery.querySelectorAll<HTMLButtonElement>(".scenario-tab")]
+    const panels = [...gallery.querySelectorAll<HTMLElement>("[data-scenario-panel]")]
+    const select = (id: string) => {
+      for (const tab of tabs) tab.setAttribute("aria-selected", String(tab.dataset.scenario === id))
+      for (const panel of panels) panel.hidden = panel.dataset.scenarioPanel !== id
+    }
+    for (const tab of tabs) tab.addEventListener("click", () => select(tab.dataset.scenario!))
+    gallery.querySelector<HTMLInputElement>(".token-toggle")?.addEventListener("change", (event) => {
+      gallery.dataset.showTokens = String((event.target as HTMLInputElement).checked)
+    })
+  }
+</script>

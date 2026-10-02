@@ -1,0 +1,15 @@
+// @efx no-ambient
+
+/** Create a task */
+export command create(
+  /** Task title */ title: string,
+  /** Priority */ --priority: "low" | "normal" | "high" = "normal",
+  /** Only print what would happen @alias n */ --dryRun: boolean = false,
+) {
+  const prefix = dryRun ? "[dry run] " : ""
+  process.stdout.write(`${prefix}created "${title}" with ${priority} priority\n`)
+}
+
+main {
+  await Command.runWith(create, { version: "1.0.0" })(process.argv.slice(2))
+}

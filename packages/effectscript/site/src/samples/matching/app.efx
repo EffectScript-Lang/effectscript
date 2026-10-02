@@ -1,0 +1,11 @@
+export schema Shape =
+  | Circle { radius: number }
+  | Square { side: number }
+  | Rectangle { width: number; height: number }
+
+export const area = (shape: Shape) =>
+  match (shape) {
+    when Circle({ radius }): Math.PI * radius ** 2
+    when Square({ side }): side ** 2
+    when Rectangle({ width, height }): width * height
+  }

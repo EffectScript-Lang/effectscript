@@ -1,0 +1,13 @@
+declare const loadUser: (id: string) => Effect<string>
+declare const loadPosts: (id: string) => Effect<ReadonlyArray<string>>
+declare const loadAvatar: (id: string) => Effect<Uint8Array>
+
+export effect profile(id: string) {
+  const [user, posts] = await [loadUser(id), loadPosts(id)]
+  const avatar = await loadAvatar(id) |> timeout("500 millis") |> option
+  return { user, posts, avatar }
+}
+
+export effect everyone(ids: ReadonlyArray<string>) {
+  return await forEach(ids, profile, { concurrency: 4 })
+}

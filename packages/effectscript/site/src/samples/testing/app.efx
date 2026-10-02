@@ -1,0 +1,15 @@
+service Users {
+  effect find(id: string): string
+  layer test = { find: effect (id: string) => `user-${id}` }
+}
+
+describe "Users" with Users.layerTest {
+  test "finds a user" {
+    expect(await Users.find("1")).toBe("user-1")
+  }
+
+  test "runs effects concurrently" {
+    const [a, b] = await [Users.find("1"), Users.find("2")]
+    expect([a, b]).toEqual(["user-1", "user-2"])
+  }
+}
