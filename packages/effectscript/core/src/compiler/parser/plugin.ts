@@ -310,9 +310,13 @@ export const efxPlugin = (Base: any): any =>
       return super.parseProperty(isPattern, refDestructuringErrors)
     }
 
-    parseClassElement(constructorAllowsSuper: boolean): any {
+    parseClassElement(allowsSuper: boolean): any {
       const kinds = this.efxState().classKinds
-      if (kinds[kinds.length - 1] === "service" && this.efxIsWord("layer")) {
+      const kind = kinds[kinds.length - 1]
+      // `schema`/`error`/`service` compile to subclasses (`Schema.Class`, `Schema.TaggedError`,
+      // `Context.Service`), so their members may use `override` (and `super`)
+      const constructorAllowsSuper = allowsSuper || kind === "schema" || kind === "error" || kind === "service"
+      if (kind === "service" && this.efxIsWord("layer")) {
         const next = this.lookahead()
         if (next.type === tt.name && this.efxSameLine(next)) {
           const keyword = { start: this.start, end: this.end }

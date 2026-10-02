@@ -93,7 +93,7 @@ describe("efx build / run (ADR-0022)", () => {
       "data:text/javascript,import{registerHooks}from'node:module';registerHooks({resolve(s,c,n){if(s==='typescript')throw new Error('Cannot find package typescript');return n(s,c)}})"
     const help = spawnSync(process.execPath, ["--import", noTypeScript, efx, "--help"], { cwd: dir, encoding: "utf8" })
     expect(help.status).toBe(0)
-    expect(help.stderr).toContain("usage: efx")
+    expect(help.stdout).toContain("SUBCOMMANDS")
     const built = spawnSync(process.execPath, ["--import", noTypeScript, efx, "build"], { cwd: dir, encoding: "utf8" })
     expect(built.status).toBe(1)
     expect(built.stderr).toContain("efx build needs TypeScript 6")

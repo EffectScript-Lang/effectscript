@@ -13,8 +13,9 @@ describe("bin entry points (review I10)", () => {
       fs.mkdirSync(path.join(dir, "src/cli"), { recursive: true })
       fs.copyFileSync(path.join(import.meta.dirname, "../bin/efx.js"), path.join(dir, "bin/efx.js"))
       fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ type: "module" }))
-      fs.writeFileSync(path.join(dir, "dist/cli/main.js"), "export const main = () => 42\n")
-      fs.writeFileSync(path.join(dir, "src/cli/main.ts"), "export const main = (): number => 7\n")
+      // the entry modules run the CLI when imported (a `main` block)
+      fs.writeFileSync(path.join(dir, "dist/cli/main.js"), "process.exitCode = 42\n")
+      fs.writeFileSync(path.join(dir, "src/cli/main.ts"), "process.exitCode = 7\n")
       const run = (env: Record<string, string>) =>
         spawnSync(process.execPath, [path.join(dir, "bin/efx.js")], { env: { ...process.env, ...env } }).status
       expect(run({ EFFECTSCRIPT_DEV: "1" })).toBe(7)

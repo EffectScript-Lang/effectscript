@@ -214,3 +214,13 @@ describe("D06: lookahead understands regexes and templates", () => {
     expect(result.code).toMatch(/Match\.value|Effect\.fnUntraced/)
   })
 })
+
+describe("override in declarations that compile to subclasses (Plan 8 dogfooding)", () => {
+  it("accepts override members in error and schema bodies", () => {
+    const result = toTypeScript(
+      "error Failed {\n  code: number\n  override get message() {\n    return `code ${this.code}`\n  }\n}\nschema Box {\n  n: number\n  override toString() {\n    return `${this.n}`\n  }\n}\n"
+    )
+    expect(result.diagnostics.filter((d) => d.severity === "error")).toEqual([])
+    expect(result.code).toContain("override get message()")
+  })
+})

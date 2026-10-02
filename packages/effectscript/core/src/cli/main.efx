@@ -1,0 +1,64 @@
+// @efx no-ambient
+/**
+ * The `efx` command (spec §7.1): EffectScript command modules on `effect/cli`, compiled by
+ * `pnpm codegen` into `main.ts` (ADR-0032).
+ *
+ * @since 4.0.0
+ */
+import { Runtime } from "effect"
+import { Argument, Command, Flag } from "effect/cli"
+import { check as checkProject } from "./check.ts"
+import { buildProject, version } from "./project.ts"
+import { run as runFile } from "./run.ts"
+
+/** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
+export error ExitCode {
+  code: number
+  override get [Runtime.errorExitCode]() {
+    return this.code
+  }
+  override get [Runtime.errorReported]() {
+    return false
+  }
+}
+
+/** Fails with the exit code unless it is 0. */
+const exitWith = effect (code: number) => {
+  if (code !== 0) throw new ExitCode({ code })
+}
+
+/** Compile .efx files to JavaScript and declarations */
+export command build(
+  /** The tsconfig.json to build @alias p */ --project: string = "tsconfig.json",
+) {
+  await exitWith(await promise(() => buildProject(project)))
+}
+
+// `check` and `run` forward arguments after `--`: the `command` construct has no variadic form yet
+
+/** Type-check the project, .efx files included */
+export const check = Command.make("check", {
+  project: Flag.String("project").pipe(Flag.withAlias("p"), Flag.optional, Flag.withDescription("The tsconfig.json to check")),
+  args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("More tsc arguments (after --)"))
+}, effect ({ project, args }) => {
+  const projectArgs = project._tag === "Some" ? ["-p", project.value] : []
+  await exitWith(checkProject([...projectArgs, ...args]))
+}) |> Command.withDescription("Type-check the project, .efx files included")
+
+/** Run a .efx or .ts file */
+export const run = Command.make("run", {
+  file: Argument.String("file").pipe(Argument.withDescription("The entry file")),
+  args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("Arguments for the program (after --)"))
+}, effect ({ file, args }) => {
+  await exitWith(runFile([file, ...args]))
+}) |> Command.withDescription("Run a .efx or .ts file")
+
+export const efx = Command.make("efx")
+  |> Command.withDescription("EffectScript: TypeScript with Effect as native syntax")
+  |> Command.withSubcommands([build, check, run])
+
+main {
+  // without a command, show the help
+  const argv = process.argv.slice(2)
+  await Command.runWith(efx, { version })(argv.length === 0 ? ["--help"] : argv)
+}

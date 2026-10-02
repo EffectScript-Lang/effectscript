@@ -363,6 +363,9 @@ importers:
 
   packages/effectscript/core:
     dependencies:
+      '@effect/platform-node':
+        specifier: workspace:^
+        version: link:../../platform/node
       '@effectscript/language':
         specifier: workspace:^
         version: link:../language
@@ -372,22 +375,19 @@ importers:
       acorn:
         specifier: ^8.18.0
         version: 8.18.0
+      effect:
+        specifier: workspace:^
+        version: link:../../effect
       magic-string:
         specifier: ^1.4.2
         version: 1.4.2
     devDependencies:
-      '@effect/platform-node':
-        specifier: workspace:^
-        version: link:../../platform/node
       '@effect/vitest':
         specifier: workspace:^
         version: link:../../vitest
       '@types/node':
         specifier: ^26.6.3
         version: 26.6.3
-      effect:
-        specifier: workspace:^
-        version: link:../../effect
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
