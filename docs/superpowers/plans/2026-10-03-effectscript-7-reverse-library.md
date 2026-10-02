@@ -166,3 +166,24 @@ stay as written.
 - §6.4: list the new normalizations (`process.env["X"]` → `.X`, `Effect.log` → `console.log`).
 - COMPATIBILITY: update the reverse-compiler row.
 - This plan's execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Task 1:** in `effect` code, `await log(x)` normalizes to `console.log(x)`, the spec's
+  ambient row. The ambient blocker now honors local bindings of `console`/`Date`/`Math`/`process`.
+- **Task 2:** `toEffectScript` now runs on any file that imports `effect`, its subpaths or
+  `@effect/*`. Before, it ran only when `Effect` or `Schema` was imported.
+- **Task 5:**
+  - The import pass judges each candidate against the original TypeScript: 2 = bytes,
+    1 = tokens, and a choice never lowers the verdict. The old baseline, the compile of the
+    EffectScript with its imports still in place, couldn't accept a removal that fixes generated
+    names (`it` → `it2`).
+  - `@effect/vitest` `describe`/`it`/`layer` are recognized even when an inner scope rebinds the
+    name.
+- **Golden fixtures:** every fixture now reverses fully. `config/app`, `atom/counter`,
+  `layer/app` and `cli/create` reverse to their exact source. The rest differ only by listed
+  normalizations.

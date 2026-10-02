@@ -1023,9 +1023,8 @@ any granularity.
 
 ### 6.2 Canonical shapes
 
-Each row is the inverse of a row in §4. The rows for §4.1–4.13 are implemented (Plan 6, ADR-0031).
-The library-construct and ambient rows (`describe`/`test` through the ambient forms) are Plan 7,
-and until then they stay TypeScript.
+Each row is the inverse of a row in §4. All rows are implemented: §4.1–4.13 in Plan 6, and the
+library constructs and ambient forms in Plan 7 (ADR-0031).
 
 | TypeScript shape                                                                    | EffectScript                         |
 | ----------------------------------------------------------------------------------- | ------------------------------------ |
@@ -1134,6 +1133,11 @@ Unsupported shapes stay TypeScript, with an explanation.
   - A first Hack step that the forward compiler inlined stays a call.
   - `do { … }` comes back as `await effect { … }`.
   - `for await` comes back as `await Stream.runForEach(…)`.
+  - Ambient forms replace the effect spellings in `effect` code: `await log(x)` → `console.log(x)`,
+    `await Clock.currentTimeMillis` → `Date.now()`, and `process.env["X"]` → `process.env.X`.
+  - `group`/`api` declarations are written in their canonical layout. An identifier equal to the
+    default is dropped, and `T[]` becomes `Array<T>`.
+  - `command` parameters are written one per line, with JSDoc for descriptions and aliases.
 - Canonical outputs reach a fixed point: converting again changes nothing.
 - Effect APIs are recognized by binding origin (their import), never by spelling (ADR-0009). A
   user object named `Effect` is never re-sugared.
