@@ -6,6 +6,7 @@
 import { spawnSync } from "node:child_process"
 import { createRequire } from "node:module"
 import * as path from "node:path"
+import { standalone } from "./host.ts"
 
 /**
  * @since 4.0.0
@@ -31,9 +32,11 @@ export const runCheck = (
   }
   // `efx check` never writes files (review I2)
   const noEmit = args.includes("--noEmit") ? [] : ["--noEmit"]
+  // the standalone binary runs the checker on its own Bun (ADR-0037)
   const result = spawnSync(process.execPath, [bin, ...args, ...noEmit], {
     stdio: quiet ? "pipe" : "inherit",
-    encoding: "utf8"
+    encoding: "utf8",
+    ...(standalone() === undefined ? {} : { env: { ...process.env, BUN_BE_BUN: "1" } })
   })
   return { status: result.status ?? 1, output: quiet ? `${result.stdout}${result.stderr}` : "" }
 }

@@ -10,6 +10,7 @@ import { toTypeScript } from "../compiler/compile.ts"
 import { formatDiagnostic, lineColumn } from "../compiler/diagnostics.ts"
 import { toEffectScript } from "../compiler/reverse/convert.ts"
 import { packageInfo } from "../project.ts"
+import { standalone } from "./host.ts"
 import { loadTypeScript } from "./typescript.ts"
 
 /**
@@ -18,7 +19,8 @@ import { loadTypeScript } from "./typescript.ts"
  * @since 4.0.0
  * @category cli
  */
-export const version: string = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version
+export const version: string = standalone()?.version ??
+  JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version
 
 /**
  * `efx build`: loads TypeScript 6 lazily (everything else works without it, review I7) and builds

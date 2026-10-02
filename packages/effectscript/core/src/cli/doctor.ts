@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import { createRequire } from "node:module"
 import * as path from "node:path"
+import { standalone } from "./host.ts"
 import { member, parseJsonc } from "./jsonc.ts"
 import { defaultRuntime } from "./run.ts"
 
@@ -42,12 +43,22 @@ const atLeast = (version: string, major: number, minor: number): boolean => {
  */
 export const doctor = (cwd: string, out: (line: string) => void): number => {
   const checks: Array<Check> = []
-  const node = process.versions.node
-  checks.push({
-    name: `Node ${node}`,
-    ok: atLeast(node, 22, 18),
-    detail: "efx needs Node 22.18 or newer (it runs TypeScript sources)"
-  })
+  const host = standalone()
+  if (host === undefined) {
+    const node = process.versions.node
+    checks.push({
+      name: `Node ${node}`,
+      ok: atLeast(node, 22, 18),
+      detail: "efx needs Node 22.18 or newer (it runs TypeScript sources)"
+    })
+  } else {
+    // the binary carries its own Bun: Node is optional (ADR-0037)
+    checks.push({
+      name: `efx ${host.version} (standalone, Bun ${process.versions.bun ?? "built in"})`,
+      ok: true,
+      detail: ""
+    })
+  }
   const bun = spawnSync("bun", ["--version"], { encoding: "utf8" })
   checks.push({
     name: bun.status === 0 ? `Bun ${bun.stdout.trim()}` : "Bun",
@@ -55,7 +66,13 @@ export const doctor = (cwd: string, out: (line: string) => void): number => {
     optional: true,
     detail: "optional: the Bun integration (bun run, bun test) uses it (https://bun.sh)"
   })
-  checks.push({ name: `efx run uses ${defaultRuntime(cwd) === "bun" ? "Bun" : "Node"}`, ok: true, detail: "" })
+  checks.push({
+    name: host !== undefined
+      ? "efx run uses its built-in Bun"
+      : `efx run uses ${defaultRuntime(cwd) === "bun" ? "Bun" : "Node"}`,
+    ok: true,
+    detail: ""
+  })
   const hasPackage = fs.existsSync(path.join(cwd, "package.json"))
   checks.push({ name: "package.json", ok: hasPackage, detail: "run efx in a project: npm init, then efx init" })
   if (hasPackage) {
