@@ -35,7 +35,8 @@
     "dist/**/*.js",
     "dist/**/*.js.map",
     "dist/**/*.d.ts",
-    "dist/**/*.d.ts.map"
+    "dist/**/*.d.ts.map",
+    "skills/**/*.md"
   ],
   "publishConfig": {
     "access": "public",
@@ -54,7 +55,7 @@
   "scripts": {
     "build": "tsc -b tsconfig.json",
     "check": "tsc -b tsconfig.json",
-    "codegen": "node scripts/generate-prelude.ts && dprint fmt src/compiler/prelude/tables.ts && node scripts/compile-cli.ts"
+    "codegen": "node scripts/generate-prelude.ts && dprint fmt src/compiler/prelude/tables.ts && node scripts/compile-cli.ts && node scripts/generate-skill.ts"
   },
   "dependencies": {
     "@effect/platform-node": "workspace:^",
