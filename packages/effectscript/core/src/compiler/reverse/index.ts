@@ -120,7 +120,11 @@ const convert = (
     service: undefined,
     only
   }
-  if (ctx.effect === undefined && ctx.schema === undefined) return { code: source, notes: [] }
+  // nothing to re-sugar without an import from `effect`, its subpaths or `@effect/*`
+  const imports = (parsed.program.body as Array<Node>).some((s) =>
+    s.type === "ImportDeclaration" && /^(effect(\/|$)|@effect\/)/.test(s.source.value)
+  )
+  if (!imports) return { code: source, notes: [] }
   const enabled = (i: number) => only === undefined || only.has(i)
   // classes first: bodies need to know which classes become `error` declarations
   for (const [i, top] of (parsed.program.body as Array<Node>).entries()) {

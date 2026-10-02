@@ -8,6 +8,7 @@ import { children, type Node } from "../ast.ts"
 import { blocker, genShape, isGenerator } from "./blockers.ts"
 import { convertGeneratorNode, unqualify, type Visit } from "./body.ts"
 import { convertSchemaRun } from "./classes.ts"
+import { convertConfig } from "./config.ts"
 import {
   commaToPipe,
   commentsIn,
@@ -284,6 +285,13 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
       node.type === "VariableDeclaration" &&
       (parent?.type === "Program" || parent?.type === "BlockStatement" || parent?.type === "ExportNamedDeclaration") &&
       convertDeclaration(ctx, node, parent.type === "ExportNamedDeclaration" ? parent.start : node.start, visit)
+    ) {
+      return
+    }
+    if (
+      node.type === "VariableDeclaration" &&
+      (parent?.type === "Program" || parent?.type === "ExportNamedDeclaration") &&
+      convertConfig(ctx, node, visit)
     ) {
       return
     }
