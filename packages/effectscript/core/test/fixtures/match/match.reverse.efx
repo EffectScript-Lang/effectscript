@@ -16,7 +16,7 @@ export const label = Match.value(status).pipe(Match.when("active", () => "✓"),
 
 export effect scaled() {
   return (await Match.valueTags(shape, {
-    Circle: (c) => gen(function*() { return yield* scale(c.radius) }),
-    Square: () => gen(function*() { return 0 })
+    Circle: (c) => effect { return await scale(c.radius) },
+    Square: () => effect { return 0 }
   }))
 }

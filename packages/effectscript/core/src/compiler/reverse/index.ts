@@ -12,9 +12,9 @@ import { resolveOptions } from "../options.ts"
 import { parse } from "../parser/parse.ts"
 import { classShape, convertClass } from "./classes.ts"
 import type { ConvertNote, ConvertOptions, ReverseCtx } from "./context.ts"
-import { convertDeclaration } from "./effects.ts"
+import { makeVisit, visitProgram } from "./effects.ts"
 import { removePreludeImports } from "./imports.ts"
-import { importedLocal } from "./origin.ts"
+import { importedLocal, isMember } from "./origin.ts"
 
 export type { ConvertNote, ConvertOptions } from "./context.ts"
 
@@ -49,23 +49,31 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
     effect: importedLocal(analysis, "effect", "Effect"),
     schema: importedLocal(analysis, "effect", "Schema"),
     errors: new Set(),
+    effects: new Set(),
     notes: []
   }
   if (ctx.effect === undefined && ctx.schema === undefined) return { code: source, notes: [] }
-  const statements = (parsed.program.body as Array<Node>).map((top) => ({
-    top,
-    statement: top.type === "ExportNamedDeclaration" && top.declaration !== null ? top.declaration : top
-  }))
   // classes first: bodies need to know which classes become `error` declarations
-  for (const { statement } of statements) {
-    if (statement.type !== "ClassDeclaration") continue
-    const shape = classShape(ctx, statement, false)
-    if (shape?.keyword === "error") ctx.errors.add(shape.name)
+  for (const top of parsed.program.body as Array<Node>) {
+    const statement: Node = top.type === "ExportNamedDeclaration" && top.declaration !== null ? top.declaration : top
+    if (statement.type === "ClassDeclaration") {
+      const shape = classShape(ctx, statement, false)
+      if (shape?.keyword === "error") ctx.errors.add(shape.name)
+    }
+    // conservative: any module const initialized by `Effect.fn(…)(…)` without pipes
+    const declarator: Node | undefined = statement.type === "VariableDeclaration"
+      ? statement.declarations[0]
+      : undefined
+    const init: Node | undefined = declarator?.init ?? undefined
+    if (
+      declarator?.id.type === "Identifier" && init?.type === "CallExpression" && init.arguments.length === 1 &&
+      init.callee.type === "CallExpression" && isMember(init.callee.callee, ctx.effect, "fn")
+    ) {
+      ctx.effects.add(declarator.id.name)
+    }
   }
-  for (const { statement, top } of statements) {
-    if (statement.type === "VariableDeclaration") convertDeclaration(ctx, statement, top.start)
-    else if (statement.type === "ClassDeclaration") convertClass(ctx, statement)
-  }
+  const topLevel = new Set((parsed.program.body as Array<Node>).flatMap((top) => [top, top.declaration]))
+  visitProgram(ctx, parsed.program, makeVisit(ctx, (cls) => topLevel.has(cls) && convertClass(ctx, cls)))
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
   return { code: removePreludeImports(ctx.s.toString(), options), notes: ctx.notes }
 }

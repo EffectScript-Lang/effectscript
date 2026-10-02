@@ -13,14 +13,14 @@ export effect useResource() {
 
 export effect sum(numbers: Stream.Stream<number>) {
   let total = 0
-  await Stream.runForEach(numbers, (n) => gen(function*() {
+  await Stream.runForEach(numbers, (n) => effect {
     if (n < 0) return
     total += n
-  }))
+  })
   return total
 }
 
-export const block = Effect.scoped(Effect.gen(function*() {
-  yield* Effect.addFinalizer(() => Console.log("bye"))
+export const block = scoped(effect {
+  await addFinalizer(() => Console.log("bye"))
   return 2
-}))
+})

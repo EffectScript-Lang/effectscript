@@ -4,7 +4,7 @@ class Missing extends Data.TaggedError("Missing")<{}> {}
 declare const find: (id: string) => Effect.Effect<string | undefined>
 
 effect required(id: string) {
-  const value = (await find(id)) ?? (await fail(new Missing()))
+  const value = await find(id) ?? throw new Missing()
   return value
 }
 
@@ -20,9 +20,9 @@ const size = (() => {
 })()
 
 effect describeId(id: string) {
-  const label = (await gen(function*() {
-    const value = yield* find(id)
+  const label = (await effect {
+    const value = await find(id)
     return value === undefined ? "none" : value.toUpperCase()
-  }))
+  })
   return label
 }

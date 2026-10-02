@@ -5,7 +5,7 @@ const Schema = { note: "user value named Schema" }
 export schema Point { x: number; y: number }
 
 export effect area(Effect: number) {
-  const inner = gen(function*() { return Effect * 2 })
+  const inner = effect { return Effect * 2 }
   return await inner
 }
 

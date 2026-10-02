@@ -1,31 +1,30 @@
-import { Effect } from "effect"
 declare const task: Effect.Effect<number>
 
-export const program = Effect.gen(function*() {
-  const n = yield* task
+export const program = effect {
+  const n = await task
   return n + 1
-})
+}
 
 class Counter {
   count = 0
-  readonly increment = Effect.gen({ self: this }, function*() {
+  readonly increment = effect {
     this.count++
     return this.count
-  })
+  }
 }
 
-export const add = Effect.fnUntraced(function*(n: number) { return (yield* task) + n })
-export const addAll = Effect.fnUntraced(function*(xs: ReadonlyArray<number>): Effect.fn.Return<number> {
+export const add = effect (n: number) => await task + n
+export const addAll = effect (xs: ReadonlyArray<number>): number => {
   let total = 0
-  for (const x of xs) total += x + (yield* task)
+  for (const x of xs) total += x + await task
   return total
-})
-export const typed = Effect.fnUntraced(function*(s: string): Effect.fn.Return<string, never> { return s.trim() })
+}
+export const typed = effect (s: string): string throws never => s.trim()
 
 export const api = {
-  fetch: Effect.fn("fetch")(function*(id: string) {
-    return id.length + (yield* task)
-  }),
+  effect fetch(id: string) {
+    return id.length + await task
+  },
   plain() {
     return 1
   }

@@ -5,7 +5,7 @@ declare const program: Effect.Effect<void>
 effect helper() {
   return 1
 }
-NodeRuntime.runMain(Effect.gen(function*() {
-  yield* program
+NodeRuntime.runMain(effect {
+  await program
   globalThis.console.log("done")
-}).pipe(Effect.provide(Layer.empty), Effect.provide(NodeServices.layer)))
+}.pipe(provide(Layer.empty), provide(NodeServices.layer)))

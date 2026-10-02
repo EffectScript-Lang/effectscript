@@ -68,9 +68,9 @@ export const classShape = (ctx: ReverseCtx, cls: Node, explain: boolean): ClassS
  * @since 4.0.0
  * @category reverse
  */
-export const convertClass = (ctx: ReverseCtx, cls: Node): void => {
+export const convertClass = (ctx: ReverseCtx, cls: Node): boolean => {
   const shape = classShape(ctx, cls, true)
-  if (shape === undefined) return
+  if (shape === undefined) return false
   const { fields, keyword, name, types } = shape
   ctx.s.update(cls.start, fields.start, `${keyword} ${name} `)
   removeKeepingComments(ctx, fields.end, cls.end)
@@ -92,4 +92,5 @@ export const convertClass = (ctx: ReverseCtx, cls: Node): void => {
     const comma = separatorComma(ctx, last.end, fields.end - 1)
     if (comma !== -1) ctx.s.remove(comma, comma + 1)
   }
+  return true
 }

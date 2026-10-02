@@ -51,6 +51,8 @@ export interface ReverseCtx {
   readonly schema: string | undefined
   /** Classes this conversion turns into `error` declarations (the forward `localErrors`). */
   readonly errors: Set<string>
+  /** Module consts that become pipe-less `effect` declarations (the forward `localEffects`). */
+  readonly effects: Set<string>
   readonly notes: Array<ConvertNote>
 }
 
@@ -106,6 +108,19 @@ export const replaceHoistingComments = (
   if (comments.length === 0) return
   const indent = indentAt(ctx.source, hoistTo)
   ctx.s.appendLeft(hoistTo, comments.map((c) => `${ctx.source.slice(c.start, c.end)}\n${indent}`).join(""))
+}
+
+/**
+ * Replaces `[start, end)` with `text`, keeping the range's comments just before it.
+ *
+ * @since 4.0.0
+ * @category comments
+ */
+export const replaceKeepingComments = (ctx: ReverseCtx, start: number, end: number, text: string): void => {
+  const comments = commentsIn(ctx, start, end)
+  const replacement = `${commentBlock(ctx, comments, " ")}${text}`
+  if (start < end) ctx.s.update(start, end, replacement)
+  else if (replacement !== "") ctx.s.appendLeft(start, replacement)
 }
 
 /**

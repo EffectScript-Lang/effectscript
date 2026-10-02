@@ -21,7 +21,7 @@ describe("ADR-0023: reverse compiler subset", () => {
     const ts =
       "import { Effect } from \"effect\"\nexport const f = Effect.fn(\"f\")(function*() {\n  return 1\n})\nexport const run = Effect.runSync(f())\n"
     const back = toEffectScript(ts).code
-    expect(back).toBe("export effect f() {\n  return 1\n}\nexport const run = Effect.runSync(f())\n")
+    expect(back).toBe("export effect f() {\n  return 1\n}\nexport const run = runSync(f())\n")
     expect(toTypeScript(back).code).toBe(ts)
   })
 

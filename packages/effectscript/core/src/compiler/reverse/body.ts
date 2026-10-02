@@ -1,80 +1,165 @@
 /**
- * Generator bodies: `yield*` → `await`, failures → `throw`, `Effect.x` → builtin `x`.
+ * Generator bodies: `yield*` → `await`, failures → `throw`, `Effect.x` → builtin `x`, each exactly
+ * where the forward compiler lowers back to the same text (ADR-0030).
  *
  * @since 4.0.0
  */
-import { children, type Node } from "../ast.ts"
-import { excludedNames, namespaceExports } from "../prelude/tables.ts"
-import type { ReverseCtx } from "./context.ts"
+import type { Node } from "../ast.ts"
+import { excludedNames, namespaceExports, preludeFunctions, preludeModules } from "../prelude/tables.ts"
+import { isParenthesized } from "../transform/await.ts"
+import { commentsIn, note, type ReverseCtx } from "./context.ts"
 import { isMember } from "./origin.ts"
 
-const nestedScopes = new Set([
-  "FunctionDeclaration",
-  "FunctionExpression",
-  "ArrowFunctionExpression",
-  "ClassDeclaration",
-  "ClassExpression"
-])
+/**
+ * Recursion back into the walker: `generator` is true at a generator body's direct level.
+ *
+ * @since 4.0.0
+ * @category models
+ */
+export type Visit = (node: Node, parent: Node | undefined, generator: boolean) => void
 
 /**
- * `Effect.x` → `x` when `x` is a builtin that is free everywhere in the file (spec §4.13).
+ * Whether the builtin `name` can be written unqualified: the forward compiler resolves it to
+ * `Effect.name` (spec §4.13).
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const isBuiltin = (ctx: ReverseCtx, name: string): boolean => {
+  if (ctx.effect !== "Effect" || !ctx.options.prelude) return false
+  if (excludedNames.has(name) || preludeModules.has(name) || preludeFunctions.has(name)) return false
+  if (!namespaceExports.get("Effect")!.has(name)) return false
+  const { innerBound, module } = ctx.analysis
+  return !innerBound.has(name) && !module.values.has(name) && !module.types.has(name)
+}
+
+/**
+ * `name` as EffectScript writes it: the builtin, or qualified with the `Effect` import.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const builtin = (ctx: ReverseCtx, name: string): string => isBuiltin(ctx, name) ? name : `${ctx.effect}.${name}`
+
+/** Constructors of the forms that become `effect` syntax: when one stays TypeScript, it stays qualified. */
+const formNames = new Set(["fn", "fnUntraced", "gen"])
+
+/**
+ * `Effect.x` → `x` for builtins.
  *
  * @since 4.0.0
  * @category reverse
  */
 export const unqualify = (ctx: ReverseCtx, node: Node): void => {
-  if (!isMember(node, ctx.effect)) return
-  const name: string = node.property.name
-  if (excludedNames.has(name) || !namespaceExports.get("Effect")!.has(name)) return
-  const { innerBound, module } = ctx.analysis
-  if (innerBound.has(name) || module.values.has(name) || module.types.has(name)) return
-  ctx.s.remove(node.start, node.property.start)
+  if (!isMember(node, ctx.effect) || node.optional === true || formNames.has(node.property.name)) return
+  if (isBuiltin(ctx, node.property.name)) ctx.s.remove(node.start, node.property.start)
 }
 
 /**
- * Unqualifies builtins in an expression without converting `yield*`.
- *
- * @since 4.0.0
- * @category reverse
+ * Parents where `await x` parses like `(yield* x)` and the forward compiler restores the
+ * parentheses (`needsParens`). Member objects, callees and `!` would re-parse differently.
  */
-export const walkExpressions = (ctx: ReverseCtx, node: Node): void => {
-  unqualify(ctx, node)
-  for (const child of children(node)) walkExpressions(ctx, child)
+const droppableParens = (node: Node, parent: Node | undefined): boolean => {
+  switch (parent?.type) {
+    case "BinaryExpression":
+      return parent.operator !== "**"
+    case "LogicalExpression":
+    case "UnaryExpression":
+    case "TSAsExpression":
+    case "TSSatisfiesExpression":
+      return true
+    case "ConditionalExpression":
+      return parent.test === node
+    default:
+      return false
+  }
 }
 
 /** `new E(…)` where `E` becomes an `error` declaration: the forward compiler yields it directly. */
 const isOwnError = (ctx: ReverseCtx, node: Node): boolean =>
   node.type === "NewExpression" && node.callee.type === "Identifier" && ctx.errors.has(node.callee.name)
 
+const failure = (ctx: ReverseCtx, target: Node): Node | undefined => {
+  if (isOwnError(ctx, target)) return target
+  if (
+    target.type === "CallExpression" && isMember(target.callee, ctx.effect, "fail") && target.arguments.length === 1
+  ) {
+    const error: Node = target.arguments[0]
+    // `throw <primitive>` is an error inside `effect` code (EFX8004): those stay `await fail(…)`
+    const primitive = (error.type === "Literal" && error.regex === undefined) || error.type === "TemplateLiteral"
+    if (!isOwnError(ctx, error) && error.type !== "SpreadElement" && !primitive) return error
+  }
+  return undefined
+}
+
+const parenRange = (ctx: ReverseCtx, node: Node): { readonly open: number; readonly close: number } | undefined => {
+  if (!isParenthesized(ctx.source, node)) return undefined
+  let open = node.start - 1
+  while (/\s/.test(ctx.source[open]!)) open--
+  let close = node.end
+  while (/\s/.test(ctx.source[close]!)) close++
+  return { open, close }
+}
+
 /**
- * `yield* e` → `await e`; `return yield* Effect.fail(e)` / `return yield* new E(…)` → `throw …`,
- * exactly where the forward compiler lowers `throw` to those shapes.
+ * Handles one node at a generator's direct level. Returns true when it walked the children itself.
  *
  * @since 4.0.0
  * @category reverse
  */
-export const convertBody = (ctx: ReverseCtx, node: Node): void => {
-  if (nestedScopes.has(node.type)) return walkExpressions(ctx, node)
+export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node | undefined, visit: Visit): boolean => {
+  // `return yield* Effect.fail(e)` / `return yield* new E(…)` → `throw …` (the forward `throw` lowering)
   if (node.type === "ReturnStatement" && node.argument?.type === "YieldExpression" && node.argument.delegate) {
-    const target: Node = node.argument.argument
-    if (
-      target.type === "CallExpression" && isMember(target.callee, ctx.effect, "fail") &&
-      target.arguments.length === 1 && !isOwnError(ctx, target.arguments[0])
-    ) {
-      const error: Node = target.arguments[0]
+    const yielded: Node = node.argument
+    const error = failure(ctx, yielded.argument)
+    if (error !== undefined && ctx.source.slice(node.start, yielded.argument.start) === "return yield* ") {
       ctx.s.update(node.start, error.start, "throw ")
-      ctx.s.remove(error.end, node.argument.end)
-      return convertBody(ctx, error)
-    }
-    if (isOwnError(ctx, target)) {
-      ctx.s.update(node.start, target.start, "throw ")
-      return convertBody(ctx, target)
+      ctx.s.remove(error.end, yielded.end)
+      visit(error, node, true)
+      return true
     }
   }
-  if (node.type === "YieldExpression") {
-    if (!node.delegate) return
+  if (node.type === "ThrowStatement" && node.argument.type !== "SequenceExpression") {
+    // a native throw is a defect: `return await die(e)` compiles to `return yield* Effect.die(e)`
+    ctx.s.update(node.start, node.argument.start, `return await ${builtin(ctx, "die")}(`)
+    ctx.s.appendLeft(node.argument.end, ")")
+    note(ctx, node, "canonicalized: a native `throw` in an Effect generator is a defect, written `return await die(e)`")
+    visit(node.argument, node, true)
+    return true
+  }
+  if (node.type !== "YieldExpression" || !node.delegate) return false
+  const argument: Node = node.argument
+  const parens = parenRange(ctx, node)
+  // `(yield* Effect.fail(e))` in expression position → the throw expression
+  const statement = parent?.type === "ReturnStatement" || parent?.type === "ExpressionStatement"
+  const error = parens !== undefined && !statement ? failure(ctx, argument) : undefined
+  if (error !== undefined && commentsIn(ctx, parens!.open, error.start).length === 0) {
+    ctx.s.update(parens!.open, error.start, "throw ")
+    ctx.s.remove(error.end, parens!.close + 1)
+    visit(error, node, true)
+    return true
+  }
+  // `yield* Effect.all([..] | {..}, { concurrency: "unbounded" })` → `await [..]` / `await {..}`
+  const all = argument.type === "CallExpression" && isMember(argument.callee, ctx.effect, "all") &&
+      argument.arguments.length === 2 &&
+      (argument.arguments[0].type === "ArrayExpression" || argument.arguments[0].type === "ObjectExpression") &&
+      ctx.source.slice(argument.arguments[0].end, argument.end) === ", { concurrency: \"unbounded\" })"
+    ? argument.arguments[0] as Node
+    : undefined
+  if (all !== undefined) {
+    ctx.s.update(node.start, all.start, "await ")
+    ctx.s.remove(all.end, argument.end)
+  } else {
     ctx.s.update(node.start, node.start + "yield*".length, "await")
   }
-  unqualify(ctx, node)
-  for (const child of children(node)) convertBody(ctx, child)
+  // parentheses the forward compiler puts back (`x + (yield* t)` ← `x + await t`) are dropped
+  if (
+    parens !== undefined && droppableParens(node, parent) &&
+    commentsIn(ctx, parens.open, node.start).length === 0 && commentsIn(ctx, node.end, parens.close).length === 0
+  ) {
+    ctx.s.remove(parens.open, parens.open + 1)
+    ctx.s.remove(parens.close, parens.close + 1)
+  }
+  visit(all ?? argument, node, true)
+  return true
 }
