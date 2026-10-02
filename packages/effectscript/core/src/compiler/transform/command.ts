@@ -3,6 +3,7 @@
  *
  * @since 4.0.0
  */
+import { parseDocComment } from "../../docs/comment.ts"
 import type { Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
@@ -37,14 +38,14 @@ export const jsdocBefore = (
   end: number
 ): { description: string; alias?: string } | undefined => {
   const gap = source.slice(from, end)
-  // the last `/**` in the gap: earlier doc comments belong to earlier declarations
-  // stop at the comment's own `*/` (review I4)
-  const match = /^\/\*\*((?:(?!\*\/)[\s\S])*)\*\/[\s,]*$/.exec(gap.slice(Math.max(0, gap.lastIndexOf("/**"))))
-  if (match === null) return undefined
-  const text = match[1]!.split("\n").map((line) => line.replace(/^\s*\*?\s?/, "")).join(" ")
-  const alias = /@alias\s+(\S+)/.exec(text)?.[1]
-  const description = text.replace(/@alias\s+\S+/, "").replace(/\s+/g, " ").trim()
-  return alias === undefined ? { description } : { description, alias }
+  const at = Math.max(0, gap.lastIndexOf("/**"))
+  // the last `/**` in the gap: earlier doc comments belong to earlier declarations; stop at its own `*/` (review I4)
+  if (!/^\/\*\*(?:(?!\*\/)[\s\S])*\*\/[\s,]*$/.test(gap.slice(at))) return undefined
+  const start = from + at
+  const doc = parseDocComment(source, start, source.indexOf("*/", start + 3) + 2)
+  const description = [doc.summary, doc.body].join(" ").replace(/\s+/g, " ").trim()
+  const alias = doc.tags.find((t) => t.name === "alias")?.text.split(/\s+/)[0]
+  return alias === undefined || alias === "" ? { description } : { description, alias }
 }
 
 const parameter = (ctx: Ctx, param: Node, previousEnd: number): string => {
