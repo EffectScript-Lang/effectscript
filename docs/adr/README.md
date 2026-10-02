@@ -53,8 +53,9 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0039](0039-await-guardrails-in-the-editor.md) | The `await` guardrails in the editor | Accepted |
 | [0040](0040-standalone-language-server-and-efx-lsp.md) | A standalone language server, run by `efx lsp` | Accepted |
 | [0041](0041-vscode-extension-packaging-and-commands.md) | VS Code extension packaging and commands | Accepted |
-| [0042](0042-docs-are-tsdoc-documented-once-with-doctests.md) | Docs are TSDoc comments, written once at the definition, with Elixir-style doctests | Accepted |
-| [0043](0043-efx-docs-generator-and-blume.md) | `efx docs` is our own syntactic generator that writes Markdown for Blume | Accepted |
+| [0042](0042-docs-are-tsdoc-documented-once-with-doctests.md) | Docs are TSDoc comments, written once at the definition, with Elixir-style doctests | Accepted, amended by 0044 |
+| [0043](0043-efx-docs-generator-and-blume.md) | `efx docs` is our own syntactic generator that writes Markdown for Blume | Accepted, amended by 0044 |
+| [0044](0044-living-docs-review-amendments.md) | Living-docs amendments from the Plan 12 review | Accepted |
 | [0050](0050-effect-docs-corpus-in-effectscript.md) | The Effect docs, translated to EffectScript by the reverse compiler | Accepted |
 | [0051](0051-the-effectscript-agent-skill.md) | The EffectScript agent skill: generated where it can be, type-checked where it's written | Accepted |
 | [0053](0053-efx8112-await-on-a-runtime-array.md) | EFX8112 warns when `await` gets an array built at runtime | Accepted |

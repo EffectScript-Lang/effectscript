@@ -86,6 +86,8 @@ export interface DocModule {
   readonly declarations: ReadonlyArray<DocDeclaration>
   /** Local name → relative import, for linking. */
   readonly imports: ReadonlyMap<string, DocImport>
+  /** Every import statement, on one line each: what the module's examples can use (ADR-0044). */
+  readonly importStatements: ReadonlyArray<string>
   readonly hasMain: boolean
 }
 
@@ -314,15 +316,30 @@ export const docModule = (
   const parsed = parse(source)
   if (parsed._tag === "Failure") {
     return {
-      module: { file, path, source, doc: undefined, declarations: [], imports: new Map(), hasMain: false },
+      module: {
+        file,
+        path,
+        source,
+        doc: undefined,
+        declarations: [],
+        imports: new Map(),
+        importStatements: [],
+        hasMain: false
+      },
       diagnostics: parsed.diagnostics
     }
   }
   const b: Builder = { source, comments: parsed.comments }
   const body: ReadonlyArray<Node> = parsed.program.body
   const imports = new Map<string, DocImport>()
-  const exportedLocals = new Set<string>()
+  const importStatements: Array<string> = []
+  /** local name → its public names, from `export { a, a as b }` */
+  const exportedLocals = new Map<string, Array<string>>()
   for (const statement of body) {
+    if (statement.type === "ImportDeclaration") {
+      const text = slice(b, statement.start, statement.end)
+      importStatements.push(text.endsWith(";") ? text : `${text};`)
+    }
     if (statement.type === "ImportDeclaration" && isRelative(statement.source.value)) {
       for (const specifier of statement.specifiers) {
         const imported = specifier.type === "ImportSpecifier"
@@ -334,23 +351,40 @@ export const docModule = (
       }
     }
     if (statement.type === "ExportNamedDeclaration" && statement.declaration == null && statement.source == null) {
-      for (const specifier of statement.specifiers) exportedLocals.add(specifier.local.name ?? specifier.local.value)
+      for (const specifier of statement.specifiers) {
+        if (statement.exportKind === "type" || specifier.exportKind === "type") continue
+        const local: string = specifier.local.name ?? specifier.local.value
+        const exported: string = specifier.exported.name ?? specifier.exported.value
+        exportedLocals.set(local, [...(exportedLocals.get(local) ?? []), exported])
+      }
     }
   }
   const declarations: Array<DocDeclaration> = []
+  /** Function overloads (`TSDeclareFunction`s) and their implementation are one declaration. */
+  const add = (d: DocDeclaration, node: Node) => {
+    const previous = declarations[declarations.length - 1]
+    const isFunction = (kind: DocKind) => kind === "function" || kind === "effect"
+    if (previous !== undefined && previous.name === d.name && isFunction(previous.kind) && isFunction(d.kind)) {
+      const merged = node.type === "TSDeclareFunction" ? `${previous.signature}\n${d.signature}` : previous.signature
+      declarations[declarations.length - 1] = { ...previous, signature: merged, doc: previous.doc ?? d.doc }
+      return
+    }
+    declarations.push(d)
+  }
   for (const statement of body) {
     if (statement.type === "ExportNamedDeclaration") {
       if (statement.declaration == null) continue
       const d = declaration(b, statement.declaration, statement.declaration.start)
-      if (d !== undefined) declarations.push(d)
+      if (d !== undefined) add(d, statement.declaration)
     } else if (statement.type === "ExportDefaultDeclaration") {
       const d = declaration(b, statement.declaration, statement.declaration.start)
-      if (d !== undefined) declarations.push({ ...d, name: "default" })
+      if (d !== undefined) add({ ...d, name: "default" }, statement.declaration)
     } else {
       const name = declaredName(statement)
-      if (name === undefined || !exportedLocals.has(name)) continue
+      const exported = name === undefined ? undefined : exportedLocals.get(name)
+      if (exported === undefined) continue
       const d = declaration(b, statement, statement.start)
-      if (d !== undefined) declarations.push(d)
+      if (d !== undefined) { for (const publicName of exported) add({ ...d, name: publicName }, statement) }
     }
   }
   const first = parsed.comments[0]
@@ -365,6 +399,7 @@ export const docModule = (
       doc: firstDoc !== undefined && isModuleDoc(firstDoc) ? firstDoc : undefined,
       declarations,
       imports,
+      importStatements,
       hasMain: body.some((statement) => statement.type === "MainStatement")
     },
     diagnostics: []

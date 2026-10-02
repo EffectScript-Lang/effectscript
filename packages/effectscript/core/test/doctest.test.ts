@@ -1,5 +1,5 @@
 import { toTypeScript } from "effectscript/compiler"
-import { doctestSource } from "effectscript/docs/doctest"
+import { doctestSource } from "effectscript/doc/doctest"
 import { describe, expect, it } from "vitest"
 
 describe("doctest statement", () => {

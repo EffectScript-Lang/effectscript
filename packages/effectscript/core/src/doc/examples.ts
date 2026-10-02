@@ -39,7 +39,10 @@ export const rewriteExample = (
   if (parsed._tag === "Failure") {
     const d = parsed.diagnostics[0]!
     const offset = Math.min(Math.max(0, d.start - prefix.length), Math.max(0, example.code.length - 1))
-    return { lines: example.code.split("\n"), diagnostics: [at("EFX9301", `This example doesn't parse: ${d.message}`, offset, offset + 1)] }
+    return {
+      lines: example.code.split("\n"),
+      diagnostics: [at("EFX9301", `This example doesn't parse: ${d.message}`, offset, offset + 1)]
+    }
   }
   const block: Node = parsed.program.body[0].expression?.body ?? parsed.program.body[0].body
   const statements: ReadonlyArray<Node> = block.body
@@ -54,12 +57,21 @@ export const rewriteExample = (
     const expected = text.slice(2).trim()
     const statement = [...statements].reverse().find((st) => st.end - prefix.length <= start)
     const sameLine = statement !== undefined && !example.code.slice(statement.end - prefix.length, start).includes("\n")
-    const awaited: Node | undefined = statement?.type === "ExpressionStatement" && statement.expression.type === "AwaitExpression"
-      ? statement.expression.argument
-      : undefined
+    const awaited: Node | undefined =
+      statement?.type === "ExpressionStatement" && statement.expression.type === "AwaitExpression"
+        ? statement.expression.argument
+        : undefined
     if (expected === "dies") {
       if (!sameLine || awaited === undefined) {
-        diagnostics.push(at("EFX9303", "`// => dies` must follow `await <effect>` on the same line", start, end, "write `await e // => dies`"))
+        diagnostics.push(
+          at(
+            "EFX9303",
+            "`// => dies` must follow `await <effect>` on the same line",
+            start,
+            end,
+            "write `await e // => dies`"
+          )
+        )
         continue
       }
       s.appendLeft(awaited.start - prefix.length, `${helpers}.dies(`)
@@ -69,11 +81,20 @@ export const rewriteExample = (
     const throwsMatch = /^throws\b\s*(.*)$/.exec(expected)
     if (throwsMatch !== null) {
       const name = throwsMatch[1]!.trim()
-      const operand: Node | undefined = statement?.type === "ExpressionStatement" && statement.expression.type === "AwaitExpression"
-        ? statement.expression.argument
-        : undefined
+      const operand: Node | undefined =
+        statement?.type === "ExpressionStatement" && statement.expression.type === "AwaitExpression"
+          ? statement.expression.argument
+          : undefined
       if (!sameLine || operand === undefined || !/^[A-Za-z_$][\w$]*$/.test(name)) {
-        diagnostics.push(at("EFX9303", "`// => throws Name` must follow `await <effect>` on the same line", start, end, "write `await e // => throws ErrorName`"))
+        diagnostics.push(
+          at(
+            "EFX9303",
+            "`// => throws Name` must follow `await <effect>` on the same line",
+            start,
+            end,
+            "write `await e // => throws ErrorName`"
+          )
+        )
         continue
       }
       s.appendLeft(operand.start - prefix.length, `${helpers}.failsWith(`)
@@ -81,7 +102,9 @@ export const rewriteExample = (
       continue
     }
     if (!sameLine || expected === "") {
-      diagnostics.push(at("EFX9302", "`// => expected` must follow an expression or a `const` on the same line", start, end))
+      diagnostics.push(
+        at("EFX9302", "`// => expected` must follow an expression or a `const` on the same line", start, end)
+      )
       continue
     }
     if (statement.type === "ExpressionStatement") {
@@ -93,9 +116,16 @@ export const rewriteExample = (
       statement.declarations[0].id.type === "Identifier"
     ) {
       const name: string = statement.declarations[0].id.name
-      s.appendRight(statement.end - prefix.length, `${example.code[statement.end - prefix.length - 1] === ";" ? "" : ";"} ${helpers}.assertDoc(${name}, (${expected}))`)
+      s.appendRight(
+        statement.end - prefix.length,
+        `${
+          example.code[statement.end - prefix.length - 1] === ";" ? "" : ";"
+        } ${helpers}.assertDoc(${name}, (${expected}))`
+      )
     } else {
-      diagnostics.push(at("EFX9302", "`// => expected` must follow an expression or a `const` on the same line", start, end))
+      diagnostics.push(
+        at("EFX9302", "`// => expected` must follow an expression or a `const` on the same line", start, end)
+      )
     }
   }
   return { lines: s.toString().split("\n"), diagnostics }

@@ -1,6 +1,6 @@
 # ADR-0042: Docs are TSDoc comments, written once at the definition, with Elixir-style doctests
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by ADR-0044
 - **Date:** 2026-10-03
 - **Deciders:** the user, in conversation (design for living docs)
 - **Related:** docs spec `docs/superpowers/specs/2026-10-03-effectscript-docs-design.md`, spec §4.2,

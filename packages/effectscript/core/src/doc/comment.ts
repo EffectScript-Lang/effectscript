@@ -101,7 +101,10 @@ const tagStarts = (text: string): Array<number> => {
   for (let i = 0; i < text.length; i++) {
     const c = text[i]
     if (c === "`") inCode = !inCode
-    else if (!inCode && c === "@" && (i === 0 || /\s/.test(text[i - 1]!)) && /[A-Za-z]/.test(text[i + 1] ?? "")) {
+    // a tag name ends at whitespace or the line's end: `@effect/vitest` in prose is not a tag
+    else if (
+      !inCode && c === "@" && (i === 0 || /\s/.test(text[i - 1]!)) && /^@[A-Za-z][\w-]*(?=\s|$)/.test(text.slice(i))
+    ) {
       starts.push(i)
     }
   }
@@ -149,7 +152,9 @@ export const parseDocComment = (source: string, start: number, end: number): Doc
       continue
     }
     const open = fenceOpen.exec(line.text.trimStart())
-    if (open !== null && tags.length === 0) {
+    const tag = tags[tags.length - 1]
+    // fences count in the description and under a TSDoc `@example <title>` tag
+    if (open !== null && (tag === undefined || tag.name === "example")) {
       fence = {
         marker: open[1]!,
         runnable: open[2] === "efx" && !/(^|\s)ignore(\s|$)/.test(open[3] ?? ""),
@@ -157,7 +162,8 @@ export const parseDocComment = (source: string, start: number, end: number): Doc
         code: [],
         title: paragraph.length > 0 ? "" : lastParagraph
       }
-      if (paragraph.length > 0) fence.title = paragraph.join(" ").trim().replace(/:$/, "")
+      if (tag !== undefined) fence.title = tag.text.join(" ").trim()
+      else if (paragraph.length > 0) fence.title = paragraph.join(" ").trim().replace(/:$/, "")
       paragraph = []
       pushText(line.text)
       continue
@@ -217,7 +223,9 @@ export const docCommentBefore = (
     if (comment.end > start) break
     candidate = comment
   }
-  if (candidate === undefined || candidate.line || source.slice(candidate.start, candidate.start + 3) !== "/**") return undefined
+  if (candidate === undefined || candidate.line || source.slice(candidate.start, candidate.start + 3) !== "/**") {
+    return undefined
+  }
   if (source.slice(candidate.start, candidate.end) === "/**/") return undefined
   const gap = source.slice(candidate.end, start)
   return /^(?:\s|export\b|default\b|declare\b)*$/.test(gap) ? candidate : undefined

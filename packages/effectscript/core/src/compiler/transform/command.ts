@@ -3,7 +3,7 @@
  *
  * @since 4.0.0
  */
-import { parseDocComment } from "../../docs/comment.ts"
+import { parseDocComment } from "../../doc/comment.ts"
 import type { Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"

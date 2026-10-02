@@ -89,7 +89,10 @@ export effect transfer(from: AccountId, to: AccountId, amount: Money): Receipt t
 - **Titles.** An example's title is the last paragraph before the fence, without a trailing `:`.
   If there is none, the title is `example N`.
 - **Body.** The body is an `effect` body: `await` binds effects, and the prelude applies.
-- **Scope.** All exports of the documented module are in scope.
+- **Scope.** All exports of the documented module are in scope, and so are all of its own imports
+  (ADR-0044).
+- **`@example`.** `@example <title>` followed by a fence is also a titled example. Pages render it
+  as `**title**` and the fence (ADR-0044).
 - **Assertions:**
   - `expr // => expected` is allowed on an expression statement or a single-declarator
     `const x = expr`. It passes when `Equal.equals(actual, expected)` holds or
@@ -144,8 +147,14 @@ efx docs [paths] [--out docs/api] [--check] [--strict]
   directories.
 - **Exports only.** Only exported declarations are documented. A module with no exports gets no
   page.
-- **Writing pages.** It writes `<out>/<module path>.md` for each module and `<out>/index.md`. The
-  output directory is deleted and fully regenerated.
+- **Writing pages.** It writes `<out>/<module path>.md` for each module and `<out>/index.md`. It
+  keeps a manifest, `<out>/.efx-docs.json`, and on the next run replaces only the files listed
+  there. It refuses to write to:
+  - the project itself;
+  - a directory that contains an input;
+  - a non-empty directory it didn't write.
+
+  Two modules that map to the same page are an error (ADR-0044).
 - **Module paths.** A module path is the file path relative to the package root, with a leading
   `src/` and the extension removed. `index` files take their directory's path, as service keys do
   (ADR-0014), so `src/users/index.efx` → `users`. The root `src/index.efx` has path `""`, and its
@@ -153,7 +162,7 @@ efx docs [paths] [--out docs/api] [--check] [--strict]
 - **`--check`.** Writes nothing, prints the diagnostics, and exits with 1 on errors (or on warnings
   with `--strict`).
 
-### 3.1 Doc model (internal, `core/src/docs/model.ts`)
+### 3.1 Doc model (internal, `core/src/doc/model.ts`)
 
 ```ts
 interface DocModule { path: string; doc?: DocComment; declarations: DocDeclaration[] }
@@ -184,7 +193,7 @@ interface DocComment {
   to that declaration's anchor. Its summary is copied into the table where it is referenced.
 - **Schema definitions and constraints are shown as written** (`Int & Brand<"Money">`, or a field
   `cents = Int.check(isGreaterThan(0))`), not rephrased. The text is exact, short and already familiar to Effect users.
-- **One parser.** The doc-comment parser (`core/src/docs/comment.ts`) replaces `jsdocBefore` in
+- **One parser.** The doc-comment parser (`core/src/doc/comment.ts`) replaces `jsdocBefore` in
   `transform/command.ts`, so CLI help text and API pages read comments the same way.
 
 ### 3.2 Page layout
@@ -350,3 +359,9 @@ These are deviations from the text above, decided while implementing:
   - `blume validate` found no broken links;
   - `efx` fences had keyword colors;
   - the API pages were listed in `llms.txt`.
+- **Pipeline directory.** The pipeline lives in `core/src/doc/`, exported as `effectscript/doc/*`,
+  not `src/docs/`. The repo's dprint and oxlint configs exclude `**/docs`, which would have left
+  the pipeline unlinted.
+- **Review fixes.** The Plan 12 final review findings were fixed under ADR-0044: output-directory
+  safety, examples that see the module's imports, `@example` tags, and the tag-name rule. See
+  `docs/reviews/2026-10-03-plan-12-final-review.md`.

@@ -26,14 +26,29 @@ export const doctestSource = (
     const start = main === null ? 0 : main.index + main[0].indexOf("main")
     return {
       code: "",
-      diagnostics: [diagnosticError("EFX9307", "A doctest target can't have a `main` block: importing it would run the program", start, start + 4, "move the examples' code into a module without `main`")]
+      diagnostics: [
+        diagnosticError(
+          "EFX9307",
+          "A doctest target can't have a `main` block: importing it would run the program",
+          start,
+          start + 4,
+          "move the examples' code into a module without `main`"
+        )
+      ]
     }
   }
   const lines = source.split("\n").map(() => "")
   const specifier = `./${path.basename(file)}`
-  const values = module.declarations.filter((d) => !typeKinds.has(d.kind) && d.name !== "default").map((d) => d.name)
-  const types = module.declarations.filter((d) => typeKinds.has(d.kind)).map((d) => d.name)
-  const header: Array<string> = []
+  const values = [
+    ...new Set(module.declarations.filter((d) => !typeKinds.has(d.kind) && d.name !== "default").map((d) => d.name))
+  ]
+  // a name that is both a value and a type comes in once, through the value import
+  const types = [
+    ...new Set(module.declarations.filter((d) => typeKinds.has(d.kind) && !values.includes(d.name)).map((d) => d.name))
+  ]
+  // the module's own imports are in scope of its examples too, unchanged: the virtual module lives
+  // in the same directory (ADR-0044)
+  const header: Array<string> = [...module.importStatements]
   if (values.length > 0) header.push(`import { ${values.join(", ")} } from ${JSON.stringify(specifier)};`)
   if (types.length > 0) header.push(`import type { ${types.join(", ")} } from ${JSON.stringify(specifier)};`)
   header.push(`import * as ${helpers} from "effectscript/doctest";`, "export default ($efxIt) => {")
@@ -57,7 +72,14 @@ export const doctestSource = (
     lines[example.closeLine - 1] = "})"
   }
   if (examples.length === 0) {
-    diagnostics.push(diagnosticWarning("EFX9305", `${path.basename(file)} has no \`efx\` examples to test`, 0, Math.min(1, source.length)))
+    diagnostics.push(
+      diagnosticWarning(
+        "EFX9305",
+        `${path.basename(file)} has no \`efx\` examples to test`,
+        0,
+        Math.min(1, source.length)
+      )
+    )
     lines[0] += ` $efxIt.skip(${JSON.stringify(`${path.basename(file)} has no efx examples`)}, () => {});`
   }
   lines.push("}")

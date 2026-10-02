@@ -1,6 +1,6 @@
 import { Data, Effect } from "effect"
-import { parseDocComment } from "effectscript/docs/comment"
-import { rewriteExample } from "effectscript/docs/examples"
+import { parseDocComment } from "effectscript/doc/comment"
+import { rewriteExample } from "effectscript/doc/examples"
 import { assertDoc, dies, failsWith } from "effectscript/doctest"
 import { describe, expect, it } from "vitest"
 

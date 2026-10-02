@@ -1,6 +1,6 @@
 # ADR-0043: `efx docs` is our own syntactic generator that writes Markdown for Blume
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by ADR-0044
 - **Date:** 2026-10-03
 - **Deciders:** the user, in conversation (design for living docs)
 - **Related:** docs spec `docs/superpowers/specs/2026-10-03-effectscript-docs-design.md`, spec §5,

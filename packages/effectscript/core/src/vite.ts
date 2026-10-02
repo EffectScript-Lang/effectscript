@@ -12,7 +12,7 @@ import * as path from "node:path"
 import { toTypeScript } from "./compiler/compile.ts"
 import { formatDiagnostic } from "./compiler/diagnostics.ts"
 import type { Runtime } from "./compiler/options.ts"
-import { doctestSource } from "./docs/doctest.ts"
+import { doctestSource } from "./doc/doctest.ts"
 import { packageInfo } from "./project.ts"
 
 /**

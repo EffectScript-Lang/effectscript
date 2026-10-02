@@ -1,5 +1,5 @@
-import { docModule, modulePath } from "effectscript/docs/model"
-import { pageFile, renderIndex, renderModule, slug } from "effectscript/docs/render"
+import { docModule, modulePath } from "effectscript/doc/model"
+import { pageFile, renderIndex, renderModule, slug } from "effectscript/doc/render"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { describe, expect, it } from "vitest"

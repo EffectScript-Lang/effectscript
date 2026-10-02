@@ -1,4 +1,4 @@
-import { allExamples, docModule, modulePath } from "effectscript/docs/model"
+import { allExamples, docModule, modulePath } from "effectscript/doc/model"
 import { describe, expect, it } from "vitest"
 
 const source = `/**

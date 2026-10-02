@@ -21,8 +21,7 @@ export interface DocSite {
  * @since 4.0.0
  * @category utils
  */
-export const slug = (heading: string): string =>
-  heading.toLowerCase().replace(/[^a-z0-9 _-]/g, "").replace(/ /g, "-")
+export const slug = (heading: string): string => heading.toLowerCase().replace(/[^a-z0-9 _-]/g, "").replace(/ /g, "-")
 
 /**
  * The page of a module, relative to the output directory.
@@ -135,11 +134,22 @@ const memberRow = (site: DocSite, module: DocModule, owner: DocDeclaration, memb
   }
   if (member.kind !== "field") return []
   const parts = fieldParts(member.signature)
-  if (parts === undefined) return [`| \`${member.signature.replace(/\|/g, "\\|")}\` | ${cellText(member.doc?.summary ?? "")} |`]
+  if (parts === undefined) {
+    return [`| \`${member.signature.replace(/\|/g, "\\|")}\` | ${cellText(member.doc?.summary ?? "")} |`]
+  }
   return [`| **${parts.name}** | ${describeType(site, module, parts.type, member.doc?.summary)} |`]
 }
 
-const hiddenTags = new Set(["module", "param", "returns", "throws"])
+const hiddenTags = new Set(["module", "param", "returns", "throws", "example"])
+
+/** A TSDoc `@example <title>` tag: the title in bold, then its fences and text as written. */
+const exampleTag = (text: string): Array<string> => {
+  const lines = text.split("\n")
+  const fence = lines.findIndex((line) => /^\s*(`{3,}|~{3,})/.test(line))
+  const title = flat((fence === -1 ? lines : lines.slice(0, fence)).join(" "))
+  const rest = fence === -1 ? "" : lines.slice(fence).join("\n")
+  return [...(title === "" ? [] : [`**${title}**`, ""]), ...(rest === "" ? [] : [rest, ""])]
+}
 
 const section = (
   site: DocSite,
@@ -154,6 +164,7 @@ const section = (
   const rows = d.members.flatMap((m) => memberRow(site, module, d, m))
   if (rows.length > 0) out.push("| | |", "| --- | --- |", ...rows, "")
   if (d.doc?.body) out.push(d.doc.body, "")
+  for (const tag of tags(d, "example")) out.push(...exampleTag(tag.text))
   const shown = (d.doc?.tags ?? []).filter((tag) => !hiddenTags.has(tag.name))
   if (shown.length > 0) {
     out.push(...shown.map((tag) => `- **@${tag.name}**${tag.text === "" ? "" : ` ${flat(tag.text)}`}`), "")

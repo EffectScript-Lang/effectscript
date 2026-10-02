@@ -36,12 +36,18 @@ describe("efx docs (Plan 12 Task 6)", () => {
       "src/money.efx": money,
       "src/pay.efx": pay,
       "src/pay.test.efx": "doctest \"./pay.efx\"\n",
-      "docs/api/stale.md": "old"
+      "docs/api/stale.md": "old",
+      "docs/api/.efx-docs.json": "{ \"files\": [\"stale.md\"] }"
     })
     const result = run(dir)
     expect(result.stderr).toBe("")
     expect(result.status).toBe(0)
-    expect(fs.readdirSync(path.join(dir, "docs/api")).sort()).toEqual(["index.md", "money.md", "pay.md"])
+    expect(fs.readdirSync(path.join(dir, "docs/api")).sort()).toEqual([
+      ".efx-docs.json",
+      "index.md",
+      "money.md",
+      "pay.md"
+    ])
     expect(fs.readFileSync(path.join(dir, "docs/api/pay.md"), "utf8")).toContain(
       "[`Money`](./money.md#money): Whole cents."
     )
@@ -70,7 +76,7 @@ describe("efx docs (Plan 12 Task 6)", () => {
   it("honors --out and explicit paths, and tolerates no exports", () => {
     const dir = project({ "lib/x.ts": "/** X. */\nexport const x: number = 1\n", "lib/empty.ts": "const y = 1\n" })
     expect(run(dir, "lib", "--out", "site/ref").status).toBe(0)
-    expect(fs.readdirSync(path.join(dir, "site/ref")).sort()).toEqual(["index.md", "lib"])
+    expect(fs.readdirSync(path.join(dir, "site/ref")).sort()).toEqual([".efx-docs.json", "index.md", "lib"])
     expect(fs.existsSync(path.join(dir, "site/ref/lib/empty.md"))).toBe(false)
   }, 30_000)
 })
