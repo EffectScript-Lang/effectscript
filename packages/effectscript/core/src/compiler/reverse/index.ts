@@ -10,7 +10,6 @@ import { analyze } from "../analyze/scope.ts"
 import { children, type Node } from "../ast.ts"
 import { resolveOptions } from "../options.ts"
 import { parse } from "../parser/parse.ts"
-import { effectDeclarationName } from "./blockers.ts"
 import { classShape, convertClass } from "./classes.ts"
 import type { ConvertNote, ConvertOptions, ReverseCtx } from "./context.ts"
 import { makeVisit, visitProgram } from "./effects.ts"
@@ -18,7 +17,9 @@ import { applyPrelude } from "./imports.ts"
 import { directive, leadingComments } from "./main.ts"
 import { importedLocal } from "./origin.ts"
 import { topicsRoundTrip } from "./pipes.ts"
+import { effectDeclarationName } from "./resources.ts"
 import { convertService } from "./service.ts"
+import { compilesBack } from "./verify.ts"
 
 export type { ConvertNote, ConvertOptions } from "./context.ts"
 
@@ -28,7 +29,7 @@ export type { ConvertNote, ConvertOptions } from "./context.ts"
  */
 export interface ConvertResult {
   readonly code: string
-  /** Near misses that were left as TypeScript and why, plus `canonicalized: …` notes. */
+  /** Near misses that were left as TypeScript, and why. */
   readonly notes: ReadonlyArray<ConvertNote>
 }
 
@@ -38,8 +39,32 @@ export interface ConvertResult {
  * @since 4.0.0
  * @category reverse
  */
-export const toEffectScript = (source: string, options: ConvertOptions = {}): ConvertResult =>
-  convert(source, options, new Set())
+export const toEffectScript = (source: string, options: ConvertOptions = {}): ConvertResult => {
+  const full = convert(source, options, new Set(), undefined)
+  if (full.code === source || compilesBack(source, full.code, options)) return full
+  // ADR-0030 amendment 2: add top-level statements one at a time, keeping those that verify
+  const parsed = parse(source)
+  if (parsed._tag === "Failure") return { code: source, notes: full.notes }
+  const body: Array<Node> = parsed.program.body
+  const enabled = new Set<number>()
+  const failed: Array<ConvertNote> = []
+  let best: ConvertResult = { code: source, notes: [] }
+  body.forEach((statement, i) => {
+    const attempt = convert(source, options, new Set(), new Set([...enabled, i]))
+    if (attempt.code === best.code) return
+    if (compilesBack(source, attempt.code, options)) {
+      enabled.add(i)
+      best = attempt
+    } else {
+      failed.push({
+        start: statement.start,
+        end: statement.end,
+        message: "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)"
+      })
+    }
+  })
+  return { code: best.code, notes: [...best.notes, ...failed] }
+}
 
 const binderNames = new Set(["defect", "error"])
 
@@ -57,7 +82,13 @@ const bindersClash = (program: Node, binders: ReadonlySet<Node>): boolean => {
   return clash
 }
 
-const convert = (source: string, options: ConvertOptions, disabled: ReadonlySet<"try" | "main">): ConvertResult => {
+/** One conversion; with `only`, top-level statements outside it are left as written. */
+const convert = (
+  source: string,
+  options: ConvertOptions,
+  disabled: ReadonlySet<"try" | "main">,
+  only: ReadonlySet<number> | undefined
+): ConvertResult => {
   const parsed = parse(source)
   if (parsed._tag === "Failure") {
     return { code: source, notes: parsed.diagnostics.map((d) => ({ start: d.start, end: d.end, message: d.message })) }
@@ -82,13 +113,15 @@ const convert = (source: string, options: ConvertOptions, disabled: ReadonlySet<
     disabled,
     telemetryDirective: false,
     namespace: "Effect",
-    service: undefined
+    service: undefined,
+    only
   }
   if (ctx.effect === undefined && ctx.schema === undefined) return { code: source, notes: [] }
+  const enabled = (i: number) => only === undefined || only.has(i)
   // classes first: bodies need to know which classes become `error` declarations
-  for (const top of parsed.program.body as Array<Node>) {
+  for (const [i, top] of (parsed.program.body as Array<Node>).entries()) {
     const statement: Node = top.type === "ExportNamedDeclaration" && top.declaration !== null ? top.declaration : top
-    if (statement.type === "ClassDeclaration") {
+    if (statement.type === "ClassDeclaration" && enabled(i)) {
       const shape = classShape(ctx, statement, false)
       if (shape?.keyword === "error") ctx.errors.add(shape.name)
     }
@@ -98,17 +131,21 @@ const convert = (source: string, options: ConvertOptions, disabled: ReadonlySet<
   const statements = (parsed.program.body as Array<Node>).map((top) =>
     top.type === "ExportNamedDeclaration" && top.declaration !== null ? top.declaration : top
   )
-  const loose = { effect: ctx.effect, effectCandidates: new Set<string>() }
   for (const statement of statements) {
-    const name = effectDeclarationName(loose, statement, false)
+    const name = effectDeclarationName(ctx, statement, false)
     if (name !== undefined) ctx.effectCandidates.add(name)
   }
-  for (const statement of statements) {
-    const name = effectDeclarationName(ctx, statement, true)
+  for (const [i, statement] of statements.entries()) {
+    const name = enabled(i) ? effectDeclarationName(ctx, statement, true) : undefined
     if (name !== undefined) ctx.effects.add(name)
   }
   ctx.topics = topicsRoundTrip(ctx)
-  const topLevel = new Set((parsed.program.body as Array<Node>).flatMap((top) => [top, top.declaration]))
+  // `export default class` has no declaration spelling (`export default schema` doesn't parse)
+  const topLevel = new Set(
+    (parsed.program.body as Array<Node>).flatMap((
+      top
+    ) => [top, top.type === "ExportNamedDeclaration" ? top.declaration : top])
+  )
   visitProgram(
     ctx,
     parsed.program,
@@ -117,14 +154,14 @@ const convert = (source: string, options: ConvertOptions, disabled: ReadonlySet<
       (cls, visit) => topLevel.has(cls) && (convertService(ctx, cls, visit) || convertClass(ctx, cls, visit))
     )
   )
-  if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, new Set([...disabled, "try"]))
+  if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, new Set([...disabled, "try"]), only)
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
   if (!ctx.telemetryDirective) return { code: applyPrelude(ctx.s.toString(), options), notes: ctx.notes }
   // the telemetry directive must end up leading: verify the imports with telemetry on, then check
   const code = applyPrelude(ctx.s.toString(), { ...options, observability: "otlp" })
   const found = directive.exec(code)
   if (found === null || found.index >= leadingComments(code).length) {
-    return convert(source, options, new Set([...disabled, "main"]))
+    return convert(source, options, new Set([...disabled, "main"]), only)
   }
   return { code, notes: ctx.notes }
 }

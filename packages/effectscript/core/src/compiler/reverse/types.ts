@@ -38,6 +38,15 @@ const generic1: Record<string, string> = {
 }
 const generic2: Record<string, string> = { Record: "Record", ReadonlyMap: "ReadonlyMap" }
 
+/** Schemas whose type is a union: a brand on them doesn't distribute. */
+const unions = ["Union", "Literals", "NullOr", "UndefinedOr", "NullishOr"]
+
+/** A literal a type can spell: a string, number, boolean, `null`, or a negative number. */
+const isLiteral = (node: Node): boolean =>
+  (node.type === "Literal" && node.regex === undefined && node.bigint === undefined) ||
+  (node.type === "UnaryExpression" && node.operator === "-" && node.argument.type === "Literal" &&
+    typeof node.argument.value === "number")
+
 /**
  * The TypeScript type for a schema expression, or `undefined` when it has no table entry.
  *
@@ -54,12 +63,14 @@ export const schemaToType = (source: string, schema: string, node: Node): string
     if (n.type === "Identifier") return n.name
     if (n.type !== "CallExpression") return undefined
     const args: Array<Node> = n.arguments
-    // T.pipe(Schema.brand("X"))
+    // T.pipe(Schema.brand("X")); a union can't be branded as `A | B & Brand<…>` (it would brand B)
     if (
       n.callee.type === "MemberExpression" && !n.callee.computed && n.callee.property.name === "pipe" &&
       args.length === 1 && args[0]!.type === "CallExpression" && isMember(args[0]!.callee, schema, "brand")
     ) {
-      const inner = go(n.callee.object)
+      const object: Node = n.callee.object
+      if (object.type === "CallExpression" && unions.some((u) => isMember(object.callee, schema, u))) return undefined
+      const inner = go(object)
       const literal = args[0]!.arguments[0]
       return inner === undefined || literal?.type !== "Literal" ? undefined : `${inner} & Brand<${slice(literal)}>`
     }
@@ -72,11 +83,16 @@ export const schemaToType = (source: string, schema: string, node: Node): string
     const list = (n: Node | undefined) => (n?.type === "ArrayExpression" ? all(n.elements) : undefined)
     switch (name) {
       case "Literal":
-        return args.length === 1 ? slice(args[0]!) : undefined
+        return args.length === 1 && isLiteral(args[0]!) ? slice(args[0]!) : undefined
       case "Literals":
-        return args[0]?.type === "ArrayExpression" ? args[0].elements.map(slice).join(" | ") : undefined
-      case "Union":
-        return list(args[0])?.join(" | ")
+        return args[0]?.type === "ArrayExpression" && args[0].elements.length > 1 &&
+            (args[0].elements as Array<Node>).every(isLiteral)
+          ? args[0].elements.map(slice).join(" | ")
+          : undefined
+      case "Union": {
+        const members = list(args[0])
+        return members === undefined || members.length < 2 ? undefined : members.join(" | ")
+      }
       case "Tuple": {
         const types = list(args[0])
         return types === undefined ? undefined : `[${types.join(", ")}]`

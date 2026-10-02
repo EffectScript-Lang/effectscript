@@ -421,7 +421,10 @@ export const efxPlugin = (Base: any): any =>
         left = this.finishNode(pipe, "PipelineExpression")
       }
       node.argument = left
-      return this.finishNode(node, "AwaitExpression")
+      // the node was finished once already: extend it over the pipeline
+      node.end = left.end
+      if (node.loc) node.loc.end = left.loc.end
+      return node
     }
 
     efxIsClassLikeStart(): boolean {

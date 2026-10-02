@@ -6,7 +6,7 @@
  * @since 4.0.0
  */
 import type { Node } from "../ast.ts"
-import { atLevel, genShape } from "./blockers.ts"
+import { atLevel, blocker, genShape, isGenerator } from "./blockers.ts"
 import type { Visit } from "./body.ts"
 import { removeKeepingComments, replaceKeepingComments, type ReverseCtx } from "./context.ts"
 import { isMember } from "./origin.ts"
@@ -109,4 +109,37 @@ export const inFrame = (ctx: ReverseCtx, deferAllowed: boolean, f: () => void): 
   ctx.deferAllowed = deferAllowed
   f()
   ctx.deferAllowed = previous
+}
+
+/**
+ * `const f = Effect.fn("f")(function*…)` that becomes a pipe-less `effect` declaration (the forward
+ * `localEffects`). Without `checkBlockers`, the shape alone (the candidates).
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const effectDeclarationName = (
+  info: ReverseCtx,
+  statement: Node,
+  checkBlockers: boolean
+): string | undefined => {
+  if (statement.type !== "VariableDeclaration" || statement.kind !== "const" || statement.declarations.length !== 1) {
+    return undefined
+  }
+  const declarator: Node = statement.declarations[0]
+  const call: Node | null = declarator.init
+  if (declarator.id.type !== "Identifier" || declarator.id.typeAnnotation || call?.type !== "CallExpression") {
+    return undefined
+  }
+  const head: Node = call.callee
+  if (head.type !== "CallExpression" || !isMember(head.callee, info.effect, "fn")) return undefined
+  const span: Node | undefined = head.arguments[0]
+  if (head.arguments.length !== 1 || span?.type !== "Literal" || span.value !== declarator.id.name) return undefined
+  const fn: Node = call.arguments[0]
+  if (!isGenerator(fn)) return undefined
+  // `Effect.scoped` is the forward compiler's own pipe for a body with `defer`
+  const scoped = call.arguments.length === 2 && isMember(call.arguments[1], info.effect, "scoped") &&
+    hasFinalizer(info, fn.body)
+  if (call.arguments.length !== 1 && !scoped) return undefined
+  return !checkBlockers || blocker(fn, "declaration", info) === undefined ? declarator.id.name : undefined
 }

@@ -80,3 +80,29 @@ compiles back to the same whitespace. The contract is refined:
   file-wide. A removal happens only when the file compiles to the same output with and without it.
   This replaces exception 2 (specifier order), which no longer occurs. The `canonicalized:` notes
   now cover only exception 1.
+
+## Amendment 2 (2026-10-03, Plan 6 final review)
+
+The final review found inputs the tests didn't cover:
+
+- conditional or parenthesized `pipe` heads;
+- a brand on a union;
+- `Schema.Literal(<identifier>)`;
+- arrow pipe steps;
+- `yield*` inside pipe heads;
+- topic `$` in property keys.
+
+For these, the reverse produced EffectScript that failed to parse or that compiled to different code.
+Enforcing ADR-0030 only through tests leaves every unforeseen shape unguarded, so it is now also
+checked at conversion time:
+
+- **The guard:** `toEffectScript` recompiles its result with the same options and compares it with
+  the input under the token-and-comment equivalence. A whole-file check is cheap (one compile)
+  and doesn't have the per-statement context problem rejected above.
+- **On failure:** the conversion is redone statement by statement. Top-level statements are added
+  one at a time, each kept only if the file still verifies. A statement that fails stays
+  TypeScript with a note. If even that doesn't verify, the input is returned unchanged with a
+  note.
+- **No exceptions:** the native-`throw` → `return await die(e)` canonicalization is withdrawn. A
+  native `throw` in a generator is now a §6.3 blocker, so every conversion is verified the same
+  way, and the `canonicalized:` note no longer exists.

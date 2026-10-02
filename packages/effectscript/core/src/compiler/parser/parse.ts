@@ -24,6 +24,8 @@ export type ParseResult =
     readonly mode: Mode
     /** Comments in source order (`text` includes the delimiters). */
     readonly comments: ReadonlyArray<Comment>
+    /** Token ranges in source order, when requested with `tokens: true`. */
+    readonly tokens: ReadonlyArray<readonly [number, number]>
   }
   | { readonly _tag: "Failure"; readonly diagnostics: ReadonlyArray<Diagnostic> }
 
@@ -50,17 +52,28 @@ const parsers: Record<Mode, typeof acorn.Parser> = {
  */
 export const looksLikeJsx = (source: string): boolean => source.includes("</") || source.includes("/>")
 
-const parseWith = (mode: Mode, source: string): { program: Node; comments: Array<Comment> } => {
+const parseWith = (
+  mode: Mode,
+  source: string,
+  withTokens: boolean
+): { program: Node; comments: Array<Comment>; tokens: Array<readonly [number, number]> } => {
   const found = new Map<number, Comment>()
+  // speculative parsing can lex a position twice: the last lexing of a start offset wins
+  const tokens = new Map<number, readonly [number, number]>()
   const program = parsers[mode].parse(source, {
     ecmaVersion: "latest",
     sourceType: "module",
     locations: true,
     allowHashBang: true,
     // speculative TypeScript parsing can report a comment twice
-    onComment: (block, _text, start, end) => found.set(start, { start, end, line: !block })
+    onComment: (block, _text, start, end) => found.set(start, { start, end, line: !block }),
+    ...(withTokens ? { onToken: (token: acorn.Token) => tokens.set(token.start, [token.start, token.end]) } : {})
   }) as unknown as Node
-  return { program, comments: [...found.values()].sort((a, b) => a.start - b.start) }
+  return {
+    program,
+    comments: [...found.values()].sort((a, b) => a.start - b.start),
+    tokens: [...tokens.values()].filter(([start, end]) => end > start).sort((a, b) => a[0] - b[0])
+  }
 }
 
 interface ParseError {
@@ -80,7 +93,10 @@ const toParseError = (error: unknown): ParseError => {
  * @since 0.1.0
  * @category parsing
  */
-export const parse = (source: string, options: { readonly mode?: Mode | undefined } = {}): ParseResult => {
+export const parse = (
+  source: string,
+  options: { readonly mode?: Mode | undefined; readonly tokens?: boolean | undefined } = {}
+): ParseResult => {
   const order: ReadonlyArray<Mode> = options.mode !== undefined
     ? [options.mode]
     : looksLikeJsx(source)
@@ -89,7 +105,7 @@ export const parse = (source: string, options: { readonly mode?: Mode | undefine
   let furthest: ParseError | undefined
   for (const mode of order) {
     try {
-      return { _tag: "Success", ...parseWith(mode, source), mode }
+      return { _tag: "Success", ...parseWith(mode, source, options.tokens === true), mode }
     } catch (error) {
       const parsed = toParseError(error)
       if (furthest === undefined || parsed.pos > furthest.pos) furthest = parsed

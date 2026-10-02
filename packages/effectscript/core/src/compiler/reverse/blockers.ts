@@ -124,6 +124,9 @@ export const blocker = (
 ): string | undefined => {
   const body: Node = fn.body
   if (atLevel(body, (n) => n.type === "YieldExpression" && !n.delegate)) return "it uses `yield` without `*`"
+  if (atLevel(body, (n) => n.type === "ThrowStatement")) {
+    return "a native `throw` is a defect, but in `effect` code `throw` is a typed failure (ADR-0030)"
+  }
   if (atLevel(body, (n) => n.type === "TryStatement")) {
     return "a `try` inside it would become an Effect `try` (ADR-0010)"
   }
@@ -189,35 +192,4 @@ export const genShape = (
   }
   const reason = blocker(fn!, "block", info)
   return reason === undefined ? { fn: fn! } : { reason }
-}
-
-/**
- * `const f = Effect.fn("f")(function*…)` that becomes a pipe-less `effect` declaration (the forward
- * `localEffects`). Without `checkBlockers`, the shape alone (the candidates).
- *
- * @since 4.0.0
- * @category reverse
- */
-export const effectDeclarationName = (
-  info: StrictInfo,
-  statement: Node,
-  checkBlockers: boolean
-): string | undefined => {
-  if (statement.type !== "VariableDeclaration" || statement.kind !== "const" || statement.declarations.length !== 1) {
-    return undefined
-  }
-  const declarator: Node = statement.declarations[0]
-  const call: Node | null = declarator.init
-  if (declarator.id.type !== "Identifier" || declarator.id.typeAnnotation || call?.type !== "CallExpression") {
-    return undefined
-  }
-  const head: Node = call.callee
-  if (head.type !== "CallExpression" || !isMember(head.callee, info.effect, "fn") || call.arguments.length !== 1) {
-    return undefined
-  }
-  const span: Node | undefined = head.arguments[0]
-  if (head.arguments.length !== 1 || span?.type !== "Literal" || span.value !== declarator.id.name) return undefined
-  const fn: Node = call.arguments[0]
-  if (!isGenerator(fn)) return undefined
-  return !checkBlockers || blocker(fn, "declaration", info) === undefined ? declarator.id.name : undefined
 }

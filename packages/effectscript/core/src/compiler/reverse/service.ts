@@ -15,13 +15,15 @@ import {
   commentsIn,
   note,
   removeKeepingComments,
+  replaceKeepingComments,
   type ReverseCtx,
   separatorComma,
   slice,
   within
 } from "./context.ts"
-import { convertReturnType } from "./effects.ts"
+import { convertReturnType, returnTypeProblem } from "./effects.ts"
 import { importedLocal, isMember } from "./origin.ts"
+import { isPlainStep } from "./pipes.ts"
 import { inFrame } from "./resources.ts"
 
 const reservedStatics = new Set([
@@ -160,6 +162,7 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
       continue
     }
     if (!returnsEffect(ctx, signature) || reservedStatics.has(signature.key.name)) continue
+    if (returnTypeProblem(ctx, returnTypeOf(signature), "Effect") !== undefined) continue
     const accessor = accessors.get(signature.key.name)
     if (accessor === undefined) continue
     if (slice(ctx, accessor) !== accessorFor(ctx, name, signature)) {
@@ -210,7 +213,7 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
   }
   for (const accessor of accessorNodes) ctx.s.remove(lineStart(ctx, accessor.start), accessor.end + 1)
   layers.forEach((layer, i) => {
-    ctx.s.update(layer.member.start, layer.member.value.start, `${layer.head} = `)
+    replaceKeepingComments(ctx, layer.member.start, layer.member.value.start, `${layer.head} = `)
     layerPlans[i]!(visit)
   })
   return true
@@ -241,7 +244,8 @@ const layerPlan = (ctx: ReverseCtx, name: string, value: Node): ((visit: Visit) 
     const returns = (shape.fn.body.body as Array<Node>).filter((s) => s.type === "ReturnStatement")
     // the forward compiler wraps every top-level `return { … }` in `S.of(…)`
     if (returns.some((r) => r.argument?.type === "ObjectExpression")) return undefined
-    if (pipe !== undefined && pipe.arguments.some((a: Node) => a.type === "SpreadElement")) return undefined
+    // every step must read the same after `|>`
+    if (pipe !== undefined && !(pipe.arguments as Array<Node>).every((a) => isPlainStep(a))) return undefined
     return (visit) => {
       ctx.s.remove(head.start, inner.start)
       ctx.s.update(inner.start, shape.fn.body.start, "effect ")

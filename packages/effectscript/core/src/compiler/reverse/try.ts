@@ -108,7 +108,31 @@ const clausesFrom = (
     : [...clauses, { tags: undefined, handler: fallback.handler, fn: fallback.fn }]
 }
 
-const isIdentifierName = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name)
+/** Type names that are keywords in a type position: `catch (e: string)` would catch everything. */
+const typeKeywords = new Set([
+  "any",
+  "asserts",
+  "bigint",
+  "boolean",
+  "infer",
+  "is",
+  "keyof",
+  "never",
+  "null",
+  "number",
+  "object",
+  "readonly",
+  "string",
+  "symbol",
+  "this",
+  "typeof",
+  "undefined",
+  "unique",
+  "unknown",
+  "void"
+])
+
+const isIdentifierName = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name) && !typeKeywords.has(name)
 
 /** `Effect.catchDefect((defect) => Effect.fail(new Cause.UnknownError(defect)))` */
 const isDefectPrelude = (ctx: ReverseCtx, node: Node, binders: Array<Node>): boolean => {

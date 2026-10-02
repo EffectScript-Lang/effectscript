@@ -181,13 +181,16 @@ export const convertMatch = (
   ctx: ReverseCtx,
   shape: MatchShape,
   range: readonly [number, number],
-  visit: Visit
+  visit: Visit,
+  generator: boolean
 ): boolean => {
   const { arms, subject } = shape
   const first = arms[0]!
   const last = arms[arms.length - 1]!
   const closing = ctx.source.slice(last.end, range[1])
   if (!ctx.source.startsWith(shape.opener, subject.end) || commentsIn(ctx, last.end, range[1]).length > 0) return false
+  // an arm head is rewritten whole, so it can't hold a comment
+  if (arms.some((arm) => commentsIn(ctx, arm.start, arm.value.start).length > 0)) return false
   for (const [i, arm] of arms.entries()) {
     if (i < arms.length - 1 && !ctx.source.startsWith(shape.separator, arm.end)) return false
   }
@@ -211,7 +214,7 @@ export const convertMatch = (
   })
   const close = lineBreak(closing)
   ctx.s.update(last.end, range[1], close === undefined ? " }" : `${close}}`)
-  visit(subject, shape.call, false)
+  visit(subject, shape.call, generator)
   for (const arm of arms) visit(arm.value, arm.fn ?? shape.call, arm.fn !== undefined)
   return true
 }

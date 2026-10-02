@@ -73,15 +73,6 @@ describe("reverse: effect forms (Plan 6 Task 2)", () => {
     expect(back).toContain("return await find(id) ?? throw new Error(\"missing\")")
     expect(toTypeScript(back).code).toBe(ts)
   })
-
-  it("canonicalizes a native throw as a defect (ADR-0030)", () => {
-    const result = convert(
-      "export const f = Effect.fn(\"f\")(function*(n: number) {\n  if (n < 0) throw new Error(\"negative\")\n  return n\n})\n"
-    )
-    expect(result.code).toContain("if (n < 0) return await die(new Error(\"negative\"))")
-    expect(result.notes.some((n) => n.startsWith("canonicalized:"))).toBe(true)
-    expect(result.again).toContain("if (n < 0) return yield* Effect.die(new Error(\"negative\"))")
-  })
 })
 
 describe("reverse: blockers (§6.3)", () => {

@@ -38,9 +38,19 @@ interface ClassShape {
 const superShape = (ctx: ReverseCtx, cls: Node) => {
   const outer: Node | null = cls.superClass
   if (ctx.schema === undefined || cls.id === null || outer?.type !== "CallExpression") return undefined
+  // `abstract`, `implements` and type parameters have no place in a declaration
+  if (cls.abstract === true || (cls.implements?.length ?? 0) > 0 || cls.typeParameters) return undefined
   const inner: Node = outer.callee
   if (inner.type !== "CallExpression") return undefined
   const name: string = cls.id.name
+  // the type argument is the class itself: `Schema.Class<X>("X")`, `TaggedError<X>()`
+  const typeArgs: Array<Node> = (inner.typeArguments ?? inner.typeParameters)?.params ?? []
+  if (
+    typeArgs.length !== 1 || typeArgs[0]!.type !== "TSTypeReference" || typeArgs[0]!.typeName.type !== "Identifier" ||
+    typeArgs[0]!.typeName.name !== name || typeArgs[0]!.typeArguments
+  ) {
+    return undefined
+  }
   const tagged = (member: string) => isMember(inner.callee, ctx.schema, member) && inner.arguments.length === 0
   if (tagged("TaggedError") || tagged("TaggedClass")) {
     const [tag, fields] = outer.arguments
@@ -59,6 +69,7 @@ const superShape = (ctx: ReverseCtx, cls: Node) => {
 const entriesOf = (ctx: ReverseCtx, fields: Node, schemaFields: boolean): Array<Field> | undefined => {
   const entries: Array<Field> = []
   for (const property of fields.properties as Array<Node>) {
+    if (commentsIn(ctx, property.start, property.end).length > 0) return undefined
     const typed = fieldType(ctx.source, ctx.schema!, property)
     if (typed !== undefined) {
       entries.push({ kind: "typed", property, optional: typed.optional, type: typed.type })
@@ -151,6 +162,8 @@ export const convertClass = (ctx: ReverseCtx, cls: Node, visit: Visit): boolean 
   const shape = classShape(ctx, cls, true)
   if (shape === undefined) return false
   const { entries, fields, keyword, name } = shape
+  // the text between the fields and the class body is removed, so it can't hold a comment
+  if (commentsIn(ctx, fields.end, cls.body.start + 1).length > 0) return false
   replaceKeepingComments(ctx, cls.start, fields.start, `${keyword} ${name} `)
   if (shape.tagField) {
     // the forward compiler drops the `_tag` field's whole line
@@ -170,7 +183,6 @@ export const convertClass = (ctx: ReverseCtx, cls: Node, visit: Visit): boolean 
   const close = fields.end - 1
   const atLineStart = ctx.source[close - 1] === "\n"
   const end = ctx.source[cls.body.start + 1] === "\n" && atLineStart ? cls.body.start + 2 : cls.body.start + 1
-  if (commentsIn(ctx, close, end).length > 0) return true
   ctx.s.remove(close, end)
   for (const member of members) visit(member, cls.body, false)
   return true
@@ -215,6 +227,7 @@ export const convertSchemaRun = (ctx: ReverseCtx, body: ReadonlyArray<Node>, ind
     const shape = superShape(ctx, statement)
     if (shape?.keyword !== "schema" || shape.tag !== shape.name || shape.fields?.type !== "ObjectExpression") break
     if (variants.length > 0 && !joinedByLines(ctx, tops[variants.length - 1]!.end, top.start)) break
+    if (commentsIn(ctx, top.start, top.end).length > 0) break
     const entries = entriesOf(ctx, shape.fields, false)
     if (entries === undefined || commentsIn(ctx, shape.fields.start, shape.fields.end).length > 0) break
     variants.push({ name: shape.name, entries })
@@ -240,7 +253,8 @@ export const convertSchemaRun = (ctx: ReverseCtx, body: ReadonlyArray<Node>, ind
         m?.type === "Identifier" && m.name === variants[i]!.name
       ) &&
       ctx.source.slice(tops[variants.length - 1]!.end, tops[variants.length]!.start) === "\n" &&
-      ctx.source.slice(tops[variants.length]!.end, tops[variants.length + 1]!.start) === "\n"
+      ctx.source.slice(tops[variants.length]!.end, tops[variants.length + 1]!.start) === "\n" &&
+      commentsIn(ctx, tops[variants.length]!.start, tops[variants.length + 1]!.end).length === 0
     ) {
       const lines = variants.map((variant, i) => {
         const fields = variant.entries.map((e) =>
@@ -267,7 +281,7 @@ export const convertSchemaRun = (ctx: ReverseCtx, body: ReadonlyArray<Node>, ind
     if (
       name === undefined || declarator.id.typeAnnotation || declarator.init === null ||
       !isTypeOf(second.statement, name) || ctx.source.slice(tops[0]!.end, tops[1]!.start) !== "\n" ||
-      commentsIn(ctx, declarator.init.start, declarator.init.end).length > 0
+      commentsIn(ctx, tops[0]!.start, tops[1]!.end).length > 0
     ) {
       return 0
     }

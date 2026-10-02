@@ -23,6 +23,8 @@ export interface ConvertOptions {
   readonly packageRoot?: string | undefined
   readonly runtime?: Runtime | undefined
   readonly prelude?: boolean | undefined
+  readonly ambient?: boolean | undefined
+  readonly strict?: boolean | undefined
   readonly observability?: "otlp" | undefined
 }
 
@@ -33,7 +35,7 @@ export interface ConvertOptions {
 export interface ConvertNote {
   readonly start: number
   readonly end: number
-  /** Why a near match stayed TypeScript, or `canonicalized: …` for a listed canonicalization. */
+  /** Why a near match stayed TypeScript. */
   readonly message: string
 }
 
@@ -75,6 +77,8 @@ export interface ReverseCtx {
   namespace: "Effect" | "Layer"
   /** The service whose layer is being visited: its `effect` members are named `Svc.member`. */
   service: string | undefined
+  /** Top-level statement indexes to convert (all when `undefined`); see `toEffectScript`. */
+  readonly only: ReadonlySet<number> | undefined
 }
 
 /**

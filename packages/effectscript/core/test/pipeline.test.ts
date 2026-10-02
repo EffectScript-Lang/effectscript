@@ -52,3 +52,13 @@ describe("multi-line pipelines after an effect block (Plan 6 Task 4)", () => {
     )
   })
 })
+
+describe("await over a pipeline inside an operand (Plan 6 final review)", () => {
+  it("parenthesizes the whole awaited pipeline", () => {
+    const { code, diagnostics } = toTypeScript(
+      "declare const a: Effect<number>\nexport const p = effect {\n  return 1 + (await a |> map((n) => n))\n}\n"
+    )
+    expect(diagnostics).toEqual([])
+    expect(code).toContain("return 1 + (yield* pipe(a, Effect.map((n) => n)))")
+  })
+})

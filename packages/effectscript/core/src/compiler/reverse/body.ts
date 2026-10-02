@@ -7,9 +7,10 @@
 import type { Node } from "../ast.ts"
 import { excludedNames, namespaceExports, preludeFunctions, preludeModules } from "../prelude/tables.ts"
 import { isParenthesized } from "../transform/await.ts"
-import { commentsIn, note, type ReverseCtx } from "./context.ts"
+import { commentsIn, removeKeepingComments, type ReverseCtx } from "./context.ts"
 import { convertMatch, matchShape } from "./match.ts"
 import { isMember } from "./origin.ts"
+import { inPosition, pipeShape } from "./pipes.ts"
 import { convertFinalizer } from "./resources.ts"
 import { convertTry } from "./try.ts"
 
@@ -132,7 +133,7 @@ export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node |
     const error = failure(ctx, yielded.argument)
     if (error !== undefined && ctx.source.slice(node.start, yielded.argument.start) === "return yield* ") {
       ctx.s.update(node.start, error.start, "throw ")
-      ctx.s.remove(error.end, yielded.end)
+      removeKeepingComments(ctx, error.end, yielded.end)
       visit(error, node, true)
       return true
     }
@@ -141,21 +142,13 @@ export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node |
   if ((node.type === "ReturnStatement" || node.type === "ExpressionStatement") && convertTry(ctx, node, visit)) {
     return true
   }
-  if (node.type === "ThrowStatement" && node.argument.type !== "SequenceExpression") {
-    // a native throw is a defect: `return await die(e)` compiles to `return yield* Effect.die(e)`
-    ctx.s.update(node.start, node.argument.start, `return await ${builtin(ctx, "die")}(`)
-    ctx.s.appendLeft(node.argument.end, ")")
-    note(ctx, node, "canonicalized: a native `throw` in an Effect generator is a defect, written `return await die(e)`")
-    visit(node.argument, node, true)
-    return true
-  }
   if (node.type !== "YieldExpression" || !node.delegate) return false
   const argument: Node = node.argument
   const parens = parenRange(ctx, node)
   // `(yield* Match…(… Effect.gen(…) …))` → `match (…) { … }` with awaiting arms
   if (parens !== undefined) {
     const shape = matchShape(ctx, argument, true)
-    if (shape !== undefined && convertMatch(ctx, shape, [parens.open, parens.close + 1], visit)) return true
+    if (shape !== undefined && convertMatch(ctx, shape, [parens.open, parens.close + 1], visit, true)) return true
   }
   // `(yield* Effect.fail(e))` in expression position → the throw expression
   const statement = parent?.type === "ReturnStatement" || parent?.type === "ExpressionStatement"
@@ -179,9 +172,12 @@ export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node |
   } else {
     ctx.s.update(node.start, node.start + "yield*".length, "await")
   }
-  // parentheses the forward compiler puts back (`x + (yield* t)` ← `x + await t`) are dropped
+  // parentheses the forward compiler puts back (`x + (yield* t)` ← `x + await t`) are dropped,
+  // unless the argument becomes a pipeline or `match`, which bind looser than `await`
+  const loose = pipeShape(ctx, argument, node, ctx.topics) !== undefined ||
+    (inPosition(argument, node) && matchShape(ctx, argument, false) !== undefined)
   if (
-    parens !== undefined && droppableParens(node, parent) &&
+    parens !== undefined && droppableParens(node, parent) && !loose &&
     commentsIn(ctx, parens.open, node.start).length === 0 && commentsIn(ctx, node.end, parens.close).length === 0
   ) {
     ctx.s.remove(parens.open, parens.open + 1)

@@ -9,8 +9,18 @@ import type { Node } from "../ast.ts"
 import type { Runtime } from "../options.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
-import { commaToPipe, note, removeKeepingComments, type ReverseCtx, separatorComma, slice, within } from "./context.ts"
+import {
+  commaToPipe,
+  commentsIn,
+  note,
+  removeKeepingComments,
+  type ReverseCtx,
+  separatorComma,
+  slice,
+  within
+} from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
+import { isPlainStep } from "./pipes.ts"
 import { hasFinalizer, inFrame } from "./resources.ts"
 
 /**
@@ -113,7 +123,9 @@ export const convertMain = (ctx: ReverseCtx, program: Node, visit: Visit): boole
   // `Effect.scoped` first when the body has a finalizer that becomes `defer`
   const scoped = args.length > 0 && isMember(args[0], ctx.effect, "scoped") && hasFinalizer(ctx, fn.body)
   const pipes = scoped ? args.slice(1) : args
-  if (pipes.some((p) => p.type === "SpreadElement")) return false
+  if (!pipes.every((p) => isPlainStep(p))) return explain("a pipe step wouldn't read the same after `|>`")
+  // the text before the body is rewritten whole, and so is the text after `.pipe(`
+  if (commentsIn(ctx, statement.start, fn.body.start).length > 0) return false
 
   // rewrite (a directive that isn't leading yet becomes leading once the imports above it go;
   // `toEffectScript` checks that and otherwise converts again without `main`)
@@ -126,7 +138,13 @@ export const convertMain = (ctx: ReverseCtx, program: Node, visit: Visit): boole
       const from = scoped ? args[0]!.end : ctx.source.indexOf("(", gen.end) + 1
       const gap = ctx.source.slice(from, pipe.start)
       const newline = gap.lastIndexOf("\n")
-      ctx.s.update(fn.body.end, pipe.start, newline === -1 ? " |> " : `${gap.slice(newline)}|> `)
+      if (commentsIn(ctx, fn.body.end, pipe.start).length > 0) {
+        // keep the comments: drop only `).pipe(` (and the scope) before them
+        ctx.s.remove(fn.body.end, from)
+        ctx.s.appendLeft(pipe.start, "|> ")
+      } else {
+        ctx.s.update(fn.body.end, pipe.start, newline === -1 ? " |> " : `${gap.slice(newline)}|> `)
+      }
     } else {
       commaToPipe(ctx, separatorComma(ctx, previous.end, pipe.start), pipe)
     }

@@ -82,12 +82,23 @@ const topicReferences = (node: Node): ReadonlyArray<Node> | undefined => {
     return undefined
   }
   const references: Array<Node> = []
-  const collect = (n: Node): void => {
-    if (n.type === "Identifier" && n.name === "$") references.push(n)
-    for (const child of children(n)) collect(child)
+  let plain = true
+  const collect = (n: Node, parent: Node | undefined): void => {
+    if (n.type === "Identifier" && n.name === "$") {
+      // a property name or a nested binder isn't the topic (and `%` can't stand there)
+      const key = (parent?.type === "MemberExpression" && parent.property === n && !parent.computed) ||
+        (parent?.type === "Property" && (parent.key === n || parent.shorthand) && !parent.computed)
+      if (key) plain = false
+      else references.push(n)
+    }
+    if (/Function/.test(n.type) && (n.params as Array<Node>).some((p) => p.type === "Identifier" && p.name === "$")) {
+      plain = false
+    }
+    if (n.type === "VariableDeclarator" && n.id.type === "Identifier" && n.id.name === "$") plain = false
+    for (const child of children(n)) collect(child, n)
   }
-  collect(node.body)
-  return references.length > 0 ? references : undefined
+  collect(node.body, node)
+  return plain && references.length > 0 ? references : undefined
 }
 
 /**
@@ -99,8 +110,8 @@ const isTopicStep = (step: Node, index: number): boolean => {
   return references !== undefined && (index > 0 || references.length > 1)
 }
 
-/** Step expressions that parse the same after `|>` and before another `|>`. */
-const stepTypes = new Set(["Identifier", "MemberExpression", "CallExpression", "NewExpression", "TSAsExpression"])
+/** Step expressions that parse the same after `|>`, also before another `|>`. */
+const stepTypes = new Set(["Identifier", "MemberExpression", "CallExpression", "NewExpression"])
 const topicBodyTypes = new Set([
   ...stepTypes,
   "BinaryExpression",
@@ -110,13 +121,23 @@ const topicBodyTypes = new Set([
 ])
 
 /**
- * Whether a function step reads the same written after `|>` (an arrow only as the last step).
+ * Whether a function step reads the same written after `|>`. An arrow never does: `|> (x) => …`
+ * doesn't parse, and parenthesizing it changes the compiled text.
  *
  * @since 4.0.0
  * @category reverse
  */
-export const isPlainStep = (step: Node, last: boolean): boolean =>
-  stepTypes.has(step.type) || (last && step.type === "ArrowFunctionExpression")
+export const isPlainStep = (step: Node): boolean => stepTypes.has(step.type)
+
+/** Heads `pipe(head, …)` can lose its call around: simple expressions that can't start a statement badly. */
+const headTypes = new Set([
+  "Identifier",
+  "MemberExpression",
+  "CallExpression",
+  "NewExpression",
+  "ThisExpression",
+  "Literal"
+])
 
 interface PipeShape {
   readonly kind: "method" | "function"
@@ -150,7 +171,10 @@ export const pipeShape = (
   } else if (
     callee.type === "Identifier" && callee.name === "pipe" &&
     importedLocal(ctx.analysis, "effect", "pipe") === "pipe" &&
-    args.length >= 2 && !pipeableInEfx(ctx, args[0]!)
+    args.length >= 2 && !pipeableInEfx(ctx, args[0]!) && headTypes.has(args[0]!.type) &&
+    (args[0]!.type !== "Literal" || args[0]!.regex === undefined) &&
+    // exactly `pipe(` before the head: no parentheses or comments around it
+    /^\(\s*$/.test(ctx.source.slice(callee.end, args[0]!.start))
   ) {
     shape = { kind: "function", head: args[0]!, steps: args.slice(1) }
   }
@@ -158,7 +182,7 @@ export const pipeShape = (
   const ok = shape.steps.every((step, i) => {
     const last = i === shape.steps.length - 1
     if (topics && isTopicStep(step, i)) return last || topicBodyTypes.has(step.body.type)
-    return isPlainStep(step, last)
+    return isPlainStep(step)
   })
   return ok ? shape : undefined
 }
@@ -201,8 +225,9 @@ const joinSteps = (
   previous: Node,
   steps: ReadonlyArray<Node>,
   from: number,
-  visit: Visit
-) => {
+  visit: Visit,
+  generator: boolean
+): void => {
   steps.forEach((step, offset) => {
     const i = from + offset
     if (i > 0) commaToPipe(ctx, separatorComma(ctx, previous.end, step.start), step)
@@ -211,7 +236,7 @@ const joinSteps = (
       for (const topic of topicReferences(step)!) ctx.s.update(topic.start, topic.end, "%")
       visit(step.body, step, false)
     } else {
-      visit(step, call, false)
+      visit(step, call, generator)
     }
     previous = step
   })
@@ -222,7 +247,13 @@ const joinSteps = (
  * @since 4.0.0
  * @category reverse
  */
-export const convertPipe = (ctx: ReverseCtx, call: Node, parent: Node | undefined, visit: Visit): boolean => {
+export const convertPipe = (
+  ctx: ReverseCtx,
+  call: Node,
+  parent: Node | undefined,
+  visit: Visit,
+  generator: boolean
+): boolean => {
   const shape = pipeShape(ctx, call, parent, ctx.topics)
   if (shape === undefined) return false
   const first = shape.steps[0]!
@@ -231,7 +262,7 @@ export const convertPipe = (ctx: ReverseCtx, call: Node, parent: Node | undefine
     const callee: Node = call.callee
     const dot = ctx.source.lastIndexOf(".", callee.property.start)
     const open = ctx.source.indexOf("(", callee.property.end)
-    visit(shape.head, callee, false)
+    visit(shape.head, callee, generator)
     if (ctx.source.slice(open + 1, first.start).includes("\n") || commentsIn(ctx, open, first.start).length > 0) {
       ctx.s.remove(dot, open + 1)
       ctx.s.appendLeft(first.start, "|> ")
@@ -241,9 +272,9 @@ export const convertPipe = (ctx: ReverseCtx, call: Node, parent: Node | undefine
   } else {
     // `pipe(x, a` → `x |> a`
     ctx.s.remove(call.start, shape.head.start)
-    visit(shape.head, call, false)
+    visit(shape.head, call, generator)
     commaToPipe(ctx, separatorComma(ctx, shape.head.end, first.start), first)
   }
-  joinSteps(ctx, call, shape.head, shape.steps, 0, visit)
+  joinSteps(ctx, call, shape.head, shape.steps, 0, visit, generator)
   return true
 }

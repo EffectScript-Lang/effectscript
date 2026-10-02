@@ -273,3 +273,44 @@ inside a clause, and a shape with a foreign pipe step that stays TypeScript.
   - The reverse tracks the forward namespace (`Layer` inside layer values).
 - **Task 10:** a telemetry `main` whose directive leads only after import removal is verified after
   the import pass. Otherwise the file converts again without `main`.
+
+**Final review** (fresh Opus reviewer). 6 Critical and 8 Important findings, all reproduced with
+probes. One fix pass:
+
+- **Systemic:** a conversion-time ADR-0030 guard (`reverse/verify.ts`), with statement-by-statement
+  fallback (ADR-0030 amendment 2). The native-`throw` canonicalization was withdrawn and is now a
+  blocker.
+- **Targeted fixes**, so the shapes convert or stay TypeScript precisely instead of falling back:
+  - `pipe()` heads are restricted (C1).
+  - Parentheses stay around an awaited pipeline or `match` (C2).
+  - `Schema.Literal(s)` takes only literals, and a brand never applies to a union (C3, C4).
+  - Layer and `main` pipes accept only plain steps; arrow and `as` steps are refused (C6, I7).
+  - The generator level now carries through pipe heads, steps and `match` subjects (I8).
+  - Topic `$` is refused as a property key and when rebound (I9).
+  - An unconvertible return type blocks the form (I10).
+  - Schema classes are checked for type argument, `abstract`, `implements`, type parameters and
+    `export default` (I11).
+  - Scoped declarations count as local effects (I12).
+  - Comment-bearing ranges are kept or refused (I13).
+  - Type-keyword tags are refused (I14).
+  - Comments inside `function*` headers block the form (M17).
+- **Forward bug found by the review:** `1 + (await a |> f)` compiled to a comma expression,
+  because the parser left the `AwaitExpression` ending before the pipeline. A test is in
+  `pipeline.test.ts`.
+- **Tests:** `core/test/reverse-review.test.ts` holds every review input. Each case asserts that
+  the code compiles back without the guard's fallback.
+
+**Deferred minors:**
+
+- **M15:** schema mappings that aren't one-to-one, such as `Union([S])`, `Literals(["a"])`,
+  `optionalKey(UndefinedOr(S))` and `Union([S, Null])`. The guard now keeps these as TypeScript;
+  an exact inverse would let them convert.
+- **M16:** the forward compiler drops a comment between `}` and `catch`/`finally`, and one between
+  pipeline steps on a line. The reverse can't produce them without failing the guard, so the
+  enclosing statement stays TypeScript.
+- **Declined (reviewer):**
+  - A file whose inner scope rebinds `Effect` isn't converted, and gets no note.
+  - The EFX8111 `localAsync` gap.
+  - Decorators fail in the parser.
+- `ambient` and `strict` were added to `ConvertOptions`, so the guard compiles with the caller's
+  options.

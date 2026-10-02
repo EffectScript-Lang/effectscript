@@ -1036,7 +1036,7 @@ and until then they stay TypeScript.
 | `yield* e` inside those generators                                                  | `await e`                             |
 | `yield* Effect.all(xs, { concurrency: "unbounded" })` with an array/object literal | `await [ … ]` / `await { … }`         |
 | `return yield* Effect.fail(e)` / `return yield* new E(…)`                           | `throw e` / `throw new E(…)`          |
-| A native `throw e` inside an Effect generator (a defect)                            | `return await die(e)` (a `canonicalized` note) |
+| A native `throw e` inside an Effect generator (a defect)                            | stays TypeScript (a §6.3 blocker; ADR-0030 amendment 2) |
 | `yield* Effect.addFinalizer(() => e \| Effect.sync(() => {…}) \| Effect.gen(…))` in a frame with the forward scope (`Effect.scoped` first pipe or wrapper, or a layer constructor) | `defer e` / `defer {…}` (the scope is removed) |
 | `Effect.gen(…).pipe(catch…/ensuring)` in the §4.4 shape                             | `try … catch … finally`               |
 | `x.pipe(f, g)` / `pipe(x, f, g)`                                                    | `x \|> f \|> g`                       |
@@ -1068,6 +1068,7 @@ A generator stays `Effect.gen`/`Effect.fn` TypeScript, which is still valid Effe
 direct body contains any of these. "Direct" means its `effect` level, outside nested functions.
 
 - **Statements that would change meaning:**
+  - A native `throw`: a defect, where `throw` in `effect` code is a typed failure.
   - A native `try`. Under §4.4 every `try` in `effect` code is an Effect `try`.
   - A `using` declaration. In `effect` code it acquires a scoped resource (ADR-0011).
   - `console.*`, `Date.now()`, `Math.random()` or `process.env`, which would be captured
@@ -1117,8 +1118,9 @@ Unsupported shapes stay TypeScript, with an explanation.
   per shape.
 - A rewrite applies only where compiling its result reproduces the input TypeScript (ADR-0030).
   For compiler output that means byte for byte. For any other TypeScript it means the same code
-  tokens (trailing commas aside) and the same comments in order. The only exception, native
-  `throw` → `return await die(e)`, is reported as a `canonicalized` note.
+  tokens (trailing commas aside) and the same comments in order. `toEffectScript` checks this at
+  conversion time (ADR-0030 amendment 2). When the check fails, it keeps only the top-level
+  statements that verify and notes the others.
 - **EffectScript-side normalizations** (`toEffectScript(toTypeScript(efx))` differs from `efx`):
   - `Effect.Effect<A>` → `Effect<A>` and `Effect.succeed(…)` → `succeed(…)`. A builtin stays
     qualified when its name is bound anywhere in the file.

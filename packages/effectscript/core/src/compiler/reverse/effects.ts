@@ -10,6 +10,7 @@ import { convertGeneratorNode, unqualify, type Visit } from "./body.ts"
 import { convertSchemaRun } from "./classes.ts"
 import {
   commaToPipe,
+  commentsIn,
   note,
   removeKeepingComments,
   replaceHoistingComments,
@@ -38,35 +39,62 @@ export const convertReturnType = (
   member: "fn.Return" | "Effect" = "fn.Return"
 ): boolean => {
   const type: Node | undefined = annotation?.typeAnnotation
-  if (type?.type !== "TSTypeReference") return false
-  const name: Node = type.typeName
-  const isReturn = member === "fn.Return"
-    ? name.type === "TSQualifiedName" && name.right.name === "Return" &&
-      name.left.type === "TSQualifiedName" && name.left.right.name === "fn" &&
-      name.left.left.type === "Identifier" && name.left.left.name === ctx.effect
-    : name.type === "TSQualifiedName" && name.right.name === "Effect" && name.left.type === "Identifier" &&
-      name.left.name === ctx.effect
-  if (!isReturn) return false
-  const [success, error, requirements]: Array<Node> = (type.typeArguments ?? type.typeParameters)?.params ?? []
-  if (success === undefined) return false
+  if (type === undefined || returnTypeProblem(ctx, annotation, member) !== undefined) return false
+  const [success, error, requirements]: Array<Node> = (type.typeArguments ?? type.typeParameters).params
   const omitError = error === undefined || (requirements !== undefined && error.type === "TSNeverKeyword")
   const throws = omitError ? "" : ` throws ${slice(ctx, error)}`
   const needs = requirements === undefined ? "" : ` needs ${slice(ctx, requirements)}`
-  ctx.s.update(type.start, type.end, `${slice(ctx, success)}${throws}${needs}`)
+  ctx.s.update(type.start, type.end, `${slice(ctx, success!)}${throws}${needs}`)
   return true
 }
 
-/** `const f = Effect.fn(…)` statements converted to `effect` declarations. */
-const declarations = new WeakSet<Node>()
+/** Success types that would swallow a following `throws` (`() => A throws E`). */
+const openTypes = new Set(["TSFunctionType", "TSConstructorType", "TSConditionalType"])
+
+/**
+ * Why a return type can't be written as `A throws E needs R`, or `undefined` (also when there is
+ * none). The forward compiler wraps any annotation, so an unconvertible one blocks the form.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const returnTypeProblem = (
+  ctx: ReverseCtx,
+  annotation: Node | null | undefined,
+  member: "fn.Return" | "Effect" = "fn.Return"
+): string | undefined => {
+  if (annotation === null || annotation === undefined) return undefined
+  const type: Node | undefined = annotation.typeAnnotation
+  const name: Node | undefined = type?.type === "TSTypeReference" ? type.typeName : undefined
+  const matches = member === "fn.Return"
+    ? name?.type === "TSQualifiedName" && name.right.name === "Return" &&
+      name.left.type === "TSQualifiedName" && name.left.right.name === "fn" &&
+      name.left.left.type === "Identifier" && name.left.left.name === ctx.effect
+    : name?.type === "TSQualifiedName" && name.right.name === "Effect" && name.left.type === "Identifier" &&
+      name.left.name === ctx.effect
+  const params: Array<Node> = (type?.typeArguments ?? type?.typeParameters)?.params ?? []
+  if (!matches || params.length === 0 || params.length > 3) return `its return type isn't \`Effect.${member}<…>\``
+  if (openTypes.has(params[0]!.type)) return "a function type in its return type would absorb `throws`"
+  if (commentsIn(ctx, type!.start, type!.end).length > 0) return "its return type has comments"
+  return undefined
+}
 
 /** The `(` that opens a generator function expression's parameters. */
 const paramsOpen = (ctx: ReverseCtx, fn: Node): number => ctx.source.indexOf("(", ctx.source.indexOf("*", fn.start))
 
 const blocked = (ctx: ReverseCtx, node: Node, what: string, fn: Node, kind: Parameters<typeof blocker>[1]) => {
-  const reason = blocker(fn, kind, ctx)
+  // arrows and methods rewrite the header up to the parameters (and `paramsOpen` would find a `(`
+  // in a comment); declarations keep the text after `function*`
+  const header = kind !== "declaration" &&
+    commentsIn(ctx, fn.start, fn.params[0]?.start ?? fn.body.start).length > 0
+  const reason = blocker(fn, kind, ctx) ?? returnTypeProblem(ctx, fn.returnType) ??
+    (header ? "a comment inside `function*` has no place" : undefined)
   if (reason !== undefined) note(ctx, node, `${what} stays TypeScript: ${reason}`)
   return reason !== undefined
 }
+
+/** `const f = Effect.fn(…)` statements converted to `effect` declarations. */
+const declarations = new WeakSet<Node>()
 
 /**
  * `const f = Effect.fn("f")(function*(…) {…}, …pipes)` → `effect f(…) {…} |> …pipes`.
@@ -104,7 +132,7 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
     note(ctx, statement, `\`${name}\` stays TypeScript: it passes span options`)
     return false
   }
-  if (!pipes.every((pipe, i) => isPlainStep(pipe, i === pipes.length - 1))) {
+  if (!pipes.every((pipe) => isPlainStep(pipe))) {
     note(ctx, statement, `\`${name}\` stays TypeScript: a pipe step wouldn't read the same after \`|>\``)
     return false
   }
@@ -263,7 +291,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     if (node.type === "Property" && convertProperty(ctx, node, visit)) return
     if (node.type === "CallExpression" && inPosition(node, parent)) {
       const shape = matchShape(ctx, node, false)
-      if (shape !== undefined && convertMatch(ctx, shape, [node.start, node.end], visit)) return
+      if (shape !== undefined && convertMatch(ctx, shape, [node.start, node.end], visit, generator)) return
     }
     if (node.type === "CallExpression" && convertScopedGen(ctx, node, parent)) {
       const shape = genShape(ctx, node.arguments[0], parent) as { readonly fn: Node }
@@ -272,7 +300,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     }
     if (
       node.type === "CallExpression" &&
-      (convertPipe(ctx, node, parent, visit) || convertGen(ctx, node, parent, visit) ||
+      (convertPipe(ctx, node, parent, visit, generator) || convertGen(ctx, node, parent, visit) ||
         convertUntraced(ctx, node, visit))
     ) {
       return
@@ -303,6 +331,7 @@ export const visitProgram = (ctx: ReverseCtx, program: Node, visit: Visit): void
       skip--
       return
     }
+    if (ctx.only !== undefined && !ctx.only.has(i)) return
     if (i === body.length - 1 && convertMain(ctx, program, visit)) return
     const consumed = convertSchemaRun(ctx, body, i)
     if (consumed > 0) {
