@@ -1,7 +1,7 @@
 # EffectScript living docs: design spec
 
 - **Date:** 2026-10-03
-- **Status:** Draft, awaiting user review
+- **Status:** Implemented (Plan 12, `docs/superpowers/plans/2026-10-03-effectscript-12-living-docs.md`)
 - **Decisions:** ADR-0042 (doc format and doctests), ADR-0043 (`efx docs` generator and Blume)
 - **Extends:** the main spec `2026-10-02-effectscript-design.md` (§4.14, §4.19, §7.1, §12)
 
@@ -326,3 +326,27 @@ pay nothing for docs. Doc diagnostics come from `efx docs` and from loading a `?
   - `requires`/`ensures` rows in the facts table, once contracts exist.
   - `efx docs --json` and JSON diagnostics for agents.
   - Superset-safe typed holes.
+
+## 7. Execution record (Plan 12)
+
+These are deviations from the text above, decided while implementing:
+
+- **Fixtures.** The docs fixtures and golden pages live in `core/test/docs/fixtures/`. Two other
+  locations didn't work:
+  - Under `test/fixtures/`, the compiler's golden suite would compile them.
+  - Without a `fixtures` directory name, dprint would reformat the `.md` snapshots.
+- **Field and layer rows.** Schema, error and config fields render as rows in the same facts
+  table: `| **name** | linked type: summary |`. A field's own doc comment wins over the linked type's
+  summary. Service layers render as `| **Service.layerTest** | Layer<Service> |`.
+- **Nested `doctest`.** A `doctest` nested in `describe … with` reuses the parameter name `it`,
+  shadowing the outer one, the same as nested `describe … with`.
+- **Docs home.** `efx init`'s `docs/index.md` also carries the package `description` in its
+  frontmatter, so it shows in `llms.txt`.
+- **Proof of criterion 1.** `examples/test/doctest-failure.test.ts` runs Vitest on a deliberately
+  wrong example and checks the diff and the `wrong.efx:7` frame.
+- **Blume end-to-end check.** It was done by hand on a copy of the examples package with Blume 2.1.0:
+  - `efx init` then `efx docs`;
+  - `blume build` in `docs/` built 5 pages and left the root `dist/` untouched;
+  - `blume validate` found no broken links;
+  - `efx` fences had keyword colors;
+  - the API pages were listed in `llms.txt`.

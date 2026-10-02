@@ -697,6 +697,15 @@ layer(Users.layerTest)("with shared layer", (it) => { it.effect("uses it", () =>
 - `describe`, `it`, `assert`, `expect`, and `layer` are imported automatically from
   `@effect/vitest`.
 
+#### `doctest` (living docs, ADR-0042)
+
+`doctest "../src/bank.efx" [with Layer]` turns every ` ```efx ` example in that file's doc comments
+into one `it.effect` test. The assertions are `expr // => expected`, `await e // => throws Name`
+and `await e // => dies`. It compiles to `describe(…)`, or to `layer(Layer)(…)` with `with`, around
+the default export of the virtual module `"../src/bank.efx?doctest"`. The Vite plugin builds that
+module, keeping every example on its doc-comment line. The full design is in
+`2026-10-03-effectscript-docs-design.md`.
+
 #### `api` / `group` / `impl` (HttpApi, `effect/http-api`)
 
 ```ts
@@ -1174,7 +1183,11 @@ All live under `packages/effectscript/`, registered in the monorepo (§10).
   embedded Bun runtime (§7.5), so nothing else needs to be installed. From npm, it uses a local Bun
   if present, otherwise Node with `effectscript/register`.
 - `efx check`: delegates to `efx-tsc` from `@effectscript/language`.
-- `efx init`: add tsconfig/bunfig/vite settings, scripts, and the skill to a project.
+- `efx docs [paths] [--out docs/api] [--check] [--strict]`: write signature-first Markdown API pages
+  for Blume from doc comments, or with `--check` only report doc problems (docs spec §3, ADR-0043,
+  Plan 12).
+- `efx init`: add tsconfig/bunfig/vite settings, scripts, the skill, and a Blume docs site in
+  `docs/` to a project.
 - `efx setup`: detect the editors and coding agents installed on this machine and offer to set each
   one up (§7.5).
 - `efx convert --ai`: after the mechanical conversion, hand the leftovers to a locally installed
@@ -1555,7 +1568,8 @@ implementation.
 
 Codes have the form `EFX<area><nn>`. Areas: 1 = parse, internal errors and configuration, 2 = `effect`,
 3 = schema, 4 = service, 5 = pipe, 6 = main, 7 = proposals, 8 = strict rules, 9 = library constructs
-(`command`, `group`/`api`/`impl`).
+(`command`, `group`/`api`/`impl`) and tooling. EFX9301–EFX9307 are the living-docs diagnostics
+(docs spec §4).
 
 The compiler reports syntactic diagnostics; rules that need types run in the checker (language
 service and `efx check`). Heuristic rules say so in their message. A compile fails only when a
@@ -1632,6 +1646,9 @@ The order was revised after the plan review (ADR-0016).
     optional field initialized.
   - **`isolatedDeclarations`-friendly exports**, for fast `.d.ts` emit in tsgo and oxc.
   - **AoT type hints** in a Bun-specific emit mode, once Bun exposes a stable mechanism.
+- **Living docs** (delivered in Plan 12, ADR-0042/0043): doc comments written once at the
+  definition, `efx` examples run as doctests, and `efx docs` writing Markdown for Blume. These are
+  the first rung of the trust ladder that contracts, property tests and proofs build on.
 - **Proofs.** Generate Effect code *and* proof obligations automatically. Planned in stages:
   1. **Contracts.** `requires`/`ensures` clauses on `effect` functions and schema refinements. They
      are checked at runtime in development, and property tests are derived from them automatically
