@@ -137,3 +137,28 @@ verification and revert), `init` and `doctor`.
 - Spec §7.1: what's implemented and the recorded construct gaps.
 - COMPATIBILITY rows.
 - This plan's execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- Task 1 was folded into Task 2: the codegen check needs a `.efx` module to test.
+- **Generated CLI files:**
+  - They get an oxlint override for `no-import-from-barrel-package`, because the forward
+    compiler emits barrel imports by design.
+  - The codegen script formats through dprint itself and has a `--check` mode, which the test
+    runs.
+- **Help:** `efx` with no arguments shows the help (`runWith(["--help"])` from `main`). A root
+  handler that referenced `efx` made it implicitly `any`.
+- **Arguments:** `check` and `run` forward extra arguments after `--`. `build` and `check` keep
+  `-p` as an alias for existing callers.
+- **`convert`:**
+  - It renames only files the reverse compiler changes, leaving `.d.ts`, `*.config.*` and
+    `node_modules` alone.
+  - It runs `efx check` only when a tsconfig.json exists.
+- **Compiler changes found by dogfooding:**
+  - `override` and `super` are allowed in `schema`/`error`/`service` bodies.
+  - `toEffectScript` moved to `reverse/convert.ts`, since the barrel rule flags `index.ts`
+    modules.

@@ -1182,9 +1182,27 @@ All live under `packages/effectscript/`, registered in the monorepo (§10).
   what is missing.
 - `efx skill [--dir]`: install the AI skill (default `.claude/skills/effectscript`).
 
+**Status (Plan 8, ADR-0032):**
+
+- **Implemented:** `build`, `check`, `run`, `print`, `convert` (the mechanical pass with
+  verification), `init` and `doctor`.
+- **Pending:**
+  - `setup`, `convert --ai` and `skill` are Plan 10;
+  - Bun for `efx run` is Plan 9.
+- **Passing arguments through:** `check` and `run` pass extra arguments after `--`.
+- **Dry run:** `convert` reports by default; `--write` converts on the branch
+  `effectscript/convert`.
+
 Dogfooding: the CLI's command modules are `src/cli/*.efx`. `pnpm codegen` compiles them into
 checked-in `src/cli/*.ts`, formatted with dprint, the same way the monorepo handles generated
 barrels. That keeps `pnpm check`/`lint` meaningful and proves the compiler on real code.
+
+Gaps that dogfooding found in the constructs, and how the CLI works around them:
+
+- `command` has no variadic parameters, so `check`, `run` and `convert` use plain
+  `Command.make` inside the `.efx` file.
+- `override` was rejected in `error` bodies. Fixed in the parser.
+- The prelude puts generated imports above the leading comment.
 
 ### 7.2 Runtime integrations
 
