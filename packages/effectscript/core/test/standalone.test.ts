@@ -139,6 +139,22 @@ describe.skipIf(!hasBun)("the standalone binary (Plan 10 Task 3, ADR-0037)", () 
     expect(session.logs.join("\n")).toMatch(/TypeScript 6\.\d+\.\d+, bundled with the language server/)
   })
 
+  it("installs the same skill files as the npm CLI (ADR-0051)", () => {
+    const dir = path.join(fs.mkdtempSync(path.join(work, "skill-")), "effectscript")
+    const result = efx(["skill", "--dir", dir], work)
+    expect(result.status, result.stderr).toBe(0)
+    const tree = (d: string): Record<string, string> =>
+      Object.fromEntries(
+        (fs.readdirSync(d, { recursive: true, withFileTypes: true }) as Array<fs.Dirent>)
+          .filter((e) => e.isFile())
+          .map((e) => {
+            const full = path.join(e.parentPath, e.name)
+            return [path.relative(d, full), fs.readFileSync(full, "utf8")]
+          })
+      )
+    expect(tree(dir)).toEqual(tree(path.join(root, "skills/effectscript")))
+  })
+
   it("packages archives with matching checksums", () => {
     const result = script(["package", "--outdir", outdir])
     expect(result.status, result.stderr).toBe(0)

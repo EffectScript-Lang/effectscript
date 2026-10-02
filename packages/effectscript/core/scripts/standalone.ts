@@ -77,13 +77,24 @@ const build = (args: ReadonlyArray<string>): void => {
     const tsPackage = createRequire(path.join(language, "package.json")).resolve("typescript/package.json")
     const tsLib = path.join(path.dirname(tsPackage), "lib")
     const tsFiles = fs.readdirSync(tsLib).filter((f) => f === "typescript.js" || /^lib\..*\.d\.ts$/.test(f)).sort()
+    // `efx skill` (ADR-0051): the agent skill's files
+    const skillRoot = path.join(root, "skills/effectscript")
+    const skill: Array<readonly [string, string]> = []
+    const collect = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+        const full = path.join(dir, entry.name)
+        if (entry.isDirectory()) collect(full)
+        else skill.push([path.relative(skillRoot, full).split(path.sep).join("/"), fs.readFileSync(full, "utf8")])
+      }
+    }
+    collect(skillRoot)
     fs.writeFileSync(
       path.join(work, "entry.ts"),
       tsFiles.map((f, i) => `import ts${i} from ${JSON.stringify(path.join(tsLib, f))} with { type: "file" }\n`).join(
         ""
       ) +
         `;(globalThis as any).__effectscriptStandalone = { ...${
-          JSON.stringify({ version, preload, languageServer })
+          JSON.stringify({ version, preload, languageServer, skill })
         }, ` +
         `typescript: { version: ${JSON.stringify(JSON.parse(fs.readFileSync(tsPackage, "utf8")).version)}, ` +
         `files: [${tsFiles.map((f, i) => `[${JSON.stringify(f)}, ts${i}]`).join(", ")}] } }\n` +

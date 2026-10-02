@@ -9,6 +9,7 @@ import { NodeRuntime, NodeServices } from "@effect/platform-node"
  */
 import { Effect, pipe, Runtime, Schema } from "effect"
 import { Argument, Command, Flag } from "effect/cli"
+import { homedir } from "node:os"
 import { convertProject } from "../convert/project.ts"
 import { check as checkProject } from "./check.ts"
 import { docsProject } from "./docs.ts"
@@ -17,6 +18,7 @@ import { initProject } from "./init.ts"
 import { lsp as runLanguageServer } from "./lsp.ts"
 import { buildProject, passthrough, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
+import { installSkill } from "./skill.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
 export class ExitCode extends Schema.TaggedError<ExitCode>()("ExitCode", {
@@ -221,10 +223,37 @@ export const lsp = pipe(
   Command.withDescription("Run the EffectScript language server over stdio")
 )
 
+/** Install the EffectScript skill for coding agents */
+export const skill = pipe(
+  Command.make(
+    "skill",
+    {
+      global: Flag.Boolean("global").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Install for every project (~/.claude/skills)")
+      ),
+      dir: Flag.String("dir").pipe(Flag.optional, Flag.withDescription("Install into this directory instead")),
+      force: Flag.Boolean("force").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Replace a directory that isn't the EffectScript skill")
+      )
+    },
+    Effect.fnUntraced(function*({ global, dir, force }) {
+      const code = installSkill(
+        { cwd: process.cwd(), home: homedir(), global, dir: dir._tag === "Some" ? dir.value : undefined, force },
+        (line) => process.stdout.write(`${line}\n`),
+        (line) => process.stderr.write(`${line}\n`)
+      )
+      yield* exitWith(code)
+    })
+  ),
+  Command.withDescription("Install the EffectScript skill for coding agents")
+)
+
 export const efx = pipe(
   Command.make("efx"),
   Command.withDescription("EffectScript: TypeScript with Effect as native syntax"),
-  Command.withSubcommands([build, check, run, print, convert, docs, init, doctor, lsp])
+  Command.withSubcommands([build, check, run, print, convert, docs, init, doctor, lsp, skill])
 )
 
 NodeRuntime.runMain(
