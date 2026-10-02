@@ -28,8 +28,13 @@ curl -fsSL https://effectscript.dev/install | sh     # the standalone efx binary
 brew install effectscript-lang/tap/effectscript      # the same binary, with Homebrew
 ```
 
-The standalone binary carries its own Bun, so it needs no Node or npm (ADR-0037). Then, in a
-project: `efx init`, and `efx convert` to convert existing TypeScript.
+The standalone binary carries its own Bun, so it needs no Node or npm (ADR-0037). Then:
+
+```bash
+efx setup              # your editors and coding agents, once per machine (asks before each change)
+efx init               # in a project: the editor plugin and scripts
+efx convert --write    # convert existing TypeScript on a new git branch; add --ai for the rest
+```
 
 ## Compiler API
 

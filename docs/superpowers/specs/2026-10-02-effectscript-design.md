@@ -1346,6 +1346,18 @@ efx convert                 # this repo → EffectScript (mechanical; add --ai f
   - darwin-x64 under Rosetta;
   - windows-x64 in Parallels (`--windows`).
 
+**Status (Plan 15, ADR-0052):** `efx setup` and `efx convert --ai` are built.
+
+- **The skill** is written once to `~/.agents/skills/effectscript` and linked into each agent
+  (copied where links can't be made).
+- **Editors:** Neovim gets a drop-in `plugin/effectscript.lua`; Helix gets a marked
+  `languages.toml` block plus queries. VS Code-family editors install the `.vsix`, which the
+  standalone binary embeds.
+- **Flags:** `--dry-run`, `--only`, and `--project`. Without a terminal, `efx setup` only lists
+  unless given `--yes`.
+- **`--ai`:** runs `claude`, `codex`, `gemini` or `opencode` per file. Edits outside the file are
+  undone, and the file's edit is kept only if it compiles and the project verifies.
+
 **`efx setup`** is interactive, writes only after you confirm each item, and supports `--yes` for
 CI. It detects:
 
@@ -1625,7 +1637,8 @@ The order was revised after the plan review (ADR-0016).
    - **7b (Plan 9):** the Bun and Vite plugins and the examples package.
    - **7c (Plan 10):** the standalone binary, Homebrew, the install script and the release
      workflow.
-   - **Plan 10b** (after phases 8 and 9, ADR-0038): `setup`, `convert --ai` and `skill`.
+   - **Plan 10b** (after phases 8 and 9, ADR-0038): `skill` (Plan 14), and `setup` and
+     `convert --ai` (Plan 15, ADR-0052). Done.
 8. **Language tooling completion (Plan 11):** the language server for other editors (`efx lsp`),
    the `await` guardrails in every editor, and the VS Code commands and `.vsix`
    (ADR-0039–0041).

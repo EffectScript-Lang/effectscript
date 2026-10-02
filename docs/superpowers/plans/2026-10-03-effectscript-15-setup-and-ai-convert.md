@@ -110,3 +110,23 @@ Builds on ADR-0038 (the split), ADR-0040 (`efx lsp`), ADR-0041 (`.vsix`) and ADR
 
 - Spec §7.5 status and COMPATIBILITY (shared, so ping first), the core README, and this plan's
   execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Where skills go:** observed on the user's machine. Every agent loads `<home>/<agent>/skills/<name>/SKILL.md`,
+  and the user already keeps skills in `~/.agents/skills` with links into each agent, so
+  `efx setup` follows that layout.
+- **`--only <ids>`:** added. It is useful by itself, and it keeps tests away from editors
+  installed in `/Applications` (this Mac has VS Code, Cursor, Zed and a JetBrains IDE).
+- **The language server command** written into editor configs is the running `efx` itself (the
+  binary path, or Node plus `bin/efx.js`), never a bare `efx`.
+- **Writes go through the skill manifest** (ADR-0051 amendment). An existing copy of our skill is
+  updated in place rather than replaced by a link, so nothing the user added is lost.
+- **The `--ai` pass** targets converted files that still have notes. Files the mechanical pass
+  couldn't change at all aren't sent to the agent yet.
+- **Gates and commits:** gates run per path and commits name their paths, because the
+  living-docs session works in the same tree.
