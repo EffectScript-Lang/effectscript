@@ -11,6 +11,7 @@ import { check as checkProject } from "./check.ts"
 import { buildProject, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
 import { convertProject } from "../convert/project.ts"
+import { initProject } from "./init.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
 export error ExitCode {
@@ -88,9 +89,14 @@ export const convert = Command.make("convert", {
   await exitWith(code)
 }) |> Command.withDescription("Convert TypeScript files with Effect to EffectScript")
 
+/** Set up this project for EffectScript */
+export command init() {
+  await exitWith(initProject(process.cwd(), (line) => process.stdout.write(`${line}\n`)))
+}
+
 export const efx = Command.make("efx")
   |> Command.withDescription("EffectScript: TypeScript with Effect as native syntax")
-  |> Command.withSubcommands([build, check, run, print, convert])
+  |> Command.withSubcommands([build, check, run, print, convert, init])
 
 main {
   // without a command, show the help

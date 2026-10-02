@@ -11,6 +11,7 @@ import { Effect, pipe, Runtime, Schema } from "effect"
 import { Argument, Command, Flag } from "effect/cli"
 import { convertProject } from "../convert/project.ts"
 import { check as checkProject } from "./check.ts"
+import { initProject } from "./init.ts"
 import { buildProject, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
 
@@ -149,10 +150,19 @@ export const convert = pipe(
   Command.withDescription("Convert TypeScript files with Effect to EffectScript")
 )
 
+/** Set up this project for EffectScript */
+export const init = Command.make(
+  "init",
+  {},
+  Effect.fn("init")(function*() {
+    yield* exitWith(initProject(process.cwd(), (line) => process.stdout.write(`${line}\n`)))
+  })
+).pipe(Command.withDescription("Set up this project for EffectScript"))
+
 export const efx = pipe(
   Command.make("efx"),
   Command.withDescription("EffectScript: TypeScript with Effect as native syntax"),
-  Command.withSubcommands([build, check, run, print, convert])
+  Command.withSubcommands([build, check, run, print, convert, init])
 )
 
 NodeRuntime.runMain(
