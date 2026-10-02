@@ -5,10 +5,13 @@
  *
  * @since 4.0.0
  */
-import type { Node } from "../ast.ts"
+import { children, type Node } from "../ast.ts"
 import { defaultIdentifier } from "../transform/httpApi.ts"
-import { commentsIn, type ReverseCtx, slice } from "./context.ts"
+import { blocker, isGenerator } from "./blockers.ts"
+import type { Visit } from "./body.ts"
+import { commentsIn, type ReverseCtx, slice, within } from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
+import { inFrame } from "./resources.ts"
 import { fieldType, schemaToType } from "./types.ts"
 
 const module = "effect/http-api"
@@ -150,5 +153,96 @@ export const convertHttpApi = (ctx: ReverseCtx, cls: Node): boolean => {
     return false
   }
   ctx.s.update(cls.start, cls.end, text)
+  return true
+}
+
+interface ImplShape {
+  readonly api: string
+  readonly group: string
+  readonly fn: Node
+  readonly unwrap: ReadonlyArray<Node>
+}
+
+/** Return statements of a body, not crossing into nested functions or classes. */
+const returnsOf = (node: Node, out: Array<Node> = []): Array<Node> => {
+  if (node.type === "ReturnStatement") out.push(node)
+  if (/Function|Class/.test(node.type)) return out
+  for (const child of children(node)) returnsOf(child, out)
+  return out
+}
+
+/**
+ * `HttpApiBuilder.group(Api, "g", Effect.fn("Api.g")(function*(handlers) {…}))` with every return
+ * `handlers.handleAll(…)`, or `undefined`.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const implShape = (ctx: ReverseCtx, call: Node): ImplShape | undefined => {
+  const builder = importedLocal(ctx.analysis, module, "HttpApiBuilder")
+  if (call.type !== "CallExpression" || !isMember(call.callee, builder, "group") || call.arguments.length !== 3) {
+    return undefined
+  }
+  const [api, group, handler]: Array<Node> = call.arguments
+  if (api?.type !== "Identifier" || !isString(group) || !/^[A-Za-z_$][\w$]*$/.test(group.value)) return undefined
+  if (handler?.type !== "CallExpression" || handler.arguments.length !== 1) return undefined
+  const head: Node = handler.callee
+  const span: Node | undefined = head.type === "CallExpression" ? head.arguments[0] : undefined
+  if (head.type !== "CallExpression" || !isMember(head.callee, ctx.effect, "fn") || head.arguments.length !== 1) {
+    return undefined
+  }
+  if (!isString(span) || span.value !== `${api.name}.${group.value}`) return undefined
+  const fn: Node = handler.arguments[0]
+  if (!isGenerator(fn) || fn.returnType || fn.params.length !== 1 || fn.params[0].type !== "Identifier") {
+    return undefined
+  }
+  // the forward compiler names the parameter `unused(ctx, "handlers")`
+  const handlers: string = fn.params[0].name
+  if (handlers !== "handlers" || blocker(fn, "block", ctx) !== undefined) return undefined
+  const unwrap: Array<Node> = []
+  for (const statement of returnsOf(fn.body)) {
+    const argument: Node | null = statement.argument
+    if (argument === null) continue
+    if (
+      argument.type !== "CallExpression" || argument.arguments.length !== 1 ||
+      !isMember(argument.callee, handlers, "handleAll")
+    ) {
+      return undefined
+    }
+    unwrap.push(argument)
+  }
+  // `handlers` may appear only in those calls: the parameter goes away
+  let uses = 0
+  const count = (node: Node): void => {
+    if (node.type === "Identifier" && node.name === handlers) uses++
+    for (const child of children(node)) count(child)
+  }
+  count(fn.body)
+  return uses === unwrap.length ? { api: api.name, group: group.value, fn, unwrap } : undefined
+}
+
+/**
+ * Rewrites an `impl` lowering. Returns false when `call` isn't one.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertImpl = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => {
+  const shape = implShape(ctx, call)
+  if (shape === undefined || commentsIn(ctx, call.start, shape.fn.body.start).length > 0) return false
+  if (ctx.source.slice(shape.fn.end, call.end) !== "))") return false
+  ctx.s.update(call.start, shape.fn.body.start, `impl ${shape.api}.${shape.group} `)
+  ctx.s.remove(shape.fn.body.end, call.end)
+  for (const handleAll of shape.unwrap) {
+    ctx.s.remove(handleAll.start, handleAll.arguments[0].start)
+    ctx.s.remove(handleAll.arguments[0].end, handleAll.end)
+  }
+  // the layer owns the scope; members are named `Api.g.member`
+  within(
+    ctx,
+    "Effect",
+    () => inFrame(ctx, true, () => visit(shape.fn.body, shape.fn, true)),
+    `${shape.api}.${shape.group}`
+  )
   return true
 }

@@ -7,7 +7,8 @@
 import { children, type Node } from "../ast.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
-import { commaToPipe, commentsIn, removeKeepingComments, type ReverseCtx, separatorComma } from "./context.ts"
+import { commaToPipe, commentsIn, removeKeepingComments, type ReverseCtx, separatorComma, within } from "./context.ts"
+import { implShape } from "./httpApi.ts"
 import { importedLocal } from "./origin.ts"
 
 /**
@@ -19,6 +20,8 @@ import { importedLocal } from "./origin.ts"
 export const pipeableInEfx = (ctx: ReverseCtx, node: Node, seen: ReadonlySet<string> = new Set()): boolean => {
   switch (node.type) {
     case "CallExpression": {
+      // an `impl` is pipeable (the forward `efxPipeable`)
+      if (implShape(ctx, node) !== undefined) return true
       const shape = genShape(ctx, node, undefined)
       if (shape !== undefined) return "fn" in shape
       return node.callee.type === "Identifier" && ctx.effects.has(node.callee.name) &&
@@ -275,6 +278,11 @@ export const convertPipe = (
     visit(shape.head, call, generator)
     commaToPipe(ctx, separatorComma(ctx, shape.head.end, first.start), first)
   }
-  joinSteps(ctx, call, shape.head, shape.steps, 0, visit, generator)
+  // an `impl`'s steps resolve in the `Layer` namespace (the forward `efxStepNamespace`)
+  if (implShape(ctx, shape.head) !== undefined) {
+    within(ctx, "Layer", () => joinSteps(ctx, call, shape.head, shape.steps, 0, visit, generator))
+  } else {
+    joinSteps(ctx, call, shape.head, shape.steps, 0, visit, generator)
+  }
   return true
 }

@@ -22,6 +22,7 @@ import {
   slice,
   within
 } from "./context.ts"
+import { convertImpl } from "./httpApi.ts"
 import { convertLayer } from "./layer.ts"
 import { convertMain } from "./main.ts"
 import { convertMatch, matchShape } from "./match.ts"
@@ -312,7 +313,8 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     }
     if (
       node.type === "CallExpression" &&
-      (convertPipe(ctx, node, parent, visit, generator) || convertGen(ctx, node, parent, visit) ||
+      (convertPipe(ctx, node, parent, visit, generator) || convertImpl(ctx, node, visit) ||
+        convertGen(ctx, node, parent, visit) ||
         convertUntraced(ctx, node, visit))
     ) {
       return
