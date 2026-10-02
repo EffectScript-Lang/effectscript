@@ -1,6 +1,6 @@
 /**
  * `efx doctor` (spec §7.1): what is installed and configured for EffectScript here, and what is
- * missing, each with its fix. Editors and agents join in Plan 10 (`efx setup`).
+ * missing, each with its fix. Editors and agents join in Plan 10b (`efx setup`, ADR-0038).
  *
  * @since 4.0.0
  */

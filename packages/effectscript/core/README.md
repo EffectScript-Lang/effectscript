@@ -20,6 +20,17 @@ export const getUser = Effect.fn("getUser")(function*(id: UserId): Effect.fn.Ret
 }, Effect.retry({ times: 3 }))
 ```
 
+## Install
+
+```bash
+npm i -D effectscript                                # in a project
+curl -fsSL https://effectscript.dev/install | sh     # the standalone efx binary
+brew install effectscript-lang/tap/effectscript      # the same binary, with Homebrew
+```
+
+The standalone binary carries its own Bun, so it needs no Node or npm (ADR-0037). Then, in a
+project: `efx init`, and `efx convert` to convert existing TypeScript.
+
 ## Compiler API
 
 ```ts

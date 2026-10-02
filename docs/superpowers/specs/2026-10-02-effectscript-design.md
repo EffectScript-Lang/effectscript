@@ -1264,9 +1264,9 @@ Gaps that dogfooding found in the constructs, and how the CLI works around them:
 ### 7.5 Distribution and onboarding: from zero to EffectScript in one minute
 
 ```bash
-brew install effectscript   # or: npm i -D effectscript / curl -fsSL https://effectscript.dev/install | sh
-efx setup                   # editors + agents on this machine
-efx convert                 # this repo → EffectScript (mechanical; add --ai for the rest)
+brew install effectscript-lang/tap/effectscript   # or: npm i -D effectscript / curl -fsSL https://effectscript.dev/install | sh
+efx setup                   # editors + agents on this machine (Plan 10b)
+efx convert                 # this repo → EffectScript (mechanical; add --ai for the rest, Plan 10b)
 ```
 
 **Channels:**
@@ -1275,21 +1275,42 @@ efx convert                 # this repo → EffectScript (mechanical; add --ai f
 - **Homebrew:** `brew install effectscript`, from the `EffectScript-Lang/homebrew-tap` tap first (`brew install effectscript-lang/tap/effectscript`, ADR-0036) and homebrew-core
   later.
 - **Install script:** `curl -fsSL https://effectscript.dev/install | sh`, served by the site.
-- **Later:** Windows via winget/scoop.
+  It is `packages/effectscript/core/distribution/install.sh` (ADR-0038):
+  - It detects the OS, architecture, Rosetta and musl.
+  - It verifies `SHASUMS256.txt` and runs the binary before installing it into
+    `~/.effectscript/bin`.
+  - It prints the PATH line and never edits shell startup files.
+  - Settings: `EFX_VERSION`, `EFX_INSTALL` and `EFX_DOWNLOAD_BASE`.
+- **Later:** a PowerShell installer, winget and scoop. Until then, Windows users download the zip
+  or use npm.
 
-**Standalone binary.** `efx` is built with `bun build --compile` for darwin-arm64, darwin-x64,
-linux-x64, linux-arm64, and windows-x64, and published on GitHub Releases.
+**Standalone binary** (ADR-0037, ADR-0038):
 
-- **Contents:** the Bun runtime, the compiler, the Bun plugin, the language server, and the skill
-  files. Users need no Node, Bun, or npm to run `.efx` files.
-- **How `efx run` works:** it runs in-process. It registers the EffectScript Bun plugin, then
-  imports the entry file.
+- **Build:** `bun build --compile` (`scripts/standalone.ts`). The targets are darwin-arm64,
+  darwin-x64, linux-x64, linux-arm64, linux-x64-musl, linux-arm64-musl and windows-x64. On Alpine,
+  the musl builds need `apk add libstdc++ libgcc`.
+- **Publishing:** `.github/workflows/effectscript-release.yml` publishes them on GitHub Releases
+  of `EffectScript-Lang/effect-lang` (tag `effectscript@<version>`) as `efx-<target>.tar.gz` or
+  `.zip`, with `SHASUMS256.txt` and `install.sh`, and updates the tap's formula.
+- **Contents:** the Bun runtime, the compiler and the Bun plugin. The language server (phase 8)
+  and the skill files (phase 9) join later. Users need no Node, Bun or npm to run `.efx` files.
+- **How `efx run` works:** the binary runs the entry on its own Bun. It re-runs itself with
+  `BUN_BE_BUN=1` and `--preload` of the EffectScript plugin, unpacked into the user cache
+  directory. `main` targets Bun when the project has `@effect/platform-bun`, and Node's platform
+  otherwise.
+
+  An in-process import can't resolve workspace packages whose `exports` point at `.ts` sources
+  inside a compiled binary (Bun 1.4), so the binary doesn't use one.
 - **Resolving `effect`:**
   - inside a project → the project's own install;
-  - a lone file outside a project → Bun's auto-install where available, otherwise `efx run`
-    offers to create a minimal project (a `package.json` plus an install).
-- A locally installed Bun or Node is never required, but `efx run --runtime node` lets you choose
-  one explicitly.
+  - a lone file outside a project → Bun's auto-install.
+- A locally installed Bun or Node is never required. `efx run --runtime node` runs on Node when
+  the project has `effectscript` installed.
+- **Cross-platform checks:** `scripts/xplatform.sh` runs on a developer Mac. It runs:
+  - every Linux build and `install.sh` in Docker (Debian, Ubuntu, Alpine; arm64 and amd64);
+  - the formula with real Homebrew;
+  - darwin-x64 under Rosetta;
+  - windows-x64 in Parallels (`--windows`).
 
 **`efx setup`** is interactive, writes only after you confirm each item, and supports `--yes` for
 CI. It detects:
@@ -1553,8 +1574,9 @@ The order was revised after the plan review (ADR-0016).
    - **7a (Plan 8):** the dogfooded `efx` CLI: `build`, `check`, `run`, `print`, `convert`,
      `init`, `doctor`.
    - **7b (Plan 9):** the Bun and Vite plugins and the examples package.
-   - **7c (Plan 10):** the standalone binary, Homebrew, the install script, `setup`,
-     `convert --ai` and `skill`.
+   - **7c (Plan 10):** the standalone binary, Homebrew, the install script and the release
+     workflow.
+   - **Plan 10b** (after phases 8 and 9, ADR-0038): `setup`, `convert --ai` and `skill`.
 8. **Language tooling completion:** the language server for other editors, and VS Code commands
    and grammar polish.
 9. **AI skill:** `SKILL.md` + references, generated syntax reference, and `efx skill`.

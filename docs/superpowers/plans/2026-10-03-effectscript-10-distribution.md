@@ -180,3 +180,28 @@ organization.
 - COMPATIBILITY rows.
 - The core README install section.
 - This plan's execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **In-process `run` rejected (ADR-0037):** in a compiled binary, Bun 1.4.2 can't resolve
+  package `exports` that point at `.ts`. The binary re-runs itself with `BUN_BE_BUN=1` and an
+  unpacked preload instead.
+- **Musl targets added:** `linux-x64-musl` and `linux-arm64-musl`, after the Docker smoke test
+  showed glibc builds can't run on Alpine. They need `libstdc++ libgcc`, and `install.sh` says so.
+- **`scripts/xplatform.sh`** (at the user's request) runs on a developer Mac:
+  - every Linux build and `install.sh` in Debian, Ubuntu and Alpine containers, on arm64 and
+    amd64 (OrbStack);
+  - the formula with real Homebrew (`homebrew/brew`);
+  - darwin-x64 under Rosetta;
+  - windows-x64 in the Parallels "Windows 11" VM.
+
+  The Windows files are staged in `~/Downloads/.efx-xplatform-*`, because Parallels shares only
+  Desktop, Documents and Downloads. All twelve checks pass, plus Windows.
+- **Releases:** they are regular "latest" GitHub releases during alpha, because
+  `releases/latest` skips prereleases.
+- **`dist-bin/`** is ignored in the root `.gitignore`: the root ignores dotfiles, so a package
+  `.gitignore` would never be tracked.
