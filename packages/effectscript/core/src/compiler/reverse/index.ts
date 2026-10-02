@@ -7,7 +7,7 @@
  */
 import { MagicString } from "magic-string"
 import { analyze } from "../analyze/scope.ts"
-import type { Node } from "../ast.ts"
+import { children, type Node } from "../ast.ts"
 import { resolveOptions } from "../options.ts"
 import { parse } from "../parser/parse.ts"
 import { effectDeclarationName } from "./blockers.ts"
@@ -36,7 +36,26 @@ export interface ConvertResult {
  * @since 4.0.0
  * @category reverse
  */
-export const toEffectScript = (source: string, options: ConvertOptions = {}): ConvertResult => {
+export const toEffectScript = (source: string, options: ConvertOptions = {}): ConvertResult =>
+  convert(source, options, false)
+
+const binderNames = new Set(["defect", "error"])
+
+/** Whether a generated binder name is also used by another identifier (see `ReverseCtx.binders`). */
+const bindersClash = (program: Node, binders: ReadonlySet<Node>): boolean => {
+  const used = new Set([...binders].map((b) => b.name as string))
+  let clash = false
+  const visit = (node: Node): void => {
+    if (node.type === "Identifier" && binderNames.has(node.name) && used.has(node.name) && !binders.has(node)) {
+      clash = true
+    }
+    for (const child of children(node)) visit(child)
+  }
+  if (used.size > 0) visit(program)
+  return clash
+}
+
+const convert = (source: string, options: ConvertOptions, tryDisabled: boolean): ConvertResult => {
   const parsed = parse(source)
   if (parsed._tag === "Failure") {
     return { code: source, notes: parsed.diagnostics.map((d) => ({ start: d.start, end: d.end, message: d.message })) }
@@ -55,7 +74,9 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
     effects: new Set(),
     notes: [],
     topics: false,
-    deferAllowed: false
+    deferAllowed: false,
+    binders: new Set(),
+    tryDisabled
   }
   if (ctx.effect === undefined && ctx.schema === undefined) return { code: source, notes: [] }
   // classes first: bodies need to know which classes become `error` declarations
@@ -83,6 +104,7 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
   ctx.topics = topicsRoundTrip(ctx)
   const topLevel = new Set((parsed.program.body as Array<Node>).flatMap((top) => [top, top.declaration]))
   visitProgram(ctx, parsed.program, makeVisit(ctx, (cls) => topLevel.has(cls) && convertClass(ctx, cls)))
+  if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, true)
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
   return { code: applyPrelude(ctx.s.toString(), options), notes: ctx.notes }
 }

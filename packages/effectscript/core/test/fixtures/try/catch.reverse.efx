@@ -6,33 +6,33 @@ class Timeout extends Data.TaggedError("Timeout")<{}> {}
 declare const load: (id: string) => Effect<string, NotFound | Timeout | Error>
 
 effect withFallback(id: string) {
-  return await effect {
+  try {
     return await load(id)
-  } |> catchDefect((defect) => fail(new Cause.UnknownError(defect))) |> catchTags({ NotFound: (e) => effect {
+  } catch (e: NotFound) {
     return "missing"
-  }, Timeout: (e) => effect {
+  } catch (e: Timeout) {
     return "slow"
-  } }, (e) => effect {
+  } catch (e) {
     return `failed: ${String(e)}`
-  })
+  }
 }
 
 effect logged(id: string) {
   let result = "none"
-  await effect {
+  try {
     result = await load(id)
-  } |> catchTag(["NotFound", "Timeout"], (e) => effect {
+  } catch (e: NotFound | Timeout) {
     result = e._tag
-  }) |> ensuring(effect {
+  } finally {
     await log("done")
-  })
+  }
   return result
 }
 
 effect plain(json: string) {
-  return await effect {
+  try {
     return JSON.parse(json) as unknown
-  } |> catchDefect((defect) => fail(new Cause.UnknownError(defect))) |> Effect.catch(() => effect {
+  } catch {
     return null
-  })
+  }
 }

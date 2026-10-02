@@ -60,6 +60,13 @@ export interface ReverseCtx {
   topics: boolean
   /** Whether the generator frame being visited gets its scope back from the forward compiler. */
   deferAllowed: boolean
+  /**
+   * Generated binders (`defect`, `error`) of converted `try` lowerings. The forward compiler names
+   * them with `unused(…)`, so no other identifier may use those names (checked in `toEffectScript`).
+   */
+  readonly binders: Set<Node>
+  /** Set on the rerun when that check fails. */
+  readonly tryDisabled: boolean
 }
 
 /**

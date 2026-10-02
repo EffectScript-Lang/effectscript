@@ -10,6 +10,7 @@ import { isParenthesized } from "../transform/await.ts"
 import { commentsIn, note, type ReverseCtx } from "./context.ts"
 import { isMember } from "./origin.ts"
 import { convertFinalizer } from "./resources.ts"
+import { convertTry } from "./try.ts"
 
 /**
  * Recursion back into the walker: `generator` is true at a generator body's direct level.
@@ -121,6 +122,9 @@ export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node |
     }
   }
   if (ctx.deferAllowed && node.type === "ExpressionStatement" && convertFinalizer(ctx, node, visit)) return true
+  if ((node.type === "ReturnStatement" || node.type === "ExpressionStatement") && convertTry(ctx, node, visit)) {
+    return true
+  }
   if (node.type === "ThrowStatement" && node.argument.type !== "SequenceExpression") {
     // a native throw is a defect: `return await die(e)` compiles to `return yield* Effect.die(e)`
     ctx.s.update(node.start, node.argument.start, `return await ${builtin(ctx, "die")}(`)
