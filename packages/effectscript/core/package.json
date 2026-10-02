@@ -18,6 +18,7 @@
     "./register": "./src/register.ts",
     "./bun": "./src/bun.ts",
     "./bun-preload": "./src/bun-preload.ts",
+    "./vite": "./src/vite.ts",
     "./*": "./src/*.ts",
     "./index": null
   },
@@ -38,6 +39,7 @@
       "./register": "./dist/register.js",
       "./bun": "./dist/bun.js",
       "./bun-preload": "./dist/bun-preload.js",
+      "./vite": "./dist/vite.js",
       "./*": "./dist/*.js",
       "./index": null
     }
@@ -59,6 +61,7 @@
     "@effect/vitest": "workspace:^",
     "@types/node": "^26.6.3",
     "typescript": "^6.0.3",
+    "vite": "^8.3.1",
     "vitest": "^5.0.2"
   },
   "bin": {
@@ -66,13 +69,17 @@
   },
   "peerDependencies": {
     "@effectscript/language": "workspace:^",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.0"
   },
   "peerDependenciesMeta": {
     "@effectscript/language": {
       "optional": true
     },
     "typescript": {
+      "optional": true
+    },
+    "vite": {
       "optional": true
     }
   }
