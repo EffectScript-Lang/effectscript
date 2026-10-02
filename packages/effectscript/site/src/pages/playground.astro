@@ -1,0 +1,20 @@
+---
+import Follow from "../components/Follow.astro"
+import Header from "../components/Header.astro"
+import Base from "../layouts/Base.astro"
+import Playground from "../playground/Playground.tsx"
+---
+
+<Base title="Playground: EffectScript" description="Write EffectScript and see the Effect TypeScript it compiles to, or paste Effect TypeScript and see it as EffectScript.">
+  <Header />
+  <main class="mx-auto max-w-7xl px-4 py-10">
+    <h1 class="font-display text-3xl font-bold tracking-tight">Playground</h1>
+    <p class="mt-2 max-w-3xl text-subtle">
+      Edit either side. EffectScript compiles to Effect TypeScript, and Effect TypeScript converts back, both with the real compiler running in your browser.
+    </p>
+    <div class="mt-8">
+      <Playground client:only="react" />
+    </div>
+    <Follow />
+  </main>
+</Base>

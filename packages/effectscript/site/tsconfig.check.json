@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../../tsconfig.base.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["src/content.config.ts"],
+  "references": [{ "path": "../core" }],
+  "compilerOptions": {
+    "types": ["node", "vite/client"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "outDir": "${configDir}/.tsc",
+    "tsBuildInfoFile": "${configDir}/.tsc/tsconfig.tsbuildinfo"
+  }
+}

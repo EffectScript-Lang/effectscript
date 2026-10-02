@@ -1,0 +1,15 @@
+---
+/** The landing pages' top bar. */
+import Lockup from "../assets/lockup-white.svg"
+---
+
+<header class="sticky top-0 z-20 border-b border-line bg-ink/80 backdrop-blur">
+  <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3" aria-label="Main">
+    <a href="/" aria-label="EffectScript home"><Lockup height={22} width={140} /></a>
+    <div class="flex items-center gap-5 text-sm text-subtle">
+      <a class="hover:text-white" href="/docs/">Docs</a>
+      <a class="hover:text-white" href="/playground/">Playground</a>
+      <a class="hover:text-white" href="https://github.com/EffectScript-Lang/effect-lang">GitHub</a>
+    </div>
+  </nav>
+</header>

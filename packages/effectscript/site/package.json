@@ -5,6 +5,10 @@
   "type": "module",
   "license": "MIT",
   "description": "effectscript.dev: the landing page, the playground and the docs",
+  "exports": {
+    "./package.json": "./package.json",
+    "./*": "./src/*.ts"
+  },
   "scripts": {
     "content": "node scripts/content.ts",
     "dev": "node scripts/content.ts && astro dev",
@@ -14,6 +18,7 @@
   "dependencies": {
     "@astrojs/react": "^7.0.0",
     "@astrojs/starlight": "^0.42.5",
+    "@shikijs/monaco": "~4.4.3",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.5",
     "effectscript": "workspace:^",
@@ -29,6 +34,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "typescript": "^6.0.3",
+    "vite": "^8.3.1",
     "vitest": "^5.0.2"
   }
 }

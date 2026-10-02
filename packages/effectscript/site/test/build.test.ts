@@ -39,3 +39,49 @@ describe("the site build (Plan 16 Task 1, ADR-0054)", () => {
     expect(read("docs/index.html")).not.toContain("Unknown language")
   })
 })
+
+const fixtures = path.resolve(site, "../core/test/fixtures")
+const htmlFiles = (dir: string): Array<string> =>
+  (fs.readdirSync(dir, { recursive: true }) as Array<string>).filter((f) => f.endsWith(".html"))
+
+describe("the generated docs (Plan 16 Task 2, ADR-0054)", () => {
+  it("has a reference page per construct, with the compiled TypeScript and a playground link", () => {
+    const dirs = fs.readdirSync(fixtures, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)
+    for (const dir of dirs) {
+      const page = path.join("docs/reference", dir, "index.html")
+      expect(fs.existsSync(path.join(dist, page)), page).toBe(true)
+      expect(read(page)).toContain("/playground/#code=")
+    }
+  })
+
+  it("turns the skill's patterns and pitfalls into guides", () => {
+    expect(text("docs/guides/patterns/services-and-layers/index.html")).toContain("layer test")
+    expect(text("docs/guides/pitfalls/index.html")).toContain("EFX8112")
+  })
+
+  it("publishes the Effect docs in EffectScript", () => {
+    expect(text("docs/effect/guide/index.html")).toContain("EffectScript edition")
+    expect(fs.existsSync(path.join(dist, "docs/effect/guides/packages/effect/schema/index.html"))).toBe(true)
+    expect(fs.existsSync(path.join(dist, "docs/effect/api/effect/option/index.html"))).toBe(true)
+  })
+
+  it("writes llms.txt and llms-full.txt", () => {
+    const llms = read("llms.txt")
+    expect(llms).toMatch(/^# EffectScript\n\n> /)
+    expect(llms).toContain("https://effectscript.dev/docs/reference/effect/")
+    expect(read("llms-full.txt")).toContain("name: effectscript")
+  })
+
+  it("has no broken internal links", () => {
+    const broken: Array<string> = []
+    for (const file of htmlFiles(dist)) {
+      for (const [, href] of read(file).matchAll(/href="(\/[^"#?]*)/g)) {
+        const target = path.join(dist, decodeURIComponent(href!))
+        const exists = fs.existsSync(target) || fs.existsSync(path.join(target, "index.html")) ||
+          fs.existsSync(`${target}.html`)
+        if (!exists) broken.push(`${file} → ${href}`)
+      }
+    }
+    expect(broken.slice(0, 20)).toEqual([])
+  })
+})
