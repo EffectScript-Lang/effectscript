@@ -382,6 +382,9 @@ importers:
         specifier: ^1.4.2
         version: 1.4.2
     devDependencies:
+      '@effect/platform-bun':
+        specifier: workspace:^
+        version: link:../../platform/bun
       '@effect/vitest':
         specifier: workspace:^
         version: link:../../vitest

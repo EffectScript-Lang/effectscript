@@ -16,6 +16,8 @@
     ".": "./src/index.ts",
     "./compiler": "./src/compiler/index.ts",
     "./register": "./src/register.ts",
+    "./bun": "./src/bun.ts",
+    "./bun-preload": "./src/bun-preload.ts",
     "./*": "./src/*.ts",
     "./index": null
   },
@@ -34,6 +36,8 @@
       ".": "./dist/index.js",
       "./compiler": "./dist/compiler/index.js",
       "./register": "./dist/register.js",
+      "./bun": "./dist/bun.js",
+      "./bun-preload": "./dist/bun-preload.js",
       "./*": "./dist/*.js",
       "./index": null
     }
@@ -51,6 +55,7 @@
     "magic-string": "^1.4.2"
   },
   "devDependencies": {
+    "@effect/platform-bun": "workspace:^",
     "@effect/vitest": "workspace:^",
     "@types/node": "^26.6.3",
     "typescript": "^6.0.3",
