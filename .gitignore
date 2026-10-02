@@ -39,3 +39,6 @@ scratchpad/**/*
 
 # Agent config
 opencode.json
+
+# EffectScript standalone binaries (packages/effectscript/core/scripts/standalone.ts)
+dist-bin/
