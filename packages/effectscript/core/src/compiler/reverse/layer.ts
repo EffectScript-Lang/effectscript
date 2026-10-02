@@ -8,7 +8,7 @@
 import type { Node } from "../ast.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
-import { commentsIn, removeKeepingComments, type ReverseCtx, separatorComma, within } from "./context.ts"
+import { commentsIn, endsAt, removeKeepingComments, type ReverseCtx, separatorComma, within } from "./context.ts"
 import { isMember } from "./origin.ts"
 import { isPlainStep } from "./pipes.ts"
 import { inFrame } from "./resources.ts"
@@ -38,7 +38,7 @@ export const convertLayer = (ctx: ReverseCtx, statement: Node, visit: Visit): bo
     if (pipe.arguments.length === 0 || !(pipe.arguments as Array<Node>).every((a) => isPlainStep(a))) return false
     head = pipe.callee.object
   }
-  if (head.type !== "CallExpression" || statement.end !== declarator.init.end) return false
+  if (head.type !== "CallExpression" || !endsAt(ctx, statement, declarator.init.end)) return false
   if (commentsIn(ctx, statement.start, head.start).length > 0) return false
   const args: Array<Node> = head.arguments
   // `Layer.mergeAll(a, b)` → `a & b`
@@ -48,7 +48,8 @@ export const convertLayer = (ctx: ReverseCtx, statement: Node, visit: Visit): bo
     ctx.s.update(statement.start, statement.start + "const".length, "layer")
     ctx.s.remove(head.start, args[0]!.start)
     args.forEach((arg, i) => {
-      visit(arg, head, false)
+      // operands resolve in the `Layer` namespace, as the forward compiler walks them
+      within(ctx, "Layer", () => visit(arg, head, false))
       const next = args[i + 1]
       if (next === undefined) return
       const comma = separatorComma(ctx, arg.end, next.start)

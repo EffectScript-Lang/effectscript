@@ -270,6 +270,8 @@ const convertProperty = (ctx: ReverseCtx, property: Node, visit: Visit): boolean
   return true
 }
 
+const testNames = new Set(["describe", "it", "layer"])
+
 const scopes = new Set([
   "FunctionDeclaration",
   "FunctionExpression",
@@ -321,10 +323,25 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     ) {
       return
     }
-    if (generator && scopes.has(node.type)) {
-      for (const child of children(node)) visit(child, node, false)
-      return
+    // a function whose parameters rebind `describe`/`it`/`layer` hides the test imports inside
+    const shadowed = scopes.has(node.type) && node.params !== undefined
+      ? (node.params as Array<Node>).filter((p) => p.type === "Identifier" && testNames.has(p.name)).map((p) =>
+        p.name as string
+      )
+      : []
+    const added = shadowed.filter((name) => !ctx.testShadow.has(name))
+    for (const name of added) ctx.testShadow.add(name)
+    try {
+      if (generator && scopes.has(node.type)) {
+        for (const child of children(node)) visit(child, node, false)
+        return
+      }
+      visitRest(node, parent, generator)
+    } finally {
+      for (const name of added) ctx.testShadow.delete(name)
     }
+  }
+  const visitRest = (node: Node, parent: Node | undefined, generator: boolean): void => {
     if (generator && convertGeneratorNode(ctx, node, parent, visit)) return
     unqualify(ctx, node)
     for (const child of children(node)) visit(child, node, generator)

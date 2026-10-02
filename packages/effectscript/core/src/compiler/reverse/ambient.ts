@@ -10,7 +10,7 @@ import type { Node } from "../ast.ts"
 import { isParenthesized, needsParens } from "../transform/await.ts"
 import { isGlobalFree } from "./blockers.ts"
 import type { Visit } from "./body.ts"
-import { commentsIn, type ReverseCtx } from "./context.ts"
+import { commentsIn, isCanonicalString, type ReverseCtx } from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
 
 const logMethods: Record<string, string> = {
@@ -32,7 +32,7 @@ const envRead = (ctx: ReverseCtx, node: Node): string | undefined => {
   const read: Node = callee.object
   const fallback: Node = node.arguments[0]
   const ok = read.type === "CallExpression" && isMember(read.callee, config, "String") && read.arguments.length === 1 &&
-    read.arguments[0].type === "Literal" && typeof read.arguments[0].value === "string" &&
+    isCanonicalString(ctx, read.arguments[0]) &&
     fallback.type === "CallExpression" && isMember(fallback.callee, config, "withDefault") &&
     fallback.arguments.length === 1 && fallback.arguments[0].type === "Identifier" &&
     fallback.arguments[0].name === "undefined"
@@ -85,7 +85,9 @@ export const convertAmbient = (ctx: ReverseCtx, node: Node, parent: Node | undef
     while (/\s/.test(ctx.source[open]!)) open--
     let close = node.end
     while (/\s/.test(ctx.source[close]!)) close++
-    if (commentsIn(ctx, open, node.start).length === 0 && commentsIn(ctx, node.end, close + 1).length === 0) {
+    // a line break inside the parentheses would end a `return` (ASI) once they are gone
+    const inside = ctx.source.slice(open, close + 1)
+    if (!inside.includes("\n") && commentsIn(ctx, open, close + 1).length === 0) {
       ctx.s.remove(open, open + 1)
       ctx.s.remove(close, close + 1)
     }

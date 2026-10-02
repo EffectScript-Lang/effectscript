@@ -6,7 +6,7 @@
  */
 import type { Node } from "../ast.ts"
 import type { Visit } from "./body.ts"
-import { commentsIn, type ReverseCtx, within } from "./context.ts"
+import { commentsIn, endsAt, type ReverseCtx, within } from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
 import { isPlainStep } from "./pipes.ts"
 import { layerPipes } from "./service.ts"
@@ -36,7 +36,7 @@ export const convertAtom = (ctx: ReverseCtx, statement: Node, visit: Visit): boo
     return false
   }
   const value: Node = head.arguments[0]
-  if (value.type === "SpreadElement" || statement.end !== declarator.init.end) return false
+  if (value.type === "SpreadElement" || !endsAt(ctx, statement, declarator.init.end)) return false
   if (ctx.source.slice(head.callee.end, value.start) !== "(" || ctx.source.slice(value.end, head.end) !== ")") {
     return false
   }

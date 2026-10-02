@@ -184,6 +184,7 @@ export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node |
     (inPosition(argument, node) && matchShape(ctx, argument, false) !== undefined)
   if (
     parens !== undefined && droppableParens(node, parent) && !loose &&
+    !ctx.source.slice(parens.open, parens.close + 1).includes("\n") &&
     commentsIn(ctx, parens.open, node.start).length === 0 && commentsIn(ctx, node.end, parens.close).length === 0
   ) {
     ctx.s.remove(parens.open, parens.open + 1)

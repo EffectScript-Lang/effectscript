@@ -9,7 +9,7 @@
 import type { Node } from "../ast.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
-import { commaToPipe, commentsIn, type ReverseCtx, separatorComma, slice, within } from "./context.ts"
+import { commaToPipe, commentsIn, endsAt, type ReverseCtx, separatorComma, slice, within } from "./context.ts"
 import { importedLocal } from "./origin.ts"
 import { isPlainStep } from "./pipes.ts"
 import { inFrame } from "./resources.ts"
@@ -33,7 +33,7 @@ const callOf = (statement: Node): Node | undefined =>
 
 /** `describe("n", () => { … })` → `describe "n" { … }` */
 const convertDescribe = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => {
-  const describe = importedLocal(ctx.analysis, vitest, "describe", true)
+  const describe = ctx.testShadow.has("describe") ? undefined : importedLocal(ctx.analysis, vitest, "describe", true)
   if (call.callee.type !== "Identifier" || call.callee.name !== describe || call.arguments.length !== 2) return false
   const [name, fn] = call.arguments as Array<Node>
   const body = callback(fn, 0)
@@ -50,7 +50,8 @@ const convertLayerDescribe = (ctx: ReverseCtx, call: Node, visit: Visit): boolea
   const head: Node = call.callee
   if (head.type !== "CallExpression" || head.arguments.length !== 1 || call.arguments.length !== 2) return false
   const outer = ctx.testIt === undefined
-    ? head.callee.type === "Identifier" && head.callee.name === importedLocal(ctx.analysis, vitest, "layer", true)
+    ? head.callee.type === "Identifier" && !ctx.testShadow.has("layer") &&
+      head.callee.name === importedLocal(ctx.analysis, vitest, "layer", true)
     : head.callee.type === "MemberExpression" && !head.callee.computed && head.callee.object.type === "Identifier" &&
       head.callee.object.name === ctx.testIt && head.callee.property.name === "layer"
   if (!outer) return false
@@ -77,7 +78,7 @@ const modifiers: Record<string, string> = { effect: "", live: ".live", "effect.s
 
 /** `it.effect("n", () => Effect.gen(function*() {…})[.pipe(…)])` → `test "n" {…} [|> …]` */
 const convertTest = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => {
-  const it = ctx.testIt ?? importedLocal(ctx.analysis, vitest, "it", true)
+  const it = ctx.testIt ?? (ctx.testShadow.has("it") ? undefined : importedLocal(ctx.analysis, vitest, "it", true))
   let callee: Node = call.callee
   const path: Array<string> = []
   while (callee.type === "MemberExpression" && !callee.computed) {
@@ -135,6 +136,6 @@ const convertTest = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => {
  */
 export const convertTestStatement = (ctx: ReverseCtx, statement: Node, visit: Visit): boolean => {
   const call = callOf(statement)
-  if (call === undefined || statement.end !== call.end) return false
+  if (call === undefined || !endsAt(ctx, statement, call.end)) return false
   return convertDescribe(ctx, call, visit) || convertLayerDescribe(ctx, call, visit) || convertTest(ctx, call, visit)
 }

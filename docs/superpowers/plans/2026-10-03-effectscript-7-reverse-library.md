@@ -187,3 +187,38 @@ stay as written.
 - **Golden fixtures:** every fixture now reverses fully. `config/app`, `atom/counter`,
   `layer/app` and `cli/create` reverse to their exact source. The rest differ only by listed
   normalizations.
+
+**Final review** (fresh Opus reviewer). The reviewer ran `toEffectScript` over 489 real repo
+files: none threw, none recompiled with errors, and 28 fell back at least once. Findings: 1
+Critical, 6 Important. One fix pass; every fix has a test in
+`core/test/reverse-review7.test.ts`.
+
+- **Critical, fixed:** dropping parentheses across a line break after `return` changed the
+  program, and neither the guard nor the test oracle saw line breaks. Both now track them (ADR-0030
+  amendment 3), and the reverse never drops parentheses that span lines.
+- **Important, fixed:**
+  - **I2:** quadratic fallback replaced by bisection with import-free probes.
+  - **I3:** `it`/`describe`/`layer` rebound by a function parameter (the `it.layer(L)(…, (it) =>
+    …)` pattern) are no longer taken as the imports.
+  - **I4:** declarations ending in `;` convert.
+  - **I5:** strings not in `JSON.stringify` form stay as written instead of falling back.
+  - **I6:** `Schema.Struct` payloads and union errors in endpoints stay TypeScript.
+  - **I7:** a forward bug: `impl` return wrapping reached into nested `effect {}` blocks.
+- **Minors, fixed:**
+  - **M8:** array holes no longer throw, and `toEffectScript` never throws.
+  - **M9:** layer operands resolve in `Layer`.
+
+**Deferred minors:**
+
+- **M10:** a few hand-written shapes still fall back via the guard, for example:
+  - `withDefault(3 /* c */)`;
+  - `Layer.mergeAll(A, (B))`;
+  - escaped env names;
+  - reserved-word endpoint names;
+  - `.add(...gs)`;
+  - `Flag.String("a").pipe()`.
+- **M11:** some forward-produced shapes stay TypeScript: a boolean positional argument through
+  `withSchema(Schema.Boolean)`, `Config.Literal(-1, …)`, and quoted header keys.
+- **M12:** fallback granularity is the top-level statement. One bad test reverts its whole
+  `describe`.
+- **M13:** the trailing-comma filter treats `[,]` like `[]`. This is theoretical.

@@ -42,10 +42,12 @@ const generic2: Record<string, string> = { Record: "Record", ReadonlyMap: "Reado
 const unions = ["Union", "Literals", "NullOr", "UndefinedOr", "NullishOr"]
 
 /** A literal a type can spell: a string, number, boolean, `null`, or a negative number. */
-const isLiteral = (node: Node): boolean =>
-  (node.type === "Literal" && node.regex === undefined && node.bigint === undefined) ||
-  (node.type === "UnaryExpression" && node.operator === "-" && node.argument.type === "Literal" &&
-    typeof node.argument.value === "number")
+const isLiteral = (node: Node | null): boolean =>
+  node !== null && (
+    (node.type === "Literal" && node.regex === undefined && node.bigint === undefined) ||
+    (node.type === "UnaryExpression" && node.operator === "-" && node.argument.type === "Literal" &&
+      typeof node.argument.value === "number")
+  )
 
 /**
  * The TypeScript type for a schema expression, or `undefined` when it has no table entry.

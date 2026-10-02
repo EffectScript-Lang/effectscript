@@ -8,11 +8,26 @@ import { toTypeScript } from "../compile.ts"
 import { parse } from "../parser/parse.ts"
 import type { ConvertOptions } from "./context.ts"
 
+/** Tokens after which a line break ends the statement (the restricted productions). */
+const restricted = new Set(["return", "throw", "yield", "break", "continue", "async"])
+
 /** Code tokens without trailing commas, and comments, as text; `undefined` when it doesn't parse. */
 const shape = (source: string): { readonly tokens: string; readonly comments: string } | undefined => {
   const parsed = parse(source, { tokens: true })
   if (parsed._tag === "Failure") return undefined
-  const texts = parsed.tokens.map(([start, end]) => source.slice(start, end))
+  const texts: Array<string> = []
+  parsed.tokens.forEach(([start, end], i) => {
+    const text = source.slice(start, end)
+    // a line break after `return`/`throw`/… or before `++`/`--` changes the program (ASI)
+    const previous = parsed.tokens[i - 1]
+    if (
+      previous !== undefined && source.slice(previous[1], start).includes("\n") &&
+      (restricted.has(source.slice(previous[0], previous[1])) || text === "++" || text === "--")
+    ) {
+      texts.push("\u2424")
+    }
+    texts.push(text)
+  })
   const tokens = texts.filter((t, i) => !(t === "," && [")", "]", "}"].includes(texts[i + 1]!)))
   return {
     tokens: tokens.join("\u0000"),

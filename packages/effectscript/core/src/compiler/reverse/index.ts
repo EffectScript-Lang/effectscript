@@ -41,29 +41,56 @@ export interface ConvertResult {
  * @category reverse
  */
 export const toEffectScript = (source: string, options: ConvertOptions = {}): ConvertResult => {
-  const full = convert(source, options, new Set(), undefined)
+  try {
+    return guarded(source, options)
+  } catch (error) {
+    // a converter bug must never break the caller: the input is valid EffectScript as it is
+    return {
+      code: source,
+      notes: [{ start: 0, end: 0, message: `Conversion failed, so the file stays TypeScript: ${String(error)}` }]
+    }
+  }
+}
+
+/** ADR-0030 amendment 2: the full conversion, or the statements that verify. */
+const guarded = (source: string, options: ConvertOptions): ConvertResult => {
+  const full = convert(source, options, new Set(), undefined, true)
   if (full.code === source || compilesBack(source, full.code, options)) return full
-  // ADR-0030 amendment 2: add top-level statements one at a time, keeping those that verify
   const parsed = parse(source)
   if (parsed._tag === "Failure") return { code: source, notes: full.notes }
   const body: Array<Node> = parsed.program.body
+  // bisect the statements: a group that verifies is kept whole, a failing one is split. Probes skip
+  // the import pass (it only adds sugar), which runs once at the end.
   const enabled = new Set<number>()
   const failed: Array<ConvertNote> = []
   let best: ConvertResult = { code: source, notes: [] }
-  body.forEach((statement, i) => {
-    const attempt = convert(source, options, new Set(), new Set([...enabled, i]))
+  const tryAdd = (indices: ReadonlyArray<number>): void => {
+    if (indices.length === 0) return
+    const attempt = convert(source, options, new Set(), new Set([...enabled, ...indices]), false)
     if (attempt.code === best.code) return
     if (compilesBack(source, attempt.code, options)) {
-      enabled.add(i)
+      for (const i of indices) enabled.add(i)
       best = attempt
-    } else {
+      return
+    }
+    if (indices.length === 1) {
+      const statement = body[indices[0]!]!
       failed.push({
         start: statement.start,
         end: statement.end,
         message: "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)"
       })
+      return
     }
-  })
+    const middle = indices.length >> 1
+    tryAdd(indices.slice(0, middle))
+    tryAdd(indices.slice(middle))
+  }
+  tryAdd(body.map((_, i) => i))
+  if (enabled.size > 0) {
+    const sugared = convert(source, options, new Set(), enabled, true)
+    if (compilesBack(source, sugared.code, options)) best = sugared
+  }
   return { code: best.code, notes: [...best.notes, ...failed] }
 }
 
@@ -88,7 +115,8 @@ const convert = (
   source: string,
   options: ConvertOptions,
   disabled: ReadonlySet<"try" | "main">,
-  only: ReadonlySet<number> | undefined
+  only: ReadonlySet<number> | undefined,
+  prelude: boolean
 ): ConvertResult => {
   const parsed = parse(source)
   if (parsed._tag === "Failure") {
@@ -120,6 +148,7 @@ const convert = (
     namespace: "Effect",
     service: undefined,
     testIt: undefined,
+    testShadow: new Set(),
     only
   }
   // nothing to re-sugar without an import from `effect`, its subpaths or `@effect/*`
@@ -166,14 +195,16 @@ const convert = (
         (convertService(ctx, cls, visit) || convertHttpApi(ctx, cls) || convertClass(ctx, cls, visit))
     )
   )
-  if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, new Set([...disabled, "try"]), only)
+  if (bindersClash(parsed.program, ctx.binders)) {
+    return convert(source, options, new Set([...disabled, "try"]), only, prelude)
+  }
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
-  const code = applyPrelude(ctx.s.toString(), options, source)
+  const code = prelude ? applyPrelude(ctx.s.toString(), options, source) : ctx.s.toString()
   // a telemetry directive must end up leading (after the imports above it went)
   if (ctx.telemetryDirective) {
     const found = directive.exec(code)
     if (found === null || found.index >= leadingComments(code).length) {
-      return convert(source, options, new Set([...disabled, "main"]), only)
+      return convert(source, options, new Set([...disabled, "main"]), only, prelude)
     }
   }
   return { code, notes: ctx.notes }

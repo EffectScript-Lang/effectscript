@@ -106,3 +106,15 @@ checked at conversion time:
 - **No exceptions:** the native-`throw` → `return await die(e)` canonicalization is withdrawn. A
   native `throw` in a generator is now a §6.3 blocker, so every conversion is verified the same
   way, and the `canonicalized:` note no longer exists.
+
+## Amendment 3 (2026-10-03, Plan 7 final review)
+
+- **Line breaks:** token equivalence now also covers line breaks where JavaScript's automatic
+  semicolon insertion depends on them: after `return`, `throw`, `yield`, `break`, `continue` and
+  `async`, and before `++`/`--`. Before this, `return (\n x) * 2` → `return \n x * 2` passed the
+  check while changing what the `return` returns. The reverse never drops parentheses that
+  contain a line break.
+- **Fallback cost:** the guard's fallback bisects the top-level statements instead of adding them
+  one at a time, and its probes skip the import pass, which runs once at the end. Isolating one
+  failing statement among 400 dropped from about 8 s to well under a second.
+- **No throws:** `toEffectScript` never throws. A converter error returns the input with a note.

@@ -9,7 +9,16 @@ import type { Node } from "../ast.ts"
 import { jsdocBefore, kebab } from "../transform/command.ts"
 import { isGenerator } from "./blockers.ts"
 import type { Visit } from "./body.ts"
-import { commaToPipe, commentsIn, type ReverseCtx, separatorComma, slice, within } from "./context.ts"
+import {
+  commaToPipe,
+  commentsIn,
+  endsAt,
+  isCanonicalString,
+  type ReverseCtx,
+  separatorComma,
+  slice,
+  within
+} from "./context.ts"
 import { returnTypeProblem } from "./effects.ts"
 import { importedLocal, isMember } from "./origin.ts"
 import { isPlainStep } from "./pipes.ts"
@@ -19,9 +28,10 @@ import { schemaToType } from "./types.ts"
 const nativeNames = new Set(["Int", "Finite", "Date", "Redacted"])
 const cli = "effect/cli"
 
-const isString = (node: Node | undefined): node is Node => node?.type === "Literal" && typeof node.value === "string"
-const isLiteral = (node: Node): boolean =>
-  node.type === "Literal" && node.regex === undefined && node.bigint === undefined
+const isLiteral = (node: Node | null): boolean =>
+  node !== null && (
+    node.type === "Literal" && node.regex === undefined && node.bigint === undefined
+  )
 
 /** A JSDoc text the forward compiler reads back to the same description: one normalized line. */
 const docText = (text: string): boolean =>
@@ -53,7 +63,7 @@ const parameterOf = (ctx: ReverseCtx, property: Node, flag: string | undefined, 
     isMember(steps[0], local, member) ||
     (steps[0]?.type === "CallExpression" && isMember(steps[0].callee, local, member))
   let type: string | undefined
-  if (constructor === "Literals" && args.length === 2 && isString(args[0]) && args[0].value === cliName) {
+  if (constructor === "Literals" && args.length === 2 && isCanonicalString(ctx, args[0]) && args[0].value === cliName) {
     const list = args[1]!
     if (
       list.type !== "ArrayExpression" || list.elements.length < 2 || !(list.elements as Array<Node>).every(isLiteral)
@@ -61,7 +71,7 @@ const parameterOf = (ctx: ReverseCtx, property: Node, flag: string | undefined, 
       return undefined
     }
     type = (list.elements as Array<Node>).map((e) => slice(ctx, e)).join(" | ")
-  } else if (args.length === 1 && isString(args[0]) && args[0].value === cliName) {
+  } else if (args.length === 1 && isCanonicalString(ctx, args[0]) && args[0].value === cliName) {
     if (constructor === "String" && step("withSchema")) {
       const schema: Node | undefined = steps[0]!.arguments?.[0]
       const mapped = schema === undefined || ctx.schema === undefined
@@ -95,12 +105,12 @@ const parameterOf = (ctx: ReverseCtx, property: Node, flag: string | undefined, 
     fallback = ` = ${slice(ctx, steps[0]!.arguments[0])}`
     steps = steps.slice(1)
   }
-  if (step("withAlias") && steps[0]!.arguments.length === 1 && isString(steps[0]!.arguments[0])) {
+  if (step("withAlias") && steps[0]!.arguments.length === 1 && isCanonicalString(ctx, steps[0]!.arguments[0])) {
     alias = steps[0]!.arguments[0].value
     if (!/^\S+$/.test(alias!)) return undefined
     steps = steps.slice(1)
   }
-  if (step("withDescription") && steps[0]!.arguments.length === 1 && isString(steps[0]!.arguments[0])) {
+  if (step("withDescription") && steps[0]!.arguments.length === 1 && isCanonicalString(ctx, steps[0]!.arguments[0])) {
     description = steps[0]!.arguments[0].value
     if (description === "" || !docText(description!)) return undefined
     steps = steps.slice(1)
@@ -136,12 +146,16 @@ export const convertCommand = (ctx: ReverseCtx, statement: Node, outerStart: num
   if (make.type !== "CallExpression" || !isMember(make.callee, Command, "make") || make.arguments.length !== 3) {
     return false
   }
+  if (!endsAt(ctx, statement, declarator.init.end)) return false
   const [id, entries, handler]: Array<Node> = make.arguments
-  if (!isString(id) || id.value !== name || entries?.type !== "ObjectExpression") return false
+  if (!isCanonicalString(ctx, id) || id.value !== name || entries?.type !== "ObjectExpression") return false
   // the handler: `Effect.fn("c")(function*({ a, b }) {…}[, Effect.scoped])`
   if (handler?.type !== "CallExpression" || handler.callee.type !== "CallExpression") return false
   const head: Node = handler.callee
-  if (!isMember(head.callee, ctx.effect, "fn") || head.arguments.length !== 1 || !isString(head.arguments[0])) {
+  if (
+    !isMember(head.callee, ctx.effect, "fn") || head.arguments.length !== 1 ||
+    !isCanonicalString(ctx, head.arguments[0])
+  ) {
     return false
   }
   if (head.arguments[0].value !== name) return false
@@ -176,26 +190,27 @@ export const convertCommand = (ctx: ReverseCtx, statement: Node, outerStart: num
     const first = pipes[0]
     if (
       first?.type !== "CallExpression" || !isMember(first.callee, Command, "withDescription") ||
-      first.arguments.length !== 1 || !isString(first.arguments[0]) || first.arguments[0].value !== doc!.description
+      first.arguments.length !== 1 || !isCanonicalString(ctx, first.arguments[0]) ||
+      first.arguments[0].value !== doc!.description
     ) {
       return false
     }
     pipes = pipes.slice(1)
   }
   if (!pipes.every((p) => isPlainStep(p)) || commentsIn(ctx, statement.start, fn.body.start).length > 0) return false
-  if (commentsIn(ctx, fn.body.end, statement.end).length > 0) return false
+  if (commentsIn(ctx, fn.body.end, declarator.init.end).length > 0) return false
   // rewrite: the header, then the pipes after the body
   const list = (params as Array<{ text: string }>).map((p) => `  ${p.text},\n`).join("")
   ctx.s.update(statement.start, fn.body.start, `command ${name}(${list === "" ? "" : `\n${list}`}) `)
   if (pipes.length === 0) {
-    ctx.s.remove(fn.body.end, statement.end)
+    ctx.s.remove(fn.body.end, declarator.init.end)
   } else {
     ctx.s.update(fn.body.end, pipes[0]!.start, " |> ")
     pipes.forEach((step, i) => {
       if (i > 0) commaToPipe(ctx, separatorComma(ctx, pipes[i - 1]!.end, step.start), step)
       within(ctx, "Command", () => visit(step, pipe!, false))
     })
-    ctx.s.remove(pipes[pipes.length - 1]!.end, statement.end)
+    ctx.s.remove(pipes[pipes.length - 1]!.end, declarator.init.end)
   }
   within(ctx, "Effect", () => inFrame(ctx, scoped, () => visit(fn.body, fn, true)))
   return true

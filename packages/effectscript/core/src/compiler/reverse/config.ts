@@ -6,7 +6,7 @@
  */
 import type { Node } from "../ast.ts"
 import type { Visit } from "./body.ts"
-import { commentsIn, type ReverseCtx, separatorComma, slice, within } from "./context.ts"
+import { commentsIn, endsAt, type ReverseCtx, separatorComma, slice, within } from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
 
 const named = new Set(["Int", "Finite", "Port", "LogLevel", "Redacted", "Duration", "URL", "Date", "NonEmptyString"])
@@ -17,8 +17,10 @@ const typeKeywords = new Set(["string", "number", "boolean", "bigint", "symbol",
 const screamingSnake = (name: string): string =>
   name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/([A-Z])([A-Z][a-z])/g, "$1_$2").toUpperCase()
 
-const isLiteral = (node: Node): boolean =>
-  node.type === "Literal" && node.regex === undefined && node.bigint === undefined
+const isLiteral = (node: Node | null): boolean =>
+  node !== null && (
+    node.type === "Literal" && node.regex === undefined && node.bigint === undefined
+  )
 
 interface Field {
   readonly property: Node
@@ -98,7 +100,7 @@ export const convertConfig = (ctx: ReverseCtx, statement: Node, visit: Visit): b
     return false
   }
   const object: Node = call.arguments[0]
-  if (ctx.source.slice(object.end, call.end) !== ")" || statement.end !== call.end) return false
+  if (ctx.source.slice(object.end, call.end) !== ")" || !endsAt(ctx, statement, call.end)) return false
   const fields = (object.properties as Array<Node>).map((p) => fieldOf(ctx, C, p))
   if (fields.length === 0 || fields.some((f) => f === undefined)) return false
   // the declaration head and each field are rewritten whole, so they can't hold comments

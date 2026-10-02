@@ -79,6 +79,8 @@ export interface ReverseCtx {
   service: string | undefined
   /** Inside `describe … with`: the `it` parameter tests are called through. */
   testIt: string | undefined
+  /** `describe`/`it`/`layer` names rebound by an enclosing function's parameters. */
+  readonly testShadow: Set<string>
   /** Top-level statement indexes to convert (all when `undefined`); see `toEffectScript`. */
   readonly only: ReadonlySet<number> | undefined
 }
@@ -214,3 +216,22 @@ export const within = (
   ctx.namespace = previous[0]
   ctx.service = previous[1]
 }
+
+/**
+ * Whether `statement` ends at `end`, or right after it with a `;` (which the forward compiler keeps).
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const endsAt = (ctx: ReverseCtx, statement: Node, end: number): boolean =>
+  statement.end === end || ctx.source.slice(end, statement.end) === ";"
+
+/**
+ * A string literal written exactly as the forward compiler writes a string (`JSON.stringify`), so
+ * re-emitting it from its value keeps the text.
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const isCanonicalString = (ctx: ReverseCtx, node: Node | null | undefined): node is Node =>
+  node?.type === "Literal" && typeof node.value === "string" && slice(ctx, node) === JSON.stringify(node.value)

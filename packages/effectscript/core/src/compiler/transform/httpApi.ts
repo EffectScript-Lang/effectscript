@@ -27,7 +27,8 @@ const identifierText = (ctx: Ctx, node: Node): string =>
 /** Return statements of a body, not crossing into nested functions or classes. */
 const implReturns = (node: Node, out: Array<Node> = []): Array<Node> => {
   if (node.type === "ReturnStatement") out.push(node)
-  if (/Function|Class/.test(node.type) || node.efx !== undefined) return out
+  // a nested `effect { … }` returns from itself, not from the impl
+  if (/Function|Class|EffectBlock/.test(node.type) || node.efx !== undefined) return out
   for (const child of children(node)) implReturns(child, out)
   return out
 }

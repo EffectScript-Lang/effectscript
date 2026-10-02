@@ -9,7 +9,7 @@ import { children, type Node } from "../ast.ts"
 import { defaultIdentifier } from "../transform/httpApi.ts"
 import { blocker, isGenerator } from "./blockers.ts"
 import type { Visit } from "./body.ts"
-import { commentsIn, type ReverseCtx, slice, within } from "./context.ts"
+import { commentsIn, isCanonicalString, type ReverseCtx, slice, within } from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
 import { inFrame } from "./resources.ts"
 import { fieldType, schemaToType } from "./types.ts"
@@ -25,6 +25,7 @@ const methods: Record<string, string> = {
   options: "options"
 }
 const sections = new Set(["params", "query", "payload", "headers"])
+const unionSchemas = ["Union", "Literals", "NullOr", "UndefinedOr", "NullishOr"]
 
 const isString = (node: Node | undefined): node is Node => node?.type === "Literal" && typeof node.value === "string"
 
@@ -36,6 +37,8 @@ const typeOf = (ctx: ReverseCtx, node: Node): string | undefined =>
 
 /** A section value: a field map → `{ a: T; b?: U }`, a schema → its type. */
 const sectionType = (ctx: ReverseCtx, value: Node): string | undefined => {
+  // a `Schema.Struct` would come back as a type literal, which the forward compiler reads as a field map
+  if (value.type === "CallExpression" && isMember(value.callee, ctx.schema, "Struct")) return undefined
   if (value.type !== "ObjectExpression") return typeOf(ctx, value)
   if (ctx.schema === undefined) return undefined
   const fields: Array<string> = []
@@ -54,7 +57,9 @@ const endpointLine = (ctx: ReverseCtx, endpoint: string, call: Node): string | u
   }
   const method = methods[call.callee.property.name]
   const [name, path, options]: Array<Node> = call.arguments
-  if (method === undefined || !isString(name) || !/^[A-Za-z_$][\w$]*$/.test(name.value) || !isString(path)) {
+  if (
+    method === undefined || !isCanonicalString(ctx, name) || !/^[A-Za-z_$][\w$]*$/.test(name.value) || !isString(path)
+  ) {
     return undefined
   }
   if (call.arguments.length > 3) return undefined
@@ -87,8 +92,12 @@ const endpointLine = (ctx: ReverseCtx, endpoint: string, call: Node): string | u
       if (parts.length > 0) line += ` (${parts.join(", ")})`
       parts.length = 0
       stage = 2
+      // a union schema would come back as `throws A | B`, which the forward compiler writes as an array
+      if (value.type === "CallExpression" && unionSchemas.some((u) => isMember(value.callee, ctx.schema, u))) {
+        return undefined
+      }
       const types = value.type === "ArrayExpression"
-        ? (value.elements as Array<Node>).map((e) => typeOf(ctx, e))
+        ? (value.elements as Array<Node | null>).map((e) => (e === null ? undefined : typeOf(ctx, e)))
         : [typeOf(ctx, value)]
       if (types.some((t) => t === undefined) || (value.type === "ArrayExpression" && types.length < 2)) return undefined
       line += ` throws ${types.join(" | ")}`
@@ -101,8 +110,8 @@ const endpointLine = (ctx: ReverseCtx, endpoint: string, call: Node): string | u
 }
 
 /** `make("id")`: the identifier text, empty when it is the forward default. */
-const identifier = (name: string, id: Node | undefined): string | undefined => {
-  if (!isString(id)) return undefined
+const identifier = (ctx: ReverseCtx, name: string, id: Node | undefined): string | undefined => {
+  if (!isCanonicalString(ctx, id)) return undefined
   return id.value === defaultIdentifier(name) ? "" : ` ${JSON.stringify(id.value)}`
 }
 
@@ -139,7 +148,7 @@ export const convertHttpApi = (ctx: ReverseCtx, cls: Node): boolean => {
     node = node.callee.object
   }
   if (node.type !== "CallExpression" || node.arguments.length !== 1) return false
-  const id = identifier(name, node.arguments[0])
+  const id = identifier(ctx, name, node.arguments[0])
   if (id === undefined) return false
   let text: string
   if (isMember(node.callee, Group) && endpoint !== undefined) {
@@ -184,14 +193,16 @@ export const implShape = (ctx: ReverseCtx, call: Node): ImplShape | undefined =>
     return undefined
   }
   const [api, group, handler]: Array<Node> = call.arguments
-  if (api?.type !== "Identifier" || !isString(group) || !/^[A-Za-z_$][\w$]*$/.test(group.value)) return undefined
+  if (api?.type !== "Identifier" || !isCanonicalString(ctx, group) || !/^[A-Za-z_$][\w$]*$/.test(group.value)) {
+    return undefined
+  }
   if (handler?.type !== "CallExpression" || handler.arguments.length !== 1) return undefined
   const head: Node = handler.callee
   const span: Node | undefined = head.type === "CallExpression" ? head.arguments[0] : undefined
   if (head.type !== "CallExpression" || !isMember(head.callee, ctx.effect, "fn") || head.arguments.length !== 1) {
     return undefined
   }
-  if (!isString(span) || span.value !== `${api.name}.${group.value}`) return undefined
+  if (!isCanonicalString(ctx, span) || span.value !== `${api.name}.${group.value}`) return undefined
   const fn: Node = handler.arguments[0]
   if (!isGenerator(fn) || fn.returnType || fn.params.length !== 1 || fn.params[0].type !== "Identifier") {
     return undefined
