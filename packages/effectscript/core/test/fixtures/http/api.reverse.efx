@@ -11,18 +11,18 @@ export error UserNotFound { id: string }
 
 export error Forbidden {}
 
-export class UsersApi extends HttpApiGroup.make("users").add(
-  HttpApiEndpoint.get("list", "/", { query: { search: Schema.optionalKey(Schema.String) }, success: Schema.Array(User) }),
-  HttpApiEndpoint.get("getById", "/:id", { params: { id: Schema.String }, success: User, error: [UserNotFound, Forbidden] }),
-  HttpApiEndpoint.post("create", "/", { payload: NewUser, success: User }),
-  HttpApiEndpoint.delete("remove", "/:id", { params: { id: Schema.String } })
-) {}
+export group UsersApi {
+  get list "/" (query: { search?: string }): Array<User>
+  get getById "/:id" (params: { id: string }): User throws UserNotFound | Forbidden
+  post create "/" (payload: NewUser): User
+  del remove "/:id" (params: { id: string })
+}
 
-export class SystemApi extends HttpApiGroup.make("system").add(
-  HttpApiEndpoint.get("health", "/health", { success: Schema.String })
-) {}
+export group SystemApi {
+  get health "/health": string
+}
 
-export class Api extends HttpApi.make("api").add(UsersApi, SystemApi) {}
+export api Api { UsersApi, SystemApi }
 
 export service Users {
   effect find(id: string): User throws UserNotFound

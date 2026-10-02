@@ -13,6 +13,7 @@ import { parse } from "../parser/parse.ts"
 import { classShape, convertClass } from "./classes.ts"
 import type { ConvertNote, ConvertOptions, ReverseCtx } from "./context.ts"
 import { makeVisit, visitProgram } from "./effects.ts"
+import { convertHttpApi } from "./httpApi.ts"
 import { applyPrelude } from "./imports.ts"
 import { directive, leadingComments } from "./main.ts"
 import { importedLocal } from "./origin.ts"
@@ -160,7 +161,9 @@ const convert = (
     parsed.program,
     makeVisit(
       ctx,
-      (cls, visit) => topLevel.has(cls) && (convertService(ctx, cls, visit) || convertClass(ctx, cls, visit))
+      (cls, visit) =>
+        topLevel.has(cls) &&
+        (convertService(ctx, cls, visit) || convertHttpApi(ctx, cls) || convertClass(ctx, cls, visit))
     )
   )
   if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, new Set([...disabled, "try"]), only)
