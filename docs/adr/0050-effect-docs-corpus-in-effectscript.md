@@ -25,8 +25,8 @@ re-sugar.
 
 ## Decision
 
-- **Generated, not hand-written.** A private package, `packages/effectscript/docs`
-  (`@effectscript/docs`), generates `content/` from the repository's sources, which it only
+- **Generated, not hand-written.** A private package, `packages/effectscript/effect-docs`
+  (`@effectscript/effect-docs`), generates `content/` from the repository's sources, which it only
   reads:
   - `ai-docs/**`: every example as `.efx`, and `index.md` with EffectScript fences;
   - `LLMS.efx.md`: the `ai-docgen` layout (same sections and order as `LLMS.md`), with `efx`
@@ -69,3 +69,23 @@ re-sugar.
   evidence trail for the numbers.
 - **Rewrite the prose too (with a model):** unreviewable at this size, and it could misstate
   Effect's semantics.
+
+## Amendment 1 (Plan 13 final review)
+
+- **Only examples that compile back are labelled EffectScript.** A block that parses but, as
+  EffectScript, would gain an automatic import the original never had stays a `ts` fence. 70 of
+  them were labelled `efx` before. The corpus records `valid`, and a test checks every valid
+  entry with the reverse compiler's verifier.
+- **v3 examples** (a fence whose preceding label says `v3`, as in the migration guides) are left
+  as written and kept out of the corpus. EffectScript targets v4.
+- **Symbols come from TypeScript's syntax tree:** export specifiers (`export { let_ as let }`),
+  interface and class members, and `declare namespace` members are all named. Only the last
+  comment before a declaration documents it.
+- **Tokens are the EffectScript parser's tokens.** The raw TypeScript scanner miscounted template
+  literals. The totals are now 191,369 → 152,480 tokens for 1,714 re-sugared examples, 20.3%
+  fewer.
+- **The package directory is `packages/effectscript/effect-docs`** (`@effectscript/effect-docs`).
+  The repository's lint and format configs exclude every `docs` directory, which had silently
+  excluded this package's own code. Only its generated `content/` is excluded now.
+- **The edition note** also says that `effect` imports are implicit and that `Effect.x` is written
+  `x`, the most common change.

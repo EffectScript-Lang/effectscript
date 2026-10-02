@@ -5,7 +5,7 @@
  * - `syntax.md`: every language fixture (`test/fixtures/<construct>/<name>.efx`) with the
  *   TypeScript it compiles to, which the golden tests verify. A new construct gets a section here,
  *   or the skill test fails.
- * - `effect-docs.md`: Effect's agent guide in EffectScript (`@effectscript/docs`, ADR-0050).
+ * - `effect-docs.md`: Effect's agent guide in EffectScript (`@effectscript/effect-docs`, ADR-0050).
  */
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
@@ -77,9 +77,9 @@ const syntax = (): string => {
 }
 
 const effectDocs = (): string => {
-  const llms = fs.readFileSync(path.join(root, "../docs/content/LLMS.efx.md"), "utf8")
+  const llms = fs.readFileSync(path.join(root, "../effect-docs/content/LLMS.efx.md"), "utf8")
   return [
-    "<!-- Generated from @effectscript/docs content/LLMS.efx.md (ADR-0050): Effect's guide for agents, with EffectScript code. -->",
+    "<!-- Generated from @effectscript/effect-docs content/LLMS.efx.md (ADR-0050): Effect's guide for agents, with EffectScript code. -->",
     "",
     llms.trimEnd(),
     ""
@@ -97,7 +97,9 @@ const formatted = (file: string, text: string): string => {
   return result.stdout
 }
 
-const files = new Map([["syntax.md", syntax()], ["effect-docs.md", effectDocs()]].map(([f, t]) => [f!, formatted(f!, t!)]))
+const files = new Map(
+  [["syntax.md", syntax()], ["effect-docs.md", effectDocs()]].map(([f, t]) => [f!, formatted(f!, t!)])
+)
 if (process.argv.includes("--check")) {
   for (const [file, text] of files) {
     const target = path.join(references, file)

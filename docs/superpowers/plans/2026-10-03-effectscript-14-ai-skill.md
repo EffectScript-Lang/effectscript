@@ -22,7 +22,7 @@ it. It contains:
   package and embedded in the standalone binary.
 - **Generation:** `scripts/generate-skill.ts` writes `references/syntax.md` (from
   `test/fixtures/**/*.efx` and `.ts` pairs) and `references/effect-docs.md` (from
-  `@effectscript/docs`). `pnpm codegen` runs it, and a test fails on drift.
+  `@effectscript/effect-docs`). `pnpm codegen` runs it, and a test fails on drift.
 - **`src/cli/skill.ts`:** `installSkill({ target, force })`. It copies the skill into a project's
   `.claude/skills/effectscript/` (default), `~/.claude/skills/effectscript/` (`--global`), or any
   `--dir`. Other agents' locations come with `efx setup` (Plan 10b).

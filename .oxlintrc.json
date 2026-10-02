@@ -6,6 +6,7 @@
     "**/dist",
     "**/build",
     "**/docs",
+    "packages/effectscript/effect-docs/content",
     "packages/effectscript/**/fixtures/**",
     "**/*.tsbuildinfo",
     "**/CHANGELOG.md",

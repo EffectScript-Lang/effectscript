@@ -1425,7 +1425,7 @@ the diff of newly exposed names for review, and nothing becomes a builtin unrevi
 **Status (Plan 14, ADR-0051):** built.
 
 - `references/syntax.md` and `references/effect-docs.md` are generated: from the fixtures, and
-  from the Effect docs in EffectScript (`@effectscript/docs`, ADR-0050).
+  from the Effect docs in EffectScript (`@effectscript/effect-docs`, ADR-0050).
 - Every hand-written example compiles and type-checks against `effect` in the tests.
 - `efx skill` installs the skill into `.claude/skills` (project), `~/.claude/skills`
   (`--global`), or `--dir`.
@@ -1448,6 +1448,11 @@ the diff of newly exposed names for review, and nothing becomes a builtin unrevi
 ---
 
 ## 9. Site and docs (`packages/effectscript/site`, at effectscript.dev)
+
+**Content available to the site:** `packages/effectscript/effect-docs/content` (ADR-0050). It has
+the Effect docs and examples in EffectScript, with `LLMS.efx.md`, guides, per-module API
+examples, a TS ↔ EffectScript corpus, and `REPORT.md` with the token numbers that §9's claims
+cite.
 
 The site lives in this monorepo, so there are no separate repos to maintain. Its domain is
 **effectscript.dev**; effectscript.com redirects there for now.

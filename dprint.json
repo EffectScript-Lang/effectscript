@@ -17,6 +17,7 @@
     "**/dist",
     "**/build",
     "**/docs",
+    "packages/effectscript/effect-docs/content",
     "**/coverage",
     "packages/effectscript/**/fixtures",
     "**/*.tsbuildinfo",

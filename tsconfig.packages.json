@@ -16,7 +16,7 @@
     { "path": "packages/effectscript/core" },
     { "path": "packages/effectscript/language" },
     { "path": "packages/effectscript/vscode" },
-    { "path": "packages/effectscript/docs" },
+    { "path": "packages/effectscript/effect-docs" },
     { "path": "packages/opentelemetry" },
     { "path": "packages/platform/browser" },
     { "path": "packages/platform/bun" },
