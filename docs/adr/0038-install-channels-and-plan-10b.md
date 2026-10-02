@@ -29,7 +29,9 @@ Docker base. Bun's musl builds run there once `libstdc++` and `libgcc` are insta
   - `efx-windows-x64.zip`, holding `efx.exe`;
   - `SHASUMS256.txt` and `install.sh`.
 
-  Asset names carry no version, so `releases/latest/download/<asset>` always works.
+  Asset names carry no version, so `releases/latest/download/<asset>` always works. GitHub's
+  "latest" skips prereleases, so alpha releases are published as regular releases and marked
+  latest. npm dist-tags, not GitHub, say what is prerelease.
 - **Targets:** the five in spec §7.5, plus `linux-x64-musl` and `linux-arm64-musl`.
 - **Install script** (`distribution/install.sh`, POSIX `sh`, served at
   effectscript.dev/install by the site):
@@ -49,6 +51,8 @@ Docker base. Bun's musl builds run there once `libstdc++` and `libgcc` are insta
 - **Cross-platform checks:** `scripts/xplatform.sh` runs on a developer Mac:
   - every Linux build, plus `install.sh`, in Docker containers (OrbStack): Debian, Ubuntu and
     Alpine, on arm64 and amd64;
+  - the generated formula with real Homebrew (`homebrew/brew`: `brew install` from a local tap,
+    then `brew test`);
   - darwin-x64 under Rosetta;
   - windows-x64 in a Parallels VM with `--windows`.
 

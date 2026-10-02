@@ -68,6 +68,18 @@ linux/arm64 ubuntu:24.04 linux-arm64
 linux/arm64 alpine:3.20 linux-arm64-musl
 linux/amd64 alpine:3.20 linux-x64-musl
 EOF
+  # the generated formula with real Homebrew: brew install from a local tap, then brew test
+  if [ -n "$port" ]; then
+    node "$root/scripts/homebrew.ts" --version "$(node -p "require('$root/package.json').version")" \
+      --shasums "$bin/SHASUMS256.txt" --base "http://host.docker.internal:$port/latest/download" >"$work/effectscript.rb"
+    # shellcheck disable=SC2016 # the container's shell expands $(brew …)
+    check "Homebrew formula on homebrew/brew" docker run --rm -e HOMEBREW_NO_AUTO_UPDATE=1 \
+      -e HOMEBREW_NO_INSTALL_FROM_API=1 -e HOMEBREW_NO_ANALYTICS=1 -v "$work:/app" homebrew/brew sh -c '
+        brew tap-new --no-git local/efx >/dev/null &&
+        cp /app/effectscript.rb "$(brew --repository local/efx)/Formula/effectscript.rb" &&
+        brew install local/efx/effectscript && brew test local/efx/effectscript &&
+        cd /tmp && cp /app/app.efx . && efx run app.efx --flag'
+  fi
 else
   echo "skipped Linux: Docker isn't running (orb start)"
 fi
