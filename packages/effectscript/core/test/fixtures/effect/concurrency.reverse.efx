@@ -1,5 +1,5 @@
-declare const a: Effect.Effect<number>
-declare const b: Effect.Effect<string>
+declare const a: Effect<number>
+declare const b: Effect<string>
 
 effect both() {
   const [n, s] = await [a, b]

@@ -1,4 +1,4 @@
-declare const task: Effect.Effect<number, string>
+declare const task: Effect<number, string>
 
 export effect resilient() {
   return await task

@@ -1,7 +1,7 @@
 import { assert, describe, expect, it, layer } from "@effect/vitest"
 import { Clock } from "effect"
 class Users extends Context.Service<Users, {
-  find(id: string): Effect.Effect<string>
+  find(id: string): Effect<string>
 }>()("fixtures/test/Users") {
   static readonly layerTest = Layer.succeed(Users, Users.of({ find: effect (id: string) => `user-${id}` }))
   static readonly find = (id: string) => Users.use((_) => _.find(id))

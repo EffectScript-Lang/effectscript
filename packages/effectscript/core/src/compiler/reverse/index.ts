@@ -13,7 +13,7 @@ import { parse } from "../parser/parse.ts"
 import { classShape, convertClass } from "./classes.ts"
 import type { ConvertNote, ConvertOptions, ReverseCtx } from "./context.ts"
 import { makeVisit, visitProgram } from "./effects.ts"
-import { removePreludeImports } from "./imports.ts"
+import { applyPrelude } from "./imports.ts"
 import { importedLocal, isMember } from "./origin.ts"
 
 export type { ConvertNote, ConvertOptions } from "./context.ts"
@@ -75,5 +75,5 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
   const topLevel = new Set((parsed.program.body as Array<Node>).flatMap((top) => [top, top.declaration]))
   visitProgram(ctx, parsed.program, makeVisit(ctx, (cls) => topLevel.has(cls) && convertClass(ctx, cls)))
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
-  return { code: removePreludeImports(ctx.s.toString(), options), notes: ctx.notes }
+  return { code: applyPrelude(ctx.s.toString(), options), notes: ctx.notes }
 }

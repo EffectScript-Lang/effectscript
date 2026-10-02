@@ -1,4 +1,4 @@
-declare const task: Effect.Effect<number>
+declare const task: Effect<number>
 
 /** Doubles the task result. */
 export effect doubled /* inline */ (): number {

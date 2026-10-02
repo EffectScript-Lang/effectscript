@@ -1,4 +1,4 @@
-declare const getUserName: (id: string) => Effect.Effect<string, Error>
+declare const getUserName: (id: string) => Effect<string, Error>
 
 effect loadUser(id: string) {
   return await getUserName(id)

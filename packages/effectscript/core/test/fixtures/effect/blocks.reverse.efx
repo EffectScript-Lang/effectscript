@@ -1,4 +1,4 @@
-declare const task: Effect.Effect<number>
+declare const task: Effect<number>
 
 export const program = effect {
   const n = await task

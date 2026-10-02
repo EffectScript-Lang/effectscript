@@ -1,6 +1,6 @@
-declare const a: Effect.Effect<number>
-declare const b: Effect.Effect<boolean>
-declare const s: Effect.Effect<{ readonly length: number }>
+declare const a: Effect<number>
+declare const b: Effect<boolean>
+declare const s: Effect<{ readonly length: number }>
 declare const maybe: number | undefined
 
 effect precedence() {

@@ -1,6 +1,6 @@
 import { Console, Scope, Stream } from "effect"
 
-declare const acquire: Effect.Effect<{ readonly close: Effect.Effect<void> }, never, Scope.Scope>
+declare const acquire: Effect<{ readonly close: Effect<void> }, never, Scope.Scope>
 
 export effect useResource() {
   const handle = await acquire

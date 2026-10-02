@@ -1,12 +1,12 @@
 export class Users extends Context.Service<Users, {
-  list(): Effect.Effect<Array<string>>
+  list(): Effect<Array<string>>
 }>()("fixtures/layer/app/Users") {
   static readonly layer = Layer.succeed(Users, Users.of({ list: effect () => ["ada"] }))
   static readonly list = () => Users.use((_) => _.list())
 }
 
 export class Posts extends Context.Service<Posts, {
-  count(): Effect.Effect<number>
+  count(): Effect<number>
 }>()("fixtures/layer/app/Posts") {
   static readonly layer = Layer.succeed(Posts, Posts.of({ count: effect () => 1 }))
   static readonly count = () => Posts.use((_) => _.count())

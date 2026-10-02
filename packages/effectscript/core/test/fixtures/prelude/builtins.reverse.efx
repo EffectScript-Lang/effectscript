@@ -1,4 +1,4 @@
-declare const fetchUser: (id: string) => Effect.Effect<string, Error>
+declare const fetchUser: (id: string) => Effect<string, Error>
 
 export effect profile(id: string): string throws Error {
   const name = await pipe(fetchUser(id), Effect.retry({ times: 2 }), orElseSucceed(() => "anonymous"))
@@ -12,10 +12,10 @@ export const delays = Schedule.exponential("10 millis")
 const local = (retry: number) => retry + 1
 const map = new Map<string, number>()
 
-export type User = { readonly id: Option.Option<string> }
-export const parsed: Effect.Effect<number> = succeed(local(1) + map.size)
+export type User = { readonly id: Option<string> }
+export const parsed: Effect<number> = succeed(local(1) + map.size)
 
 export effect readConfig(path: string) {
-  const fs = await FileSystem.FileSystem
+  const fs = await FileSystem
   return await fs.readFileString(path)
 }

@@ -3,7 +3,7 @@ import { Data } from "effect"
 class NotFound extends Data.TaggedError("NotFound")<{}> {}
 class Timeout extends Data.TaggedError("Timeout")<{}> {}
 
-declare const load: (id: string) => Effect.Effect<string, NotFound | Timeout | Error>
+declare const load: (id: string) => Effect<string, NotFound | Timeout | Error>
 
 effect withFallback(id: string) {
   return await effect {

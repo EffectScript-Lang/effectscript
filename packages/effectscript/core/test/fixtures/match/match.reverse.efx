@@ -5,7 +5,7 @@ type Shape = typeof Shape.Type
 
 declare const shape: Shape
 declare const status: "active" | "banned" | "pending"
-declare const scale: (n: number) => Effect.Effect<number>
+declare const scale: (n: number) => Effect<number>
 
 export const area = Match.valueTags(shape, {
   Circle: ({ radius }) => Math.PI * radius ** 2,

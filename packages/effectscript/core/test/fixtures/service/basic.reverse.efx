@@ -5,11 +5,11 @@ schema User {
   name: string
 }
 
-declare const SqlLive: Layer.Layer<never>
+declare const SqlLive: Layer<never>
 
 export class Users extends Context.Service<Users, {
-  find(id: string): Effect.Effect<User, UserNotFound>
-  list(): Effect.Effect<ReadonlyArray<User>>
+  find(id: string): Effect<User, UserNotFound>
+  list(): Effect<ReadonlyArray<User>>
   readonly size: number
 
 }>()("fixtures/service/basic/Users") {
