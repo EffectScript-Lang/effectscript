@@ -6,7 +6,11 @@
  */
 import * as assert from "node:assert"
 import { isDeepStrictEqual, inspect } from "node:util"
-import { Cause, Effect, Equal, Exit, Result } from "effect"
+import * as Cause from "effect/Cause"
+import * as Effect from "effect/Effect"
+import * as Equal from "effect/Equal"
+import * as Exit from "effect/Exit"
+import * as Result from "effect/Result"
 
 /**
  * Passes when `Equal.equals` or deep strict equality holds; otherwise fails with a diff.
