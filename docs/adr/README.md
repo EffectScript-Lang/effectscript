@@ -41,6 +41,8 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0027](0027-ambient-process-env-preserves-undefined.md) | Ambient `process.env.NAME` keeps its `string \| undefined` meaning | Accepted |
 | [0028](0028-strict-mode-syntactic-rules.md)          | Strict-mode rules are syntactic; warnings never affect the superset guarantee | Accepted |
 | [0029](0029-otlp-through-layer-from-config.md)        | `main` telemetry uses `Otlp.layerFromConfig`                  | Accepted |
+| [0030](0030-reverse-rewrites-must-recompile-identically.md) | A reverse rewrite applies only where the forward compiler reproduces its input | Accepted |
+| [0031](0031-reverse-compiler-in-two-plans.md) | Deliver the full reverse compiler in two plans | Accepted |
 
 ## Template
 

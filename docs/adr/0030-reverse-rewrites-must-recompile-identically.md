@@ -1,0 +1,64 @@
+# ADR-0030: A reverse rewrite applies only where the forward compiler reproduces its input
+
+- **Status:** Accepted
+- **Date:** 2026-10-03
+- **Deciders:** agent ruling for Plan 6
+- **Related:** spec §6.4, ADR-0023, review R07
+
+## Context
+
+Spec §6.4 says `toTypeScript(toEffectScript(ts)) = canonicalTS(ts)` for supported shapes, but it
+doesn't say how much `canonicalTS` may change. Many reverse rewrites are tempting but would
+compile back to different code:
+
+- `stream.pipe(dest)` → `stream |> dest` compiles to `pipe(stream, dest)` when the head isn't
+  known to be pipeable. That is `dest(stream)`, a different program.
+- `return yield* new E()` → `throw new E()` compiles to `Effect.fail(new E())` unless `E` is an
+  EffectScript `error` declaration.
+- Removing an `effect` import makes the prelude re-insert it at the top of the file. That can move
+  it before a side-effectful import.
+
+"Semantically equivalent" is hard to check. Byte identity is easy to check.
+
+## Decision
+
+A reverse rewrite is applied only where compiling the result reproduces the input TypeScript
+byte for byte. `toTypeScript(toEffectScript(ts), sameOptions).code === ts`. When a shape can't meet
+that, the node stays TypeScript, and a note explains why.
+
+There are two listed exceptions, called canonicalizations. Each produces a `canonicalized` note:
+
+1. A native `throw e` directly inside an Effect generator becomes `return await die(e)`. That
+   compiles to `return yield* Effect.die(e)`. Both are defects, both exit, and both keep
+   control-flow narrowing.
+2. Prelude names removed from an import that is kept come back at the end of its specifier list
+   (`import { Data, Effect }` instead of `import { Effect, Data }`). Specifier order within one
+   declaration is not observable.
+
+`ConvertOptions` carries the compile options that change output (`filename`, `packageName`,
+`packageRoot`, `runtime`, `prelude`). The reverse direction decides with the same inputs as the
+forward one.
+
+The evidence is two tests:
+
+- Every golden fixture's compiled `.ts` round-trips to identical bytes, and its reverse output is
+  snapshotted.
+- On the `ai-docs/src` corpus, real hand-written Effect code, a file with no `canonicalized` note
+  round-trips to identical bytes, and every reverse output compiles without errors.
+
+## Consequences
+
+- Conversion is safe by construction, and the property is cheap to test on any corpus.
+- Some valid re-sugarings are skipped, for example `.pipe` on a head the forward compiler can't
+  prove pipeable. Coverage grows by widening the forward compiler's knowledge, never by relaxing
+  the check.
+- The EffectScript side normalizes instead. For example, `Effect.Effect<A>` becomes `Effect<A>`,
+  `using` becomes `const`, and `main` moves to the end. §6.4 lists these per shape.
+
+## Alternatives considered
+
+- **Semantic equivalence judged per shape:** it can't be checked mechanically, and the
+  `stream.pipe` example shows how easily it goes wrong.
+- **Verify by recompiling at conversion time and fall back per statement:** compile output depends
+  on file-level context (imports, local error classes, service names), so statement-level
+  recompilation is unreliable. The tests enforce the property instead.

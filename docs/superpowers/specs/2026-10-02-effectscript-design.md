@@ -1095,6 +1095,9 @@ Unsupported shapes stay TypeScript, with an explanation.
 - Several sources can share one output (for example `T[]`, `Array<T>` and `ReadonlyArray<T>` in a
   schema). The reverse direction produces one canonical spelling; that loss is listed explicitly
   per shape.
+- A rewrite applies only where compiling its result reproduces the input TypeScript byte for byte
+  (ADR-0030). The two listed canonicalizations (native `throw` → `die`, specifier order in a kept
+  import) are reported as `canonicalized` notes.
 - Canonical outputs reach a fixed point: converting again changes nothing.
 - Effect APIs are recognized by binding origin (their import), never by spelling (ADR-0009). A
   user object named `Effect` is never re-sugared.
@@ -1468,7 +1471,10 @@ The order was revised after the plan review (ADR-0016).
    capture, and syntactic strict mode (ADR-0027, ADR-0028).
 5. **Library DSLs and telemetry (Plan 5).** Done: `api`/`group`/`impl`, `command`, `atom`, and the
    OTLP layer for `main` (§4.14, §4.16, ADR-0029).
-6. **Full reverse compiler:** §6 shapes and blockers, and the round-trip contract (§6.4).
+6. **Full reverse compiler (ADR-0031):**
+   - **6a (Plan 6):** the language-core shapes (§4.1–4.13), the §6.3 blockers, and the ADR-0030
+     identity harness.
+   - **6b (Plan 7):** library constructs and ambient forms (§4.14–4.15).
 7. **CLI, integrations and distribution:** the rest of `efx`, the Bun and Vite plugins, the
    standalone binary, the Homebrew tap, the install script, `setup`/`doctor`/`convert --ai`, and
    the examples package.
