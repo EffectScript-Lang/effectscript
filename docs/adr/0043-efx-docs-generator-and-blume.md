@@ -38,8 +38,13 @@ a **site** that serves those pages.
     and requirements, built from each linked definition's own summary (ADR-0042). The body and
     examples come after.
   - `efx docs` owns `docs/api/` and regenerates it completely.
-- **Blume is the default site for CLI projects.** `efx init` adds `blume` and a minimal
-  `blume.config.ts`, plus `docs:dev`/`docs:build` scripts that run `efx docs` first.
+- **Blume is the default site for CLI projects, in `docs/`.** `efx init` writes
+  `docs/blume.config.ts` (content root `.`) and the `docs`/`docs:dev`/`docs:build` scripts, which run
+  `efx docs` first.
+  - Blume always builds into `dist/` next to its config. At the package root, that would overwrite
+    a library's own `dist/`.
+  - The `effectscript/blume` integration registers the EffectScript grammars, so `efx` code blocks
+    are highlighted.
   - The only coupling is files: frontmatter plus Markdown.
   - Our own site, effectscript.dev, stays on Starlight (§9.3).
 - **`efx docs --check` runs only the doc diagnostics**, without writing anything, for CI.
@@ -66,6 +71,8 @@ a **site** that serves those pages.
   service.
 - **A Blume custom content source instead of files:** its interface is barely documented, it ties
   us to Blume internals, and generated files can be inspected and diffed.
+- **Blume at the package root:** simpler paths, but `blume build` would overwrite the package's
+  `dist/` (verified with Blume 2.1.0, which has no output-directory option).
 - **Starlight for user projects:** that's what our own site uses, but the user chose Blume for its
   agent outputs (llms.txt, Markdown copies, MCP, evals).
 - **Emitting a versioned JSON doc model, like Elixir's EEP 48:** Blume already serves the pages as

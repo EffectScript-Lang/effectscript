@@ -58,7 +58,7 @@ const workspace = (withTypeScript: boolean) => {
   return dir
 }
 
-const start = async (dir: string) => {
+const start = async (dir: string, locale?: string) => {
   const lsp = startLsp(process.execPath, [server, "--stdio"], { cwd: dir })
   const init = await lsp.request("initialize", {
     processId: null,
@@ -78,7 +78,8 @@ const start = async (dir: string) => {
       },
       workspace: { workspaceFolders: true }
     },
-    initializationOptions: {}
+    initializationOptions: {},
+    ...(locale === undefined ? {} : { locale })
   })
   lsp.notify("initialized", {})
   return { lsp, init }
@@ -192,6 +193,24 @@ describe("efx-language-server without the project's TypeScript", () => {
       expect(JSON.stringify(hover.contents)).toContain("const x: number")
       const log = await lsp.waitFor((n) => n.method === "window/logMessage" && /TypeScript \d/.test(n.params.message))
       expect(log.params.message).toMatch(/bundled with the language server/)
+    } finally {
+      lsp.close()
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  }, 120_000)
+})
+
+describe("efx-language-server in another locale (review I2)", () => {
+  it("rewrites a Promise await whatever the language of TypeScript's message", async () => {
+    const dir = workspace(true)
+    const { lsp } = await start(dir, "ja")
+    try {
+      const uri = open(lsp, dir, "a.efx", a)
+      const report = await lsp.request("textDocument/diagnostic", { textDocument: { uri } })
+      const codes = report.items.filter((d: { code: unknown }) => d.code === 2488)
+      expect(codes.map((d: { message: string }) => d.message)).toEqual([promiseAwaitMessage])
+      // the rest stays localized
+      expect(report.items.some((d: { message: string }) => /[\u3040-\u30ff]/.test(d.message))).toBe(true)
     } finally {
       lsp.close()
       fs.rmSync(dir, { recursive: true, force: true })

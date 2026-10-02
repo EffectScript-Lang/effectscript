@@ -23,7 +23,10 @@ Both editor hosts show the `await` guardrails (ADR-0039):
 ```lua
 vim.filetype.add({ extension = { efx = "effectscript" } })
 vim.lsp.config("efx", {
-  cmd = { "efx", "lsp" },
+  -- start in the project root, so `efx lsp` finds the project's @effectscript/language
+  cmd = function(dispatchers, config)
+    return vim.lsp.rpc.start({ "efx", "lsp" }, dispatchers, { cwd = config.root_dir })
+  end,
   filetypes = { "effectscript" },
   root_markers = { "tsconfig.json", "package.json", ".git" },
 })
@@ -54,7 +57,7 @@ line, `; inherits: typescript`, in each of `highlights.scm`, `textobjects.scm`, 
 
 **Zed:** registering a new language takes a Zed extension, which is planned. **Other LSP
 clients** (Emacs, Sublime Text, JetBrains through LSP4IJ): run `efx lsp` over stdio for `*.efx`
-files.
+files, started in the project root.
 
 Requires `typescript@^6` (the JS compiler API). TypeScript 7 native has no plugin API yet. See
 `../COMPATIBILITY.md` for what is tested on which host.

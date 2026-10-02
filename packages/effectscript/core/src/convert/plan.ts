@@ -115,6 +115,31 @@ const specifiers = (code: string): Array<Node> => {
   return found
 }
 
+/**
+ * A cheap test for "may this file import one of `targets`": a quoted string ending in a target's
+ * base name (with any extension), its directory's name for an `index` file (`"./lib"`), or a bare
+ * `"."`/`".."`. Files that fail it are never parsed (review of Plan 11, M1).
+ */
+const mentions = (targets: Iterable<string>) => {
+  const names = new Set<string>()
+  let index = false
+  for (const target of targets) {
+    const base = target.slice(target.lastIndexOf("/") + 1).replace(/\.[^.]*$/, "")
+    names.add(base)
+    if (base === "index") {
+      index = true
+      const dir = dirname(target)
+      if (dir !== "") names.add(dir.slice(dir.lastIndexOf("/") + 1))
+    }
+  }
+  const escape = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  // the quote or the last `/` before the name is matched by the surrounding pattern
+  const alternatives = [...names].map((name) => `${escape(name)}(?:\\.[A-Za-z]+)?/?`)
+  if (index) alternatives.push("\\.\\.?/?")
+  const pattern = new RegExp(`["'\`](?:[^"'\`\\n]*/)?(?:${alternatives.join("|")})["'\`]`)
+  return (code: string) => pattern.test(code)
+}
+
 /** Rewrites the specifiers of `code` (the file now at `at`) that resolve to renamed files. */
 const rewrite = (
   code: string,
@@ -188,10 +213,12 @@ export const planConversion = (files: ReadonlyMap<string, string>, options: Plan
     notes: result.notes
   }))
   const edits: Array<{ file: string; code: string }> = []
+  const mayImport = mentions(renamed.keys())
   for (const [file, source] of files) {
     if (converted.has(file) || !/\.(tsx?|efx|mts|cts|jsx?|mjs|cjs)$/.test(file) || file.includes("node_modules/")) {
       continue
     }
+    if (!mayImport(source)) continue
     const code = rewrite(source, file, file, renamed, exists)
     if (code !== source) edits.push({ file, code })
   }
@@ -214,8 +241,10 @@ export const retargetImports = (
   const exists = (file: string) => files.has(file)
   const renamed = new Map([[from, to]])
   const edits: Array<{ file: string; code: string }> = []
+  const mayImport = mentions([from])
   for (const [file, source] of [...files].sort(([a], [b]) => (a < b ? -1 : 1))) {
     if (file === from || !/\.(tsx?|efx|mts|cts|jsx?|mjs|cjs)$/.test(file) || file.includes("node_modules/")) continue
+    if (!mayImport(source)) continue
     const code = rewrite(source, file, file, renamed, exists)
     if (code !== source) edits.push({ file, code })
   }

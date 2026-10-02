@@ -30,25 +30,53 @@ export const bindAt = (binds: ReadonlyArray<SourceRange>, offset: number): Sourc
   binds.find((b) => b.start <= offset && offset < b.end)
 
 /**
- * Whether a TypeScript error is "this Promise isn't iterable" (TS2488) right after a bind: the
- * `yield*` the bind became can't iterate a Promise.
+ * Whether `start` (a diagnostic's) directly follows a bind: only whitespace between them.
  *
  * @since 4.0.0
  * @category guardrails
  */
-export const isPromiseAwait = (
-  source: string,
-  binds: ReadonlyArray<SourceRange>,
-  code: number,
-  message: string,
-  start: number | undefined
-): boolean =>
-  code === 2488 && /^Type '(Promise|PromiseLike)</.test(message) && start !== undefined &&
-  binds.some((b) => b.end <= start && source.slice(b.end, start).trim() === "")
+export const followsBind = (source: string, binds: ReadonlyArray<SourceRange>, start: number | undefined): boolean =>
+  start !== undefined && binds.some((b) => b.end <= start && source.slice(b.end, start).trim() === "")
 
-/** The first line of a TypeScript message (a chain's head carries the type). */
-const headline = (text: string | ts.DiagnosticMessageChain): string =>
-  typeof text === "string" ? text : text.messageText
+/**
+ * Whether the expression that starts at `offset` in the compiled file has a thenable type: a
+ * Promise by any name (an alias, an interface extending `Promise`, a library's own promise). The
+ * checker decides, so it holds in every locale (review I2).
+ *
+ * @since 4.0.0
+ * @category guardrails
+ */
+export const isThenableAt = (typescript: Checks, program: ts.Program, fileName: string, offset: number): boolean => {
+  const file = program.getSourceFile(fileName)
+  if (file === undefined) return false
+  // the outermost node that starts at `offset` is the operand of the `yield*`
+  let operand: ts.Node | undefined
+  const visit = (node: ts.Node): void => {
+    if (operand !== undefined || offset < node.pos || offset >= node.end) return
+    if (node !== file && node.getStart(file) === offset) {
+      operand = node
+      return
+    }
+    typescript.forEachChild(node, visit)
+  }
+  visit(file)
+  if (operand === undefined) return false
+  const checker = program.getTypeChecker()
+  const type = checker.getTypeAtLocation(operand)
+  const awaited = checker.getAwaitedType(type)
+  return awaited !== undefined && awaited !== type
+}
+
+/**
+ * The parts of the TypeScript module the guardrails use.
+ *
+ * @since 4.0.0
+ * @category models
+ */
+export type Checks = Pick<typeof ts, "forEachChild" | "flattenDiagnosticMessageText">
+
+/** TS2488: "Type '…' must have a '[Symbol.iterator]()' method", what `yield*` over a Promise gives. */
+const notIterable = 2488
 
 /**
  * @since 4.0.0
@@ -68,7 +96,8 @@ export interface Compiled {
  */
 export const decorateGuardrails = (
   service: ts.LanguageService,
-  compiled: (fileName: string) => Compiled | undefined
+  compiled: (fileName: string) => Compiled | undefined,
+  typescript: Checks
 ): ts.LanguageService => {
   const getQuickInfoAtPosition = service.getQuickInfoAtPosition.bind(service)
   const getSemanticDiagnostics = service.getSemanticDiagnostics.bind(service)
@@ -94,9 +123,20 @@ export const decorateGuardrails = (
         return (fileName: string) => {
           const diagnostics = getSemanticDiagnostics(fileName)
           const file = fileName.endsWith(".efx") ? compiled(fileName) : undefined
-          if (file === undefined) return diagnostics
+          if (file === undefined || !diagnostics.some((d) => d.code === notIterable)) return diagnostics
+          // the program holds the compiled file: find which TS2488 messages are about thenables there
+          const program = target.getProgram()
+          const thenables = new Set<string>()
+          for (const d of program?.getSemanticDiagnostics(program.getSourceFile(fileName)) ?? []) {
+            if (
+              d.code === notIterable && d.start !== undefined && isThenableAt(typescript, program!, fileName, d.start)
+            ) {
+              thenables.add(typescript.flattenDiagnosticMessageText(d.messageText, "\n"))
+            }
+          }
           return diagnostics.map((d) =>
-            isPromiseAwait(file.source, file.binds, d.code, headline(d.messageText), d.start)
+            d.code === notIterable && followsBind(file.source, file.binds, d.start) &&
+              thenables.has(typescript.flattenDiagnosticMessageText(d.messageText, "\n"))
               ? { ...d, messageText: promiseAwaitMessage }
               : d
           )

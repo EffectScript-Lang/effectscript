@@ -82,3 +82,68 @@ vim.cmd("qall!")
     expect(diagnostics).toEqual(expect.arrayContaining([expect.stringContaining("EFX2003")]))
   }, 180_000)
 })
+
+describe.skipIf(!hasNvim)("Neovim with the README's config (review I3)", () => {
+  it("starts `efx lsp` in the project even when Neovim runs elsewhere", () => {
+    const readme = fs.readFileSync(path.resolve(import.meta.dirname, "../README.md"), "utf8")
+    const snippet = /```lua\n([\s\S]*?)```/.exec(readme)![1]!
+    const efx = path.resolve(import.meta.dirname, "../../core/bin/efx.js")
+    // a project that has @effectscript/language (inside the core package), opened from elsewhere
+    const project = fs.realpathSync(fs.mkdtempSync(path.resolve(import.meta.dirname, "../../core/.efx-nvim-")))
+    const elsewhere = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "efx-nvim-cwd-")))
+    dirs.push(project, elsewhere)
+    fs.writeFileSync(path.join(project, "a.efx"), source)
+    fs.writeFileSync(
+      path.join(project, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { strict: true, types: [] } })
+    )
+    const out = path.join(elsewhere, "out.json")
+    fs.writeFileSync(
+      path.join(elsewhere, "init.lua"),
+      snippet.replaceAll("\"efx\", \"lsp\"", `${JSON.stringify(process.execPath)}, ${JSON.stringify(efx)}, "lsp"`)
+    )
+    fs.writeFileSync(
+      path.join(elsewhere, "check.lua"),
+      `local attached = vim.wait(60000, function()
+  local clients = vim.lsp.get_clients({ bufnr = 0 })
+  return #clients > 0 and clients[1].initialized
+end, 100)
+local hover = attached and vim.lsp.buf_request_sync(0, "textDocument/hover", {
+  textDocument = { uri = vim.uri_from_bufnr(0) },
+  position = { line = 2, character = 13 },
+}, 60000) or {}
+local file = io.open(${JSON.stringify(out)}, "w")
+file:write(vim.json.encode({ attached = attached, hover = hover }))
+file:close()
+vim.cmd("qall!")
+`
+    )
+    const state = path.join(elsewhere, "state")
+    spawnSync("nvim", [
+      "--headless",
+      "--clean",
+      "-i",
+      "NONE",
+      "-u",
+      "init.lua",
+      path.join(project, "a.efx"),
+      "-c",
+      "luafile check.lua"
+    ], {
+      cwd: elsewhere,
+      encoding: "utf8",
+      timeout: 150_000,
+      env: {
+        ...process.env,
+        EFFECTSCRIPT_DEV: "1",
+        XDG_STATE_HOME: state,
+        XDG_CACHE_HOME: state,
+        XDG_DATA_HOME: state,
+        XDG_CONFIG_HOME: state
+      }
+    })
+    const result = JSON.parse(fs.readFileSync(out, "utf8"))
+    expect(result.attached).toBe(true)
+    expect(JSON.stringify(result.hover)).toContain("Effect bind")
+  }, 180_000)
+})

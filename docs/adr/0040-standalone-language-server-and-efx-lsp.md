@@ -52,8 +52,12 @@ diagnostics, and bind hovers and tokens.
 - The wrapper relies on `LanguageService` method shapes (`getDiagnostics`, `getHover`,
   `getSemanticTokens`) and on `service.context`. A Volar upgrade that changes them breaks the
   server tests, not users silently.
-- The binary grows by the bundled TypeScript (about 9 MB), and `efx lsp` works without any npm
+- The binary grows by about 15 MB: TypeScript's `typescript.js` (9 MB), its 107 `lib.*.d.ts`
+  files (4 MB) and the server bundle (2 MB). In exchange, `efx lsp` works without any npm
   install.
+- Editors must start `efx lsp` in the project root, so that it finds the project's
+  `@effectscript/language`. Helix does this; the documented Neovim config passes
+  `cwd = config.root_dir`.
 
 ## Alternatives considered
 

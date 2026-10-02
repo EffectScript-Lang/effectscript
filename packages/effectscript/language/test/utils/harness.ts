@@ -74,5 +74,5 @@ export const createHarness = (files: Record<string, string>, options_: { readonl
   initialize(language)
   decorateLanguageServiceHost(ts, language, host)
   // the guardrails the TS server plugin adds (ADR-0039)
-  return { dir, service: options_.guardrails ? decorateGuardrails(proxy, (f) => compiles.get(f)) : proxy }
+  return { dir, service: options_.guardrails ? decorateGuardrails(proxy, (f) => compiles.get(f), ts) : proxy }
 }

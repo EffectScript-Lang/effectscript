@@ -15,7 +15,7 @@ docs look the same.
 
 EffectScript signatures already say most of what docs usually repeat. `: A throws E needs R`
 names the result, every typed error and every required service. Schemas name the constraints on
-parameters (`Money = Int.check(isGreaterThan(0))`). Restating that in `@param`, `@returns` and
+parameters (`schema Money = Int & Brand<"Money">`, `cents = Int.check(isGreaterThan(0))`). Restating that in `@param`, `@returns` and
 `@throws` tags costs tokens for every reader, human or model, and the restated copy drifts.
 
 The user wants no new doc syntax ("TSDoc, we don't need to invent anything"), output that machines

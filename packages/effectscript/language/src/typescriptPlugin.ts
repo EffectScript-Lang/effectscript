@@ -44,10 +44,11 @@ const toTypeScriptDiagnostic = (
  */
 export const typescriptPlugin: ts.server.PluginModuleFactory = (modules) => {
   const plugin = volarPlugin(modules)
+  const typescript = modules.typescript
   return {
     ...plugin,
     create(info) {
-      const service = decorateGuardrails(plugin.create(info), (fileName) => compiles.get(fileName))
+      const service = decorateGuardrails(plugin.create(info), (fileName) => compiles.get(fileName), typescript)
       const getSyntacticDiagnostics = service.getSyntacticDiagnostics.bind(service)
       return new Proxy(service, {
         get(target, key, receiver) {

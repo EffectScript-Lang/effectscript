@@ -85,3 +85,35 @@ describe("retargetImports (Plan 11 Task 5, ADR-0041)", () => {
     expect(retargetImports(files, "a.efx", "a.ts")).toEqual([{ file: "b.efx", code: "import { a } from \"./a.ts\"\n" }])
   })
 })
+
+describe("planning cost (review of Plan 11, M1)", () => {
+  // 3,000 files that import other modules but can't import the converted one
+  const files = new Map<string, string>()
+  const body = Array.from(
+    { length: 60 },
+    (_, i) => `import { v${i} } from "./mod${i}.ts"\nexport const w${i} = v${i} + 1`
+  ).join("\n")
+  for (let i = 0; i < 3000; i++) files.set(`src/f${i}.ts`, body)
+  files.set("src/a.efx", "export const a = 1\n")
+  files.set("src/b.ts", "import { a } from \"./a.efx\"\n")
+  files.set(
+    "src/c.ts",
+    "import { Effect } from \"effect\"\nexport const f = Effect.fn(\"f\")(function*() { return 1 })\n"
+  )
+  files.set(
+    "src/lib/index.ts",
+    "import { Effect } from \"effect\"\nexport const g = Effect.fn(\"g\")(function*() { return 1 })\n"
+  )
+  files.set("src/d.ts", "import { g } from \"./lib\"\n")
+
+  it("only parses files that mention the converted file", () => {
+    const started = performance.now()
+    expect(retargetImports(files, "src/a.efx", "src/a.ts")).toEqual([{
+      file: "src/b.ts",
+      code: "import { a } from \"./a.ts\"\n"
+    }])
+    const plan = planConversion(files, { only: new Set(["src/c.ts", "src/lib/index.ts"]) })
+    expect(plan.edits).toEqual([{ file: "src/d.ts", code: "import { g } from \"./lib/index.efx\"\n" }])
+    expect(performance.now() - started).toBeLessThan(400)
+  })
+})

@@ -37,8 +37,8 @@
  * @module
  */
 
-/** An amount of money in cents. Never negative. */
-export schema Money = Int.check(isGreaterThanOrEqualTo(0))
+/** An amount of money in whole cents. */
+export schema Money = Int & Brand<"Money">
 
 /** An account has less money than the transfer needs. */
 export error InsufficientFunds { needed: Money; available: Money }
@@ -141,6 +141,10 @@ efx docs [paths] [--out docs/api] [--check] [--strict]
   page.
 - **Writing pages.** It writes `<out>/<module path>.md` for each module and `<out>/index.md`. The
   output directory is deleted and fully regenerated.
+- **Module paths.** A module path is the file path relative to the package root, with a leading
+  `src/` and the extension removed. `index` files take their directory's path, as service keys do
+  (ADR-0014), so `src/users/index.efx` → `users`. The root `src/index.efx` has path `""`, and its
+  docs open `index.md`, above the list of modules.
 - **`--check`.** Writes nothing, prints the diagnostics, and exits with 1 on errors (or on warnings
   with `--strict`).
 
@@ -173,8 +177,8 @@ interface DocComment {
 - **Type references are linked syntactically.** An identifier in a type position that names an
   exported declaration of a documented module (local, or reached through a relative import) links
   to that declaration's anchor. Its summary is copied into the table where it is referenced.
-- **Schema constraints are shown as written** (`Int.check(isGreaterThanOrEqualTo(0))`), not
-  rephrased. The text is exact, short and already familiar to Effect users.
+- **Schema definitions and constraints are shown as written** (`Int & Brand<"Money">`, or a field
+  `cents = Int.check(isGreaterThan(0))`), not rephrased. The text is exact, short and already familiar to Effect users.
 - **One parser.** The doc-comment parser (`core/src/docs/comment.ts`) replaces `jsdocBefore` in
   `transform/command.ts`, so CLI help text and API pages read comments the same way.
 
@@ -198,7 +202,7 @@ Moves money between two accounts.
 
 | | |
 | --- | --- |
-| **amount** | [`Money`](#money): An amount of money in cents. Never negative. |
+| **amount** | [`Money`](#money): An amount of money in whole cents. |
 | **Returns** | [`Receipt`](#receipt): Proof that a transfer happened. |
 | **Fails with** | [`InsufficientFunds`](#insufficientfunds): An account has less money than the transfer needs.<br>[`AccountNotFound`](./accounts.md#accountnotfound): No account has this id. |
 | **Needs** | [`Ledger`](./ledger.md#ledger): The store of balances. |
@@ -223,17 +227,58 @@ Both balances change, or neither does.
   tags are merged into the same table.
 - **Schemas.** A `schema` section shows its fields, or its variants for ADTs, in a table with each
   field's own doc.
-- **Index.** `index.md` lists every module page with its summary.
+- **Index.** `index.md` (title "API") lists every module page with its summary, as relative links.
+- **Anchors** are GitHub slugs of the heading text, which is the declaration name, or
+  `Service.member` for service members.
 
 ### 3.3 Blume in `efx init`
 
-- **What `efx init` adds:** `blume` as a devDependency, a minimal `blume.config.ts`, and the scripts
-  `"docs:dev": "efx docs && blume dev"` and `"docs:build": "efx docs && blume build"`.
-- **Verification.** The exact config shape is checked against Blume's quickstart while the plan is
-  carried out.
-- **Existing setups.** `init` doesn't overwrite an existing `blume.config.ts` or `docs/` content
-  outside `docs/api/`.
-- **Generated output.** `docs/api/` is generated. `init` adds it to `.gitignore`.
+The Blume project lives in `docs/`, not the package root. Blume always builds into `dist/` next to
+its config and has no option to change that, so a root-level Blume would overwrite a library's own
+`dist/`.
+
+- **`docs/blume.config.ts`** (written only if absent):
+
+  ```ts
+  import { defineConfig } from "blume"
+  import { effectscript } from "effectscript/blume"
+
+  export default defineConfig({
+    title: "<package name>",
+    content: { root: ".", exclude: ["**/_*", "**/.*", "dist/**", "node_modules/**"] },
+    integrations: [effectscript()]
+  })
+  ```
+- **`docs/index.md`** (written only if `docs/` has no `index.md`/`index.mdx`). Its frontmatter
+  title is the package name. Its body is the package's `description` and a link to `./api/`.
+- **Scripts** (added only if absent):
+  - `"docs": "efx docs"`
+  - `"docs:dev": "efx docs && cd docs && blume dev"`
+  - `"docs:build": "efx docs && cd docs && blume build"`
+- **`blume`** is added to the "Install:" hint when it isn't a dependency.
+- **`.gitignore`** gets `docs/api/`, `docs/.blume/` and `docs/dist/`, each only if missing.
+- **`effectscript/blume` (new export).** It returns an Astro integration that registers the
+  EffectScript TextMate grammars with Shiki, so ` ```efx ` blocks are highlighted. The integration
+  uses `astro:config:setup` → `updateConfig({ markdown: { shikiConfig: { langs: ["tsx", injection,
+  efx] } } })`.
+  - The grammars are the VS Code extension's `effectscript.tmLanguage.json` and
+    `effectscript.injection.tmLanguage.json`. Core ships a copy in `core/grammars/`, and a test
+    keeps that copy byte-identical to the extension's.
+  - The language is registered as `{ name: "efx", embeddedLangs: ["tsx"] }`, and the injection as
+    `injectTo: ["source.efx"]`.
+  - Without the integration, Blume shows `efx` blocks as plain text.
+- **Verified against Blume 2.1.0** (probes, 2026-10-03):
+  - `defineConfig` comes from `"blume"`.
+  - `integrations` adds Astro integrations after Blume's own.
+  - With the config in `docs/` and `content.root: "."`, the site builds into `docs/dist/`. The
+    root `dist/` is untouched, and rebuilding doesn't pick up `dist/` or `.blume/` as content.
+  - Generated `.md` pages build without warnings and appear in `llms.txt`.
+  - Relative links such as `./bank/accounts.md#accountnotfound` are rewritten to site routes, and
+    `blume validate` reports broken ones.
+  - Heading anchors use GitHub slugs: `Users.find` → `usersfind`, `$weird_Name` → `weird_name`.
+  - `efx` fences are `plaintext` without the integration. With it, `effect`/`throws`/`needs` get
+    keyword colors.
+  - Blume needs Node ≥ 22.12. `efx docs` itself has no such requirement.
 
 ## 4. Diagnostics (area 9, library constructs and tooling)
 
@@ -244,6 +289,7 @@ Both balances change, or neither does.
 | EFX9303 | error | `// => throws` not on an `await` expression statement | `efx docs`, `?doctest` |
 | EFX9304 | error | A `doctest` path that isn't relative or doesn't end in `.efx`/`.ts` | compiler |
 | EFX9305 | warning | A target file of a `doctest` that has no `efx` examples | `?doctest` |
+| EFX9307 | error | A `doctest` target that has a `main` block (importing it would run the program) | `?doctest` |
 | EFX9306 | warning (strict only) | `@returns`/`@throws` repeating a written return type or `throws` clause, or `@param` on a parameter whose type is a documented schema | `efx docs --check --strict` |
 
 **Doc comments and normal compiles.** `toTypeScript` doesn't parse doc comments. Normal compiles

@@ -60,3 +60,16 @@ token provider for the same language replaces TypeScript's tokens rather than ad
   type, and a separate provider would drop TypeScript's own tokens.
 - **Rewrite every TS2488:** the same code reports non-iterables in ordinary `for…of` and spread.
   Only those that follow a bind and name a Promise are about `await`.
+
+## Amendment 1 (Plan 11 final review)
+
+The first version recognized a Promise await by the English text "Type 'Promise<". That missed
+localized messages (tsserver and the language server run in the user's locale) and every Promise
+type with another name: an alias, an interface extending `Promise`, a library's own promise type.
+
+- **Rewrite rule:** a TS2488 is rewritten when its operand in the compiled file has a thenable
+  type, which the checker decides: `getAwaitedType(t) !== t`. Its start must also follow a bind
+  in the source.
+- **The tsserver host** runs the check on the program's compiled diagnostics and matches them to
+  the mapped ones by message.
+- **The language server** runs it on the diagnostic's own position in the compiled document.

@@ -62,5 +62,11 @@ exports.run = async () => {
   await poll("b.ts", () => exists("b.ts"), (yes) => yes)
   results.toTypeScript = { b: await read("b.ts"), c: await read("c.ts"), oldGone: !(await exists("b.efx")) }
 
+  // from the explorer or a title bar, the command gets the clicked file, not the active one (review I1)
+  await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(at("a.efx")))
+  await vscode.commands.executeCommand("effectscript.convertToEffectScript", at("d.ts"))
+  await poll("d.efx", () => exists("d.efx"), (yes) => yes, 30)
+  results.byUri = { converted: await exists("d.efx"), activeStays: await exists("a.efx") }
+
   fs.writeFileSync(process.env.EFX_E2E_OUT, JSON.stringify(results, null, 2))
 }

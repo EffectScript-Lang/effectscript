@@ -200,3 +200,32 @@
 - **Version coverage:** VS Code 1.95 itself wasn't run, because that would mean downloading it.
   Its constraint, Node without `require(esm)`, is tested directly. The full editor run passes on
   the installed VS Code 1.138.
+
+**Final review** (fresh Opus reviewer): 0 Critical, 3 Important, 9 Minor. One fix pass, test first.
+
+- **Fixed:**
+  - **I1:** the commands act on the clicked file (explorer, title bar). The VS Code end-to-end
+    run converts by URI while another file is active.
+  - **I2:** the Promise-await rewrite is decided by the checker (a thenable operand type), so it
+    holds for aliases, subtypes and any locale (ADR-0039 Amendment 1). Tested with a `ja`
+    language server and with an aliased and an extended `Promise`.
+  - **I3:** the documented Neovim config starts `efx lsp` in the project root. The Neovim test
+    runs the README's own snippet from another directory.
+  - **M1, re-graded Important (an 8 s freeze on large repos):** the planner parses only files
+    whose quoted strings can name the target. For 3,000 files that took 950 ms before and
+    10 ms after. Conversions show progress.
+  - **M3:** ADR-0040's binary size is corrected to about 15 MB.
+
+**Deferred minors:**
+
+- **Convert:**
+  - in a multi-root workspace, importers in other folders aren't rewritten;
+  - on a `.ts` file with syntax errors, it says "nothing to re-sugar".
+- **Language server:**
+  - the log doesn't say when it skipped the project's TypeScript (and why);
+  - `offsetAt` doesn't clamp an overlong character, and `positionAt` is linear.
+- **VS Code:** decorations cover only the active editor, not other visible ones.
+- **tsserver plugin:** the `compiles` map never evicts closed files.
+- **Push diagnostics:** partial results (with TS syntax errors) lack the EFX diagnostics.
+- **Plan text:** it says Convert File to TypeScript uses `rewriteImportExtensions: "ts"`. The
+  code correctly leaves the `.efx` imports alone.

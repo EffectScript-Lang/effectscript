@@ -26,6 +26,7 @@ const files: Record<string, string> = {
   "b.ts":
     "import { Effect } from \"effect\"\n\nexport const greet = Effect.fn(\"greet\")(function*(name: string) {\n  return `Hello, ${name}`\n})\n",
   "c.ts": "import { greet } from \"./b.ts\"\n\nexport const hi = greet(\"Ada\")\n",
+  "d.ts": "import { Effect } from \"effect\"\n\nexport const one = Effect.fn(\"one\")(function*() {\n  return 1\n})\n",
   "tsconfig.json": JSON.stringify({
     compilerOptions: {
       strict: true,
@@ -115,5 +116,6 @@ describe.skipIf(!enabled)("the extension in VS Code (Plan 11 Task 5, ADR-0041)",
     expect(results.toTypeScript.b).toContain("Effect.fn(\"greet\")")
     expect(results.toTypeScript.c).toContain("from \"./b.ts\"")
     expect(results.toTypeScript.oldGone).toBe(true)
+    expect(results.byUri).toEqual({ converted: true, activeStays: true })
   }, 300_000)
 })

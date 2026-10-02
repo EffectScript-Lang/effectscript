@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url"
 import type * as ts from "typescript"
 import { create as createTypeScriptServices } from "volar-service-typescript"
 import { URI } from "vscode-uri"
-import { bindAt, bindHover, isPromiseAwait, promiseAwaitMessage } from "./guardrails.ts"
+import { bindAt, bindHover, type Checks, followsBind, isThenableAt, promiseAwaitMessage } from "./guardrails.ts"
 import { createLanguagePlugin, type EffectScriptVirtualCode } from "./languagePlugin.ts"
 
 type TypeScript = typeof ts
@@ -219,7 +219,8 @@ export const withEffectScript = (service: LanguageService): LanguageService => {
  * @category language server
  */
 export const withPromiseAwaitMessages = (
-  plugins: ReadonlyArray<LanguageServicePlugin>
+  plugins: ReadonlyArray<LanguageServicePlugin>,
+  typescript: Checks
 ): Array<LanguageServicePlugin> =>
   plugins.map((plugin) => ({
     ...plugin,
@@ -239,13 +240,18 @@ export const withPromiseAwaitMessages = (
           if (script === undefined || root?.binds === undefined || code === undefined) return diagnostics
           const map = context.language.maps.get(code, script)
           const source = script.snapshot.getText(0, script.snapshot.getLength())
+          // the diagnostics are on the compiled file, which is what the program holds
+          const service = context.inject<{ "typescript/languageService": () => ts.LanguageService }>(
+            "typescript/languageService"
+          )
+          const fileName = context.project.typescript?.uriConverter.asFileName(decoded[0])
+          const program = service?.getProgram()
           return diagnostics.map((d) => {
-            if (d.code !== 2488) return d
-            for (const [start] of map.toSourceLocation(document.offsetAt(d.range.start))) {
-              const message = typeof d.message === "string" ? d.message : (d.message as { value: string }).value
-              if (isPromiseAwait(source, root.binds, 2488, message, start)) {
-                return { ...d, message: promiseAwaitMessage }
-              }
+            if (d.code !== 2488 || program === undefined || fileName === undefined) return d
+            const generated = document.offsetAt(d.range.start)
+            if (!isThenableAt(typescript, program, fileName, generated)) return d
+            for (const [start] of map.toSourceLocation(generated)) {
+              if (followsBind(source, root.binds, start)) return { ...d, message: promiseAwaitMessage }
             }
             return d
           })
@@ -286,7 +292,7 @@ export const startLanguageServer = (
         getLanguageService: async (uri) => wrap(await project.getLanguageService(uri)),
         getExistingLanguageServices: async () => (await project.getExistingLanguageServices()).map(wrap)
       },
-      [effectScriptLegend(), ...withPromiseAwaitMessages(createTypeScriptServices(typescript))]
+      [effectScriptLegend(), ...withPromiseAwaitMessages(createTypeScriptServices(typescript), typescript)]
     )
   })
   connection.onInitialized(() => {

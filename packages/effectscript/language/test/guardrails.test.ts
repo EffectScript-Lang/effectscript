@@ -49,6 +49,26 @@ describe("await guardrails in the TS language service (Plan 11 Task 2, ADR-0039)
     expect(ts.flattenDiagnosticMessageText(iterable.messageText, "\n")).toMatch(/^Type '1' must have/)
   })
 
+  it("rewrites awaiting any thenable type, whatever its name (review I2)", () => {
+    const aliased = [
+      "type P = Promise<number>",
+      "interface Q extends Promise<number> {}",
+      "declare const p: P",
+      "declare const q: Q",
+      "export effect a() {",
+      "  const x = await p",
+      "  const y = await q",
+      "  return x + y",
+      "}",
+      ""
+    ].join("\n")
+    const harness = createHarness({ "c.efx": aliased }, { guardrails: true })
+    const messages = harness.service.getSemanticDiagnostics(`${harness.dir}/c.efx`).filter((d) => d.code === 2488).map((
+      d
+    ) => [aliased.slice(d.start!, d.start! + 1), d.messageText])
+    expect(messages).toEqual([["p", promiseAwaitMessage], ["q", promiseAwaitMessage]])
+  })
+
   it("never throws on incomplete code", () => {
     const broken = "export effect a() {\n  const x = await succeed(1)\n  const y = x.\n}\n"
     const harness = createHarness({ "b.efx": broken }, { guardrails: true })

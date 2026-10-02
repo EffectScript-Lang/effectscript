@@ -97,21 +97,36 @@ const target = async (folder: vscode.WorkspaceFolder, file: string): Promise<boo
   }
 }
 
-const convertToEffectScript = async (output: vscode.OutputChannel) => {
-  const document = vscode.window.activeTextEditor?.document
+/**
+ * The document a command acts on: the clicked file when VS Code passes one (explorer, title bar,
+ * review I1), else the active editor's.
+ */
+const targetDocument = async (uri: unknown): Promise<vscode.TextDocument | undefined> =>
+  uri instanceof vscode.Uri ? vscode.workspace.openTextDocument(uri) : vscode.window.activeTextEditor?.document
+
+const converting = <A>(file: string, task: () => Promise<A>): Thenable<A> =>
+  vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Converting ${file}…` }, task)
+
+const convertToEffectScript = async (output: vscode.OutputChannel, uri: unknown) => {
+  const document = await targetDocument(uri)
   const folder = document && vscode.workspace.getWorkspaceFolder(document.uri)
   if (document === undefined || folder === undefined || !/\.tsx?$/.test(document.uri.path)) {
     return vscode.window.showWarningMessage(
       "Convert File to EffectScript works on a .ts or .tsx file in a workspace folder"
     )
   }
-  const files = await workspaceFiles(folder)
   const file = path.posix.relative(folder.uri.path, document.uri.path)
-  const { packageName, packageRoot } = packageInfo(document.uri.fsPath)
-  const plan = planConversion(files, {
-    only: new Set([file]),
-    packageName,
-    packageRoot: packageRoot === undefined ? undefined : path.relative(folder.uri.fsPath, packageRoot)
+  const { files, plan } = await converting(file, async () => {
+    const files = await workspaceFiles(folder)
+    const { packageName, packageRoot } = packageInfo(document.uri.fsPath)
+    return {
+      files,
+      plan: planConversion(files, {
+        only: new Set([file]),
+        packageName,
+        packageRoot: packageRoot === undefined ? undefined : path.relative(folder.uri.fsPath, packageRoot)
+      })
+    }
   })
   const [rename] = plan.renames
   if (rename === undefined) {
@@ -129,8 +144,8 @@ const convertToEffectScript = async (output: vscode.OutputChannel) => {
   }
 }
 
-const convertToTypeScript = async () => {
-  const document = vscode.window.activeTextEditor?.document
+const convertToTypeScript = async (uri: unknown) => {
+  const document = await targetDocument(uri)
   const folder = document && vscode.workspace.getWorkspaceFolder(document.uri)
   if (document === undefined || folder === undefined || !document.uri.path.endsWith(".efx")) {
     return vscode.window.showWarningMessage("Convert File to TypeScript works on a .efx file in a workspace folder")
@@ -143,11 +158,13 @@ const convertToTypeScript = async () => {
   if (errors.length > 0) {
     return vscode.window.showErrorMessage(`Fix the EffectScript errors first: ${errors[0]!.code} ${errors[0]!.message}`)
   }
-  const files = await workspaceFiles(folder)
   const file = path.posix.relative(folder.uri.path, document.uri.path)
   const to = file.replace(/\.efx$/, result.mode === "tsx" ? ".tsx" : ".ts")
   if (await target(folder, to)) return vscode.window.showErrorMessage(`${to} already exists`)
-  const edit = conversionEdit(folder, files, { from: file, to, code: result.code }, retargetImports(files, file, to))
+  const edit = await converting(file, async () => {
+    const files = await workspaceFiles(folder)
+    return conversionEdit(folder, files, { from: file, to, code: result.code }, retargetImports(files, file, to))
+  })
   if (!(await applyAndSave(edit))) return vscode.window.showErrorMessage(`Couldn't convert ${file}`)
   await vscode.window.showTextDocument(vscode.Uri.joinPath(folder.uri, to))
 }
@@ -200,8 +217,8 @@ export const activate = (context: vscode.ExtensionContext): void => {
     vscode.workspace.onDidChangeTextDocument((e) => {
       if (isEffectScript(e.document)) changed.fire(compiledUri(e.document.uri))
     }),
-    vscode.commands.registerCommand("effectscript.showCompiledTypeScript", async () => {
-      const document = vscode.window.activeTextEditor?.document
+    vscode.commands.registerCommand("effectscript.showCompiledTypeScript", async (uri: unknown) => {
+      const document = await targetDocument(uri)
       if (document === undefined || !isEffectScript(document)) {
         return vscode.window.showWarningMessage("Show Compiled TypeScript works on a .efx file")
       }
@@ -213,8 +230,11 @@ export const activate = (context: vscode.ExtensionContext): void => {
         preserveFocus: true
       })
     }),
-    vscode.commands.registerCommand("effectscript.convertToEffectScript", () => convertToEffectScript(output)),
-    vscode.commands.registerCommand("effectscript.convertToTypeScript", convertToTypeScript)
+    vscode.commands.registerCommand(
+      "effectscript.convertToEffectScript",
+      (uri: unknown) => convertToEffectScript(output, uri)
+    ),
+    vscode.commands.registerCommand("effectscript.convertToTypeScript", (uri: unknown) => convertToTypeScript(uri))
   )
   bindDecorations(context)
 }
