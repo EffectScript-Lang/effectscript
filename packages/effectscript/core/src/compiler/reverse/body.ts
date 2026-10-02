@@ -10,7 +10,7 @@ import { isParenthesized } from "../transform/await.ts"
 import { convertAmbient } from "./ambient.ts"
 import { commentsIn, removeKeepingComments, type ReverseCtx } from "./context.ts"
 import { convertMatch, matchShape } from "./match.ts"
-import { isMember } from "./origin.ts"
+import { importedLocal, isMember } from "./origin.ts"
 import { inPosition, pipeShape } from "./pipes.ts"
 import { convertFinalizer } from "./resources.ts"
 import { convertTry } from "./try.ts"
@@ -55,13 +55,13 @@ const formNames = new Set(["fn", "fnUntraced", "gen"])
  */
 export const unqualify = (ctx: ReverseCtx, node: Node): void => {
   if (node.type !== "MemberExpression" || node.optional === true) return
-  if (ctx.namespace === "Layer") {
-    // in a layer, a bare name resolves to `Layer.name` (spec §4.14)
-    if (!isMember(node, ctx.layer)) return
+  if (ctx.namespace !== "Effect") {
+    // in a `layer` or `atom`, a bare name resolves to `Layer.name` / `Atom.name` (spec §4.14)
+    const local = ctx.namespace === "Layer" ? ctx.layer : importedLocal(ctx.analysis, "effect/reactivity", "Atom")
+    if (!isMember(node, local)) return
     const name: string = node.property.name
-    if (
-      ctx.options.prelude && !excludedNames.has(name) && namespaceExports.get("Layer")!.has(name) && isFree(ctx, name)
-    ) {
+    const exports = namespaceExports.get(ctx.namespace)!
+    if (ctx.options.prelude && !excludedNames.has(name) && exports.has(name) && isFree(ctx, name)) {
       ctx.s.remove(node.start, node.property.start)
     }
     return

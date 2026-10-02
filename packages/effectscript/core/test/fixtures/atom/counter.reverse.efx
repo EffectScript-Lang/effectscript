@@ -1,9 +1,9 @@
-export const count = Atom.make(0)
+export atom count = 0
 
-export const doubled = Atom.make((get) => get(count) * 2)
+export atom doubled = (get) => get(count) * 2
 
-export const session = Atom.make(1).pipe(Atom.keepAlive)
+export atom session = 1 |> keepAlive
 
-export const greeting = Atom.make(effect {
+export atom greeting = effect {
   return await succeed("hello")
-})
+}

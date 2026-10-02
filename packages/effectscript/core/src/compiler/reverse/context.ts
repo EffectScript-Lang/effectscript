@@ -74,7 +74,7 @@ export interface ReverseCtx {
   /** `main` telemetry depends on a directive that only becomes leading once imports are removed. */
   telemetryDirective: boolean
   /** The namespace the forward compiler resolves bare builtins in at the visited position. */
-  namespace: "Effect" | "Layer"
+  namespace: "Effect" | "Layer" | "Atom"
   /** The service whose layer is being visited: its `effect` members are named `Svc.member`. */
   service: string | undefined
   /** Top-level statement indexes to convert (all when `undefined`); see `toEffectScript`. */

@@ -5,6 +5,7 @@
  * @since 4.0.0
  */
 import { children, type Node } from "../ast.ts"
+import { convertAtom } from "./atom.ts"
 import { blocker, genShape, isGenerator } from "./blockers.ts"
 import { convertGeneratorNode, unqualify, type Visit } from "./body.ts"
 import { convertSchemaRun } from "./classes.ts"
@@ -292,7 +293,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     if (
       node.type === "VariableDeclaration" &&
       (parent?.type === "Program" || parent?.type === "ExportNamedDeclaration") &&
-      (convertConfig(ctx, node, visit) || convertLayer(ctx, node, visit))
+      (convertConfig(ctx, node, visit) || convertLayer(ctx, node, visit) || convertAtom(ctx, node, visit))
     ) {
       return
     }

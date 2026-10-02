@@ -281,7 +281,13 @@ const layerPlan = (ctx: ReverseCtx, name: string, value: Node): ((visit: Visit) 
  * @since 4.0.0
  * @category reverse
  */
-export const layerPipes = (ctx: ReverseCtx, pipe: Node, head: Node, visit: Visit): void => {
+export const layerPipes = (
+  ctx: ReverseCtx,
+  pipe: Node,
+  head: Node,
+  visit: Visit,
+  namespace: ReverseCtx["namespace"] = "Layer"
+): void => {
   const args: Array<Node> = pipe.arguments
   const open = ctx.source.indexOf("(", pipe.callee.property.end)
   const dot = ctx.source.lastIndexOf(".", pipe.callee.property.start)
@@ -295,7 +301,7 @@ export const layerPipes = (ctx: ReverseCtx, pipe: Node, head: Node, visit: Visit
   let previous = head
   args.forEach((step, i) => {
     if (i > 0) commaToPipe(ctx, separatorComma(ctx, previous.end, step.start), step)
-    within(ctx, "Layer", () => visit(step, pipe, false))
+    within(ctx, namespace, () => visit(step, pipe, false))
     previous = step
   })
   removeKeepingComments(ctx, previous.end, pipe.end)
