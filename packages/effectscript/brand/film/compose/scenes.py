@@ -619,17 +619,33 @@ def ready(shot):
     return d.exists() and sum(1 for p in d.iterdir() if p.suffix == ".exr") >= SHOT_FRAMES[shot]
 
 
+def bframe(c, name, t, t0, alpha=1.0, last=None):
+    """Draw a Blender shot at source time t. When the edit slows a block down,
+    t falls between rendered frames, so the two neighbours are blended."""
+    x = (t - t0) * FPS + 1
+    n = int(math.floor(x + 1e-6))
+    f = x - n
+    if last:
+        n = min(max(1, n), last)
+    draw_frame(c, blender_frame(name, n), alpha=alpha)
+    if 0.03 < f < 0.97 and (not last or n < last):
+        draw_frame(c, blender_frame(name, n + 1), alpha=alpha * f)
+
+
 def shot(c, name, t, t0, alpha=1.0, n=None):
-    if n is None:
-        n = int((t - t0) * FPS) + 1
-    draw_frame(c, blender_frame(name, min(max(1, n), SHOT_FRAMES[name])), alpha=alpha)
+    if n is not None:
+        draw_frame(c, blender_frame(name, min(max(1, n), SHOT_FRAMES[name])), alpha=alpha)
+        return
+    bframe(c, name, t, t0, alpha, last=SHOT_FRAMES[name])
 
 
 def tangle(c, t):
-    if ready("tangle2"):
+    # real cables while the ceremony builds; the glowing tangle for the climax,
+    # because it is the same visual language as the converge shot that follows
+    if ready("tangle2") and t < 46.0:
         shot(c, "tangle2", t, 40.0)
     else:
-        draw_frame(c, blender_frame("tangle", int((t - 40.0) * FPS) + 1))
+        bframe(c, "tangle", t, 40.0, last=420)
 
 
 def ceremony(c, t):
@@ -669,6 +685,14 @@ def ceremony(c, t):
             kenburns(c, plate("threads-hall"), phase(t, 46, 49.5), 1.04, 1.2, (0.5, 0.78), (0.5, 0.42))
         flash(c, math.exp(-(t - 46.0) * 6) * 0.5)
         a = window(t, 46.0, 49.3, 0.01, 0.3)
+        g = skia.GradientShader.MakeRadial(
+            skia.Point(W / 2, H / 2), 1000, [argb(INK, 0.72 * a), argb(INK, 0.0)], [0.0, 1.0]
+        )
+        c.save()
+        c.scale(1.0, 0.45)
+        c.translate(0, H / 2 / 0.45 - H / 2)
+        c.drawRect(skia.Rect.MakeXYWH(0, -H, W, H * 3), skia.Paint(Shader=g))
+        c.restore()
         text(c, "You got ceremony.", W / 2, H / 2 + 40, 132, align="center", alpha=a, reveal=phase(t, 46.0, 46.45), glow=0.25)
         return
     # 49.5–54: the climax, then a strobe montage that cuts to nothing
@@ -711,7 +735,7 @@ def question(c, t):
             kenburns(c, plate("one-thread"), phase(t, 55, 62), 1.16, 1.07, (0.5, 0.476), (0.5, 0.476), alpha=a_img)
     x = smooth(phase(t, 61.0, 62.2))
     if x > 0:
-        draw_frame(c, blender_frame("converge", int((t - 58.0) * FPS) + 1), alpha=x)
+        bframe(c, "converge", t, 58.0, alpha=x, last=300)
     a = window(t, 56.5, 61.5, 0.01, 0.7)
     text(c, "What if the language", W / 2, 330, 92, align="center", alpha=a, reveal=phase(t, 56.5, 57.6))
     text(c, "just understood?", W / 2, 440, 92, align="center", alpha=a, gradient=True, reveal=phase(t, 58.5, 59.6))
@@ -738,7 +762,7 @@ def draw_mark(c, x, y, h, alpha=1.0, glow=0.0):
 def introducing(c, t):
     fill(c)
     if t < 77.6:
-        draw_frame(c, blender_frame("monolith", int((t - 68.0) * FPS) + 1), alpha=1 - smooth(phase(t, 76.2, 77.4)))
+        bframe(c, "monolith", t, 68.0, alpha=1 - smooth(phase(t, 76.2, 77.4)), last=360)
     flash(c, math.exp(-max(0.0, t - 70.0) * 5) * (t >= 70.0) * 0.55)
     a = window(t, 72.4, 75.8, 0.6, 0.5)
     text(c, "Introducing", W / 2, 170, 44, DISPLAY_SEMI, SUBTLE, alpha=a, align="center", tracking=0.01)
@@ -984,7 +1008,7 @@ T_NPM = Typing("npm i effectscript", 155.0, 20)
 def finale(c, t):
     fill(c)
     if t < 152.2:
-        draw_frame(c, blender_frame("hero", int((t - 144.0) * FPS) + 1), alpha=smooth(phase(t, 144.0, 144.5)))
+        bframe(c, "hero", t, 144.0, alpha=smooth(phase(t, 144.0, 144.5)), last=240)
         sh = skia.GradientShader.MakeLinear(
             [skia.Point(0, 0), skia.Point(W * 0.55, 0)], [argb(INK, 0.5), argb(INK, 0.0)], [0.0, 1.0]
         )

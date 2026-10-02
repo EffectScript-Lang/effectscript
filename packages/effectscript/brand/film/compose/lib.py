@@ -461,9 +461,18 @@ def _frames(directory):
     return out
 
 
+# per-shot HDR highlight lift for renders that sit too low: linear values above
+# the knee expand quadratically, so shadows and the text side stay untouched
+SHOT_LIFT = {"hero": 1.5}
+
+
 def _load(p):
     if p.suffix == ".exr":
-        return f16_image(srgb_encode(np.clip(_read_exr(p), 0, None) * BLENDER_GAIN))
+        lin = np.clip(_read_exr(p), 0, None) * BLENDER_GAIN
+        k = SHOT_LIFT.get(p.parent.name, 0.0)
+        if k:
+            lin = lin + k * np.clip((lin - KNEE) / (1 - KNEE), 0, None) ** 2
+        return f16_image(srgb_encode(lin))
     return skia.Image.open(str(p))
 
 

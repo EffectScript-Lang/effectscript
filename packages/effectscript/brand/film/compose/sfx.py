@@ -13,6 +13,7 @@ from scipy import signal
 
 sys.path.insert(0, str(Path(__file__).parent))
 import scenes  # noqa: E402
+import timeline  # noqa: E402
 
 SR = 48000
 DUR = 160.0
@@ -284,9 +285,11 @@ def bed(name, start, end, gain, fin, fout, n):
 
 
 def main():
-    n = int(DUR * SR)
+    e = timeline.EDIT.to_edit  # events are authored in source time; place them on the edit
+    n = int(timeline.EDIT.total * SR)
     mix = np.zeros((n, 2))
     for t, kind, strength in scenes.EVENTS:
+        t = e(t)
         x = VOICES[kind](strength) * LEVEL[kind]
         start = int(round(t * SR))
         end = min(n, start + len(x))
@@ -300,8 +303,8 @@ def main():
             pan_curve = np.full(end - start, pan)
         mix[start:end, 0] += x[: end - start] * np.sqrt(0.5 - pan_curve / 2) * 1.414
         mix[start:end, 1] += x[: end - start] * np.sqrt(0.5 + pan_curve / 2) * 1.414
-    for spec in BEDS:
-        b = bed(*spec, n)
+    for name, a, z, gain, fin, fout in BEDS:
+        b = bed(name, e(a), e(z), gain, fin, fout, n)
         mix[:, 0] += b
         mix[:, 1] += b
     # a small room so the Foley sits in the same space as the score
@@ -312,7 +315,7 @@ def main():
     wet = np.stack([signal.oaconvolve(mix[:, c], ir[:, c])[:n] for c in range(2)], axis=1)
     out = mix + 0.35 * wet
     # the hard cut: nothing may ring into the silence
-    out[int(54.0 * SR) : int(56.0 * SR)] = 0
+    out[int(e(54.0) * SR) : int(e(56.0) * SR)] = 0
     peak = np.abs(out).max()
     if peak > 0.98:
         out *= 0.98 / peak

@@ -487,7 +487,7 @@ def floor_litter(scene, mat, n=520, seed=9):
 
 
 def build():
-    scene = E.new_scene(FRAMES, samples=int(os.environ.get("SAMPLES", "48")), adaptive=0.035, bounces=(6, 3, 2, 12), clamp_ind=4.0)
+    scene = E.new_scene(FRAMES, samples=int(os.environ.get("SAMPLES", "16")), adaptive=0.04, bounces=(6, 3, 2, 12), clamp_ind=4.0)
     c = scene.cycles
     c.volume_biased = True
     c.volume_step_rate = 4.0

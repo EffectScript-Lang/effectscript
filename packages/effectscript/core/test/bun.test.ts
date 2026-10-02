@@ -19,7 +19,7 @@ describe.skipIf(!hasBun)("effectscript/bun (Plan 9 Task 1)", () => {
   write("src/greet.efx", "export effect greet(name: string): string {\n  return `hello ${name}`\n}\n")
   write(
     "src/main.efx",
-    "import { greet } from \"./greet\"\n\nmain {\n  globalThis.console.log(await greet(\"bun\"))\n}\n"
+    "import { greet } from \"./greet.efx\"\n\nmain {\n  globalThis.console.log(await greet(\"bun\"))\n}\n"
   )
   write(
     "src/greet.test.ts",
@@ -27,7 +27,7 @@ describe.skipIf(!hasBun)("effectscript/bun (Plan 9 Task 1)", () => {
   )
   write("src/broken.efx", "effect broken() {\n  return await\n}\n")
 
-  it("runs a main block with an extensionless .efx import", () => {
+  it("runs a main block that imports another .efx module (ADR-0035)", () => {
     const result = bun(["--preload", preload, "./src/main.efx"])
     expect(result.stderr).toBe("")
     expect(result.stdout.trim()).toBe("hello bun")

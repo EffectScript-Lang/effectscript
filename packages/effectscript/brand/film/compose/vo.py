@@ -16,6 +16,8 @@ from pathlib import Path
 import numpy as np
 from scipy import ndimage
 
+import timeline
+
 FILM = Path(__file__).resolve().parent.parent
 SR = 48000
 DUR = 160.0
@@ -90,7 +92,9 @@ def clips(cues):
 
 
 def main():
-    cues = list(csv.DictReader(open(FILM / "prompts" / "voiceover-script.csv")))
+    # line starts come from the edit (timeline.json); without one, the cue sheet
+    cues = [{"line": v["line"], "start_time": v["start"]} for v in timeline.EDIT.voice()]
+    DUR = timeline.EDIT.total
     parts, source = clips(cues)
     print(f"{len(parts)} lines from {source}")
     out = np.zeros((int(DUR * SR), 2), np.float32)
@@ -107,7 +111,8 @@ def main():
         over = end / SR - nxt
         report.append((float(cue["start_time"]), len(clip) / SR, over, cue["line"]))
     # nothing may sound in the film's silence
-    out[int(54.0 * SR) : int(56.0 * SR)] = 0
+    e = timeline.EDIT.to_edit
+    out[int(e(54.0) * SR) : int(e(56.0) * SR)] = 0
     peak = np.abs(out).max()
     out *= 10 ** (-3 / 20) / max(peak, 1e-6)  # voice peaks at -3 dBFS before the final limiter
     write(FILM / "build" / "vo.wav", out)

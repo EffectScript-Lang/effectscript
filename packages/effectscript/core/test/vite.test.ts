@@ -2,7 +2,7 @@ import { efx } from "effectscript/vite"
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import { build } from "vite"
+import { build, createServer } from "vite"
 import { afterAll, describe, expect, it } from "vitest"
 
 // inside this package, so `effect` and `effectscript/vite` resolve
@@ -74,5 +74,28 @@ describe("effectscript/vite (Plan 9 Task 3)", () => {
     expect(output).toContain("1 passed")
     expect(output).toContain("1 failed")
     expect(output).toMatch(/greet\.test\.efx:9:/)
+    // source map paths resolve against the module's own directory, not the working directory
+    expect(output).not.toContain("test/test/")
   }, 120_000)
+
+  it("serves an .efx entry compiled from the dev server", async () => {
+    const server = await createServer({
+      root: dir,
+      configFile: false,
+      logLevel: "silent",
+      plugins: [efx()],
+      server: { port: 0 }
+    })
+    await server.listen()
+    try {
+      const address = server.httpServer!.address() as { port: number }
+      const response = await fetch(`http://localhost:${address.port}/src/app.efx`)
+      expect(response.headers.get("content-type")).toMatch(/javascript/)
+      const code = await response.text()
+      expect(code).toContain("Effect.gen")
+      expect(code).not.toContain("effect {")
+    } finally {
+      await server.close()
+    }
+  }, 60_000)
 })

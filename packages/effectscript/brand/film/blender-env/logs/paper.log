@@ -1,0 +1,127 @@
+/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/blender-env/paper.py:501: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  w.use_nodes = True
+01:01.534  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0001.exr'
+Info: Saved as "paper.blend"
+[paper] frame 1 done in 58.5s
+02:38.539  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0002.exr'
+[paper] frame 2 done in 97.0s
+04:38.595  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0003.exr'
+[paper] frame 3 done in 120.1s
+06:03.870  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0004.exr'
+[paper] frame 4 done in 85.3s
+06:58.444  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0005.exr'
+[paper] frame 5 done in 54.6s
+07:31.422  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0006.exr'
+[paper] frame 6 done in 33.0s
+08:03.533  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0007.exr'
+[paper] frame 7 done in 32.1s
+08:35.975  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0008.exr'
+[paper] frame 8 done in 32.4s
+09:06.861  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0009.exr'
+[paper] frame 9 done in 30.9s
+09:37.879  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0010.exr'
+[paper] frame 10 done in 31.0s
+10:06.736  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0011.exr'
+[paper] frame 11 done in 28.9s
+10:34.961  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0012.exr'
+[paper] frame 12 done in 28.2s
+10:58.350  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0013.exr'
+[paper] frame 13 done in 23.4s
+11:14.755  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0014.exr'
+[paper] frame 14 done in 16.4s
+11:31.259  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0015.exr'
+[paper] frame 15 done in 16.5s
+11:50.316  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0016.exr'
+[paper] frame 16 done in 19.1s
+12:09.299  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0017.exr'
+[paper] frame 17 done in 19.0s
+12:29.208  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0018.exr'
+[paper] frame 18 done in 19.9s
+12:46.537  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0019.exr'
+[paper] frame 19 done in 17.3s
+13:03.078  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0020.exr'
+[paper] frame 20 done in 16.5s
+13:23.302  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0021.exr'
+[paper] frame 21 done in 20.2s
+13:41.127  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0022.exr'
+[paper] frame 22 done in 17.8s
+14:09.787  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0023.exr'
+[paper] frame 23 done in 28.7s
+14:37.157  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0024.exr'
+[paper] frame 24 done in 27.4s
+15:03.990  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0025.exr'
+[paper] frame 25 done in 26.8s
+15:35.858  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0026.exr'
+[paper] frame 26 done in 31.9s
+15:53.191  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0027.exr'
+[paper] frame 27 done in 17.3s
+16:06.497  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0028.exr'
+[paper] frame 28 done in 13.3s
+16:19.671  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0029.exr'
+[paper] frame 29 done in 13.2s
+16:33.033  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0030.exr'
+[paper] frame 30 done in 13.4s
+16:47.246  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0031.exr'
+[paper] frame 31 done in 14.2s
+17:00.473  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0032.exr'
+[paper] frame 32 done in 13.2s
+17:14.242  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0033.exr'
+[paper] frame 33 done in 13.8s
+17:29.547  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0034.exr'
+[paper] frame 34 done in 15.3s
+17:43.172  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0035.exr'
+[paper] frame 35 done in 13.6s
+17:56.633  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0036.exr'
+[paper] frame 36 done in 13.5s
+18:09.914  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0037.exr'
+[paper] frame 37 done in 13.3s
+18:23.516  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0038.exr'
+[paper] frame 38 done in 13.6s
+18:37.117  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0039.exr'
+[paper] frame 39 done in 13.6s
+18:50.665  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0040.exr'
+[paper] frame 40 done in 13.5s
+19:03.927  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0041.exr'
+[paper] frame 41 done in 13.3s
+19:17.233  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0042.exr'
+[paper] frame 42 done in 13.3s
+19:31.318  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0043.exr'
+[paper] frame 43 done in 14.1s
+19:45.149  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0044.exr'
+[paper] frame 44 done in 13.8s
+19:59.955  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0045.exr'
+[paper] frame 45 done in 14.8s
+20:14.150  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0046.exr'
+[paper] frame 46 done in 14.2s
+20:28.738  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0047.exr'
+[paper] frame 47 done in 14.6s
+20:43.212  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0048.exr'
+[paper] frame 48 done in 14.5s
+20:57.367  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0049.exr'
+[paper] frame 49 done in 14.2s
+21:11.677  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0050.exr'
+[paper] frame 50 done in 14.3s
+21:25.780  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0051.exr'
+[paper] frame 51 done in 14.1s
+21:40.010  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0052.exr'
+[paper] frame 52 done in 14.2s
+21:54.369  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0053.exr'
+[paper] frame 53 done in 14.4s
+22:08.719  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0054.exr'
+[paper] frame 54 done in 14.4s
+22:24.202  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0055.exr'
+[paper] frame 55 done in 15.5s
+22:40.186  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0056.exr'
+[paper] frame 56 done in 16.0s
+22:55.272  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0057.exr'
+[paper] frame 57 done in 15.1s
+23:09.671  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0058.exr'
+[paper] frame 58 done in 14.4s
+23:24.436  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0059.exr'
+[paper] frame 59 done in 14.8s
+23:38.862  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/paper/0060.exr'
+[paper] frame 60 done in 14.4s
+[paper] total render time 1415.8s
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:49:19)
+
+Blender quit

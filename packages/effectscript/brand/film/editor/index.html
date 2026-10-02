@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Film Edit</title>
+<style>
+@font-face { font-family: "Inter Display"; src: url(/fonts/InterDisplay-Bold.otf); font-weight: 700; }
+@font-face { font-family: "Inter"; src: url(/fonts/Inter-Regular.otf); font-weight: 400; }
+@font-face { font-family: "Inter"; src: url(/fonts/Inter-Medium.otf); font-weight: 500; }
+@font-face { font-family: "JetBrains Mono"; src: url(/fonts/JetBrainsMono-Regular.ttf); font-weight: 400; }
+@font-face { font-family: "JetBrains Mono"; src: url(/fonts/JetBrainsMono-Medium.ttf); font-weight: 500; }
+:root {
+  --ink: #09090b; --tile: #18181a; --tile2: #202023; --line: #27272a; --line2: #3f3f46;
+  --muted: #71717a; --subtle: #a1a1aa; --text: #e4e4e7; --white: #fff; --warn: #fbbf24; --bad: #f87171;
+  --pps: 14px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--ink); color: var(--text); font: 14px/1.4 Inter, system-ui, sans-serif; }
+button { font: 500 13px Inter, sans-serif; color: var(--text); background: var(--tile); border: 1px solid var(--line2); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--subtle); }
+button.primary { background: var(--white); color: var(--ink); border-color: var(--white); }
+button:disabled { opacity: .45; cursor: default; }
+.mono { font-family: "JetBrains Mono", monospace; }
+.label { font: 500 11px "JetBrains Mono", monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+header { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+header h1 { font: 700 18px "Inter Display", Inter, sans-serif; letter-spacing: -.02em; margin: 0; color: var(--white); }
+header .grow { flex: 1; }
+.chip { font: 500 12px "JetBrains Mono", monospace; color: var(--subtle); padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; }
+.chip.dirty { color: var(--warn); border-color: #5b4a1a; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; padding: 16px 18px 0; }
+.viewer { position: relative; background: #000; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; aspect-ratio: 16 / 9; max-height: 52vh; margin: 0 auto; width: 100%; }
+.viewer img, .viewer video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.viewer .tc { position: absolute; left: 12px; bottom: 10px; font: 500 13px "JetBrains Mono", monospace; color: var(--white); background: rgba(9,9,11,.7); padding: 3px 8px; border-radius: 6px; }
+.viewer .busy { position: absolute; right: 12px; top: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--subtle); opacity: 0; transition: opacity .15s; }
+.viewer.loading .busy { opacity: 1; }
+.viewbar { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
+aside { background: var(--tile); border: 1px solid var(--line); border-radius: 12px; padding: 14px; overflow: auto; max-height: calc(52vh + 52px); }
+aside h2 { font: 700 15px "Inter Display", Inter, sans-serif; margin: 6px 0 10px; color: var(--white); letter-spacing: -.01em; }
+aside .row { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+aside .row:last-child { border-bottom: 0; }
+aside input[type=number] { width: 90px; background: var(--ink); color: var(--white); border: 1px solid var(--line2); border-radius: 6px; padding: 5px 7px; font: 500 13px "JetBrains Mono", monospace; text-align: right; }
+aside .help { color: var(--muted); font-size: 12.5px; }
+aside .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+#log { white-space: pre-wrap; font: 12px "JetBrains Mono", monospace; color: var(--subtle); margin-top: 8px; }
+.timeline { margin: 14px 18px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--tile); overflow: hidden; }
+.tlbar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.tlbar input[type=range] { accent-color: #fff; width: 160px; }
+.scroller { overflow-x: auto; overflow-y: hidden; position: relative; }
+.lanes { position: relative; padding: 0 0 6px 0; }
+.lane { position: relative; height: 54px; border-bottom: 1px solid var(--line); }
+.lane.ruler { height: 28px; cursor: pointer; }
+.lane.voice { height: 46px; }
+.lane.music { height: 34px; }
+.lanename { position: sticky; left: 0; z-index: 3; display: inline-block; background: var(--tile); padding: 4px 8px; margin: 0; }
+.tick { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); }
+.tick span { position: absolute; top: 6px; left: 4px; font: 11px "JetBrains Mono", monospace; color: var(--muted); }
+.block { position: absolute; top: 18px; height: 34px; background: var(--tile2); border: 1px solid var(--line2); border-radius: 6px; overflow: hidden; cursor: pointer; display: flex; align-items: center; }
+.block .thumb { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: .55; }
+.block .t { position: relative; padding: 0 8px; font: 500 11.5px Inter, sans-serif; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px #000; }
+.block .spd { position: absolute; right: 9px; top: 2px; font: 500 10px "JetBrains Mono", monospace; color: var(--warn); text-shadow: 0 1px 2px #000; }
+.block.sel, .clip.sel { border-color: var(--white); box-shadow: 0 0 0 1px var(--white) inset; }
+.block .h { position: absolute; right: 0; top: 0; bottom: 0; width: 8px; cursor: ew-resize; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35)); }
+.clip { position: absolute; top: 18px; height: 24px; background: #2a2a2e; border: 1px solid var(--line2); border-radius: 5px; overflow: hidden; cursor: grab; font: 11px Inter, sans-serif; color: var(--text); padding: 4px 6px; white-space: nowrap; text-overflow: ellipsis; }
+.clip.over { border-color: var(--bad); background: #3a2224; }
+.marker { position: absolute; top: 16px; height: 16px; border-left: 2px solid var(--subtle); padding-left: 4px; font: 10.5px "JetBrains Mono", monospace; color: var(--subtle); white-space: nowrap; }
+.playhead { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--white); z-index: 4; pointer-events: none; }
+.playhead::before { content: ""; position: absolute; top: 0; left: -6px; border: 5px solid transparent; border-top: 7px solid var(--white); }
+kbd { font: 11px "JetBrains Mono", monospace; border: 1px solid var(--line2); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; color: var(--subtle); }
+@media (max-width: 900px) { main { grid-template-columns: 1fr; } aside { max-height: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>ƒx&nbsp; Edit · Introducing EffectScript</h1>
+  <span class="chip mono" id="total">--:--</span>
+  <span class="chip" id="state">Saved</span>
+  <span class="grow"></span>
+  <button id="undo" title="Undo (⌘Z)">Undo</button>
+  <button id="reset" title="Back to the authored cut">Reset all</button>
+  <button id="save">Save</button>
+  <button id="render" class="primary">Render preview</button>
+</header>
+<main>
+  <section>
+    <div class="viewer" id="viewer"><img id="frame" alt=""><video id="video" controls hidden></video><span class="tc" id="tc">00:00.00</span><span class="busy"></span></div>
+    <div class="viewbar">
+      <button id="play">Play</button>
+      <button id="showFrame" hidden>Back to frames</button>
+      <span class="help label" style="margin-left:auto">click ruler to scrub · <kbd>←</kbd><kbd>→</kbd> 1 frame · <kbd>⇧</kbd> 1 s · <kbd>Space</kbd> play</span>
+    </div>
+  </section>
+  <aside id="inspector"></aside>
+</main>
+<div class="timeline">
+  <div class="tlbar"><span class="label">Zoom</span><input type="range" id="zoom" min="4" max="60" value="14"><span class="label">Drag a block's right edge to change its length · <kbd>⇧</kbd> snaps to beats · double-click resets</span></div>
+  <div class="scroller" id="scroller"><div class="lanes" id="lanes"></div></div>
+</div>
+<script>
+const $ = (s) => document.querySelector(s);
+let D, edit, sel = null, playhead = 0, undo = [], dirty = false, thumbs = {}, anchors = [];
+const fmt = (t) => { const m = Math.floor(t / 60), s = t - m * 60; return `${String(m).padStart(2, "0")}:${s.toFixed(2).padStart(5, "0")}`; };
+const pps = () => +$("#zoom").value;
+const clone = (x) => JSON.parse(JSON.stringify(x));
+
+function starts() { const s = [0]; for (const b of edit.blocks) s.push(s[s.length - 1] + Math.max(0.05, +b.dur)); return s; }
+function total() { const s = starts(); return s[s.length - 1]; }
+function blockAt(t, s = starts()) { let i = 0; while (i < edit.blocks.length - 1 && s[i + 1] <= t) i++; return i; }
+function toEdit(src) {
+  const s = starts(); let i = 0;
+  while (i < edit.blocks.length - 1 && edit.blocks[i + 1].src[0] <= src) i++;
+  const [a, z] = edit.blocks[i].src; return s[i] + (src - a) / (z - a) * (s[i + 1] - s[i]);
+}
+// narration lines ride with the block they sit in, so editing picture keeps them in place
+function anchorVoice() {
+  const s = starts();
+  anchors = edit.voice.map((v) => { const i = blockAt(v.start, s); return { i, f: (v.start - s[i]) / (s[i + 1] - s[i]) }; });
+}
+function applyAnchors() {
+  const s = starts();
+  edit.voice.forEach((v, k) => { const a = anchors[k]; v.start = +(s[a.i] + a.f * (s[a.i + 1] - s[a.i])).toFixed(3); });
+}
+function push() { undo.push(clone(edit)); if (undo.length > 200) undo.shift(); }
+function markDirty(v = true) { dirty = v; $("#state").textContent = v ? "Unsaved changes" : "Saved"; $("#state").classList.toggle("dirty", v); }
+
+async function load() {
+  D = await (await fetch("/api/timeline")).json();
+  edit = D.edit; anchorVoice(); draw(); seek(0); inspect(); loadThumbs();
+}
+
+function draw() {
+  const p = pps(), T = total(), s = starts();
+  $("#total").textContent = `${fmt(T)} · ${edit.blocks.length} blocks`;
+  const lanes = $("#lanes"); lanes.style.width = `${T * p + 80}px`; lanes.innerHTML = "";
+  const lane = (cls, name) => { const d = document.createElement("div"); d.className = `lane ${cls}`; if (name) { const n = document.createElement("span"); n.className = "lanename label"; n.textContent = name; d.append(n); } lanes.append(d); return d; };
+  const ruler = lane("ruler");
+  for (let t = 0; t <= T; t += (p < 8 ? 10 : 5)) { const k = document.createElement("div"); k.className = "tick"; k.style.left = `${t * p}px`; k.innerHTML = `<span>${fmt(t).slice(0, 5)}</span>`; ruler.append(k); }
+  ruler.onpointerdown = (e) => { const r = lanes.getBoundingClientRect(); const go = (ev) => seek(Math.max(0, Math.min(T, (ev.clientX - r.left) / p))); go(e); window.onpointermove = go; window.onpointerup = () => (window.onpointermove = null); };
+  // picture
+  const pic = lane("pic", "Picture");
+  edit.blocks.forEach((b, i) => {
+    const el = document.createElement("div"); el.className = "block" + (sel && sel.kind === "block" && sel.i === i ? " sel" : "");
+    el.style.left = `${s[i] * p}px`; el.style.width = `${Math.max(4, (s[i + 1] - s[i]) * p - 2)}px`;
+    const speed = (b.src[1] - b.src[0]) / b.dur;
+    el.innerHTML = `<div class="thumb" style="${thumbs[b.id] ? `background-image:url(${thumbs[b.id]})` : ""}"></div><span class="t">${b.label}</span>${Math.abs(speed - 1) > 0.005 ? `<span class="spd">${speed.toFixed(2)}×</span>` : ""}<div class="h"></div>`;
+    el.title = `${b.label}\n${b.dur.toFixed(2)} s (authored ${(b.src[1] - b.src[0]).toFixed(2)} s)`;
+    el.onclick = (e) => { if (e.target.classList.contains("h")) return; sel = { kind: "block", i }; seek(s[i] + 0.05); draw(); inspect(); };
+    el.ondblclick = () => { push(); b.dur = +(b.src[1] - b.src[0]).toFixed(3); applyAnchors(); markDirty(); draw(); inspect(); };
+    el.querySelector(".h").onpointerdown = (e) => {
+      e.stopPropagation(); push(); const x0 = e.clientX, d0 = b.dur;
+      window.onpointermove = (ev) => {
+        let d = d0 + (ev.clientX - x0) / p; d = ev.shiftKey ? Math.round(d * 2) / 2 : Math.round(d * 10) / 10;
+        b.dur = Math.max(0.2, Math.min(60, d)); applyAnchors(); markDirty(); draw(); sel = { kind: "block", i }; inspect();
+      };
+      window.onpointerup = () => { window.onpointermove = null; seek(starts()[i + 1] - 0.04); };
+    };
+    pic.append(el);
+  });
+  // voice
+  const vo = lane("voice", "Voice");
+  edit.voice.forEach((v, k) => {
+    const dur = D.voiceDur[v.id] || 1.5, next = edit.voice[k + 1];
+    const el = document.createElement("div");
+    el.className = "clip" + (next && v.start + dur > next.start ? " over" : "") + (sel && sel.kind === "voice" && sel.k === k ? " sel" : "");
+    el.style.left = `${v.start * p}px`; el.style.width = `${Math.max(6, dur * p)}px`;
+    el.textContent = v.line.replace(/\[[^\]]*\]\s*/g, ""); el.title = v.line;
+    el.onpointerdown = (e) => {
+      push(); const x0 = e.clientX, s0 = v.start; let moved = false;
+      window.onpointermove = (ev) => { moved = true; v.start = Math.max(0, Math.round((s0 + (ev.clientX - x0) / p) * 20) / 20); anchorVoice(); markDirty(); draw(); };
+      window.onpointerup = () => { window.onpointermove = null; if (!moved) undo.pop(); sel = { kind: "voice", k }; seek(v.start); draw(); inspect(); if (!moved) playLine(v); };
+    };
+    vo.append(el);
+  });
+  // music: where the song's anchors land on this edit
+  const mu = lane("music", "Music");
+  D.music.forEach((m) => {
+    const t = m.src == null ? toEdit(40) - D.sunoDownbeat : toEdit(m.src);
+    const el = document.createElement("div"); el.className = "marker"; el.style.left = `${t * p}px`; el.textContent = m.label; mu.append(el);
+  });
+  const ph = document.createElement("div"); ph.className = "playhead"; ph.id = "ph"; lanes.append(ph); placePlayhead();
+}
+function placePlayhead() { const ph = $("#ph"); if (ph) ph.style.left = `${playhead * pps()}px`; }
+
+let frameCtl = null, frameTimer = null;
+function seek(t) {
+  playhead = t; $("#tc").textContent = fmt(t); placePlayhead(); showFrames();
+  clearTimeout(frameTimer); frameTimer = setTimeout(fetchFrame, 60);
+}
+async function fetchFrame() {
+  frameCtl?.abort(); frameCtl = new AbortController(); $("#viewer").classList.add("loading");
+  try {
+    const r = await fetch("/api/frame", { method: "POST", body: JSON.stringify({ t: playhead, edit, w: 1280 }), signal: frameCtl.signal });
+    if (r.ok) { const u = URL.createObjectURL(await r.blob()); const img = $("#frame"); const old = img.src; img.src = u; if (old.startsWith("blob:")) URL.revokeObjectURL(old); }
+  } catch (_) {}
+  $("#viewer").classList.remove("loading");
+}
+async function loadThumbs() {
+  const s = starts();
+  for (const [i, b] of edit.blocks.entries()) {
+    const r = await fetch("/api/frame", { method: "POST", body: JSON.stringify({ t: s[i] + (s[i + 1] - s[i]) * 0.55, edit, w: 240 }) });
+    if (r.ok) { thumbs[b.id] = URL.createObjectURL(await r.blob()); const el = document.querySelectorAll(".block .thumb")[i]; if (el) el.style.backgroundImage = `url(${thumbs[b.id]})`; }
+  }
+}
+
+function inspect() {
+  const box = $("#inspector");
+  if (sel?.kind === "block") {
+    const b = edit.blocks[sel.i], s = starts(), au = b.src[1] - b.src[0], sp = au / b.dur;
+    box.innerHTML = `<div class="label">Picture block ${sel.i + 1} / ${edit.blocks.length}</div><h2>${b.label}</h2>
+      <div class="row"><span>Starts</span><span class="mono">${fmt(s[sel.i])}</span></div>
+      <div class="row"><span>Length</span><span><input type="number" step="0.1" min="0.2" max="60" id="dur" value="${b.dur.toFixed(2)}"> s</span></div>
+      <div class="row"><span>Authored length</span><span class="mono">${au.toFixed(2)} s</span></div>
+      <div class="row"><span>Playback speed</span><span class="mono" style="color:${Math.abs(sp - 1) > 0.005 ? "var(--warn)" : "inherit"}">${sp.toFixed(2)}×</span></div>
+      <p class="help">Everything inside the block (text, camera, Foley) stretches with it. 3D shots blend between rendered frames when slowed; past ~0.7× they start to look soft.</p>
+      <div class="actions"><button id="rb">Reset block</button></div>`;
+    $("#dur").onchange = (e) => { push(); b.dur = Math.max(0.2, Math.min(60, +e.target.value)); applyAnchors(); markDirty(); draw(); inspect(); };
+    $("#rb").onclick = () => { push(); b.dur = +au.toFixed(3); applyAnchors(); markDirty(); draw(); inspect(); };
+  } else if (sel?.kind === "voice") {
+    const v = edit.voice[sel.k], dur = D.voiceDur[v.id] || 0, next = edit.voice[sel.k + 1], gap = next ? next.start - (v.start + dur) : null;
+    box.innerHTML = `<div class="label">Voice line ${v.id}</div><h2>${v.line.replace(/\[[^\]]*\]\s*/g, "")}</h2>
+      <div class="row"><span>Direction</span><span class="mono" style="color:var(--subtle);font-size:12px;text-align:right">${(v.line.match(/\[[^\]]*\]/g) || []).join(" ")}</span></div>
+      <div class="row"><span>Starts</span><span><input type="number" step="0.05" min="0" id="vs" value="${v.start.toFixed(2)}"> s</span></div>
+      <div class="row"><span>Spoken length</span><span class="mono">${dur.toFixed(2)} s</span></div>
+      <div class="row"><span>Gap to next line</span><span class="mono" style="color:${gap != null && gap < 0 ? "var(--bad)" : "inherit"}">${gap == null ? "—" : gap.toFixed(2) + " s"}</span></div>
+      <div class="actions"><button id="pl">Play line</button></div>`;
+    $("#vs").onchange = (e) => { push(); v.start = Math.max(0, +e.target.value); anchorVoice(); markDirty(); draw(); inspect(); seek(v.start); };
+    $("#pl").onclick = () => playLine(v);
+  } else {
+    box.innerHTML = `<div class="label">Inspector</div><h2>Select a block or a voice line</h2>
+      <p class="help">Picture blocks are the film's shots and cards in order. Lengthening one slows it down; shortening speeds it up, and everything after it moves. Voice lines ride with their block; drag them to move them on their own. Music re-anchors itself to the cuts when you render.</p>`;
+  }
+  const r = D.render; if (r) renderStatus(r);
+}
+
+const audio = new Audio();
+function playLine(v) { audio.src = `/voice/${v.id}`; audio.play().catch(() => {}); }
+
+// slideshow playback: the playhead runs in real time and frames arrive as fast as they render
+let playing = false, playT0 = 0, playStart = 0, lastLine = -1;
+function play() {
+  if (playing) return stop();
+  playing = true; $("#play").textContent = "Stop"; playT0 = performance.now(); playStart = playhead; lastLine = -1;
+  const tick = async () => {
+    if (!playing) return;
+    const t = playStart + (performance.now() - playT0) / 1000;
+    if (t >= total()) return stop();
+    playhead = t; $("#tc").textContent = fmt(t); placePlayhead();
+    const k = edit.voice.findIndex((v) => v.start <= t && t < v.start + 0.25);
+    if (k >= 0 && k !== lastLine) { lastLine = k; playLine(edit.voice[k]); }
+    await fetchFrame(); requestAnimationFrame(tick);
+  };
+  tick();
+}
+function stop() { playing = false; $("#play").textContent = "Play"; audio.pause(); }
+
+function showFrames() { $("#video").hidden = true; $("#video").pause(); $("#frame").hidden = false; $("#showFrame").hidden = true; }
+function renderStatus(r) {
+  const btn = $("#render");
+  btn.disabled = r.state === "running"; btn.textContent = r.state === "running" ? "Rendering…" : "Render preview";
+  let el = $("#log"); if (!el) { el = document.createElement("div"); el.id = "log"; $("#inspector").append(el); }
+  el.textContent = r.state === "idle" ? "" : `${r.state === "running" ? "Rendering preview" : r.state === "done" ? "Preview ready" : "Render failed"}\n${r.log.join("\n")}`;
+}
+async function pollRender() {
+  const r = await (await fetch("/api/render")).json(); D.render = r; renderStatus(r);
+  if (r.state === "running") setTimeout(pollRender, 2000);
+  else if (r.state === "done") { const v = $("#video"); v.src = `${r.file}?${r.finished}`; v.hidden = false; $("#frame").hidden = true; $("#showFrame").hidden = false; v.currentTime = playhead; }
+}
+
+$("#zoom").oninput = () => draw();
+$("#play").onclick = play;
+$("#showFrame").onclick = showFrames;
+$("#undo").onclick = () => { if (!undo.length) return; edit = undo.pop(); anchorVoice(); markDirty(); draw(); inspect(); seek(playhead); };
+$("#reset").onclick = () => { if (!confirm("Reset every block and voice line to the authored cut?")) return; push(); edit = clone(D.authored); anchorVoice(); markDirty(); draw(); inspect(); seek(playhead); };
+$("#save").onclick = async () => { const r = await fetch("/api/timeline", { method: "POST", body: JSON.stringify(edit) }); if (r.ok) markDirty(false); else alert((await r.json()).error); };
+$("#render").onclick = async () => {
+  if (!confirm("Save this edit and render a full 1080p preview with audio? (about 4–6 minutes)")) return;
+  const r = await fetch("/api/render", { method: "POST", body: JSON.stringify(edit) });
+  if (!r.ok) return alert((await r.json()).error);
+  markDirty(false); pollRender();
+};
+window.onkeydown = (e) => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === " ") { e.preventDefault(); play(); }
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); const d = (e.shiftKey ? 1 : 1 / 30) * (e.key === "ArrowLeft" ? -1 : 1); seek(Math.max(0, Math.min(total(), playhead + d))); }
+  if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); $("#undo").click(); }
+};
+window.onbeforeunload = () => (dirty ? true : undefined);
+load().then(pollRender);
+</script>
+</body>
+</html>

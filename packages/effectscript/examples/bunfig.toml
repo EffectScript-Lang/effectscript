@@ -1,4 +1,4 @@
-# `bun test` and `bun ./src/app.efx` load .efx through the EffectScript plugin
+# `bun test` and `bun ./src/main.efx` load .efx through the EffectScript plugin
 preload = ["effectscript/bun-preload"]
 
 [test]

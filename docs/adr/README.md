@@ -46,6 +46,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0032](0032-cli-integrations-distribution-in-three-plans.md) | Deliver phase 7 in three plans, with a dogfooded CLI that depends on `effect` | Accepted |
 | [0033](0033-cli-conventions-and-convert-verification.md) | CLI argument passthrough and `efx convert` verification | Accepted |
 | [0034](0034-efx-run-runtime-selection.md) | `efx run` picks Bun only when the project can run `main` on Bun | Accepted |
+| [0035](0035-import-efx-with-its-extension.md) | Import `.efx` modules with their extension | Accepted |
 
 ## Template
 

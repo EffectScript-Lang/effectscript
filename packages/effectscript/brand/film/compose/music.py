@@ -14,6 +14,8 @@ from pathlib import Path
 import mido
 import numpy as np
 
+import timeline
+
 FILM = Path(__file__).resolve().parent.parent
 BUILD = FILM / "build"
 SUNO = BUILD / "audio-in" / "EffectScript Score.wav"
@@ -138,48 +140,64 @@ def main():
     stem_gain = 10 ** (8 / 20)  # the stems were written 8 dB under the master
     print(f"Suno gain {20 * np.log10(g):+.1f} dB")
 
-    out = np.zeros((int(DUR * SR), 2), np.float32)
+    # Every placement is anchored to a cue in the edit (timeline.json): e() maps
+    # an authored cue time onto the edited film. Music is never time-stretched
+    # to the edit; it is re-placed so its key moments land on the moved cues.
+    e = timeline.EDIT.to_edit
+    dur = timeline.EDIT.total
+    out = np.zeros((int(dur * SR) + SR, 2), np.float32)
 
     def put(src, film_t0, film_t1, src_t0, fin=0.01, fout=0.01, gain=1.0, auto=None, lp=None):
+        if film_t1 <= film_t0:
+            return
         a, b = int(film_t0 * SR), int(film_t1 * SR)
         s0 = int(src_t0 * SR)
-        seg = src[s0 : s0 + (b - a)].copy() * env(min(b - a, len(src) - s0), fin, fout) * gain
+        n = min(b - a, len(src) - s0)
+        seg = src[s0 : s0 + n].copy() * env(n, fin, fout) * gain
         if lp:
             seg = sweep_lowpass(seg, film_t0, lp)
         if auto:
             seg = automate(seg, film_t0, auto)
         out[a : a + len(seg)] += seg
 
-    # 0–7.4 room tone; Suno's first piano note lands as getUser(id) finishes typing
-    put(mine, 0.0, 8.4, 0.0, 0.0, 0.6)
-    start = 40.0 - A  # Suno's drums land on the tangle cut, on the film's bar grid
+    def tail_aligned(src, src_a, src_b, film_end, film_floor, **kw):
+        """Place src[src_a, src_b) so that src_b lands on film_end, starting no earlier than film_floor."""
+        start = max(film_floor, film_end - (src_b - src_a))
+        put(src, start, film_end, src_b - (film_end - start), **kw)
+
+    # cold open: room tone (looped from the fx stem if the opening got longer)
+    put(mine, 0.0, min(e(8.4), 8.4), 0.0, 0.0, 0.6)
+    if e(8.4) > 8.4:
+        put(fx, 7.8, e(8.4), 0.5, 0.6, 0.6, stem_gain)
+    start = e(40.0) - A  # Suno's drums land on the tangle cut
     print(f"Suno enters at {start:.2f}s")
-    # 7.4–54: the promise flows into the ceremony; the ceremony muffles, then the drums break the tangle open
+    # the promise flows into the ceremony; the ceremony muffles, then the drums break the tangle open
     put(
-        suno, start, 54.0, 0.0, 0.0, 0.004, g,
-        auto=[(start, 0.62), (12.0, 0.85), (29.0, 0.85), (31.0, 0.7), (39.9, 0.62), (40.0, 0.95), (50.0, 1.0), (54.0, 1.05)],
-        lp=[(start, 20000), (30.0, 20000), (31.0, 6000), (37.5, 650), (39.95, 520), (40.0, 20000)],
+        suno, max(0.0, start), e(54.0), max(0.0, -start), 0.0, 0.004, g,
+        auto=[(start, 0.62), (e(12.0), 0.85), (e(29.0), 0.85), (e(31.0), 0.7), (e(39.9), 0.62), (e(40.0), 0.95), (e(50.0), 1.0), (e(54.0), 1.05)],
+        lp=[(start, 20000), (e(30.0), 20000), (e(31.0), 6000), (e(37.5), 650), (e(39.95), 520), (e(40.0), 20000)],
     )
-    put(drums, 30.0, 54.0, 30.0, 0.05, 0.004, stem_gain * 0.9)  # the clock
-    put(fx, 38.0, 54.0, 38.0, 0.5, 0.004, stem_gain * 0.9)  # the riser into the dead stop
-    # 56–70: the question stays synthesised (its chords sit inside Suno's key)
-    put(mine, 56.0, 70.0, 56.0, 0.0, 0.01)
+    tail_aligned(drums, 30.0, 54.0, e(54.0), e(30.0), fin=0.05, fout=0.004, gain=stem_gain * 0.9)  # the clock
+    tail_aligned(fx, 38.0, 54.0, e(54.0), e(38.0), fin=0.5, fout=0.004, gain=stem_gain * 0.9)  # riser into the dead stop
+    # the question stays synthesised; its swell resolves exactly on the impact
+    tail_aligned(mine, 56.0, 70.0, e(70.0), e(56.0), fin=0.0, fout=0.01)
     fx_gain = np.abs(mine[int(69.9 * SR) : int(70.5 * SR)]).max() / max(np.abs(fx[int(69.9 * SR) : int(70.5 * SR)]).max(), 1e-6)
-    put(fx, 70.0, 74.0, 70.0, 0.0, 2.5, fx_gain * 0.9)  # the impact
-    # 70–126: Suno's groove from the brass entrance; its guitar and brass peaks land on 96–117
-    put(suno, 70.0, 126.0, A + 20.0, 0.0, 0.03, g)
-    # 126–144: 3:07 AM. Suno's opening piano returns, distant and filtered, under the clock
+    put(fx, e(70.0), e(70.0) + 4.0, 70.0, 0.0, 2.5, fx_gain * 0.9)  # the impact
+    # Suno's groove from the brass entrance, cut dead on the 3 AM drop
+    put(suno, e(70.0), e(126.0), A + 20.0, 0.0, 0.03, g)
+    # 3:07 AM: Suno's opening piano returns, distant and filtered, under the clock
     put(
-        suno, 126.0, 144.4, 0.0, 0.25, 0.4, g,
-        auto=[(126.0, 0.42), (136.5, 0.42), (138.0, 0.6), (144.4, 0.6)],
-        lp=[(126.0, 2200), (136.5, 2200), (138.5, 9000), (144.4, 9000)],
+        suno, e(126.0), e(144.0) + 0.4, 0.0, 0.25, 0.4, g,
+        auto=[(e(126.0), 0.42), (e(136.5), 0.42), (e(138.0), 0.6), (e(144.0) + 0.4, 0.6)],
+        lp=[(e(126.0), 2200), (e(136.5), 2200), (e(138.5), 9000), (e(144.0) + 0.4, 9000)],
     )
-    put(drums, 126.0, 137.5, 126.0, 0.05, 1.0, stem_gain * 0.8)
-    # 144–160: Suno's own ending; its last piano note lands on 156
+    put(drums, e(126.0), e(126.0) + 11.5, 126.0, 0.05, 1.0, stem_gain * 0.8)
+    # finale: Suno's own ending, its last piano note on the end card
     last_note = 154.48 * r
-    put(suno, 144.0, 160.0, last_note - 12.0, 0.25, 1.3, g)
-    out[int(54.0 * SR) : int(56.0 * SR)] = 0
-    out[int(159.8 * SR) :] = 0
+    put(suno, e(144.0), dur, last_note - (e(156.0) - e(144.0)), 0.25, 1.3, g)
+    out[int(e(54.0) * SR) : int(e(56.0) * SR)] = 0
+    out[int((dur - 0.2) * SR) :] = 0
+    out = out[: int(dur * SR)]
     peak = np.abs(out).max()
     if peak > 0.98:
         out *= 0.98 / peak

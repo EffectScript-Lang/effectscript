@@ -651,7 +651,7 @@ def dust(scene, count, box, seed, radius):
 
 
 def build():
-    scene = E.new_scene(FRAMES, samples=int(os.environ.get("SAMPLES", "32")), adaptive=0.035, bounces=(4, 2, 2, 8), clamp_ind=3.0)
+    scene = E.new_scene(FRAMES, samples=int(os.environ.get("SAMPLES", "12")), adaptive=0.04, bounces=(4, 2, 2, 8), clamp_ind=3.0)
     c = scene.cycles
     c.volume_biased = True
     c.volume_step_rate = 4.0

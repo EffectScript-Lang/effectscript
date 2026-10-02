@@ -135,3 +135,33 @@ Info: Saved as "plain.blend"
 [plain] frame 66 done in 88.6s
 01:16:34.222  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0067.exr'
 [plain] frame 67 done in 88.4s
+01:18:00.346  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0068.exr'
+[plain] frame 68 done in 86.1s
+01:19:31.790  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0069.exr'
+[plain] frame 69 done in 91.4s
+01:21:08.214  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0070.exr'
+[plain] frame 70 done in 96.4s
+01:22:36.573  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0071.exr'
+[plain] frame 71 done in 88.4s
+01:24:14.599  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0072.exr'
+[plain] frame 72 done in 98.0s
+01:25:53.758  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0073.exr'
+[plain] frame 73 done in 99.2s
+01:27:34.360  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0074.exr'
+[plain] frame 74 done in 100.6s
+01:29:04.543  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0075.exr'
+[plain] frame 75 done in 90.2s
+01:30:47.306  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0076.exr'
+[plain] frame 76 done in 102.8s
+01:32:13.816  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0077.exr'
+[plain] frame 77 done in 86.5s
+01:33:52.364  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0078.exr'
+[plain] frame 78 done in 98.6s
+01:35:33.659  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0079.exr'
+[plain] frame 79 done in 101.3s
+01:37:08.998  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/plain/0080.exr'
+[plain] frame 80 done in 95.3s
+[plain] total render time 5827.6s
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:49:19)
+
+Blender quit

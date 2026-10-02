@@ -3,8 +3,8 @@
 A colossal monolith of the exact ƒx mark (30 m tall, pale board-formed
 concrete) on an endless wet salt flat at blue hour. Overcast sky with a break
 of light directly behind the mark: the low sun sits in the counter of the f,
-its beams fanning through the haze around the stroke edges. Low mist, a small
-crowd of silhouettes at the base, mirror reflections in a thin water layer.
+its beams fanning through the haze around the stroke edges. Low mist, the
+monolith alone, mirror reflections in a thin water layer.
 Low camera, slow push.
 
     blender -b -P film/blender-env/plain.py -- --stills 1,40,80 --res 960
@@ -161,6 +161,9 @@ def world(scene):
     # diffuse-ray environment: soft overcast, brighter towards the camera side
     fill = b.add(b.mul(b.mr(dz, -0.2, 1.0, 0.18, 0.42), 1.0), b.mul(b.mr(dy, 0.4, -1.0, 0.0, 0.55), 1.0))
     fill = b.add(fill, b.mul(broad, 2.0))
+    # the overcast glow sits behind the camera, not to the sides: the turned
+    # side faces of the mark fall darker and the shape carves out of the break
+    fill = b.mul(fill, b.mr(b.m("ABSOLUTE", dx), 0.25, 0.9, 1.0, 0.3))
     lp = b.new("ShaderNodeLightPath")
     is_diff = lp.outputs["Is Diffuse Ray"]
     Lout = b.mixf(is_diff, L, fill)
@@ -274,100 +277,28 @@ def flat_material(t_node_frames):
     pool = b.add(b.mul(b.noise(co, 0.3, 6.0, 0.62), 0.6), b.mul(b.noise(co, 0.04, 3.0), 0.4))
     # more open water towards the monolith, more mud towards the lens
     pool = b.add(pool, b.mr(y, -95.0, -45.0, -0.06, 0.07))
+    # a clean sheet of standing water at the foot of the mark
+    pool = b.add(pool, b.mr(y, -55.0, -20.0, 0.0, 0.35, interp="SMOOTHSTEP"))
     pool = b.mr(pool, 0.44, 0.56, 0.0, 1.0, interp="SMOOTHSTEP")
-    water_tone = b.mixf(pool, b.mr(b.noise(co, 0.8, 5.0), 0.3, 0.7, 0.012, 0.035), 0.008)
+    water_tone = b.mixf(pool, b.mr(b.noise(co, 0.8, 5.0), 0.3, 0.7, 0.006, 0.02), 0.004)
     base = b.mixf(dry, water_tone, salt_tone)
     base = b.mixf(grit, base, 0.012)
 
     # ripples: two drifting noise fields, tiny amplitude
     rco = b.combine(x, b.mul(y, 1.0), t)
-    rip = b.noise(b.v("MULTIPLY", co, (1.0, 0.55, 1.0)), 1.6, 3.0, 0.5, dims="4D", w=b.mul(t, 0.35))
-    rip2 = b.noise(rco, 9.0, 2.0, 0.5, dims="4D", w=b.mul(t, 0.9))
-    wrough = b.mixf(pool, b.mr(b.noise(co, 0.5, 3.0), 0.3, 0.7, 0.3, 0.55), b.mr(b.noise(co, 0.06, 3.0), 0.35, 0.7, 0.008, 0.05))
+    rip = b.noise(b.v("MULTIPLY", co, (1.0, 0.55, 1.0)), 4.5, 3.0, 0.5, dims="4D", w=b.mul(t, 0.5))
+    rip2 = b.noise(rco, 28.0, 2.0, 0.5, dims="4D", w=b.mul(t, 1.2))
+    wrough = b.mixf(pool, b.mr(b.noise(co, 0.5, 3.0), 0.3, 0.7, 0.3, 0.55), b.mul(b.mr(b.noise(co, 0.06, 3.0), 0.35, 0.7, 0.004, 0.03), b.mr(y, -55.0, -20.0, 1.0, 0.35)))
     rough = b.mixf(dry, wrough, 0.75)
     rough = b.mixf(grit, rough, 0.85)
     height = b.add(b.mul(rip, 1.0), b.mul(rip2, 0.35))
     height = b.mixf(dry, height, b.add(b.mul(ridge, 6.0), b.mul(b.noise(co, 30.0, 3.0), 2.0)))
     height = b.add(height, b.mul(grit, 8.0))
-    nrm = b.bump(height, 0.05, 0.02)
+    nrm = b.bump(height, 0.03, 0.006)
     p = b.principled(base=b.grey(base), rough=rough, normal=nrm, spec=0.5)
     p.inputs["IOR"].default_value = 1.33
     b.ln.new(p.outputs[0], out.inputs["Surface"])
     return mat
-
-
-# --------------------------------------------------------------------------
-# crowd
-
-
-def person(scene, name, loc, height, yaw, stride, arm, mat, seed):
-    """A stylised standing figure: legs, tapered torso, shoulders, arms, head."""
-    import bmesh
-    from mathutils import Matrix
-
-    rng = np.random.default_rng(seed)
-    s = height / 1.75
-    bm = bmesh.new()
-
-    def capsule(p0, p1, r0, r1, seg=8):
-        p0, p1 = Vector(p0), Vector(p1)
-        d = p1 - p0
-        L = d.length
-        mtx = Matrix.Translation(p0) @ d.to_track_quat("Z", "Y").to_matrix().to_4x4() @ Matrix.Translation((0, 0, L / 2))
-        bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=r0, radius2=r1, depth=L, matrix=mtx)
-        for p, r in ((p0, r0), (p1, r1)):
-            bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=6, radius=r, matrix=Matrix.Translation(p))
-
-    hip = 0.92
-    sx = stride
-    capsule((-0.085, -sx, 0.04), (-0.09, 0.0, hip), 0.045, 0.07)
-    capsule((0.085, sx * 0.6, 0.04), (0.09, 0.0, hip), 0.045, 0.07)
-    capsule((0.0, 0.0, hip - 0.02), (0.0, 0.0, 1.36), 0.13, 0.15)
-    capsule((-0.17, 0.0, 1.38), (0.17, 0.0, 1.38), 0.055, 0.055)
-    capsule((-0.19, 0.0, 1.38), (-0.22, arm, 0.84), 0.042, 0.036)
-    capsule((0.19, 0.0, 1.38), (0.22, -arm * 0.5, 0.84), 0.042, 0.036)
-    capsule((0.0, 0.0, 1.38), (0.0, 0.0, 1.5), 0.045, 0.045)
-    bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=0.1, matrix=Matrix.Translation((0, 0.01, 1.6)))
-    bmesh.ops.scale(bm, vec=(s * rng.uniform(0.95, 1.08), s, s), verts=bm.verts)
-    me = bpy.data.meshes.new(name)
-    bm.to_mesh(me)
-    bm.free()
-    me.shade_smooth()
-    ob = bpy.data.objects.new(name, me)
-    scene.collection.objects.link(ob)
-    ob.location = loc
-    ob.rotation_euler = (0, 0, yaw)
-    me.materials.append(mat)
-    return ob
-
-
-def crowd(scene):
-    mat = E.simple_material("Silhouette", 0.025, 0.6, 0.3)
-    rng = np.random.default_rng(1531)
-    xs = []
-    # clustered along the base, denser between the f foot and the x
-    centres = [-9.5, -6.0, -2.5, 0.5, 3.0, 6.5, 9.0]
-    for c in centres:
-        for _ in range(rng.integers(1, 4)):
-            xs.append(c + rng.normal(0, 0.9))
-    xs = sorted(xs)
-    figs = []
-    for i, x in enumerate(xs):
-        y = -9.0 + rng.normal(0, 1.6)
-        figs.append(
-            person(
-                scene,
-                f"Person{i:02d}",
-                (x, y, 0.0),
-                rng.uniform(1.62, 1.86),
-                math.radians(rng.uniform(150, 210)),  # facing the mark
-                rng.choice([0.0, 0.0, 0.12, 0.2]),
-                rng.uniform(-0.08, 0.08),
-                mat,
-                1000 + i,
-            )
-        )
-    return figs
 
 
 # --------------------------------------------------------------------------
@@ -448,7 +379,6 @@ def build():
     flat = E.mesh_object(scene, "Flat", [(-1500, -300, 0), (1500, -300, 0), (1500, 1500, 0), (-1500, 1500, 0)], [(0, 1, 2, 3)], flat_material(t_frames))
     for ob in E.build_mark(scene, MH, MD, MB, concrete_material()):
         ob.data.transform(__import__("mathutils").Matrix.Rotation(ROT, 4, "Z"))
-    crowd(scene)
     volumes(scene, t_frames)
     cloud_cookie(scene)
 

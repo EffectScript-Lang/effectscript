@@ -10,7 +10,14 @@
     "url": "https://github.com/gunta/effect-lang.git",
     "directory": "packages/effectscript/core"
   },
-  "sideEffects": [],
+  "sideEffects": [
+    "./src/register.ts",
+    "./src/bun-preload.ts",
+    "./dist/register.js",
+    "./dist/bun-preload.js",
+    "./src/cli/main.ts",
+    "./dist/cli/main.js"
+  ],
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",

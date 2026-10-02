@@ -24,6 +24,11 @@ export interface VitePlugin {
   readonly name: string
   readonly enforce?: "pre" | "post"
   readonly config?: (config: { readonly resolve?: { readonly extensions?: ReadonlyArray<string> } }) => object
+  readonly configureServer?: (server: {
+    readonly middlewares: {
+      readonly use: (handler: (req: { url?: string }, res: unknown, next: () => void) => void) => void
+    }
+  }) => void
   readonly transform?: (
     this: { readonly environment?: { readonly config?: { readonly consumer?: string } } },
     code: string,
@@ -46,7 +51,8 @@ const assetQuery = /[?&](raw|url|inline|worker|sharedworker)\b/
 
 /** The `.efx` file of a module id, or `undefined` (other files, asset queries). */
 const efxFile = (id: string): string | undefined => {
-  if (assetQuery.test(id)) return undefined
+  // asset queries and virtual modules (`\0…`) are someone else's
+  if (assetQuery.test(id) || id.startsWith("\0")) return undefined
   const file = id.replace(/[?#].*$/, "")
   return file.endsWith(".efx") ? file : undefined
 }
@@ -67,6 +73,16 @@ export const efx = (options: VitePluginOptions = {}): [VitePlugin, VitePlugin] =
     config: (config) => ({
       resolve: { extensions: [...(config.resolve?.extensions ?? defaultExtensions), ".efx"] }
     }),
+    // a direct request for an .efx module (an HTML entry) is a JS request: Vite only knows that
+    // for its own extensions, so it is marked with `?import`
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        if (req.url !== undefined && /\.efx(\?|$)/.test(req.url) && !/[?&](import|raw|url)\b/.test(req.url)) {
+          req.url = `${req.url}${req.url.includes("?") ? "&" : "?"}import`
+        }
+        next()
+      })
+    },
     async transform(code, id, transformOptions) {
       const file = efxFile(id)
       if (file === undefined) return undefined
@@ -80,7 +96,9 @@ export const efx = (options: VitePluginOptions = {}): [VitePlugin, VitePlugin] =
       const errors = result.diagnostics.filter((d) => d.severity === "error")
       if (errors.length > 0) throw new Error(errors.map((d) => formatDiagnostic(code, filename, d)).join("\n"))
       compiled.set(file, result.mode)
-      return { code: result.code, map: result.map }
+      // Vite resolves map sources against the module's own directory
+      const map = result.map === undefined ? undefined : { ...result.map, sources: [path.basename(file)] }
+      return { code: result.code, map }
     }
   },
   {

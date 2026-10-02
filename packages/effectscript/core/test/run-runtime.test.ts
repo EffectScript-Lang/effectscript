@@ -34,6 +34,16 @@ describe("efx run --runtime (Plan 9 Task 2, ADR-0034)", () => {
     expect(run(outside, ["which.ts"]).stdout.trim()).toBe("node")
   })
 
+  it("explains a missing Bun", () => {
+    const result = spawnSync(process.execPath, [efx, "run", "--runtime", "bun", "which.ts"], {
+      cwd: inside,
+      encoding: "utf8",
+      env: { ...process.env, EFFECTSCRIPT_DEV: "1", PATH: "" }
+    })
+    expect(result.status).toBe(1)
+    expect(result.stderr).toMatch(/needs Bun/)
+  })
+
   it.skipIf(!hasBun)("uses Bun with --runtime bun", () => {
     expect(run(inside, ["--runtime", "bun", "which.ts", "x"]).stdout.trim()).toBe("bun x")
   })

@@ -110,3 +110,30 @@ can run on it (ADR-0034). A private examples package proves all three paths.
 - **Task 4 (examples):** a library (`users.efx`) and an entry (`main.efx`), because importing a
   module that has a `main` block runs the program. The root package gains `effectscript` as a dev
   dependency for the Vitest project's plugin.
+
+**Final review** (fresh Opus reviewer): 0 Critical, 6 Important. One fix pass.
+
+- **Fixed:**
+  - **I1:** the dev server serves a direct `.efx` request (an HTML entry) as JavaScript, through
+    a middleware that adds `?import`.
+  - **I2:** Vite source map `sources` is relative to the module, so paths no longer double
+    (`test/test/…`).
+  - **I3:** Bun ignores the inline source map. This is listed as a known limit.
+  - **I4:** `.efx` imports are written with their extension (ADR-0035). The Bun extensionless
+    rewrite is removed, so Bun and Node behave alike.
+  - **I5:** the COMPATIBILITY rows and spec §7.1/§7.2 are corrected.
+  - **I6:** `efx run --runtime bun` without Bun explains itself, and a signal maps to 128 + n.
+- **Minors fixed:**
+  - Virtual `\0` ids are skipped.
+  - Runtime detection starts from the entry file's directory.
+  - The examples' README and `bunfig.toml` comment are corrected.
+  - `sideEffects` lists the register and preload modules and the CLI entry.
+
+**Deferred minors:**
+
+- Vite's `oxc.jsx` options and React Fast Refresh don't apply to JSX `.efx`; tsconfig does.
+- The module-level `compiled` map could carry the wrong ts/tsx mode if client and SSR transforms
+  of an edited file interleave. Module `meta` would avoid it.
+- Vite errors carry no `id`/`loc` for the overlay.
+- The Bun compile error prints a code frame from `bun.ts` above the EFX diagnostic.
+- `examples/tsconfig.json` type-checks nothing (`include: []`).

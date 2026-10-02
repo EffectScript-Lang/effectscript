@@ -1186,9 +1186,8 @@ All live under `packages/effectscript/`, registered in the monorepo (§10).
 
 - **Implemented:** `build`, `check`, `run`, `print`, `convert` (the mechanical pass with
   verification), `init` and `doctor`.
-- **Pending:**
-  - `setup`, `convert --ai` and `skill` are Plan 10;
-  - Bun for `efx run` is Plan 9.
+- **Pending:** `setup`, `convert --ai` and `skill` are Plan 10.
+- **Runtime:** `efx run` picks Bun only when the project can run `main` on it (ADR-0034).
 - **Passing arguments through:** `check` and `run` pass extra arguments after `--`.
 - **Dry run:** `convert` reports by default; `--write` converts on the branch
   `effectscript/convert`.
@@ -1209,12 +1208,13 @@ Gaps that dogfooding found in the constructs, and how the CLI works around them:
 **Status (Plan 9):**
 
 - **Implemented:** the Bun plugin and preload, the Vite plugin, and the examples package.
-- **Bun:** run `.efx` entries directly (`bun ./x.efx`). `bun run` treats an unknown extension as a
-  script name. Bun 1.4's runtime `onResolve` fires only for entry points, so the plugin rewrites
-  extensionless `.efx` imports inside `.efx` modules when it loads them. `.ts` importers write
-  `./x.efx`.
+- **Imports:** write `.efx` imports with their extension (ADR-0035). The Bun plugin doesn't resolve
+  extensionless imports; Vite does, through `resolve.extensions`.
+- **Bun:** with the `bunfig.toml` preload, `bun ./x.efx`, `bun run x.efx` and `bun test` work.
+  Bun ignores the inline source map, so stack traces show the compiled lines.
 - **Vite:** two plugins, compile and then strip types with Vite's `transformWithOxc`. Vite's
-  built-in oxc plugin only matches `.ts`/`.tsx`/`.jsx`/`.mts` ids.
+  built-in oxc plugin only matches `.ts`/`.tsx`/`.jsx`/`.mts` ids. In dev, a direct `.efx`
+  request (an HTML entry) is served as JavaScript.
 
 - **Bun:** `effectscript/bun` exports a `BunPlugin` (`onLoad` filter `/\.efx$/` → `{ contents,
   loader: "ts" | "tsx" }`, runtime `bun`) and a `preload` entry for `bunfig.toml`, so `bun run

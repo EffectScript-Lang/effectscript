@@ -19,6 +19,7 @@ import skia
 sys.path.insert(0, str(Path(__file__).parent))
 import lib  # noqa: E402
 import scenes  # noqa: E402
+import timeline  # noqa: E402
 
 BUILD = lib.FILM / "build"
 
@@ -30,7 +31,7 @@ def frame(t, n):
     c.clear(skia.Color4f.FromColor(lib.INK))
     c.scale(lib.SCALE, lib.SCALE)
     lib.FX["flash"] = 0.0
-    scenes.draw(c, t)
+    scenes.draw(c, timeline.EDIT.to_src(t))  # t is edited film time
     f16 = surf.makeImageSnapshot().toarray(colorType=skia.kRGBA_F16_ColorType)
     return lib.post(f16, n, flash=lib.FX["flash"])
 
@@ -75,6 +76,9 @@ def sheet(a, b, step, cols=5):
     print(p)
 
 
+# The master is HDR10 only; a 4K SDR version is opt-in (WITH_SDR=1).
+WITH_SDR = os.environ.get("WITH_SDR") == "1"
+
 HDR10 = (
     "hdr10=1:hdr10-opt=1:repeat-headers=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:range=limited"
     ":master-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(10000000,50)"
@@ -107,7 +111,7 @@ def chunk(args):
          "-color_primaries", "bt2020", "-color_trc", "smpte2084", "-colorspace", "bt2020nc", "-color_range", "tv"],
         hdr_path,
     )
-    sdr = _ffmpeg(
+    sdr = None if not WITH_SDR else _ffmpeg(
         "rgb24",
         ["-vf", "scale=out_color_matrix=bt709:out_range=tv:flags=accurate_rnd+full_chroma_int,format=yuv420p",
          "-c:v", "libx264", "-preset", "slow", "-crf", "15", "-tune", "grain",
@@ -118,10 +122,12 @@ def chunk(args):
     for n in range(n0, n1):
         h, s = frame(n / lib.FPS, n)
         hdr.stdin.write(np.ascontiguousarray(h).astype("<u2").tobytes())
-        sdr.stdin.write(np.ascontiguousarray(s).tobytes())
+        if sdr:
+            sdr.stdin.write(np.ascontiguousarray(s).tobytes())
     for p in (hdr, sdr):
-        p.stdin.close()
-        p.wait()
+        if p:
+            p.stdin.close()
+            p.wait()
     return i
 
 
@@ -140,8 +146,9 @@ def video(a, b, workers):
         for done, _ in enumerate(ex.map(chunk, jobs), 1):
             el = time.time() - t0
             print(f"chunk {done}/{len(jobs)}  {el:.0f}s elapsed, ~{el / done * (len(jobs) - done):.0f}s left", flush=True)
-    full = (a, b) == (0, lib.DURATION)
-    for kind, col in (("sdr", 4),) if lib.PREVIEW else (("hdr", 3), ("sdr", 4)):
+    full = a == 0 and abs(b - timeline.EDIT.total) < 1e-6
+    kinds = (("sdr", 4),) if lib.PREVIEW else (("hdr", 3), ("sdr", 4)) if WITH_SDR else (("hdr", 3),)
+    for kind, col in kinds:
         lst = parts / f"list-{kind}.txt"
         lst.write_text("".join(f"file '{j[col].name}'\n" for j in jobs))
         out = BUILD / (f"picture-{kind}.mp4" if full else f"picture-{kind}-{a:g}-{b:g}.mp4")
@@ -155,13 +162,13 @@ if __name__ == "__main__":
     ap.add_argument("cmd", choices=["stills", "sheet", "video"])
     ap.add_argument("times", nargs="*", type=float)
     ap.add_argument("--from", dest="a", type=float, default=0.0)
-    ap.add_argument("--to", dest="b", type=float, default=lib.DURATION)
+    ap.add_argument("--to", dest="b", type=float, default=timeline.EDIT.total)
     ap.add_argument("--hdr-stats", action="store_true")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 8) - 4))
     o = ap.parse_args()
     if o.cmd == "stills":
         stills(o.times)
     elif o.cmd == "sheet":
-        sheet(*(o.times or [0, lib.DURATION, 2]))
+        sheet(*(o.times or [0, timeline.EDIT.total, 2]))
     else:
         video(o.a, o.b, o.workers)

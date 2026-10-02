@@ -113,11 +113,20 @@ def new_scene(frames, samples=64, adaptive=0.02, bounces=(6, 4, 4, 8), clamp_ind
     except TypeError:
         pass
 
+    # Metal on the Mac; OptiX (RT cores) on NVIDIA in the cloud, CUDA as a fallback
     prefs = bpy.context.preferences.addons["cycles"].preferences
-    prefs.compute_device_type = "METAL"
-    prefs.get_devices()
+    kinds = ["METAL"] if sys.platform == "darwin" else ["OPTIX", "CUDA"]
+    for kind in kinds:
+        try:
+            prefs.compute_device_type = kind
+        except TypeError:
+            continue
+        prefs.get_devices()
+        if any(d.type == kind for d in prefs.devices):
+            break
     for d in prefs.devices:
-        d.use = d.type == "METAL"
+        d.use = d.type == prefs.compute_device_type
+    print("[cycles] devices:", [(d.name, d.type) for d in prefs.devices if d.use], flush=True)
     c = scene.cycles
     c.device = "GPU"
     c.samples = samples

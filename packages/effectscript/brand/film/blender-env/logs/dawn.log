@@ -1,0 +1,13 @@
+/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/blender-env/dawn.py:532: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  w.use_nodes = True
+00:36.976  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/dawn/0001.exr'
+Info: Saved as "dawn.blend"
+[dawn] frame 1 done in 36.2s
+02:01.122  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/dawn/0002.exr'
+[dawn] frame 2 done in 84.1s
+03:27.190  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/dawn/0003.exr'
+[dawn] frame 3 done in 86.1s
+05:14.456  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/dawn/0004.exr'
+[dawn] frame 4 done in 107.3s
+06:56.821  render           | Saved: '/Users/gunta/GitHub/effect-lang/packages/effectscript/brand/film/build/blender/dawn/0005.exr'
+[dawn] frame 5 done in 102.4s
