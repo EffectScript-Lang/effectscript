@@ -90,7 +90,7 @@ describe("efx build / run (ADR-0022)", () => {
 
   it("works without TypeScript for --help and run; build explains what's missing (review I7)", () => {
     const noTypeScript =
-      "data:text/javascript,import{registerHooks}from'node:module';registerHooks({resolve(s,c,n){if(s==='typescript')throw new Error('Cannot find package typescript');return n(s,c)}})"
+      "data:text/javascript,import{registerHooks}from'node:module';registerHooks({resolve(s,c,n){if(s==='typescript'||s.startsWith('typescript/'))throw new Error('Cannot find package typescript');return n(s,c)}})"
     const help = spawnSync(process.execPath, ["--import", noTypeScript, efx, "--help"], { cwd: dir, encoding: "utf8" })
     expect(help.status).toBe(0)
     expect(help.stdout).toContain("SUBCOMMANDS")

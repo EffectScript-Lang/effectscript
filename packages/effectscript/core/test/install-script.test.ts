@@ -39,9 +39,18 @@ const install = (
   base: string,
   system: string,
   machine: string,
-  options: { readonly env?: Record<string, string>; readonly translated?: boolean; readonly onPath?: boolean } = {}
+  options: {
+    readonly env?: Record<string, string>
+    readonly translated?: boolean
+    readonly onPath?: boolean
+    readonly libc?: string
+  } = {}
 ) => {
   const fake = temp()
+  // `ldd --version` names the system libc (glibc's prints to stdout, musl's to stderr)
+  fs.writeFileSync(path.join(fake, "ldd"), `#!/bin/sh\necho "${options.libc ?? "ldd (GNU libc) 2.36"}" >&2\n`, {
+    mode: 0o755
+  })
   fs.writeFileSync(
     path.join(fake, "uname"),
     `#!/bin/sh\ncase "$1" in -s) echo ${system} ;; -m) echo ${machine} ;; *) echo ${system} ;; esac\n`,
@@ -121,6 +130,37 @@ describe("install.sh (Plan 10 Task 4, ADR-0038)", () => {
     expect(result.stderr).toMatch(/efx-linux-arm64\.tar\.gz/)
     expect(result.installed).toBe(false)
   })
+  it("detects musl from the system libc, not from an installed musl loader (review I4)", () => {
+    const base = release(["linux-arm64", "linux-arm64-musl"])
+    const musl = install(base, "Linux", "aarch64", { libc: "musl libc (aarch64)" })
+    // this host has no musl C++ runtime, so the musl path stops with the apk line
+    expect(musl.status).toBe(1)
+    expect(musl.stderr).toMatch(/apk add libstdc\+\+ libgcc/)
+    const glibc = install(base, "Linux", "aarch64", { libc: "ldd (Debian GLIBC 2.36-9) 2.36" })
+    expect(glibc.status).toBe(0)
+    expect(spawnSync(glibc.binary, { encoding: "utf8" }).stdout).toContain("linux-arm64 ")
+  })
+
+  it("installs when the temp directory is mounted noexec (review I5)", () => {
+    const tmp = temp()
+    // a fake efx that refuses to run from the temp directory, as noexec would
+    const base = release(["darwin-arm64"])
+    const archive = new URL(`${base}/latest/download/efx-darwin-arm64.tar.gz`).pathname
+    const stage = temp()
+    fs.writeFileSync(
+      path.join(stage, "efx"),
+      `#!/bin/sh\ncase "$0" in ${tmp}/*) echo "Permission denied" >&2; exit 126 ;; esac\necho "efx v9.9.9"\n`,
+      { mode: 0o755 }
+    )
+    spawnSync("tar", ["-czf", archive, "efx"], { cwd: stage })
+    const hash = createHash("sha256").update(fs.readFileSync(archive)).digest("hex")
+    fs.writeFileSync(path.join(path.dirname(archive), "SHASUMS256.txt"), `${hash}  efx-darwin-arm64.tar.gz\n`)
+    const result = install(base, "Darwin", "arm64", { env: { TMPDIR: tmp } })
+    expect(result.stderr).toBe("")
+    expect(result.status).toBe(0)
+    expect(result.installed).toBe(true)
+  })
+
   it.skipIf(!hasShellcheck)("is POSIX sh that passes shellcheck", () => {
     const result = spawnSync("shellcheck", ["-s", "sh", script], { encoding: "utf8" })
     expect(result.stdout).toBe("")

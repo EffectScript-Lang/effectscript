@@ -71,6 +71,57 @@ describe.skipIf(!hasBun)("the standalone binary (Plan 10 Task 3, ADR-0037)", () 
     expect(result.stderr).toMatch(/npm i -D effectscript/)
   })
 
+  it("runs on Node with --runtime node when the project has effectscript (review I1)", () => {
+    const result = efx(["run", "--runtime", "node", "src/main.efx"], examples)
+    // Node may warn that stripTypeScriptTypes is experimental, as with the npm CLI
+    expect(result.stderr).not.toMatch(/Error|Cannot find/)
+    expect(result.stdout).toBe("Hello, Ada!\nHello, Grace!\nNo user 3\n")
+    expect(result.status).toBe(0)
+  })
+
+  it("builds with the project's TypeScript (review I2)", () => {
+    const dir = fs.mkdtempSync(path.join(work, "build-"))
+    fs.mkdirSync(path.join(dir, "src"))
+    fs.mkdirSync(path.join(dir, "node_modules"))
+    fs.symlinkSync(path.join(root, "node_modules/typescript"), path.join(dir, "node_modules/typescript"))
+    fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name: "built", type: "module" }))
+    fs.writeFileSync(
+      path.join(dir, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: { strict: true, module: "NodeNext", rootDir: "src", outDir: "dist", types: [] },
+        include: ["src"]
+      })
+    )
+    fs.writeFileSync(path.join(dir, "src/a.efx"), "export const n: number = 1\n")
+    const result = efx(["build"], dir)
+    expect(result.stderr).toBe("")
+    expect(result.status).toBe(0)
+    expect(fs.readFileSync(path.join(dir, "dist/a.js"), "utf8")).toContain("export const n = 1")
+  })
+
+  it("doesn't leak its re-run settings into the program (review I3)", () => {
+    const code =
+      "console.log(process.env.BUN_BE_BUN ?? \"unset\", process.env.EFFECTSCRIPT_MAIN_RUNTIME ?? \"unset\")\n"
+    const result = efx(["run", "app.efx"], lone("app.efx", code))
+    expect(result.stdout).toBe("unset unset\n")
+  })
+
+  it("runs when the cache directory can't be written", () => {
+    const readonly = fs.mkdtempSync(path.join(work, "readonly-"))
+    fs.chmodSync(readonly, 0o500)
+    try {
+      const result = spawnSync(binary, ["run", "app.efx"], {
+        cwd: lone("app.efx", "console.log(\"ran\")\n"),
+        encoding: "utf8",
+        env: { ...process.env, XDG_CACHE_HOME: readonly }
+      })
+      expect(result.stderr).toBe("")
+      expect(result.stdout).toBe("ran\n")
+    } finally {
+      fs.chmodSync(readonly, 0o700)
+    }
+  })
+
   it("packages archives with matching checksums", () => {
     const result = script(["package", "--outdir", outdir])
     expect(result.status, result.stderr).toBe(0)

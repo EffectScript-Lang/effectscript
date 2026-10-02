@@ -68,6 +68,14 @@ linux/arm64 ubuntu:24.04 linux-arm64
 linux/arm64 alpine:3.20 linux-arm64-musl
 linux/amd64 alpine:3.20 linux-x64-musl
 EOF
+  # a glibc system with the musl package (cross-compiling) and a noexec /tmp (hardened hosts)
+  if [ -n "$port" ]; then
+    check "install.sh on debian with musl and a noexec /tmp" docker run --rm --platform linux/arm64 \
+      --tmpfs /tmp:rw,noexec -e EFX_DOWNLOAD_BASE="http://host.docker.internal:$port" \
+      -v "$root/distribution/install.sh:/install.sh:ro" -v "$work:/app" -w /app debian:bookworm-slim \
+      sh -c "apt-get update -qq && apt-get install -qq -y curl musl >/dev/null && ls /lib/ld-musl-* && $install"
+  fi
+
   # the generated formula with real Homebrew: brew install from a local tap, then brew test
   if [ -n "$port" ]; then
     node "$root/scripts/homebrew.ts" --version "$(node -p "require('$root/package.json').version")" \
@@ -96,9 +104,14 @@ if [ "${1:-}" = --windows ]; then
   vm="${2:-Windows 11}"
   if [ -f "$bin/efx-windows-x64.exe" ] && command -v prlctl >/dev/null; then
     prlctl start "$vm" >/dev/null 2>&1 || true
+    # wait until Parallels Tools accept commands (the VM may still be booting)
+    for _ in $(seq 1 60); do
+      prlctl exec "$vm" --current-user cmd /c "echo ready" 2>/dev/null | grep -q ready && break
+      sleep 5
+    done
     # Parallels shares only Desktop, Documents and Downloads of the Mac's home by default
     stage="$(mktemp -d "$HOME/Downloads/.efx-xplatform-XXXXXX")"
-    trap 'rm -rf "$work" "$stage"' EXIT
+    trap '[ -n "${server:-}" ] && kill "$server" 2>/dev/null; rm -rf "$work" "$stage"' EXIT
     cp "$bin/efx-windows-x64.exe" "$stage/efx.exe"
     cp "$work/app.efx" "$stage/app.efx"
     share="\\\\Mac\\Home\\Downloads\\$(basename "$stage")"

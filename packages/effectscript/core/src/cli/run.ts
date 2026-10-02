@@ -6,7 +6,6 @@
  */
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
-import { createRequire } from "node:module"
 import * as os from "node:os"
 import * as path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -41,6 +40,25 @@ export const defaultRuntime = (cwd: string): "node" | "bun" =>
  * @category cli
  */
 export const installedInProject = (cwd: string, name: string): boolean => projectWith(cwd, name) !== undefined
+
+/**
+ * The file a package exports at `subpath`, read from its package.json. A compiled Bun binary can
+ * only resolve a package's package.json from disk, not its modules (review I1), so the `exports`
+ * entry is followed by hand: a string, or the `node`/`import`/`default` condition.
+ */
+const exportPath = (dir: string, subpath: string): string | undefined => {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"))
+    let target: unknown = pkg.exports?.[subpath]
+    while (typeof target === "object" && target !== null) {
+      const conditions = target as Record<string, unknown>
+      target = conditions.node ?? conditions.import ?? conditions.default
+    }
+    return typeof target === "string" ? path.join(dir, target) : undefined
+  } catch {
+    return undefined
+  }
+}
 
 /** The nearest directory from `cwd` up whose `node_modules` holds `name`. */
 const projectWith = (cwd: string, name: string): string | undefined => {
@@ -106,7 +124,11 @@ const runStandalone = (
       )
       return 1
     }
-    const register = createRequire(path.join(root, "package.json")).resolve("effectscript/register")
+    const register = exportPath(path.join(root, "node_modules", "effectscript"), "./register")
+    if (register === undefined) {
+      process.stderr.write("efx run --runtime node: the project's effectscript has no ./register export\n")
+      return 1
+    }
     const result = spawnSync("node", ["--import", pathToFileURL(register).href, file, ...rest], { stdio: "inherit" })
     if (result.error !== undefined) {
       process.stderr.write(`efx run --runtime node needs Node on your PATH: ${result.error.message}\n`)
@@ -114,7 +136,15 @@ const runStandalone = (
     }
     return exitStatus(result)
   }
-  const preload = unpack(cacheDir(process.env, process.platform, os.homedir()), "bun-preload", host.preload)
+  // an unwritable cache (a container user without a home, say) falls back to a private temp dir
+  let preload: string
+  let scratch: string | undefined
+  try {
+    preload = unpack(cacheDir(process.env, process.platform, os.homedir()), "bun-preload", host.preload)
+  } catch {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "efx-"))
+    preload = unpack(scratch, "bun-preload", host.preload)
+  }
   const result = spawnSync(process.execPath, ["--preload", preload, entry, ...rest], {
     stdio: "inherit",
     env: {
@@ -123,6 +153,7 @@ const runStandalone = (
       EFFECTSCRIPT_MAIN_RUNTIME: installedInProject(project, "@effect/platform-bun") ? "bun" : "node"
     }
   })
+  if (scratch !== undefined) fs.rmSync(scratch, { recursive: true, force: true })
   if (result.error !== undefined) {
     process.stderr.write(`efx run: ${result.error.message}\n`)
     return 1

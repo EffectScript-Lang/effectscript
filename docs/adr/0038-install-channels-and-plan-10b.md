@@ -36,11 +36,13 @@ Docker base. Bun's musl builds run there once `libstdc++` and `libgcc` are insta
 - **Install script** (`distribution/install.sh`, POSIX `sh`, served at
   effectscript.dev/install by the site):
   - **Detection:** OS, architecture, Rosetta (a translated shell gets the arm64 build) and musl.
-    On musl without `libstdc++`, it stops and prints the `apk add` line.
+    Musl is detected from the system libc as `ldd --version` reports it, because glibc systems
+    can carry a musl loader for cross-compiling. On musl without `libstdc++`, it stops and prints
+    the `apk add` line.
   - **Download:** with curl or wget, verified against `SHASUMS256.txt`.
-  - **Install:** runs the downloaded binary before installing it. It installs into
-    `~/.effectscript/bin` with a copy and rename, and prints the PATH line instead of editing
-    shell startup files.
+  - **Install:** copies the binary next to its target (`~/.effectscript/bin`) and runs it there,
+    since `/tmp` may be mounted `noexec`, then renames it into place. It prints the PATH line
+    instead of editing shell startup files.
   - **Settings:** `EFX_VERSION`, `EFX_INSTALL` and `EFX_DOWNLOAD_BASE`.
 - **Homebrew:**
   - The `effectscript` formula lives in `EffectScript-Lang/homebrew-tap`. It is generated from

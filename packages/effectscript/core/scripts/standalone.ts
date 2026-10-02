@@ -52,7 +52,11 @@ const build = (args: ReadonlyArray<string>): void => {
       path.join(work, "preload.ts"),
       `import { efx } from ${JSON.stringify(path.join(root, "src/bun.ts"))}\n` +
         "declare const Bun: { readonly plugin: (plugin: unknown) => void }\n" +
-        "Bun.plugin(efx({ runtime: process.env.EFFECTSCRIPT_MAIN_RUNTIME === \"node\" ? \"node\" : \"bun\" }))\n"
+        "const runtime = process.env.EFFECTSCRIPT_MAIN_RUNTIME === \"node\" ? \"node\" : \"bun\"\n" +
+        // the program and what it spawns never see the re-run settings (review I3)
+        "delete process.env.BUN_BE_BUN\n" +
+        "delete process.env.EFFECTSCRIPT_MAIN_RUNTIME\n" +
+        "Bun.plugin(efx({ runtime }))\n"
     )
     exec("bun", ["build", "preload.ts", "--target", "bun", "--outfile", "preload.js"], work)
     const preload = fs.readFileSync(path.join(work, "preload.js"), "utf8")

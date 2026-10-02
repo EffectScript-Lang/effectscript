@@ -4,8 +4,10 @@
  *
  * @since 4.0.0
  */
+import * as fs from "node:fs"
 import { createRequire } from "node:module"
 import * as path from "node:path"
+import { pathToFileURL } from "node:url"
 import type * as TS from "typescript"
 
 /**
@@ -38,13 +40,17 @@ export const typeScriptProblem = (
 export const loadTypeScript = async (cwd: string): Promise<TypeScript | string> => {
   let problem = typeScriptProblem(undefined)!
   for (const base of [path.join(cwd, "package.json"), import.meta.url]) {
+    // through package.json and its `main`: a compiled Bun binary resolves only a package's
+    // package.json from disk, not its modules (review I2)
     let resolved: string
     try {
-      resolved = createRequire(base).resolve("typescript")
+      const manifest = createRequire(base).resolve("typescript/package.json")
+      const main: unknown = JSON.parse(fs.readFileSync(manifest, "utf8")).main
+      resolved = path.join(path.dirname(manifest), typeof main === "string" ? main : "index.js")
     } catch {
       continue
     }
-    const module = await import(resolved)
+    const module = await import(pathToFileURL(resolved).href)
     const ts: TypeScript = module.default ?? module
     const found = typeScriptProblem(ts)
     if (found === undefined) return ts

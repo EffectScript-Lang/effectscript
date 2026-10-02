@@ -71,3 +71,22 @@ A spike on Bun 1.4.2 showed:
   user cache directory with a content check avoids that.
 - **Embed the preload path through `$bunfs`:** an embedded file can't be passed to `--preload` of
   the re-run process, which reads from disk.
+
+## Amendment 1 (Plan 10 final review)
+
+- **The limitation is wider than the spike showed.** Inside a compiled binary, resolving any
+  on-disk JavaScript module fails, `.js` exports included, whether through
+  `createRequire().resolve`, `import.meta.resolve` or `Bun.resolveSync`. Only `<pkg>/package.json`
+  resolves, and `import()` of an absolute file URL works. So:
+  - `--runtime node` finds `effectscript/register` by reading the project's
+    `effectscript/package.json` `exports` (a string, or the `node`/`import`/`default` condition);
+  - `efx build` loads TypeScript from `typescript/package.json`'s `main`.
+
+  Both are covered by tests that run the binary.
+- **Re-run settings don't reach the program.** The preload deletes `BUN_BE_BUN` and
+  `EFFECTSCRIPT_MAIN_RUNTIME` after reading them, so programs and the processes they spawn,
+  including another `efx`, behave normally.
+- **Unwritable cache:** when the cache directory can't be written (a container user without a
+  home, for example), the preload goes into a private temp directory for that run.
+- **Known:** the re-run Bun still reads the project's `bunfig.toml`. A project that preloads
+  `effectscript/bun-preload` there needs it installed (`npm i`), as with plain `bun`.

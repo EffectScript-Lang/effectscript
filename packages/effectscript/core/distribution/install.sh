@@ -37,6 +37,18 @@ sha256() {
   fi
 }
 
+# Whether the system libc is musl (Alpine). It asks ldd, because a glibc system can carry a musl
+# loader too (the musl package, for cross-compiling).
+is_musl() {
+  if command -v ldd >/dev/null 2>&1; then
+    case "$(ldd --version 2>&1 || true)" in
+      *musl*) return 0 ;;
+      *) return 1 ;;
+    esac
+  fi
+  ! ls /lib*/ld-linux-* /lib/*/ld-linux-* >/dev/null 2>&1 && ls /lib/ld-musl-* >/dev/null 2>&1
+}
+
 # Everything runs from main, so a download cut short never runs half a script.
 main() {
   base="${EFX_DOWNLOAD_BASE:-https://github.com/EffectScript-Lang/effect-lang/releases}"
@@ -64,7 +76,7 @@ main() {
     arch=arm64
   fi
   target="$os-$arch"
-  if [ "$os" = linux ] && ls /lib/ld-musl-* >/dev/null 2>&1; then
+  if [ "$os" = linux ] && is_musl; then
     target="$target-musl"
     ls /usr/lib/libstdc++.so.6* >/dev/null 2>&1 ||
       fail "efx on musl (Alpine) needs the C++ runtime first: apk add libstdc++ libgcc"
@@ -76,7 +88,7 @@ main() {
     url="$base/download/effectscript@$version"
   fi
   asset="efx-$target.tar.gz"
-  tmp="$(mktemp -d)"
+  tmp="$(mktemp -d "${TMPDIR:-/tmp}/efx-install.XXXXXX")"
   trap 'rm -rf "$tmp"' EXIT INT TERM
 
   printf 'Downloading %s (%s)\n' "$asset" "$version"
@@ -92,12 +104,16 @@ main() {
   mkdir "$tmp/unpacked"
   tar -xzf "$tmp/$asset" -C "$tmp/unpacked"
   [ -f "$tmp/unpacked/efx" ] || fail "$asset has no efx binary"
-  chmod +x "$tmp/unpacked/efx"
-  installed="$("$tmp/unpacked/efx" --version 2>&1)" || fail "the downloaded efx doesn't run here: $installed"
 
+  # Copy next to the target, check that it runs there (the temp directory may be mounted noexec),
+  # then rename: a running efx is never left half-written.
   mkdir -p "$dir/bin"
-  # copy next to the target, then rename: a running efx is never left half-written
   cp "$tmp/unpacked/efx" "$dir/bin/.efx.new"
+  chmod +x "$dir/bin/.efx.new"
+  if ! installed="$("$dir/bin/.efx.new" --version 2>&1)"; then
+    rm -f "$dir/bin/.efx.new"
+    fail "the downloaded efx doesn't run here: $installed"
+  fi
   mv -f "$dir/bin/.efx.new" "$dir/bin/efx"
   printf 'Installed %s at %s\n' "$installed" "$dir/bin/efx"
 

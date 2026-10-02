@@ -205,3 +205,30 @@ organization.
   `releases/latest` skips prereleases.
 - **`dist-bin/`** is ignored in the root `.gitignore`: the root ignores dotfiles, so a package
   `.gitignore` would never be tracked.
+
+**Final review** (fresh Opus reviewer): 0 Critical, 5 Important. One fix pass, test first.
+
+- **Fixed:**
+  - **I1:** `--runtime node` in the binary.
+  - **I2:** `efx build` in the binary. Both follow `package.json` by hand, because a compiled
+    binary resolves only `package.json` from disk (ADR-0037 Amendment 1).
+  - **I3:** the re-run settings no longer reach the program.
+  - **I4:** `install.sh` detects musl from `ldd`, not from a musl loader on disk.
+  - **I5:** `install.sh` runs the binary from the install directory, since `/tmp` may be mounted
+    `noexec`.
+  - **M1, re-graded Important:** an unwritable cache falls back to a private temp directory.
+  - **M3:** `xplatform.sh` waits for the VM to boot and always stops its HTTP server.
+- `xplatform.sh --windows` now runs 14 checks, all passing, including Debian with `musl`
+  installed and a `noexec` `/tmp`.
+
+**Deferred minors:**
+
+- **Bun:** the re-run Bun reads the project's `bunfig.toml` (documented in the amendment).
+- **`install.sh`:**
+  - an INT/TERM trap that doesn't exit 130;
+  - a relative `EFX_INSTALL` prints a relative PATH line.
+- **Workflow:** re-running it with an unchanged formula fails at `git commit`, and a manual
+  dispatch marks an older tag as latest.
+- **Packaging:** local packaging on macOS embeds Apple xattrs (CI packages on Linux).
+- **Windows:** a rename may hit EPERM on concurrent first runs (unverified).
+- **Tests:** the remaining hermeticity gaps in the install tests.
