@@ -14,19 +14,20 @@
 import { MagicString } from "magic-string"
 import { analyze } from "../analyze/scope.ts"
 import { children, type Node } from "../ast.ts"
-import { toTypeScript } from "../compile.ts"
 import { parse } from "../parser/parse.ts"
 import { bareTypes, excludedNames, preludeFunctions, preludeModules, serviceTags } from "../prelude/tables.ts"
 import type { ConvertOptions } from "./context.ts"
 import { runtimes } from "./main.ts"
+import { verdict } from "./verify.ts"
 
-/** The runtime imports `main` adds (`NodeRuntime`, `NodeServices`, …). */
-const runtimeImports = new Map(
-  Object.values(runtimes).flatMap((r) => [
+/** Imports the forward compiler adds itself: `main`'s runtime, the test constructs and globals. */
+const runtimeImports = new Map<string, string>([
+  ...Object.values(runtimes).flatMap((r) => [
     [r.runtime, r.module] as const,
     ...(r.services === undefined ? [] : [[r.services, r.module] as const])
-  ])
-)
+  ]),
+  ...["describe", "it", "layer", "assert", "expect", "vi"].map((name) => [name, "@effect/vitest"] as const)
+])
 
 interface Group {
   readonly name: string
@@ -119,29 +120,30 @@ const apply = (code: string, chosen: ReadonlyArray<Group>): string => {
 }
 
 /**
- * Applies the prelude groups of `code` that the forward compiler restores unchanged.
+ * Applies the prelude groups of `code` that keep it compiling back to `original` (ADR-0030):
+ * never losing byte identity where it holds.
  *
  * @since 4.0.0
  * @category reverse
  */
-export const applyPrelude = (code: string, options: ConvertOptions): string => {
+export const applyPrelude = (code: string, options: ConvertOptions, original: string): string => {
   if (options.prelude === false) return code
   const parsed = parse(code)
   if (parsed._tag === "Failure") return code
   const groups = groupsOf(parsed.program)
   if (groups.length === 0) return code
-  const expected = toTypeScript(code, options)
-  if (expected.diagnostics.some((d) => d.severity === "error")) return code
-  const same = (chosen: ReadonlyArray<Group>) => {
-    const result = toTypeScript(apply(code, chosen), options)
-    return result.code === expected.code && !result.diagnostics.some((d) => d.severity === "error")
-  }
-  if (same(groups)) return apply(code, groups)
+  const judge = (chosen: ReadonlyArray<Group>) => verdict(original, apply(code, chosen), options)
+  if (judge(groups) === 2) return apply(code, groups)
   // the prelude appends missing names at the end of an import: try the groups last-first
   const ordered = [...groups].sort((a, b) => (b.specifier?.node.start ?? -1) - (a.specifier?.node.start ?? -1))
   const accepted: Array<Group> = []
+  let current = judge([])
   for (const group of ordered) {
-    if (same([...accepted, group])) accepted.push(group)
+    const next = judge([...accepted, group])
+    if (next > 0 && next >= current) {
+      accepted.push(group)
+      current = next
+    }
   }
   return accepted.length === 0 ? code : apply(code, accepted)
 }

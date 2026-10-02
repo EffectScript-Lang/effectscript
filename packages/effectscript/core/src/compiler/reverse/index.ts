@@ -118,6 +118,7 @@ const convert = (
     telemetryDirective: false,
     namespace: "Effect",
     service: undefined,
+    testIt: undefined,
     only
   }
   // nothing to re-sugar without an import from `effect`, its subpaths or `@effect/*`
@@ -164,12 +165,13 @@ const convert = (
   )
   if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, new Set([...disabled, "try"]), only)
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
-  if (!ctx.telemetryDirective) return { code: applyPrelude(ctx.s.toString(), options), notes: ctx.notes }
-  // the telemetry directive must end up leading: verify the imports with telemetry on, then check
-  const code = applyPrelude(ctx.s.toString(), { ...options, observability: "otlp" })
-  const found = directive.exec(code)
-  if (found === null || found.index >= leadingComments(code).length) {
-    return convert(source, options, new Set([...disabled, "main"]), only)
+  const code = applyPrelude(ctx.s.toString(), options, source)
+  // a telemetry directive must end up leading (after the imports above it went)
+  if (ctx.telemetryDirective) {
+    const found = directive.exec(code)
+    if (found === null || found.index >= leadingComments(code).length) {
+      return convert(source, options, new Set([...disabled, "main"]), only)
+    }
   }
   return { code, notes: ctx.notes }
 }

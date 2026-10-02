@@ -26,11 +26,24 @@ const shape = (source: string): { readonly tokens: string; readonly comments: st
  * @since 4.0.0
  * @category reverse
  */
-export const compilesBack = (typescript: string, efx: string, options: ConvertOptions): boolean => {
+export const compilesBack = (typescript: string, efx: string, options: ConvertOptions): boolean =>
+  verdict(typescript, efx, options) > 0
+
+/**
+ * How well `efx` compiles back to `typescript`: 2 = byte for byte, 1 = token- and
+ * comment-equivalent, 0 = not at all (or with errors).
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const verdict = (typescript: string, efx: string, options: ConvertOptions): 0 | 1 | 2 => {
   const result = toTypeScript(efx, options)
-  if (result.diagnostics.some((d) => d.severity === "error")) return false
+  if (result.diagnostics.some((d) => d.severity === "error")) return 0
+  if (result.code === typescript) return 2
   const before = shape(typescript)
   const after = shape(result.code)
   return before !== undefined && after !== undefined && before.tokens === after.tokens &&
-    before.comments === after.comments
+      before.comments === after.comments
+    ? 1
+    : 0
 }

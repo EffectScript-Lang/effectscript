@@ -1,32 +1,30 @@
-import { assert, describe, expect, it, layer } from "@effect/vitest"
-import { Clock } from "effect"
 service Users {
   effect find(id: string): string
   layer test = { find: effect (id: string) => `user-${id}` }
 }
 
-describe("Users", () => {
-  it.effect("finds a user", () => effect {
+describe "Users" {
+  test "finds a user" {
     const user = await Users.find("1")
     assert.strictEqual(user, "user-1")
-  } |> provide(Users.layerTest))
+  } |> provide(Users.layerTest)
 
-  it.effect("scopes resources to the test", () => effect {
+  test "scopes resources to the test" {
     const value = await acquireRelease(succeed(1), () => Effect.void)
     assert.strictEqual(value, 1)
-  })
+  }
 
-  it.live("runs on the live clock", () => effect {
+  test.live "runs on the live clock" {
     expect(Date.now()).toBeGreaterThan(0)
-  })
+  }
 
-  it.effect.skip("is skipped", () => effect {
+  test.skip "is skipped" {
     return await fail("never runs")
-  })
-})
+  }
+}
 
-layer(Users.layerTest)("with a shared layer", (it) => {
-  it.effect("provides the layer to every test", () => effect {
+describe "with a shared layer" with Users.layerTest {
+  test "provides the layer to every test" {
     expect(await Users.find("2")).toBe("user-2")
-  })
-})
+  }
+}

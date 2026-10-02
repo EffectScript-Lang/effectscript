@@ -16,14 +16,20 @@ const importedName = (specifier: Node): string =>
  * @since 4.0.0
  * @category origin
  */
-export const importedLocal = (analysis: ScopeAnalysis, module: string, name: string): string | undefined => {
+export const importedLocal = (
+  analysis: ScopeAnalysis,
+  module: string,
+  name: string,
+  /** Accept the import even when an inner scope rebinds its name (the caller tracks shadowing). */
+  shadowed = false
+): string | undefined => {
   for (const statement of analysis.program.body as Array<Node>) {
     if (statement.type !== "ImportDeclaration" || statement.source.value !== module) continue
     if (statement.importKind === "type") continue
     for (const specifier of statement.specifiers as Array<Node>) {
       if (specifier.type !== "ImportSpecifier" || specifier.importKind === "type") continue
       if (importedName(specifier) !== name) continue
-      if (analysis.innerBound.has(specifier.local.name)) return undefined
+      if (!shadowed && analysis.innerBound.has(specifier.local.name)) return undefined
       return specifier.local.name
     }
   }

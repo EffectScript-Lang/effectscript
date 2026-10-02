@@ -77,6 +77,8 @@ export interface ReverseCtx {
   namespace: "Effect" | "Layer" | "Atom"
   /** The service whose layer is being visited: its `effect` members are named `Svc.member`. */
   service: string | undefined
+  /** Inside `describe … with`: the `it` parameter tests are called through. */
+  testIt: string | undefined
   /** Top-level statement indexes to convert (all when `undefined`); see `toEffectScript`. */
   readonly only: ReadonlySet<number> | undefined
 }

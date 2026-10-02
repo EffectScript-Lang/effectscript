@@ -28,6 +28,7 @@ import { convertMatch, matchShape } from "./match.ts"
 import { isMember } from "./origin.ts"
 import { convertPipe, inPosition, isPlainStep } from "./pipes.ts"
 import { hasFinalizer, inFrame } from "./resources.ts"
+import { convertTestStatement } from "./test.ts"
 
 /**
  * `: Effect.fn.Return<A, E, R>` → `: A throws E needs R`. An explicit `never` error stays (`throws
@@ -297,6 +298,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     ) {
       return
     }
+    if (node.type === "ExpressionStatement" && !generator && convertTestStatement(ctx, node, visit)) return
     if (node.type === "ClassDeclaration" && convertClass(node, visit)) return
     if (node.type === "Property" && convertProperty(ctx, node, visit)) return
     if (node.type === "CallExpression" && inPosition(node, parent)) {
