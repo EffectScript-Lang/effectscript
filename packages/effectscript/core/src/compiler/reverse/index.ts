@@ -103,7 +103,7 @@ const convert = (source: string, options: ConvertOptions, tryDisabled: boolean):
   }
   ctx.topics = topicsRoundTrip(ctx)
   const topLevel = new Set((parsed.program.body as Array<Node>).flatMap((top) => [top, top.declaration]))
-  visitProgram(ctx, parsed.program, makeVisit(ctx, (cls) => topLevel.has(cls) && convertClass(ctx, cls)))
+  visitProgram(ctx, parsed.program, makeVisit(ctx, (cls, visit) => topLevel.has(cls) && convertClass(ctx, cls, visit)))
   if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, true)
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
   return { code: applyPrelude(ctx.s.toString(), options), notes: ctx.notes }

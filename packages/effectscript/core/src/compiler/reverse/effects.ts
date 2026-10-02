@@ -7,6 +7,7 @@
 import { children, type Node } from "../ast.ts"
 import { blocker, genShape, isGenerator } from "./blockers.ts"
 import { convertGeneratorNode, unqualify, type Visit } from "./body.ts"
+import { convertSchemaRun } from "./classes.ts"
 import {
   commaToPipe,
   note,
@@ -229,7 +230,7 @@ const scopes = new Set([
  * @since 4.0.0
  * @category reverse
  */
-export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node) => boolean): Visit => {
+export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visit) => boolean): Visit => {
   const visit: Visit = (node, parent, generator) => {
     if (
       node.type === "VariableDeclaration" &&
@@ -238,7 +239,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node) => boolean)
     ) {
       return
     }
-    if (node.type === "ClassDeclaration" && convertClass(node)) return
+    if (node.type === "ClassDeclaration" && convertClass(node, visit)) return
     if (node.type === "Property" && convertProperty(ctx, node, visit)) return
     if (node.type === "CallExpression" && convertScopedGen(ctx, node, parent)) {
       const shape = genShape(ctx, node.arguments[0], parent) as { readonly fn: Node }
@@ -272,7 +273,17 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node) => boolean)
  */
 export const visitProgram = (ctx: ReverseCtx, program: Node, visit: Visit): void => {
   const body: Array<Node> = program.body
+  let skip = 0
   body.forEach((statement, i) => {
+    if (skip > 0) {
+      skip--
+      return
+    }
+    const consumed = convertSchemaRun(ctx, body, i)
+    if (consumed > 0) {
+      skip = consumed - 1
+      return
+    }
     visit(statement, program, false)
     const next = body[i + 1]
     if (!declarations.has(statement) || next?.type !== "ExportDefaultDeclaration") return

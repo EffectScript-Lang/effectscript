@@ -1,8 +1,8 @@
 export error UserNotFound { id: string }
 error DbError { cause: Defect }
-class Timeout extends Schema.TaggedError<Timeout>()("RequestTimeout", {
-  ms: Schema.Number
-}) {
+error Timeout {
+  _tag: "RequestTimeout"
+  ms: number
   get summary() { return `timed out after ${this.ms}ms` }
 }
 
