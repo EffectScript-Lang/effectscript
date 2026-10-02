@@ -1,0 +1,6 @@
+declare const task: Effect.Effect<number, string>
+
+export effect resilient() {
+  return await task
+} |> retry({ times: 2 })
+  |> orElseSucceed(() => 0)

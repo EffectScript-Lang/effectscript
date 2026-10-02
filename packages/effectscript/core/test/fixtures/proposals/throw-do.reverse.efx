@@ -1,0 +1,28 @@
+
+class Missing extends Data.TaggedError("Missing")<{}> {}
+
+declare const find: (id: string) => Effect.Effect<string | undefined>
+
+effect required(id: string) {
+  const value = (await find(id)) ?? (await fail(new Missing()))
+  return value
+}
+
+const port = Number(process.env["PORT"] ?? (() => { throw new Error("PORT is required") })())
+
+const size = (() => {
+  const n = port * 2
+  if (n > 100) {
+    return "large"
+  } else {
+    return "small"
+  }
+})()
+
+effect describeId(id: string) {
+  const label = (await gen(function*() {
+    const value = yield* find(id)
+    return value === undefined ? "none" : value.toUpperCase()
+  }))
+  return label
+}

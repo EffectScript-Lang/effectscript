@@ -1,0 +1,6 @@
+declare const task: Effect.Effect<number>
+
+effect main() {
+  return await task
+}
+export default main

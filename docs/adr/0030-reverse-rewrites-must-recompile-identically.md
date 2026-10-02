@@ -62,3 +62,21 @@ The evidence is two tests:
 - **Verify by recompiling at conversion time and fall back per statement:** compile output depends
   on file-level context (imports, local error classes, service names), so statement-level
   recompilation is unreliable. The tests enforce the property instead.
+
+## Amendment (2026-10-03, Plan 6 Task 1)
+
+Running the harness on the `ai-docs` corpus showed that byte identity can't hold for hand-written
+code. Layout like `Effect.fn("x")(\n  // note\n  function*…` has no EffectScript spelling that
+compiles back to the same whitespace. The contract is refined:
+
+- **Compiler output (golden fixtures):** byte identity, unchanged.
+- **Any other TypeScript:** the round trip is *token- and comment-equivalent*. The code tokens are
+  identical, except that trailing commas may be dropped. Every comment survives, in the same order.
+  Only whitespace and the position of comments relative to code may change. A rewrite never drops a
+  comment. If a comment sits inside text that a rewrite replaces, it moves to the nearest position
+  that EffectScript can hold. For example, comments between `Effect.fn("x")(` and `function*` move
+  above the declaration.
+- **Import cleanup:** removing prelude imports is verified by recompiling, because its effect is
+  file-wide. A removal happens only when the file compiles to the same output with and without it.
+  This replaces exception 2 (specifier order), which no longer occurs. The `canonicalized:` notes
+  now cover only exception 1.

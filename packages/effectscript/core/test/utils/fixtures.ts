@@ -6,7 +6,7 @@ export const fixturesDir = path.join(import.meta.dirname, "..", "fixtures")
 
 export const listFixtures = (): Array<string> =>
   fs.readdirSync(fixturesDir, { recursive: true, encoding: "utf8" })
-    .filter((file) => file.endsWith(".efx"))
+    .filter((file) => file.endsWith(".efx") && !file.endsWith(".reverse.efx"))
     .map((file) => file.split(path.sep).join("/"))
     .sort()
 

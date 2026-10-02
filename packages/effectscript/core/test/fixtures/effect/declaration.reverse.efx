@@ -1,0 +1,13 @@
+
+class NotFound extends Data.TaggedError("NotFound")<{ readonly id: string }> {}
+
+declare const lookup: (id: string) => Effect.Effect<string, NotFound>
+
+export effect getName(id: string): string throws NotFound {
+  const name = await lookup(id)
+  return name.toUpperCase()
+}
+
+effect helper(n: number) {
+  return n * 2
+}

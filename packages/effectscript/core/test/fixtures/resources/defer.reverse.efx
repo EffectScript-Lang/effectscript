@@ -1,0 +1,26 @@
+import { Console, Scope, Stream } from "effect"
+
+declare const acquire: Effect.Effect<{ readonly close: Effect.Effect<void> }, never, Scope.Scope>
+
+export effect useResource() {
+  const handle = await acquire
+  await addFinalizer(() => handle.close)
+  await addFinalizer(() => sync(() => {
+    globalThis.console.info("sync cleanup")
+  }))
+  return 1
+} |> scoped
+
+export effect sum(numbers: Stream.Stream<number>) {
+  let total = 0
+  await Stream.runForEach(numbers, (n) => gen(function*() {
+    if (n < 0) return
+    total += n
+  }))
+  return total
+}
+
+export const block = Effect.scoped(Effect.gen(function*() {
+  yield* Effect.addFinalizer(() => Console.log("bye"))
+  return 2
+}))

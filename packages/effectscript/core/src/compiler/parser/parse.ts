@@ -18,8 +18,24 @@ export type Mode = "ts" | "tsx"
  * @category models
  */
 export type ParseResult =
-  | { readonly _tag: "Success"; readonly program: Node; readonly mode: Mode }
+  | {
+    readonly _tag: "Success"
+    readonly program: Node
+    readonly mode: Mode
+    /** Comments in source order (`text` includes the delimiters). */
+    readonly comments: ReadonlyArray<Comment>
+  }
   | { readonly _tag: "Failure"; readonly diagnostics: ReadonlyArray<Diagnostic> }
+
+/**
+ * @since 4.0.0
+ * @category models
+ */
+export interface Comment {
+  readonly start: number
+  readonly end: number
+  readonly line: boolean
+}
 
 const parsers: Record<Mode, typeof acorn.Parser> = {
   ts: acorn.Parser.extend(tsPlugin() as any, efxPlugin),
@@ -34,13 +50,18 @@ const parsers: Record<Mode, typeof acorn.Parser> = {
  */
 export const looksLikeJsx = (source: string): boolean => source.includes("</") || source.includes("/>")
 
-const parseWith = (mode: Mode, source: string): Node =>
-  parsers[mode].parse(source, {
+const parseWith = (mode: Mode, source: string): { program: Node; comments: Array<Comment> } => {
+  const found = new Map<number, Comment>()
+  const program = parsers[mode].parse(source, {
     ecmaVersion: "latest",
     sourceType: "module",
     locations: true,
-    allowHashBang: true
+    allowHashBang: true,
+    // speculative TypeScript parsing can report a comment twice
+    onComment: (block, _text, start, end) => found.set(start, { start, end, line: !block })
   }) as unknown as Node
+  return { program, comments: [...found.values()].sort((a, b) => a.start - b.start) }
+}
 
 interface ParseError {
   readonly pos: number
@@ -68,7 +89,7 @@ export const parse = (source: string, options: { readonly mode?: Mode | undefine
   let furthest: ParseError | undefined
   for (const mode of order) {
     try {
-      return { _tag: "Success", program: parseWith(mode, source), mode }
+      return { _tag: "Success", ...parseWith(mode, source), mode }
     } catch (error) {
       const parsed = toParseError(error)
       if (furthest === undefined || parsed.pos > furthest.pos) furthest = parsed

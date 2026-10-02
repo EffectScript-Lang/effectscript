@@ -17,11 +17,28 @@ describe("ADR-0023: reverse compiler subset", () => {
     expect(roundTrip(back)).toBe(back) // fixed point
   })
 
-  it("keeps unrelated TypeScript and imports that are still used", () => {
+  it("keeps unrelated TypeScript and drops imports the prelude restores", () => {
     const ts =
       "import { Effect } from \"effect\"\nexport const f = Effect.fn(\"f\")(function*() {\n  return 1\n})\nexport const run = Effect.runSync(f())\n"
-    expect(toEffectScript(ts).code).toBe(
-      "import { Effect } from \"effect\"\nexport effect f() {\n  return 1\n}\nexport const run = Effect.runSync(f())\n"
+    const back = toEffectScript(ts).code
+    expect(back).toBe("export effect f() {\n  return 1\n}\nexport const run = Effect.runSync(f())\n")
+    expect(toTypeScript(back).code).toBe(ts)
+  })
+
+  it("keeps an import the prelude would move (ADR-0030)", () => {
+    const ts =
+      "import \"./polyfill\"\nimport { Effect } from \"effect\"\nexport const f = Effect.fn(\"f\")(function*() {\n  return 1\n})\n"
+    const back = toEffectScript(ts).code
+    expect(back).toContain("import { Effect } from \"effect\"")
+    expect(toTypeScript(back).code).toBe(ts)
+  })
+
+  it("keeps comments between Effect.fn and the generator, and between pipes", () => {
+    const ts =
+      "import { Effect } from \"effect\"\nexport const f = Effect.fn(\"f\")(\n  // the doc\n  function*() {\n    return 1\n  },\n  // retry it\n  Effect.retry({ times: 2 })\n)\n"
+    const back = toEffectScript(ts).code
+    expect(back).toBe(
+      "// the doc\nexport effect f() {\n    return 1\n  }\n  // retry it\n  |> retry({ times: 2 })\n"
     )
   })
 
@@ -29,6 +46,14 @@ describe("ADR-0023: reverse compiler subset", () => {
     const ts =
       "import { Schema } from \"effect\"\nclass A extends Schema.Class<A>(\"A\")({ a: Schema.String /* x, y */, b: Schema.Number }) {}\n"
     expect(toEffectScript(ts).code).toBe("schema A { a: string /* x, y */; b: number }\n")
+  })
+
+  it("throws only for error declarations; other yieldable errors stay awaited", () => {
+    const ts =
+      "import { Data, Effect } from \"effect\"\nclass E extends Data.TaggedError(\"E\")<{}> {}\nexport const f = Effect.fn(\"f\")(function*() {\n  return yield* new E()\n})\n"
+    const back = toEffectScript(ts).code
+    expect(back).toContain("return await new E()")
+    expect(toTypeScript(back).code).toBe(ts)
   })
 
   it("never re-sugars a user object named Effect", () => {

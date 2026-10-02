@@ -1,0 +1,13 @@
+import { Effect as Fx, Schema as Schema$ } from "effect"
+
+const Schema = { note: "user value named Schema" }
+
+export schema Point { x: number; y: number }
+
+export effect area(Effect: number) {
+  const inner = gen(function*() { return Effect * 2 })
+  return await inner
+}
+
+export const run = Fx.runSync(area(2))
+export const note = Schema.note

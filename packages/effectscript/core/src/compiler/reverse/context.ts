@@ -1,0 +1,154 @@
+/**
+ * Shared state and comment-preserving edit helpers for the reverse compiler (ADR-0030: a rewrite
+ * never drops a comment).
+ *
+ * @since 4.0.0
+ */
+import type { MagicString } from "magic-string"
+import type { ScopeAnalysis } from "../analyze/scope.ts"
+import type { Node } from "../ast.ts"
+import type { ResolvedOptions, Runtime } from "../options.ts"
+import type { Comment } from "../parser/parse.ts"
+
+/**
+ * The compile options that change compiler output, so the reverse direction decides with the same
+ * inputs as the forward one (ADR-0030).
+ *
+ * @since 4.0.0
+ * @category models
+ */
+export interface ConvertOptions {
+  readonly filename?: string | undefined
+  readonly packageName?: string | undefined
+  readonly packageRoot?: string | undefined
+  readonly runtime?: Runtime | undefined
+  readonly prelude?: boolean | undefined
+}
+
+/**
+ * @since 4.0.0
+ * @category models
+ */
+export interface ConvertNote {
+  readonly start: number
+  readonly end: number
+  /** Why a near match stayed TypeScript, or `canonicalized: …` for a listed canonicalization. */
+  readonly message: string
+}
+
+/**
+ * @since 4.0.0
+ * @category models
+ */
+export interface ReverseCtx {
+  readonly source: string
+  readonly s: MagicString
+  readonly analysis: ScopeAnalysis
+  readonly options: ResolvedOptions
+  readonly comments: ReadonlyArray<Comment>
+  /** Local names of `Effect` / `Schema` imported from `effect` (ADR-0009). */
+  readonly effect: string | undefined
+  readonly schema: string | undefined
+  /** Classes this conversion turns into `error` declarations (the forward `localErrors`). */
+  readonly errors: Set<string>
+  readonly notes: Array<ConvertNote>
+}
+
+/**
+ * @since 4.0.0
+ * @category utils
+ */
+export const note = (ctx: ReverseCtx, node: Node, message: string): void => {
+  ctx.notes.push({ start: node.start, end: node.end, message })
+}
+
+/**
+ * @since 4.0.0
+ * @category utils
+ */
+export const slice = (ctx: ReverseCtx, node: Node): string => ctx.source.slice(node.start, node.end)
+
+/**
+ * Comments fully inside `[start, end)`.
+ *
+ * @since 4.0.0
+ * @category comments
+ */
+export const commentsIn = (ctx: ReverseCtx, start: number, end: number): Array<Comment> =>
+  ctx.comments.filter((c) => c.start >= start && c.end <= end)
+
+/** Comment texts joined so that code may follow (a line comment ends its line). */
+const commentBlock = (ctx: ReverseCtx, comments: ReadonlyArray<Comment>, separator: string): string =>
+  comments.map((c) => `${ctx.source.slice(c.start, c.end)}${c.line ? "\n" : separator}`).join("")
+
+const indentAt = (source: string, offset: number): string => {
+  const lineStart = source.lastIndexOf("\n", offset - 1) + 1
+  return /^[ \t]*/.exec(source.slice(lineStart, offset))![0]
+}
+
+/**
+ * Replaces `[start, end)` with `text`. Comments inside the range move to their own lines before
+ * `hoistTo` (a statement start), so code tokens change and comments survive in order.
+ *
+ * @since 4.0.0
+ * @category comments
+ */
+export const replaceHoistingComments = (
+  ctx: ReverseCtx,
+  start: number,
+  end: number,
+  text: string,
+  hoistTo: number
+): void => {
+  const comments = commentsIn(ctx, start, end)
+  if (start === end) ctx.s.appendLeft(start, text)
+  else ctx.s.update(start, end, text)
+  if (comments.length === 0) return
+  const indent = indentAt(ctx.source, hoistTo)
+  ctx.s.appendLeft(hoistTo, comments.map((c) => `${ctx.source.slice(c.start, c.end)}\n${indent}`).join(""))
+}
+
+/**
+ * Removes `[start, end)` except for its comments, which stay in place.
+ *
+ * @since 4.0.0
+ * @category comments
+ */
+export const removeKeepingComments = (ctx: ReverseCtx, start: number, end: number): void => {
+  if (start >= end) return
+  const comments = commentsIn(ctx, start, end)
+  if (comments.length === 0) {
+    ctx.s.remove(start, end)
+    return
+  }
+  ctx.s.update(start, end, ` ${commentBlock(ctx, comments, " ").trimEnd()}${comments.at(-1)!.line ? "\n" : ""}`)
+}
+
+/**
+ * Turns the separator between two call arguments (`,<gap>`) into a pipe (`<gap>|> `): the exact
+ * inverse of the forward `removePipeOp`, which keeps the gap and swaps `|> ` for a comma.
+ *
+ * @since 4.0.0
+ * @category pipes
+ */
+export const commaToPipe = (ctx: ReverseCtx, comma: number, next: Node): boolean => {
+  if (comma === -1) return false
+  ctx.s.remove(comma, comma + 1)
+  ctx.s.appendLeft(next.start, "|> ")
+  return true
+}
+
+/**
+ * The first `,` in `[from, to)` outside comments, or -1.
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const separatorComma = (ctx: ReverseCtx, from: number, to: number): number => {
+  for (let i = from; i < to; i++) {
+    const comment = ctx.comments.find((c) => c.start === i)
+    if (comment !== undefined) i = comment.end - 1
+    else if (ctx.source[i] === ",") return i
+  }
+  return -1
+}

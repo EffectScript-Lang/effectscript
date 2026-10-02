@@ -1,0 +1,14 @@
+import { Argument, Command, Flag } from "effect/cli"
+import { Schema, Effect } from "effect"
+
+const Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))
+
+/** Create a task */
+export const create = Command.make("create", {
+  title: Argument.String("title").pipe(Argument.withSchema(Schema.NonEmptyString), Argument.withDescription("Task title")),
+  priority: Flag.Literals("priority", ["low", "normal", "high"]).pipe(Flag.withDefault("normal"), Flag.withDescription("Priority")),
+  assignee: Flag.String("assignee").pipe(Flag.withSchema(Email), Flag.optional, Flag.withAlias("a"), Flag.withDescription("Assignee email")),
+  dryRun: Flag.Boolean("dry-run").pipe(Flag.withDefault(false))
+}, Effect.fn("create")(function*({ title, priority, assignee, dryRun }) {
+  yield* Effect.log(`Created "${title}" with ${priority} priority`)
+})).pipe(Command.withDescription("Create a task"))
