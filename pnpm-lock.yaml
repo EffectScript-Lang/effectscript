@@ -92,6 +92,9 @@ importers:
       dprint:
         specifier: ^0.57.4
         version: 0.57.4
+      effectscript:
+        specifier: workspace:^
+        version: link:packages/effectscript/core
       fast-check:
         specifier: ^4.10.2
         version: 4.10.2
@@ -394,6 +397,31 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      vite:
+        specifier: ^8.3.1
+        version: 8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vitest:
+        specifier: ^5.0.2
+        version: 5.0.2(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.1)(@types/node@26.6.3)(@vitest/coverage-v8@5.0.2)(happy-dom@20.14.5)(jsdom@30.0.1)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+
+  packages/effectscript/examples:
+    dependencies:
+      '@effect/platform-bun':
+        specifier: workspace:^
+        version: link:../../platform/bun
+      '@effect/platform-node':
+        specifier: workspace:^
+        version: link:../../platform/node
+      effect:
+        specifier: workspace:^
+        version: link:../../effect
+      effectscript:
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      '@effect/vitest':
+        specifier: workspace:^
+        version: link:../../vitest
       vite:
         specifier: ^8.3.1
         version: 8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)

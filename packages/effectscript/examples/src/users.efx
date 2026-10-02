@@ -1,0 +1,33 @@
+/** The examples' library: a schema, an error, a service with a layer, and an effect with `try`. */
+
+export schema User {
+  id: string
+  name: string
+}
+
+export error UserNotFound { id: string }
+
+export service Users {
+  effect find(id: string): User throws UserNotFound
+  effect all(): ReadonlyArray<User>
+
+  layer = effect {
+    const users = new Map([["1", new User({ id: "1", name: "Ada" })], ["2", new User({ id: "2", name: "Grace" })]])
+    return {
+      effect find(id: string) {
+        return users.get(id) ?? throw new UserNotFound({ id })
+      },
+      all: effect () => [...users.values()]
+    }
+  }
+}
+
+/** A greeting for a user, or a note when there is none. */
+export effect greeting(id: string): string needs Users {
+  try {
+    const user = await Users.find(id)
+    return `Hello, ${user.name}!`
+  } catch (e: UserNotFound) {
+    return `No user ${e.id}`
+  }
+}

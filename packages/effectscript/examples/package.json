@@ -1,0 +1,23 @@
+{
+  "name": "@effectscript/examples",
+  "version": "4.0.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "description": "Runnable EffectScript examples: Node (efx run), Vitest and Bun",
+  "scripts": {
+    "start": "efx run src/main.efx",
+    "test": "vitest run",
+    "test:bun": "bun test test-bun"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "workspace:^",
+    "@effect/platform-node": "workspace:^",
+    "effect": "workspace:^",
+    "effectscript": "workspace:^"
+  },
+  "devDependencies": {
+    "@effect/vitest": "workspace:^",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

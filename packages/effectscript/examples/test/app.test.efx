@@ -1,0 +1,16 @@
+import { greeting, Users } from "../src/users.efx"
+
+describe "greeting" with Users.layer {
+  test "greets a known user" {
+    expect(await greeting("1")).toBe("Hello, Ada!")
+  }
+
+  test "explains a missing user" {
+    expect(await greeting("9")).toBe("No user 9")
+  }
+
+  test "lists everyone" {
+    const names = (await Users.all()).map((u) => u.name)
+    expect(names).toEqual(["Ada", "Grace"])
+  }
+}

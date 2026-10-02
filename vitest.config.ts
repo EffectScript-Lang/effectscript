@@ -1,3 +1,4 @@
+import { efx } from "effectscript/vite"
 import * as os from "node:os"
 import * as path from "node:path"
 import { defineConfig, mergeConfig, type ViteUserConfig } from "vitest/config"
@@ -133,6 +134,9 @@ export default defineConfig({
       }),
       ...project("effectscript", "packages/effectscript/core"),
       ...project("@effectscript/language", "packages/effectscript/language"),
+      ...project("@effectscript/examples", "packages/effectscript/examples", true, { plugins: [efx()] }, undefined, [
+        "test/**/*.test.{ts,efx}"
+      ]),
       ...project("@effect/opentelemetry", "packages/opentelemetry"),
       ...project("@effect/platform-browser", "packages/platform/browser", true, {
         test: {

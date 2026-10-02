@@ -1,0 +1,8 @@
+/** The examples' entry point: `efx run src/main.efx` (Node), `bun ./src/main.efx` (Bun). */
+import { greeting, Users } from "./users.efx"
+
+main {
+  for (const id of ["1", "2", "3"]) {
+    globalThis.console.log(await greeting(id))
+  }
+} |> provide(Users.layer)
