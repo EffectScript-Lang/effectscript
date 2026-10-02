@@ -1,0 +1,17 @@
+---
+title: EffectScript documentation
+description: TypeScript with Effect as native syntax. Every .ts file is valid EffectScript, and every .efx file compiles to plain Effect TypeScript.
+---
+
+EffectScript is TypeScript with [Effect](https://effect.website) as native syntax. It is built on
+Effect and compiles to it; it is not an official Effect project.
+
+```efx
+export effect getUser(id: string): User throws UserNotFound needs Users {
+  const users = await Users
+  return await users.find(id)
+} |> retry({ times: 3 })
+```
+
+Start with [installing EffectScript](/docs/start/install/), or open the
+[playground](/playground/).

@@ -1,0 +1,81 @@
+/* The EffectScript brand (packages/effectscript/brand/README.md): Effect's zinc on ink, Inter and
+   JetBrains Mono. Fonts and marks are copied from brand/ by scripts/content.ts. */
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Inter Display";
+  src: url("/fonts/InterDisplay-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter Display";
+  src: url("/fonts/InterDisplay-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@theme {
+  --color-ink: #09090b;
+  --color-tile: #18181a;
+  --color-line: #27272a;
+  --color-muted: #71717a;
+  --color-subtle: #a1a1aa;
+  --font-display: "Inter Display", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  html {
+    background: var(--color-ink);
+    color: #fff;
+    color-scheme: dark;
+  }
+  code,
+  pre,
+  kbd {
+    font-family: var(--font-mono);
+    font-variant-ligatures: none;
+  }
+}
+
+/* effect.website's headline treatment: white for most of the line, fading to muted at the end */
+.headline-fade {
+  background: linear-gradient(90deg, #fff 0%, #fff 60%, var(--color-muted) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}

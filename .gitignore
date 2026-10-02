@@ -45,3 +45,8 @@ dist-bin/
 
 # EffectScript VS Code packages (packages/effectscript/vscode/scripts/package.ts)
 *.vsix
+
+# EffectScript site: generated inputs and output (packages/effectscript/site/scripts/content.ts)
+packages/effectscript/site/public/
+packages/effectscript/site/src/assets/
+packages/effectscript/site/.astro/

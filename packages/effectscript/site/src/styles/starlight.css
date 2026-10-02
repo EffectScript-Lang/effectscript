@@ -1,0 +1,51 @@
+/* Starlight in the brand's palette (zinc on ink) and typefaces. */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter Display";
+  src: url("/fonts/InterDisplay-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --sl-font: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --sl-font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root[data-theme="dark"] {
+  --sl-color-accent-low: #27272a;
+  --sl-color-accent: #ffffff;
+  --sl-color-accent-high: #ffffff;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #e4e4e7;
+  --sl-color-gray-2: #a1a1aa;
+  --sl-color-gray-3: #71717a;
+  --sl-color-gray-4: #3f3f46;
+  --sl-color-gray-5: #27272a;
+  --sl-color-gray-6: #18181a;
+  --sl-color-black: #09090b;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #e4e4e7;
+  --sl-color-accent: #09090b;
+  --sl-color-accent-high: #09090b;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Inter Display", var(--sl-font);
+  letter-spacing: -0.025em;
+}
