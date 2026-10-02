@@ -6,7 +6,7 @@
  */
 import type { CodeMapping, IScriptSnapshot, LanguagePlugin, VirtualCode } from "@volar/language-core"
 import type { TypeScriptServiceScript } from "@volar/typescript"
-import { type Diagnostic, toTypeScript } from "effectscript/compiler"
+import { type Diagnostic, type SourceRange, toTypeScript } from "effectscript/compiler"
 import { packageInfo } from "effectscript/project"
 import type * as ts from "typescript"
 
@@ -16,6 +16,8 @@ import type * as ts from "typescript"
  */
 export interface EffectScriptVirtualCode extends VirtualCode {
   readonly mode: "ts" | "tsx"
+  /** The effect binds of the source (ADR-0039). */
+  readonly binds: ReadonlyArray<SourceRange>
 }
 
 /** A snapshot over a string; `runTsc` passes the `tsc.js` namespace, which has no `ScriptSnapshot`. */
@@ -30,8 +32,13 @@ const stringSnapshot = (text: string): IScriptSnapshot => ({
  * @category models
  */
 export interface LanguagePluginOptions {
-  /** Called with the EffectScript compiler diagnostics of every compile (review I1). */
-  readonly onCompile?: (fileName: string, source: string, diagnostics: ReadonlyArray<Diagnostic>) => void
+  /** Called after every compile with its diagnostics (review I1) and effect binds (ADR-0039). */
+  readonly onCompile?: (
+    fileName: string,
+    source: string,
+    diagnostics: ReadonlyArray<Diagnostic>,
+    binds: ReadonlyArray<SourceRange>
+  ) => void
 }
 
 /**
@@ -47,11 +54,12 @@ export const createLanguagePlugin = (
     if (languageId !== "effectscript") return undefined
     const source = snapshot.getText(0, snapshot.getLength())
     const result = toTypeScript(source, { filename: fileName, recover: true, ...packageInfo(fileName) })
-    options.onCompile?.(fileName, source, result.diagnostics)
+    options.onCompile?.(fileName, source, result.diagnostics, result.binds)
     return {
       id: "root",
       languageId: result.mode === "tsx" ? "typescriptreact" : "typescript",
       mode: result.mode,
+      binds: result.binds,
       snapshot: stringSnapshot(result.code),
       mappings: result.mappings as Array<CodeMapping>
     }

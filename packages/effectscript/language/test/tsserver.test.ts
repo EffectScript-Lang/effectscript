@@ -74,6 +74,13 @@ describe("TypeScript server plugin (VS Code path, ADR-0019)", () => {
     expect(completions.body.entries.map((e: { name: string }) => e.name)).toEqual(expect.arrayContaining(["n", "x"]))
   }, 120_000)
 
+  it("explains an effect await on hover (ADR-0039)", async () => {
+    await server.send("open", { file: path.join(dir, "a.efx"), fileContent: a, scriptKindName: "TS" }, false)
+    const info = await server.send("quickinfo", { file: path.join(dir, "a.efx"), ...lineOffset(a, a.indexOf("await")) })
+    expect(info.body.displayString).toBe("await (effect bind)")
+    expect(info.body.documentation).toContain("Effect bind (`yield*`)")
+  }, 120_000)
+
   it("reports EffectScript compiler errors in the editor (review I1)", async () => {
     const unused = "effect {\n  1\n}\n"
     fs.writeFileSync(path.join(dir, "unused.efx"), unused)

@@ -1,4 +1,5 @@
 import { createLanguagePlugin } from "@effectscript/language"
+import { type Compiled, decorateGuardrails } from "@effectscript/language/guardrails"
 import { createLanguage, FileMap } from "@volar/language-core"
 import { createProxyLanguageService, decorateLanguageServiceHost, resolveFileLanguageId } from "@volar/typescript"
 import * as path from "node:path"
@@ -11,7 +12,7 @@ let counter = 0
  * An in-process TypeScript language service decorated the way tsserver decorates it with the
  * EffectScript plugin (see `@volar/typescript` `createLanguageServicePlugin`).
  */
-export const createHarness = (files: Record<string, string>) => {
+export const createHarness = (files: Record<string, string>, options_: { readonly guardrails?: boolean } = {}) => {
   const dir = path.join(packages, "effectscript/language/test/.virtual", `project-${counter++}`)
   const contents = new Map(Object.entries(files).map(([name, text]) => [path.join(dir, name), text]))
   const options: ts.CompilerOptions = {
@@ -54,8 +55,14 @@ export const createHarness = (files: Record<string, string>) => {
   }
   const service = ts.createLanguageService(host)
   const originalSnapshot = host.getScriptSnapshot.bind(host)
+  const compiles = new Map<string, Compiled>()
   const language = createLanguage<string>(
-    [createLanguagePlugin(ts), { getLanguageId: resolveFileLanguageId }],
+    [
+      createLanguagePlugin(ts, {
+        onCompile: (fileName, source, _, binds) => compiles.set(fileName, { source, binds })
+      }),
+      { getLanguageId: resolveFileLanguageId }
+    ],
     new FileMap(ts.sys.useCaseSensitiveFileNames),
     (fileName) => {
       const s = originalSnapshot(fileName)
@@ -66,5 +73,6 @@ export const createHarness = (files: Record<string, string>) => {
   const { initialize, proxy } = createProxyLanguageService(service)
   initialize(language)
   decorateLanguageServiceHost(ts, language, host)
-  return { dir, service: proxy }
+  // the guardrails the TS server plugin adds (ADR-0039)
+  return { dir, service: options_.guardrails ? decorateGuardrails(proxy, (f) => compiles.get(f)) : proxy }
 }

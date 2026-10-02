@@ -8,15 +8,16 @@
 import { createLanguageServicePlugin } from "@volar/typescript/lib/quickstart/createLanguageServicePlugin.js"
 import type { Diagnostic } from "effectscript/compiler"
 import type * as ts from "typescript"
+import { type Compiled, decorateGuardrails } from "./guardrails.ts"
 import { createLanguagePlugin } from "./languagePlugin.ts"
 
-/** The latest EffectScript compiler diagnostics per file. */
-const compilerDiagnostics = new Map<string, ReadonlyArray<Diagnostic>>()
+/** The latest EffectScript compile per file: its diagnostics, source and binds. */
+const compiles = new Map<string, Compiled & { readonly diagnostics: ReadonlyArray<Diagnostic> }>()
 
 const volarPlugin = createLanguageServicePlugin((typescript) => ({
   languagePlugins: [
     createLanguagePlugin(typescript, {
-      onCompile: (fileName, _source, diagnostics) => compilerDiagnostics.set(fileName, diagnostics)
+      onCompile: (fileName, source, diagnostics, binds) => compiles.set(fileName, { source, diagnostics, binds })
     })
   ]
 }))
@@ -46,7 +47,7 @@ export const typescriptPlugin: ts.server.PluginModuleFactory = (modules) => {
   return {
     ...plugin,
     create(info) {
-      const service = plugin.create(info)
+      const service = decorateGuardrails(plugin.create(info), (fileName) => compiles.get(fileName))
       const getSyntacticDiagnostics = service.getSyntacticDiagnostics.bind(service)
       return new Proxy(service, {
         get(target, key, receiver) {
@@ -55,7 +56,7 @@ export const typescriptPlugin: ts.server.PluginModuleFactory = (modules) => {
             const diagnostics = getSyntacticDiagnostics(fileName)
             if (!fileName.endsWith(".efx")) return diagnostics
             const file = target.getProgram()?.getSourceFile(fileName)
-            const extra = (compilerDiagnostics.get(fileName) ?? []).map((d) => toTypeScriptDiagnostic(d, file))
+            const extra = (compiles.get(fileName)?.diagnostics ?? []).map((d) => toTypeScriptDiagnostic(d, file))
             return [...diagnostics, ...extra]
           }
         }
