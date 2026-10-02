@@ -1023,7 +1023,9 @@ any granularity.
 
 ### 6.2 Canonical shapes
 
-Each row is the inverse of a row in §4.
+Each row is the inverse of a row in §4. The rows for §4.1–4.13 are implemented (Plan 6, ADR-0031).
+The library-construct and ambient rows (`describe`/`test` through the ambient forms) are Plan 7,
+and until then they stay TypeScript.
 
 | TypeScript shape                                                                    | EffectScript                         |
 | ----------------------------------------------------------------------------------- | ------------------------------------ |
@@ -1034,8 +1036,8 @@ Each row is the inverse of a row in §4.
 | `yield* e` inside those generators                                                  | `await e`                             |
 | `yield* Effect.all(xs, { concurrency: "unbounded" })` with an array/object literal | `await [ … ]` / `await { … }`         |
 | `return yield* Effect.fail(e)` / `return yield* new E(…)`                           | `throw e` / `throw new E(…)`          |
-| A native `throw e` inside an Effect generator (a defect)                            | `await die(e)`                 |
-| `yield* Effect.addFinalizer(() => e)` plus an `Effect.scoped` pipeable              | `defer e` (the pipeable is removed)   |
+| A native `throw e` inside an Effect generator (a defect)                            | `return await die(e)` (a `canonicalized` note) |
+| `yield* Effect.addFinalizer(() => e \| Effect.sync(() => {…}) \| Effect.gen(…))` in a frame with the forward scope (`Effect.scoped` first pipe or wrapper, or a layer constructor) | `defer e` / `defer {…}` (the scope is removed) |
 | `Effect.gen(…).pipe(catch…/ensuring)` in the §4.4 shape                             | `try … catch … finally`               |
 | `x.pipe(f, g)` / `pipe(x, f, g)`                                                    | `x \|> f \|> g`                       |
 | `Effect.Effect<…>` etc. (§4.5 set)                                                  | `Effect<…>`                           |
@@ -1063,15 +1065,33 @@ an `=` field, so it is lossless.
 ### 6.3 Blockers (leave the node as TypeScript)
 
 A generator stays `Effect.gen`/`Effect.fn` TypeScript, which is still valid EffectScript, when its
-direct body contains any of these:
+direct body contains any of these. "Direct" means its `effect` level, outside nested functions.
 
-- a native `try` around `yield*` (under §4.4 every `try` in `effect` code is an Effect `try`, so re-sugaring it would change its meaning)
-- `yield` without `*`
-- `arguments`
-- an `Effect.fn` span name that doesn't match the binding (or the `Svc.x` rule)
-- `Effect.fn` span options
-- `this` in an `Effect.fnUntraced` body
-- a label that crosses a desugaring boundary
+- **Statements that would change meaning:**
+  - A native `try`. Under §4.4 every `try` in `effect` code is an Effect `try`.
+  - A `using` declaration. In `effect` code it acquires a scoped resource (ADR-0011).
+  - `console.*`, `Date.now()`, `Math.random()` or `process.env`, which would be captured
+    (§4.15) until Plan 7 adds the ambient rows.
+- **Strict-mode errors:** an effect that is created and never yielded (EFX8001), `run*` (EFX8003),
+  or an awaited Promise (EFX8111). A `throw` of a primitive stays `await fail(…)` (EFX8004).
+- `yield` without `*`.
+- `arguments`.
+- `this` in an `Effect.fnUntraced` body.
+- **Span names:** an `Effect.fn` span name that doesn't match the binding (or the `Svc.x` rule), or
+  span options.
+- **Statement position:** an `Effect.gen(…)` used as a statement (EFX2003).
+
+A label can't cross a JavaScript function boundary, so the spec's earlier label blocker can't occur.
+
+Shapes that the forward compiler would produce differently also stay TypeScript, under
+ADR-0030's identity rule:
+
+- `.pipe` on a head that isn't known to be pipeable;
+- a pipe step that would parse differently after `|>`;
+- a class with instance properties;
+- a typed `static layer`;
+- a hand-written static in a `Context.Service` class;
+- a `runMain` for another runtime.
 
 The converter reports what it left as TS and why, for example in `efx convert --explain` and in the
 playground's notes panel.
@@ -1095,15 +1115,34 @@ Unsupported shapes stay TypeScript, with an explanation.
 - Several sources can share one output (for example `T[]`, `Array<T>` and `ReadonlyArray<T>` in a
   schema). The reverse direction produces one canonical spelling; that loss is listed explicitly
   per shape.
-- A rewrite applies only where compiling its result reproduces the input TypeScript byte for byte
-  (ADR-0030). The two listed canonicalizations (native `throw` → `die`, specifier order in a kept
-  import) are reported as `canonicalized` notes.
+- A rewrite applies only where compiling its result reproduces the input TypeScript (ADR-0030).
+  For compiler output that means byte for byte. For any other TypeScript it means the same code
+  tokens (trailing commas aside) and the same comments in order. The only exception, native
+  `throw` → `return await die(e)`, is reported as a `canonicalized` note.
+- **EffectScript-side normalizations** (`toEffectScript(toTypeScript(efx))` differs from `efx`):
+  - `Effect.Effect<A>` → `Effect<A>` and `Effect.succeed(…)` → `succeed(…)`. A builtin stays
+    qualified when its name is bound anywhere in the file.
+  - Prelude imports that the prelude restores are removed.
+  - `using x = await e` → `const x = await e`.
+  - `main` moves to the end of the module.
+  - Parentheses the forward compiler restores, such as `(await t) + n`, are dropped.
+  - `ReadonlyArray<T>` in a schema → `Array<T>`.
+  - Class members of a `schema` come after its fields.
+  - Explicit `Effect.fn.Return<A, never>` keeps `throws never`.
+  - A first Hack step that the forward compiler inlined stays a call.
+  - `do { … }` comes back as `await effect { … }`.
+  - `for await` comes back as `await Stream.runForEach(…)`.
 - Canonical outputs reach a fixed point: converting again changes nothing.
 - Effect APIs are recognized by binding origin (their import), never by spelling (ADR-0009). A
   user object named `Effect` is never re-sugared.
 - Comments and documentation are preserved where the shape keeps their anchor, and each shape that
   drops them says so. Side-effectful imports get dedicated cases.
-- Evidence: structural fixtures, plus runtime traces and exported-declaration tests for each shape.
+- **Evidence:**
+  - `core/test/reverse-golden.test.ts`: every golden fixture round-trips byte for byte, and its
+    reverse is snapshotted as `<name>.reverse.efx`.
+  - `core/test/reverse-corpus.test.ts`: the `ai-docs/src` corpus is token- and
+    comment-equivalent.
+  - Per-shape tests in `core/test/reverse-*.test.ts`.
 
 ## 7. Packages and integrations
 

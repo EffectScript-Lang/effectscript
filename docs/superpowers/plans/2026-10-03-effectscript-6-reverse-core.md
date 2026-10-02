@@ -238,3 +238,38 @@ inside a clause, and a shape with a foreign pipe step that stays TypeScript.
   imports.
 - COMPATIBILITY: reverse-compiler row.
 - Plan ledger: rulings and deferred minors.
+
+---
+
+## Execution record
+
+**Rulings** (from the ledger):
+
+- **Task 1:**
+  - The corpus contract is token and comment equivalence, not byte identity. Hand-written layout
+    has no EffectScript spelling (ADR-0030 amendment).
+  - Import cleanup is verified by recompiling, which removes the specifier-order canonicalization.
+- **Task 2:**
+  - Builtins are unqualified everywhere the forward namespace is `Effect`.
+  - `do` is not re-sugared, because `(await effect {…})` is equivalent.
+  - The label blocker was dropped: a label can't cross a function boundary.
+  - Every native `try` blocks.
+  - Strict-error blockers were added (EFX8001/8003/8111, EFX2003). Primitive throws stay
+    `await fail(…)`.
+- **Task 3:**
+  - Bare types and service tags are grouped with their import and verified together.
+  - Builtin freeness is checked file-wide, which is conservative.
+- **Task 4:**
+  - `%` steps appear only when every `$` in the file belongs to a converted topic step, and never
+    for a single-topic first step.
+  - Pipe steps are limited to forms that parse the same after `|>`.
+  - Fixed a forward bug: a line-leading `|>` after an `effect { … }` head produced `}.pipe()`.
+- **Task 6:** the generated binders `defect`/`error` must be unique in the file. Otherwise the file
+  converts again without `try` sugar.
+- **Task 7:** classes with instance properties stay TypeScript.
+- **Task 8:**
+  - An Effect-returning signature becomes `effect` only when its generated accessor exists.
+  - A typed layer static keeps the class TypeScript.
+  - The reverse tracks the forward namespace (`Layer` inside layer values).
+- **Task 10:** a telemetry `main` whose directive leads only after import removal is verified after
+  the import pass. Otherwise the file converts again without `main`.
