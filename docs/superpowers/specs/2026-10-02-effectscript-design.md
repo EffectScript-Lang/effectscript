@@ -1363,18 +1363,20 @@ CI. It detects:
 
 - **VS Code-family editors** (VS Code, Cursor, Windsurf, VSCodium): installs the EffectScript
   extension through each editor's CLI (`code`/`cursor`/`windsurf`/`codium --install-extension`).
-  It uses the VS Code Marketplace or Open VSX, with the `.vsix` bundled in the binary as a
-  fallback.
-- **Neovim:** writes an `lsp/effectscript.lua` config (Neovim 0.11 `vim.lsp.config`) that points
-  at `efx lsp`, plus filetype detection for `.efx`.
-- **Helix and Zed:** `languages.toml` / extension settings that point at `efx lsp`. The Zed
-  extension itself is a Plan 5 stretch goal.
+  It installs the `.vsix` the standalone binary carries, or `--vsix <file>`. The Marketplace and
+  Open VSX come with publishing.
+- **Neovim:** writes a drop-in `plugin/effectscript.lua` (Neovim 0.11+: filetype, `vim.lsp.config`
+  started in the project root, `vim.lsp.enable`); it does nothing on older Neovim.
+- **Helix:** a marked block in `languages.toml` (server `effectscript-lsp`, running `efx lsp`) and
+  `; inherits: typescript` queries; a user's own setup is left alone.
+- **Zed:** instructions until the Zed extension exists.
 - **JetBrains IDEs:** instructions for LSP4IJ that point at `efx lsp`; a native plugin is on the
   roadmap.
 - **Coding agents** (Claude Code, Codex, Cursor, Gemini CLI, opencode): installs the EffectScript
-  skill in each agent's skill or rules location, user-wide or per project. Where the agent
-  supports it (for example, Claude Code plugins with LSP servers), it also registers `efx lsp` and
-  `efx check` as tools.
+  skill once in `~/.agents/skills/effectscript` and links it into each agent's skills directory
+  (or, with `--project`, into the project's `.claude/skills` and `.agents/skills`). Registering
+  `efx lsp` and `efx check` as agent tools (for example, a Claude Code plugin with an LSP server)
+  is later work.
 
 **`efx convert`** turns a whole project into EffectScript:
 

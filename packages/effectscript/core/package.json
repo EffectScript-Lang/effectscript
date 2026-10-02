@@ -63,7 +63,8 @@
     "@sveltejs/acorn-typescript": "^1.0.13",
     "acorn": "^8.18.0",
     "effect": "workspace:^",
-    "magic-string": "^1.4.2"
+    "magic-string": "^1.4.2",
+    "smol-toml": "^1.9.0"
   },
   "devDependencies": {
     "@effect/platform-bun": "workspace:^",

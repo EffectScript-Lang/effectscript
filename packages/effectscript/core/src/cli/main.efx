@@ -85,7 +85,7 @@ export const convert = Command.make("convert", {
   agent: Flag.String("agent").pipe(Flag.optional, Flag.withDescription("The agent for --ai: claude, codex, gemini or opencode (default: the first installed)")),
   timeout: Flag.Int("timeout").pipe(Flag.withDefault(300), Flag.withDescription("Seconds the agent gets per file"))
 }, effect ({ paths, write, explain, force, noVerify, test, ai, agent, timeout }) => {
-  const code = convertProject(process.cwd(), {
+  const code = await promise(() => convertProject(process.cwd(), {
     paths,
     write,
     explain,
@@ -98,7 +98,7 @@ export const convert = Command.make("convert", {
   }, {
     out: (line) => process.stdout.write(`${line}\n`),
     err: (line) => process.stderr.write(`${line}\n`)
-  })
+  }))
   await exitWith(code)
 }) |> Command.withDescription("Convert TypeScript files with Effect to EffectScript")
 

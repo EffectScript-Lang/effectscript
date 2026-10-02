@@ -96,3 +96,65 @@ describe("efx setup (Plan 15 Task 3, ADR-0052)", () => {
     expect(result.stdout).toMatch(/Nothing to set up/)
   })
 })
+
+describe("efx setup review fixes (Plan 15 final review)", () => {
+  it("--project keeps a project's own skill of the same name (I7)", () => {
+    const m = machine()
+    const project = temp()
+    const theirs = path.join(project, ".claude/skills/effectscript")
+    fs.mkdirSync(theirs, { recursive: true })
+    fs.writeFileSync(path.join(theirs, "SKILL.md"), "---\nname: team-rules\n---\n")
+    const result = setup(["--yes", "--project"], m, project)
+    expect(result.status).toBe(0)
+    expect(fs.readFileSync(path.join(theirs, "SKILL.md"), "utf8")).toContain("team-rules")
+    expect(result.stdout).toMatch(/isn't the EffectScript skill/)
+  })
+})
+
+describe("the language server command in editor configs (review I9, I11)", async () => {
+  const { lspCommand, windowsCommandLine } = await import("effectscript/cli/setup")
+
+  it("prefers the efx on PATH when it is this efx", () => {
+    expect(
+      lspCommand({
+        self: "/opt/efx/1.0/bin/efx",
+        standalone: true,
+        onPath: "/usr/local/bin/efx",
+        realpath: () => "/opt/efx/1.0/bin/efx"
+      })
+    )
+      .toEqual(["efx", "lsp"])
+    expect(lspCommand({ self: "/opt/efx/1.0/bin/efx", standalone: true, onPath: undefined, realpath: (p) => p }))
+      .toEqual(["/opt/efx/1.0/bin/efx", "lsp"])
+    expect(
+      lspCommand({
+        self: "/p/node_modules/effectscript/bin/efx.js",
+        standalone: false,
+        node: "/n/node",
+        onPath: "/p/node_modules/.bin/efx",
+        realpath: () => "/p/node_modules/effectscript/bin/efx.js"
+      })
+    )
+      .toEqual(["efx", "lsp"])
+    expect(
+      lspCommand({
+        self: "/p/node_modules/effectscript/bin/efx.js",
+        standalone: false,
+        node: "/n/node",
+        onPath: "/other/efx",
+        realpath: (p) => p
+      })
+    )
+      .toEqual(["/n/node", "/p/node_modules/effectscript/bin/efx.js", "lsp"])
+  })
+
+  it("quotes Windows command lines for paths with spaces", () => {
+    expect(
+      windowsCommandLine("C:\\Program Files\\Microsoft VS Code\\bin\\code.cmd", [
+        "--install-extension",
+        "C:\\a b\\x.vsix"
+      ])
+    )
+      .toBe("\"C:\\Program Files\\Microsoft VS Code\\bin\\code.cmd\" \"--install-extension\" \"C:\\a b\\x.vsix\"")
+  })
+})

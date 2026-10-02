@@ -1,14 +1,14 @@
 /**
  * `efx convert --ai` (spec §7.5 step 4, ADR-0052): after the mechanical pass, the user's own
  * coding agent converts what was left as TypeScript, one file at a time. An edit is kept only if
- * the file still compiles and the project still verifies. Edits outside the file are undone.
- * Nothing leaves the machine except through the agent the user runs.
+ * the file still compiles and the project still verifies. Edits outside the file are undone, and
+ * nothing that existed before is ever deleted. Nothing leaves the machine except through the agent
+ * the user runs.
  *
  * @since 4.0.0
  */
-import { spawnSync } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import * as fs from "node:fs"
-import * as os from "node:os"
 import * as path from "node:path"
 import { skillFiles, writeSkill } from "../cli/skill.ts"
 import { toTypeScript } from "../compiler/compile.ts"
@@ -22,19 +22,29 @@ import { toTypeScript } from "../compiler/compile.ts"
 export interface Agent {
   readonly id: "claude" | "codex" | "gemini" | "opencode"
   readonly command: string
-  readonly args: (prompt: string) => ReadonlyArray<string>
+  /** Its arguments for a prompt, given the directory that holds the skill. */
+  readonly args: (prompt: string, skill: string) => ReadonlyArray<string>
 }
 
 /**
- * The supported agents, in the order `--ai` picks them.
+ * The supported agents, in the order `--ai` picks them. Each may edit files in the project, and
+ * gets read access to the skill's directory (review I1, I2).
  *
  * @since 4.0.0
  * @category convert
  */
 export const agents: ReadonlyArray<Agent> = [
-  { id: "claude", command: "claude", args: (p) => ["-p", p, "--permission-mode", "acceptEdits"] },
-  { id: "codex", command: "codex", args: (p) => ["exec", "--full-auto", p] },
-  { id: "gemini", command: "gemini", args: (p) => ["-p", p, "--yolo"] },
+  {
+    id: "claude",
+    command: "claude",
+    args: (p, skill) => ["-p", p, "--permission-mode", "acceptEdits", "--add-dir", skill]
+  },
+  { id: "codex", command: "codex", args: (p) => ["exec", "--sandbox", "workspace-write", p] },
+  {
+    id: "gemini",
+    command: "gemini",
+    args: (p, skill) => ["--approval-mode", "auto_edit", "--include-directories", skill, "-p", p]
+  },
   { id: "opencode", command: "opencode", args: (p) => ["run", p] }
 ]
 
@@ -62,36 +72,111 @@ export const findAgent = (choice: string | undefined): Agent | undefined =>
     ? agents.find((a) => a.id === choice && onPath(a.command))
     : agents.find((a) => onPath(a.command))
 
-/** Every file git sees (tracked and untracked, not ignored), with its content. */
-const snapshot = (cwd: string): Map<string, Buffer> => {
-  const listed = spawnSync("git", ["ls-files", "-co", "--exclude-standard", "-z"], { cwd, encoding: "utf8" }).stdout
-  const files = new Map<string, Buffer>()
-  for (const file of listed.split("\0")) {
-    if (file === "") continue
+/** `git ls-files -z` with these flags. Throws when git fails: a partial list is never used (review C2). */
+const gitFiles = (cwd: string, flags: ReadonlyArray<string>): Array<string> => {
+  const result = spawnSync("git", ["ls-files", "-z", ...flags], { cwd, encoding: "utf8", maxBuffer: 1 << 30 })
+  if (result.error !== undefined || result.status !== 0) {
+    throw new Error(`git ls-files failed: ${result.error?.message ?? result.stderr}`)
+  }
+  return result.stdout.split("\0").filter((f) => f !== "")
+}
+
+interface Snapshot {
+  /** The content of every file git sees (tracked, and untracked but not ignored). */
+  readonly contents: ReadonlyMap<string, Buffer>
+  /** Every path that exists, ignored ones included: none of these is ever deleted (review C1). */
+  readonly paths: ReadonlySet<string>
+}
+
+const snapshot = (cwd: string): Snapshot => {
+  const contents = new Map<string, Buffer>()
+  for (const file of gitFiles(cwd, ["-co", "--exclude-standard"])) {
     try {
-      files.set(file, fs.readFileSync(path.join(cwd, file)))
+      contents.set(file, fs.readFileSync(path.join(cwd, file)))
     } catch {
       // listed but gone (deleted in the working tree)
     }
   }
-  return files
+  const paths = new Set(
+    [...gitFiles(cwd, ["-c"]), ...gitFiles(cwd, ["-o"])].filter((f) => fs.existsSync(path.join(cwd, f)))
+  )
+  return { contents, paths }
 }
 
-/** Puts every file except `keep` back as it was in `before`. */
-const restoreOthers = (cwd: string, before: ReadonlyMap<string, Buffer>, keep: string) => {
-  const after = snapshot(cwd)
-  for (const [file, content] of before) {
+/**
+ * Undoes the agent's edits outside `keep`: first the files git saw (so `.gitignore` is back before
+ * anything is listed again), then the paths that didn't exist before. Nothing that existed before
+ * is deleted.
+ */
+const restoreOthers = (cwd: string, before: Snapshot, keep: string) => {
+  for (const [file, content] of before.contents) {
     if (file === keep) continue
-    const now = after.get(file)
+    const full = path.join(cwd, file)
+    let now: Buffer | undefined
+    try {
+      now = fs.readFileSync(full)
+    } catch {
+      now = undefined
+    }
     if (now === undefined || !now.equals(content)) {
-      fs.mkdirSync(path.dirname(path.join(cwd, file)), { recursive: true })
-      fs.writeFileSync(path.join(cwd, file), content)
+      fs.mkdirSync(path.dirname(full), { recursive: true })
+      fs.writeFileSync(full, content)
     }
   }
-  for (const file of after.keys()) {
-    if (file !== keep && !before.has(file)) fs.rmSync(path.join(cwd, file), { force: true })
+  for (const file of [...gitFiles(cwd, ["-c"]), ...gitFiles(cwd, ["-o"])]) {
+    if (file !== keep && !before.paths.has(file)) fs.rmSync(path.join(cwd, file), { force: true })
   }
 }
+
+/**
+ * Runs the agent in its own process group, so a timeout, or its end, stops everything it started
+ * (review I3). Resolves with its exit code, or `"timeout"`.
+ */
+const runAgent = (
+  command: string,
+  args: ReadonlyArray<string>,
+  cwd: string,
+  timeoutSeconds: number
+): Promise<number | "timeout" | Error> =>
+  new Promise((resolve) => {
+    const windows = process.platform === "win32"
+    // Windows: npm installs agents as .cmd shims, which need a shell, with every part quoted, and
+    // a single-line prompt (review I11)
+    const child = windows
+      ? spawn(
+        [command, ...args].map((part) => `"${part.replace(/\n/g, " ").replace(/"/g, "\\\"")}"`).join(" "),
+        { cwd, stdio: "ignore", shell: true }
+      )
+      : spawn(command, [...args], { cwd, detached: true, stdio: "ignore" })
+    const stopTree = () => {
+      if (child.pid === undefined) return
+      if (windows) spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" })
+      else {
+        try {
+          process.kill(-child.pid, "SIGKILL")
+        } catch {
+          // already gone
+        }
+      }
+    }
+    let timedOut = false
+    const timer = timeoutSeconds > 0
+      ? setTimeout(() => {
+        timedOut = true
+        stopTree()
+      }, timeoutSeconds * 1000)
+      : undefined
+    child.on("error", (error) => {
+      clearTimeout(timer)
+      resolve(error)
+    })
+    child.on("exit", (code) => {
+      clearTimeout(timer)
+      // whatever it left running in the background must not edit files after we verify
+      stopTree()
+      resolve(timedOut ? "timeout" : code ?? 1)
+    })
+  })
 
 /**
  * @since 4.0.0
@@ -108,11 +193,25 @@ const prompt = (target: AiTarget, skill: string) =>
   [
     `Convert the TypeScript left in ${target.file} to idiomatic EffectScript.`,
     `Follow the EffectScript skill in ${path.join(skill, "SKILL.md")} and its references.`,
-    "The mechanical converter left these parts as TypeScript:",
+    "The mechanical converter left these parts as TypeScript (line numbers are from before the conversion):",
     ...target.notes.map((note) => `- ${note}`),
     `Edit only ${target.file}. Keep its behaviour and its exports exactly the same.`,
     "Don't run commands; the converter verifies the project after your edit and reverts it if it fails."
   ].join("\n")
+
+/** Where the agent can read the skill: inside the git directory, so it stays out of `git status`. */
+const skillDirectory = (cwd: string): string => {
+  const gitDir = spawnSync("git", ["rev-parse", "--absolute-git-dir"], { cwd, encoding: "utf8" }).stdout.trim()
+  return path.join(gitDir, "effectscript-skill")
+}
+
+const read = (file: string): Buffer | undefined => {
+  try {
+    return fs.readFileSync(file)
+  } catch {
+    return undefined
+  }
+}
 
 /**
  * Runs the agent on each target and keeps each edit only when it compiles and `verify` passes
@@ -121,15 +220,15 @@ const prompt = (target: AiTarget, skill: string) =>
  * @since 4.0.0
  * @category convert
  */
-export const aiPass = (
+export const aiPass = async (
   cwd: string,
   targets: ReadonlyArray<AiTarget>,
   agent: Agent,
   verify: (() => string | undefined) | undefined,
   timeoutSeconds: number,
   io: { readonly out: (line: string) => void; readonly err: (line: string) => void }
-): { readonly kept: number; readonly reverted: number } => {
-  const skill = fs.mkdtempSync(path.join(os.tmpdir(), "efx-ai-skill-"))
+): Promise<{ readonly kept: number; readonly reverted: number }> => {
+  const skill = skillDirectory(cwd)
   let kept = 0
   let reverted = 0
   try {
@@ -138,28 +237,24 @@ export const aiPass = (
       const full = path.join(cwd, target.file)
       const before = snapshot(cwd)
       const original = fs.readFileSync(full)
-      io.out(`AI pass: ${agent.command} on ${target.file} (${target.notes.length} part(s) left as TypeScript)`)
-      const run = spawnSync(agent.command, [...agent.args(prompt(target, skill))], {
-        cwd,
-        encoding: "utf8",
-        timeout: timeoutSeconds * 1000,
-        killSignal: "SIGKILL",
-        stdio: ["ignore", "pipe", "pipe"]
-      })
+      const args = agent.args(prompt(target, skill), skill)
+      io.out(`AI pass: ${agent.command} ${args.filter((a) => !a.includes("\n")).join(" ")} (${target.file})`)
+      const outcome = await runAgent(agent.command, args, cwd, timeoutSeconds)
       restoreOthers(cwd, before, target.file)
-      const timedOut = run.error !== undefined && (run.error as NodeJS.ErrnoException).code === "ETIMEDOUT"
-      const edited = fs.readFileSync(full)
-      let problem: string | undefined = timedOut
+      const edited = read(full)
+      let problem: string | undefined = outcome === "timeout"
         ? `${agent.command} timed out after ${timeoutSeconds}s`
-        : run.error !== undefined
-        ? run.error.message
-        : run.status !== 0
-        ? `${agent.command} exited with ${run.status}`
+        : outcome instanceof Error
+        ? outcome.message
+        : outcome !== 0
+        ? `${agent.command} exited with ${outcome}`
+        : edited === undefined
+        ? `${agent.command} removed the file`
         : edited.equals(original)
         ? "no change"
         : undefined
       if (problem === undefined) {
-        const errors = toTypeScript(edited.toString("utf8"), { filename: target.file }).diagnostics
+        const errors = toTypeScript(edited!.toString("utf8"), { filename: target.file }).diagnostics
           .filter((d) => d.severity === "error")
         if (errors.length > 0) problem = `it doesn't compile: ${errors[0]!.code} ${errors[0]!.message}`
       }
@@ -169,12 +264,15 @@ export const aiPass = (
         io.out(`kept the AI edit of ${target.file}`)
         continue
       }
+      fs.mkdirSync(path.dirname(full), { recursive: true })
       fs.writeFileSync(full, original)
       if (problem !== "no change") {
         reverted++
         io.out(`reverted the AI edit of ${target.file}: ${problem.split("\n")[0]}`)
       }
     }
+  } catch (error) {
+    io.err(`efx convert --ai stopped: ${(error as Error).message}`)
   } finally {
     fs.rmSync(skill, { recursive: true, force: true })
   }

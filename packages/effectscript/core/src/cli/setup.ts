@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url"
 import { detect, type Detected, type SetupEnv } from "../setup/detect.ts"
 import { type Action, plan } from "../setup/plan.ts"
 import { cacheDir, standalone, unpackFiles } from "./host.ts"
-import { skillFiles, writeSkill } from "./skill.ts"
+import { isEffectScriptSkill, skillFiles, writeSkill } from "./skill.ts"
 
 /**
  * @since 4.0.0
@@ -48,11 +48,63 @@ const machine = (home: string): SetupEnv => ({
   }
 })
 
-/** How editors start the language server: this binary, or this package's `bin/efx.js` on Node. */
-const lspCommand = (): Array<string> =>
+/**
+ * How editors start the language server (review I9): `efx lsp` when the `efx` on PATH is this one
+ * (it survives upgrades), else this binary's path, or Node with this package's `bin/efx.js`.
+ *
+ * @since 4.0.0
+ * @category setup
+ */
+export const lspCommand = (where: {
+  /** This efx: the standalone binary, or the npm package's `bin/efx.js`. */
+  readonly self: string
+  readonly standalone: boolean
+  readonly node?: string | undefined
+  /** The `efx` found on PATH, if any. */
+  readonly onPath: string | undefined
+  readonly realpath: (file: string) => string
+}): Array<string> => {
+  if (where.onPath !== undefined && where.realpath(where.onPath) === where.realpath(where.self)) return ["efx", "lsp"]
+  return where.standalone ? [where.self, "lsp"] : [where.node ?? process.execPath, where.self, "lsp"]
+}
+
+const whichEfx = (): string | undefined => {
+  for (const dir of (process.env.PATH ?? "").split(path.delimiter)) {
+    for (const name of ["efx", "efx.exe", "efx.cmd"]) {
+      const file = path.join(dir, name)
+      if (dir !== "" && fs.existsSync(file)) return file
+    }
+  }
+  return undefined
+}
+
+const realpath = (file: string) => {
+  try {
+    return fs.realpathSync(file)
+  } catch {
+    return file
+  }
+}
+
+const thisLspCommand = (): Array<string> =>
   standalone() !== undefined
-    ? [process.execPath, "lsp"]
-    : [process.execPath, fileURLToPath(new URL("../../bin/efx.js", import.meta.url)), "lsp"]
+    ? lspCommand({ self: process.execPath, standalone: true, onPath: whichEfx(), realpath })
+    : lspCommand({
+      self: fileURLToPath(new URL("../../bin/efx.js", import.meta.url)),
+      standalone: false,
+      node: process.execPath,
+      onPath: whichEfx(),
+      realpath
+    })
+
+/**
+ * A `cmd.exe` command line with every part quoted, so paths with spaces work (review I11).
+ *
+ * @since 4.0.0
+ * @category setup
+ */
+export const windowsCommandLine = (command: string, args: ReadonlyArray<string>): string =>
+  [command, ...args].map((part) => `"${part.replace(/"/g, "\\\"")}"`).join(" ")
 
 /** The `.vsix` to install: `--vsix`, or the one the standalone binary carries (unpacked once). */
 const vsixPath = (options: SetupOptions): string | undefined => {
@@ -70,8 +122,17 @@ const projectActions = (options: SetupOptions): Array<Action> =>
     id: `project:${dir}`,
     description: `Install the EffectScript skill in ${dir}`,
     apply: () => {
-      writeSkill(path.join(options.cwd, dir), skillFiles())
-      return { status: "done", detail: path.join(options.cwd, dir) }
+      const target = path.join(options.cwd, dir)
+      // a project's own skill of the same name stays (review I7)
+      if (fs.existsSync(path.join(target, "SKILL.md")) && !isEffectScriptSkill(target)) {
+        return { status: "skipped", detail: `${target} isn't the EffectScript skill` }
+      }
+      try {
+        writeSkill(target, skillFiles())
+        return { status: "done", detail: target }
+      } catch (error) {
+        return { status: "failed", detail: (error as Error).message }
+      }
     }
   }))
 
@@ -94,10 +155,12 @@ export const setup = async (
   const actions = options.project ? projectActions(options) : plan(found, {
     home: options.home,
     skill: skillFiles(),
-    vsix: vsixPath(options),
-    lsp: lspCommand(),
+    vsix: () => vsixPath(options),
+    lsp: thisLspCommand(),
     exec: (command, args) => {
-      const result = spawnSync(command, [...args], { encoding: "utf8", shell: process.platform === "win32" })
+      const result = process.platform === "win32"
+        ? spawnSync(windowsCommandLine(command, args), { encoding: "utf8", shell: true })
+        : spawnSync(command, [...args], { encoding: "utf8" })
       return { status: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "" }
     }
   })

@@ -2,13 +2,14 @@ import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterAll, describe, expect, it, vi } from "vitest"
 
 vi.setConfig({ testTimeout: 90_000 })
 
 const efx = path.join(import.meta.dirname, "../bin/efx.js")
 const dirs: Array<string> = []
-afterEach(() => {
+// tests run concurrently: clean up once, when all are done
+afterAll(() => {
   for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true })
 })
 
@@ -48,8 +49,21 @@ case "$FAKE_MODE" in
   break) printf '// BROKEN\\n' >> src/a.efx ;;
   stray) printf '// improved\\n' >> src/a.efx; printf '// stray\\n' >> src/b.ts; echo x > src/new.ts ;;
   hang) sleep 30 ;;
+  ungitignore) : > .gitignore; printf '// improved\\n' >> src/a.efx ;;
+  rmfirst) git rm -q "$(git ls-files | grep '^bulk/' | head -1)"; printf '// improved\\n' >> src/a.efx ;;
+  child) (sleep 2; printf '// late\\n' >> src/a.efx) & sleep 30 ;;
+  rename) mv src/a.efx src/a.ts ;;
   fail) printf '// partial\\n' >> src/a.efx; exit 1 ;;
 esac
+`,
+    { mode: 0o755 }
+  )
+  // codex refuses the removed --full-auto flag, as codex-cli 0.160 does (review I1)
+  fs.writeFileSync(
+    path.join(bin, "codex"),
+    `#!/bin/sh
+case " $* " in *" --full-auto "*) echo "unexpected argument '--full-auto'" >&2; exit 2 ;; esac
+printf '// codex\\n' >> src/a.efx
 `,
     { mode: 0o755 }
   )
@@ -112,9 +126,64 @@ describe("efx convert --ai (Plan 15 Task 4, ADR-0052)", () => {
     expect(result.stdout).toMatch(/timed out/)
   })
 
+  it("never deletes files git ignored, even when the agent edits .gitignore (review C1)", () => {
+    const p = setupProject()
+    fs.writeFileSync(path.join(p.dir, ".gitignore"), ".env\nlocal-db/\n")
+    spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qam", "ignore"], { cwd: p.dir })
+    spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "add", ".gitignore"], { cwd: p.dir })
+    spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "gitignore"], { cwd: p.dir })
+    fs.writeFileSync(path.join(p.dir, ".env"), "SECRET=1\n")
+    fs.mkdirSync(path.join(p.dir, "local-db"))
+    fs.writeFileSync(path.join(p.dir, "local-db/app.sqlite"), "db")
+    expect(convert(p, "ungitignore").status).toBe(0)
+    expect(read(p, ".env")).toBe("SECRET=1\n")
+    expect(read(p, "local-db/app.sqlite")).toBe("db")
+    expect(read(p, ".gitignore")).toBe(".env\nlocal-db/\n")
+  })
+
+  it("keeps every file in a repository with over a megabyte of paths (review C2)", () => {
+    const p = setupProject()
+    const bulk = path.join(p.dir, "bulk")
+    fs.mkdirSync(bulk)
+    const names = Array.from({ length: 16_000 }, (_, i) => `file-${String(i).padStart(6, "0")}-${"x".repeat(60)}.txt`)
+    for (const name of names) fs.writeFileSync(path.join(bulk, name), "")
+    spawnSync("git", ["add", "-A"], { cwd: p.dir })
+    spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "bulk"], { cwd: p.dir })
+    expect(convert(p, "rmfirst").status).toBe(0)
+    expect(fs.readdirSync(bulk).length).toBe(names.length)
+  })
+
+  it("stops the agent's whole process tree on timeout (review I3)", async () => {
+    const p = setupProject()
+    convert(p, "child", ["--timeout", "1"])
+    await new Promise((resolve) => setTimeout(resolve, 3_000))
+    expect(read(p, "src/a.efx")).not.toContain("late")
+  })
+
+  it("restores the file when the agent deletes or renames it (review I4)", () => {
+    const p = setupProject()
+    const result = convert(p, "rename")
+    expect(result.status, result.stderr).toBe(0)
+    expect(read(p, "src/a.efx")).toContain("export effect one()")
+    expect(fs.existsSync(path.join(p.dir, "src/a.ts"))).toBe(false)
+  })
+
+  it("runs codex with its current sandbox flag (review I1), and lets claude read the skill (review I2)", () => {
+    const p = setupProject()
+    const result = convert(p, "improve", ["--agent", "codex"])
+    expect(result.status).toBe(0)
+    expect(read(p, "src/a.efx")).toContain("// codex")
+    const q = setupProject()
+    convert(q, "improve")
+    const args = fs.readFileSync(path.join(q.bin, "prompt.txt"), "utf8").split("\n")
+    const skillDir = args[args.indexOf("--add-dir") + 1]!
+    expect(args.join("\n")).toContain(path.join(skillDir, "SKILL.md"))
+  })
+
   it("says so when no coding agent is installed", () => {
     const p = setupProject()
     fs.rmSync(path.join(p.bin, "claude"))
+    fs.rmSync(path.join(p.bin, "codex"))
     const result = spawnSync(process.execPath, [efx, "convert", "--write", "--ai", "--test", "true"], {
       cwd: p.dir,
       encoding: "utf8",

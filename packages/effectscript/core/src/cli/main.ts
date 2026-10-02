@@ -151,20 +151,22 @@ export const convert = pipe(
       timeout: Flag.Int("timeout").pipe(Flag.withDefault(300), Flag.withDescription("Seconds the agent gets per file"))
     },
     Effect.fnUntraced(function*({ paths, write, explain, force, noVerify, test, ai, agent, timeout }) {
-      const code = convertProject(process.cwd(), {
-        paths,
-        write,
-        explain,
-        force,
-        verify: !noVerify,
-        test: test._tag === "Some" ? test.value : undefined,
-        ai,
-        agent: agent._tag === "Some" ? agent.value : undefined,
-        timeout
-      }, {
-        out: (line) => process.stdout.write(`${line}\n`),
-        err: (line) => process.stderr.write(`${line}\n`)
-      })
+      const code = yield* Effect.promise(() =>
+        convertProject(process.cwd(), {
+          paths,
+          write,
+          explain,
+          force,
+          verify: !noVerify,
+          test: test._tag === "Some" ? test.value : undefined,
+          ai,
+          agent: agent._tag === "Some" ? agent.value : undefined,
+          timeout
+        }, {
+          out: (line) => process.stdout.write(`${line}\n`),
+          err: (line) => process.stderr.write(`${line}\n`)
+        })
+      )
       yield* exitWith(code)
     })
   ),

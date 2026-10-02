@@ -7,6 +7,7 @@
  */
 import * as fs from "node:fs"
 import * as path from "node:path"
+import { parse as parseToml } from "smol-toml"
 import { isEffectScriptSkill, writeSkill } from "../cli/skill.ts"
 import type { Detected } from "./detect.ts"
 
@@ -37,8 +38,9 @@ export interface PlanOptions {
   readonly home: string
   /** The skill's files, `[relative path, content]` (ADR-0051). */
   readonly skill: ReadonlyArray<readonly [string, string]>
-  /** The EffectScript `.vsix`, when one is at hand (the standalone binary carries it). */
-  readonly vsix: string | undefined
+  /** The EffectScript `.vsix`, when one is at hand (the standalone binary carries it). Called only
+   * when an extension is actually installed, so listing never unpacks anything (review I12). */
+  readonly vsix: () => string | undefined
   /** How editors start the language server, for example `["efx", "lsp"]`. */
   readonly lsp: ReadonlyArray<string>
   readonly exec: (
@@ -82,6 +84,10 @@ const skillActions = (agents: ReadonlyArray<Detected>, options: PlanOptions): Ar
       description: `Install the EffectScript skill in ${shared}`,
       apply: () =>
         attempt(() => {
+          if (fs.lstatSync(shared, { throwIfNoEntry: false })?.isSymbolicLink() === true) {
+            // probably a checkout of the skill: never write through it (review I6)
+            return { status: "skipped", detail: `${shared} is a link; efx setup doesn't write through links` }
+          }
           if (fs.existsSync(shared) && !isOurSkill(shared)) {
             return { status: "skipped", detail: `${shared} exists and isn't the EffectScript skill` }
           }
@@ -99,8 +105,12 @@ const skillActions = (agents: ReadonlyArray<Detected>, options: PlanOptions): Ar
         description: `Give ${agent.name} the skill (${link})`,
         apply: () =>
           attempt(() => {
+            if (!isOurSkill(shared)) {
+              // the shared skill was skipped or declined: a link to it would dangle (review I5)
+              return { status: "skipped", detail: `the shared EffectScript skill isn't installed in ${shared}` }
+            }
             const stat = fs.lstatSync(link, { throwIfNoEntry: false })
-            if (stat?.isSymbolicLink() && fs.realpathSync(link) === fs.realpathSync(shared)) {
+            if (stat?.isSymbolicLink() && fs.existsSync(link) && fs.realpathSync(link) === fs.realpathSync(shared)) {
               return { status: "skipped", detail: "already linked" }
             }
             if (stat !== undefined && !isOurSkill(link)) {
@@ -137,13 +147,14 @@ const vscodeAction = (editor: Detected, options: PlanOptions): Action => ({
       if (listed.stdout.split(/\r?\n/).some((line) => line.trim().toLowerCase() === extensionId)) {
         return { status: "skipped", detail: "already installed" }
       }
-      if (options.vsix === undefined) {
+      const vsix = options.vsix()
+      if (vsix === undefined) {
         return {
           status: "skipped",
           detail: "no .vsix at hand: the standalone efx carries one, or pass --vsix <file>"
         }
       }
-      const installed = options.exec(editor.cli!, ["--install-extension", options.vsix])
+      const installed = options.exec(editor.cli!, ["--install-extension", vsix])
       return installed.status === 0
         ? { status: "done", detail: `${editor.cli} --install-extension` }
         : { status: "failed", detail: `${installed.stdout}${installed.stderr}`.trim() }
@@ -156,11 +167,17 @@ const neovimAction = (editor: Detected, options: PlanOptions): Action => {
   const file = path.join(editor.configDir!, "plugin", "effectscript.lua")
   const text = [
     `-- EffectScript: .efx files and the efx language server (written by ${marker}; delete to opt out)`,
+    "-- vim.lsp.config and vim.lsp.enable arrived in Neovim 0.11",
+    "if vim.fn.has(\"nvim-0.11\") == 0 then",
+    "  return",
+    "end",
     "vim.filetype.add({ extension = { efx = \"effectscript\" } })",
     "vim.lsp.config(\"efx\", {",
     "  -- start in the project root, so efx lsp finds the project's @effectscript/language",
     "  cmd = function(dispatchers, config)",
-    `    return vim.lsp.rpc.start({ ${options.lsp.map(lua).join(", ")} }, dispatchers, { cwd = config.root_dir })`,
+    `    return vim.lsp.rpc.start({ ${
+      options.lsp.map(lua).join(", ")
+    } }, dispatchers, { cwd = (config or {}).root_dir })`,
     "  end,",
     "  filetypes = { \"effectscript\" },",
     "  root_markers = { \"tsconfig.json\", \"package.json\", \".git\" },",
@@ -188,12 +205,28 @@ const neovimAction = (editor: Detected, options: PlanOptions): Action => {
   }
 }
 
+const begin = `# >>> EffectScript (written by ${marker}; delete this block to opt out)`
+const finish = `# <<< EffectScript (${marker})`
+
+/** Whether a parsed `languages.toml` already has the user's own EffectScript setup. */
+const userOwned = (config: Record<string, unknown>): string | undefined => {
+  const servers = config["language-server"] as Record<string, unknown> | undefined
+  if (servers !== undefined && "efx" in servers) return "it defines a language server named efx"
+  const languages = (config.language ?? []) as Array<Record<string, unknown>>
+  for (const language of languages) {
+    if (language.name === "effectscript") return "it defines an effectscript language"
+    if (Array.isArray(language["file-types"]) && language["file-types"].includes("efx")) {
+      return `its language ${String(language.name)} handles .efx files`
+    }
+  }
+  return undefined
+}
+
 const helixAction = (editor: Detected, options: PlanOptions): Action => {
   const toml = path.join(editor.configDir!, "languages.toml")
   const block = [
-    "",
-    `# EffectScript (${marker})`,
-    "[language-server.efx]",
+    begin,
+    "[language-server.effectscript-lsp]",
     `command = ${JSON.stringify(options.lsp[0])}`,
     `args = [${options.lsp.slice(1).map((a) => JSON.stringify(a)).join(", ")}]`,
     "",
@@ -202,9 +235,9 @@ const helixAction = (editor: Detected, options: PlanOptions): Action => {
     "scope = \"source.efx\"",
     "file-types = [\"efx\"]",
     "roots = [\"tsconfig.json\", \"package.json\"]",
-    "language-servers = [\"efx\"]",
+    "language-servers = [\"effectscript-lsp\"]",
     "grammar = \"typescript\"",
-    ""
+    finish
   ].join("\n")
   const queries = path.join(editor.configDir!, "runtime", "queries", "effectscript")
   return {
@@ -213,13 +246,31 @@ const helixAction = (editor: Detected, options: PlanOptions): Action => {
     apply: () =>
       attempt(() => {
         const current = fs.existsSync(toml) ? fs.readFileSync(toml, "utf8") : ""
-        const hasLanguage = /^\s*name\s*=\s*"effectscript"\s*$/m.test(current)
+        const start = current.indexOf(begin)
+        const stop = current.indexOf(finish)
+        const ours = start !== -1 && stop > start
+        // the user's config without our block, which must parse on its own (review I8)
+        const theirs = ours ? current.slice(0, start) + current.slice(stop + finish.length) : current
+        let parsed: Record<string, unknown>
+        try {
+          parsed = parseToml(theirs) as Record<string, unknown>
+        } catch {
+          return { status: "skipped", detail: `${toml} doesn't parse; efx setup leaves it alone` }
+        }
+        const owned = userOwned(parsed)
+        if (owned !== undefined) return { status: "skipped", detail: `${toml}: ${owned}` }
+        const next = ours
+          ? current.slice(0, start) + block + current.slice(stop + finish.length)
+          : `${current}${current === "" || current.endsWith("\n") ? "" : "\n"}${current === "" ? "" : "\n"}${block}\n`
+        parseToml(next)
         const missing = ["highlights", "textobjects", "indents", "locals", "injections"]
           .filter((q) => !fs.existsSync(path.join(queries, `${q}.scm`)))
-        if (hasLanguage && missing.length === 0) return { status: "skipped", detail: "already set up" }
-        if (!hasLanguage) {
+        if (next === current && missing.length === 0) return { status: "skipped", detail: "already set up" }
+        if (next !== current) {
           fs.mkdirSync(editor.configDir!, { recursive: true })
-          fs.writeFileSync(toml, `${current}${current === "" || current.endsWith("\n") ? "" : "\n"}${block}`)
+          const temp = `${toml}.${process.pid}.tmp`
+          fs.writeFileSync(temp, next)
+          fs.renameSync(temp, toml)
         }
         fs.mkdirSync(queries, { recursive: true })
         for (const q of missing) fs.writeFileSync(path.join(queries, `${q}.scm`), "; inherits: typescript\n")

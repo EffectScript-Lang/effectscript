@@ -166,7 +166,7 @@ const verifier = (cwd: string, options: ConvertCommandOptions, io: Output): (() 
  * @since 4.0.0
  * @category convert
  */
-export const convertProject = (cwd: string, options: ConvertCommandOptions, io: Output): number => {
+export const convertProject = async (cwd: string, options: ConvertCommandOptions, io: Output): Promise<number> => {
   const isGit = gitIn(cwd, ["rev-parse", "--is-inside-work-tree"]).stdout.trim() === "true"
   if (options.write && !isGit) {
     io.err("efx convert --write needs a git repository: it works on a new branch, so nothing is lost")
@@ -266,7 +266,7 @@ export const convertProject = (cwd: string, options: ConvertCommandOptions, io: 
     } else if (targets.length === 0) {
       io.out("AI pass: nothing was left as TypeScript")
     } else {
-      const { kept, reverted } = aiPass(cwd, targets, agent, verify, options.timeout ?? 300, io)
+      const { kept, reverted } = await aiPass(cwd, targets, agent, verify, options.timeout ?? 300, io)
       io.out(`AI pass: kept ${kept} edit(s), reverted ${reverted}`)
     }
   }

@@ -82,3 +82,36 @@ reads `plugin/*.lua` from its config, and Helix reads `languages.toml` plus quer
     restored.
 - **Nothing leaves the machine** except through the agent the user installed and configured. With
   no agent installed, the mechanical conversion stands and `efx` says so.
+
+## Amendment 1 (Plan 15 final review)
+
+- **The AI pass never deletes what existed before.**
+  - It records every path first (ignored ones included) and restores the files git saw. Only
+    then does it list again, and only new paths may be removed. Ignored files such as `.env`
+    survive an agent that empties `.gitignore`. Edits to ignored files can't be undone.
+  - Git listings use a large buffer, and a git failure aborts the pass rather than acting on a
+    partial list.
+- **Agents run in their own process group,** which is killed on timeout and after the agent
+  exits, so nothing it started edits files after verification. A target the agent deletes or
+  renames is restored.
+- **Agent flags:**
+  - `codex exec --sandbox workspace-write` (codex-cli 0.160 removed `--full-auto`);
+  - `claude … --add-dir <skill>`;
+  - `gemini --approval-mode auto_edit --include-directories <skill>`.
+
+  The skill copy lives in the git directory.
+- **Setup:**
+  - An agent is linked only to an installed EffectScript skill, and a linked shared directory (a
+    checkout) is never written through.
+  - `--project` keeps a project's own skill of the same name.
+  - The `.vsix` is resolved only when an extension is installed, so listing writes nothing.
+- **Helix:** the config is parsed (`smol-toml`), and a user's own `efx` server, `effectscript`
+  language or `.efx` file type is left alone. The server id is `effectscript-lsp`. Our block sits
+  between markers, is rewritten on later runs, is validated before writing, and is written
+  atomically.
+- **Neovim:** the plugin returns early before 0.11, and reads `(config or {}).root_dir` (0.11
+  passes no config).
+- **Editor configs use `efx lsp`** when the `efx` on PATH is this `efx`, so they survive
+  upgrades.
+- **Windows:** commands and agents are called through quoted command lines (`.cmd` shims and
+  paths with spaces), with a single-line prompt.

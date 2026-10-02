@@ -36,7 +36,7 @@ const setup = (home: string, found: ReadonlyArray<Detected>, extra: Partial<Para
   plan(found, {
     home,
     skill,
-    vsix: "/tmp/effectscript.vsix",
+    vsix: () => "/tmp/effectscript.vsix",
     lsp: ["efx", "lsp"],
     exec: (command, args) => spawnSync(command, [...args], { encoding: "utf8" }),
     ...extra
@@ -97,7 +97,7 @@ describe("efx setup actions (Plan 15 Task 2, ADR-0052)", () => {
     const found: Array<Detected> = [{ kind: "editor", id: "vscode", name: "VS Code", cli: code, evidence: code }]
     expect(run(setup(home, found))).toEqual([["vscode", "done"]])
     expect(run(setup(home, found))).toEqual([["vscode", "skipped"]])
-    const noVsix = setup(home, found, { vsix: undefined })[0]!
+    const noVsix = setup(home, found, { vsix: () => undefined })[0]!
     expect(noVsix.apply().status).toBe("skipped")
   })
 
@@ -115,7 +115,7 @@ describe("efx setup actions (Plan 15 Task 2, ADR-0052)", () => {
     const file = path.join(home, ".config/nvim/plugin/effectscript.lua")
     const text = fs.readFileSync(file, "utf8")
     expect(text).toContain("vim.lsp.enable(\"efx\")")
-    expect(text).toContain("cwd = config.root_dir")
+    expect(text).toContain("cwd = (config or {}).root_dir")
     expect(run(setup(home, nvim))).toEqual([["neovim", "skipped"]])
     fs.writeFileSync(file, "-- my own\n")
     const outcome = setup(home, nvim)[0]!.apply()
@@ -156,5 +156,126 @@ describe("efx setup actions (Plan 15 Task 2, ADR-0052)", () => {
     expect(outcomes.map((o) => o.status)).toEqual(["manual", "manual"])
     expect(outcomes[1]!.detail).toMatch(/LSP4IJ/)
     expect(fs.readdirSync(home)).toEqual([])
+  })
+})
+
+describe("efx setup review fixes (Plan 15 final review)", () => {
+  it("links an agent only to an installed EffectScript skill (I5)", () => {
+    const home = temp()
+    const shared = path.join(home, ".agents/skills/effectscript")
+    fs.mkdirSync(shared, { recursive: true })
+    fs.writeFileSync(path.join(shared, "SKILL.md"), "---\nname: other\n---\n")
+    const foreign = setup(home, agents(home)).find((a) => a.id === "skill:claude")!.apply()
+    expect(foreign).toMatchObject({ status: "skipped" })
+    expect(fs.existsSync(path.join(home, ".claude/skills/effectscript"))).toBe(false)
+    const empty = temp()
+    // only the agent's action, without the shared skill first
+    const missing = setup(empty, agents(empty)).find((a) => a.id === "skill:claude")!.apply()
+    expect(missing.status).toBe("skipped")
+    expect(missing.detail).toMatch(/isn't installed/)
+    expect(fs.existsSync(path.join(empty, ".claude/skills/effectscript"))).toBe(false)
+  })
+
+  it("never writes through a shared skill directory that is a link (I6)", () => {
+    const home = temp()
+    const checkout = path.join(temp(), "skills/effectscript")
+    fs.mkdirSync(checkout, { recursive: true })
+    fs.writeFileSync(path.join(checkout, "SKILL.md"), "---\nname: effectscript\n---\nmy uncommitted edit\n")
+    fs.mkdirSync(path.join(home, ".agents/skills"), { recursive: true })
+    fs.symlinkSync(checkout, path.join(home, ".agents/skills/effectscript"))
+    const outcome = setup(home, agents(home))[0]!.apply()
+    expect(outcome.status).toBe("skipped")
+    expect(fs.readFileSync(path.join(checkout, "SKILL.md"), "utf8")).toContain("my uncommitted edit")
+  })
+
+  it("keeps a Helix config that already defines the server or the language, and writes valid TOML (I8)", async () => {
+    const { parse } = await import("smol-toml")
+    for (
+      const existing of [
+        "[language-server.efx]\ncommand = \"something-else\"\n",
+        "[[language]]\nname = 'effectscript' # mine\nscope = \"source.efx\"\n",
+        "[[language]]\nname = \"mine\"\nfile-types = [\"efx\"]\n"
+      ]
+    ) {
+      const home = temp()
+      const config = path.join(home, ".config/helix")
+      fs.mkdirSync(config, { recursive: true })
+      fs.writeFileSync(path.join(config, "languages.toml"), existing)
+      const helix: Array<Detected> = [{
+        kind: "editor",
+        id: "helix",
+        name: "Helix",
+        cli: "hx",
+        configDir: config,
+        evidence: ""
+      }]
+      const outcome = setup(home, helix)[0]!.apply()
+      expect(outcome.status, existing).toBe("skipped")
+      expect(fs.readFileSync(path.join(config, "languages.toml"), "utf8")).toBe(existing)
+    }
+    const home = temp()
+    const config = path.join(home, ".config/helix")
+    const helix: Array<Detected> = [{
+      kind: "editor",
+      id: "helix",
+      name: "Helix",
+      cli: "hx",
+      configDir: config,
+      evidence: ""
+    }]
+    setup(home, helix)[0]!.apply()
+    const parsed = parse(fs.readFileSync(path.join(config, "languages.toml"), "utf8")) as any
+    expect(parsed["language-server"]["effectscript-lsp"].command).toBe("efx")
+  })
+
+  it("rewrites the Helix block it owns when the efx command changes (I9)", () => {
+    const home = temp()
+    const config = path.join(home, ".config/helix")
+    const helix: Array<Detected> = [{
+      kind: "editor",
+      id: "helix",
+      name: "Helix",
+      cli: "hx",
+      configDir: config,
+      evidence: ""
+    }]
+    setup(home, helix)[0]!.apply()
+    const outcome = setup(home, helix, { lsp: ["/opt/efx/bin/efx", "lsp"] })[0]!.apply()
+    expect(outcome.status).toBe("done")
+    const toml = fs.readFileSync(path.join(config, "languages.toml"), "utf8")
+    expect(toml).toContain("/opt/efx/bin/efx")
+    expect(toml.match(/efx setup/g)).toHaveLength(2) // one begin and one end marker, not two blocks
+  })
+
+  it("writes a Neovim plugin that does nothing on Neovim before 0.11 (I10)", () => {
+    const home = temp()
+    const nvim: Array<Detected> = [{
+      kind: "editor",
+      id: "neovim",
+      name: "Neovim",
+      cli: "nvim",
+      configDir: path.join(home, ".config/nvim"),
+      evidence: ""
+    }]
+    setup(home, nvim)[0]!.apply()
+    const lua = fs.readFileSync(path.join(home, ".config/nvim/plugin/effectscript.lua"), "utf8")
+    expect(lua).toContain("if vim.fn.has(\"nvim-0.11\") == 0 then")
+    expect(lua).toContain("(config or {}).root_dir")
+  })
+
+  it("resolves the .vsix only when the extension is actually installed (I12)", () => {
+    const home = temp()
+    let resolved = 0
+    const code = fakeCode(home)
+    const found: Array<Detected> = [{ kind: "editor", id: "vscode", name: "VS Code", cli: code, evidence: code }]
+    const actions = setup(home, found, {
+      vsix: () => {
+        resolved++
+        return "/tmp/effectscript.vsix"
+      }
+    })
+    expect(resolved).toBe(0)
+    actions[0]!.apply()
+    expect(resolved).toBe(1)
   })
 })

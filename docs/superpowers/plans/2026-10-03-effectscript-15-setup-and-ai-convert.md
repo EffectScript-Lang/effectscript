@@ -130,3 +130,48 @@ Builds on ADR-0038 (the split), ADR-0040 (`efx lsp`), ADR-0041 (`.vsix`) and ADR
   couldn't change at all aren't sent to the agent yet.
 - **Gates and commits:** gates run per path and commits name their paths, because the
   living-docs session works in the same tree.
+
+**Final review** (fresh Opus reviewer): 2 Critical, 12 Important. One fix pass, test first.
+
+- **Fixed:**
+  - **C1:** an agent that emptied `.gitignore` made ignored files (`.env`, local databases)
+    look new, and they were deleted. Paths are now recorded first, files restored first, and
+    only new paths removed.
+  - **C2:** a truncated `git ls-files` (over 1 MiB) could delete unrelated files. Listings now use
+    a large buffer and abort on failure.
+  - **I1:** codex flags.
+  - **I2:** the skill copy lives in the git directory, with `--add-dir`/`--include-directories`.
+  - **I3:** the agent's process group is killed.
+  - **I4:** a deleted or renamed target is restored.
+  - **I5:** links only to an installed skill.
+  - **I6:** never writes through a linked shared directory.
+  - **I7:** `--project` guard.
+  - **I8:** Helix: parsed config, the user's own setup kept, namespaced server, atomic writes.
+  - **I9:** `efx lsp` preferred when it's this `efx`, and the Helix block is rewritten.
+  - **I10:** Neovim version guard.
+  - **I11:** quoted Windows command lines.
+  - **I12:** lazy `.vsix`.
+  - **Spec §7.5's body** now matches what was built.
+- One finding came from the test harness rather than the code: concurrent tests and `afterEach`
+  cleanup deleted each other's temporary projects. Cleanup moved to `afterAll`.
+
+**Deferred minors:**
+
+- **Detection:**
+  - `CLAUDE_CONFIG_DIR`, `CODEX_HOME` and `NVIM_APPNAME` are ignored;
+  - a relative `XDG_CONFIG_HOME` is used;
+  - opencode's Windows path isn't checked.
+- **`--only` and `--agent`:** unknown ids aren't validated.
+- **Upgrades:** "already installed" skips upgrading the `.vsix` and stale skill files.
+- **Windows links:** junctions aren't used.
+- **The AI prompt:** line numbers refer to the original `.ts`.
+- **`--timeout`:** 0 or negative values aren't validated.
+- **Agent output:** it is discarded.
+- **What restoring loses:**
+  - the exec bit;
+  - symlink type;
+  - git index state;
+  - edits to ignored files.
+- **Memory:** the snapshot holds the repository in memory.
+- **Gemini/opencode flags:** unverified (not installed); `gemini -p` may be deprecated.
+- **Interactive EOF** isn't handled explicitly.
