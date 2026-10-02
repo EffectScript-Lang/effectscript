@@ -61,10 +61,11 @@ export const check = Command.make("check", {
 
 /** Run a .efx or .ts file */
 export const run = Command.make("run", {
+  runtime: Flag.Literals("runtime", ["node", "bun"]).pipe(Flag.optional, Flag.withDescription("node or bun (default: bun when the project has @effect/platform-bun)")),
   file: Argument.String("file").pipe(Argument.withDescription("The entry file")),
-  args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("Arguments for the program (after --)"))
-}, effect ({ file, args }) => {
-  await exitWith(runFile([file, ...args]))
+  args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("Arguments for the program"))
+}, effect ({ runtime, file, args }) => {
+  await exitWith(runFile([file, ...args], runtime._tag === "Some" ? runtime.value : undefined))
 }) |> Command.withDescription("Run a .efx or .ts file")
 
 /** Convert TypeScript files with Effect to EffectScript (spec §7.5) */

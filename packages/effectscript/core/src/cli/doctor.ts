@@ -9,6 +9,7 @@ import * as fs from "node:fs"
 import { createRequire } from "node:module"
 import * as path from "node:path"
 import { member, parseJsonc } from "./jsonc.ts"
+import { defaultRuntime } from "./run.ts"
 
 interface Check {
   readonly name: string
@@ -54,6 +55,7 @@ export const doctor = (cwd: string, out: (line: string) => void): number => {
     optional: true,
     detail: "optional: the Bun integration (bun run, bun test) uses it (https://bun.sh)"
   })
+  checks.push({ name: `efx run uses ${defaultRuntime(cwd) === "bun" ? "Bun" : "Node"}`, ok: true, detail: "" })
   const hasPackage = fs.existsSync(path.join(cwd, "package.json"))
   checks.push({ name: "package.json", ok: hasPackage, detail: "run efx in a project: npm init, then efx init" })
   if (hasPackage) {

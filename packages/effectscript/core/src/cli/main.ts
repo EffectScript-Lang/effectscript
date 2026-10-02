@@ -93,14 +93,15 @@ export const run = pipe(
   Command.make(
     "run",
     {
+      runtime: Flag.Literals("runtime", ["node", "bun"]).pipe(
+        Flag.optional,
+        Flag.withDescription("node or bun (default: bun when the project has @effect/platform-bun)")
+      ),
       file: Argument.String("file").pipe(Argument.withDescription("The entry file")),
-      args: Argument.String("args").pipe(
-        Argument.variadic(),
-        Argument.withDescription("Arguments for the program (after --)")
-      )
+      args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("Arguments for the program"))
     },
-    Effect.fnUntraced(function*({ file, args }) {
-      yield* exitWith(runFile([file, ...args]))
+    Effect.fnUntraced(function*({ runtime, file, args }) {
+      yield* exitWith(runFile([file, ...args], runtime._tag === "Some" ? runtime.value : undefined))
     })
   ),
   Command.withDescription("Run a .efx or .ts file")

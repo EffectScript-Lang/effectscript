@@ -95,8 +95,11 @@ export const printFile = (file: string, to: "ts" | "efx" | undefined): Printed =
 export const passthrough = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
   const [command, ...rest] = argv
   if (rest.includes("--")) return argv
-  if (command === "run" && rest.length > 1 && !rest[0]!.startsWith("-")) {
-    return ["run", rest[0]!, "--", ...rest.slice(1)]
+  if (command === "run") {
+    // the first argument that isn't an `efx run` flag is the file; everything after it passes through
+    let i = 0
+    while (i < rest.length && rest[i]!.startsWith("-")) i += rest[i] === "--runtime" ? 2 : 1
+    return i < rest.length - 1 ? ["run", ...rest.slice(0, i + 1), "--", ...rest.slice(i + 1)] : argv
   }
   const help = rest.length === 1 && (rest[0] === "--help" || rest[0] === "-h")
   if (command === "check" && rest.length > 0 && !help) return ["check", "--", ...rest]
