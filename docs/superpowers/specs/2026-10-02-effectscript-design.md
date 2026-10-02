@@ -2,7 +2,7 @@
 
 - **Status:** Draft for review
 - **Date:** 2026-10-02
-- **Location:** `packages/effectscript/*` in the `gunta/effect-lang` fork of the Effect monorepo
+- **Location:** `packages/effectscript/*` in the `EffectScript-Lang/effect-lang` fork of the Effect monorepo (ADR-0036)
 - **Decisions:** the reasons behind this design are recorded as ADRs in `docs/adr/`. When this
   spec and an accepted ADR disagree, the ADR wins and this spec is fixed.
 
@@ -1272,7 +1272,7 @@ efx convert                 # this repo → EffectScript (mechanical; add --ai f
 **Channels:**
 
 - **npm:** `npm i -D effectscript` (project-local; `npx`/`bunx effectscript` also work).
-- **Homebrew:** `brew install effectscript`, from the `gunta/tap` tap first and homebrew-core
+- **Homebrew:** `brew install effectscript`, from the `EffectScript-Lang/homebrew-tap` tap first (`brew install effectscript-lang/tap/effectscript`, ADR-0036) and homebrew-core
   later.
 - **Install script:** `curl -fsSL https://effectscript.dev/install | sh`, served by the site.
 - **Later:** Windows via winget/scoop.

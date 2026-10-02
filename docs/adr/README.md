@@ -47,6 +47,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0033](0033-cli-conventions-and-convert-verification.md) | CLI argument passthrough and `efx convert` verification | Accepted |
 | [0034](0034-efx-run-runtime-selection.md) | `efx run` picks Bun only when the project can run `main` on Bun | Accepted |
 | [0035](0035-import-efx-with-its-extension.md) | Import `.efx` modules with their extension | Accepted |
+| [0036](0036-github-coordinates-under-effectscript-lang.md) | GitHub coordinates live under the EffectScript-Lang organization | Accepted |
 
 ## Template
 
