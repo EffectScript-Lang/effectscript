@@ -1422,6 +1422,15 @@ the diff of newly exposed names for review, and nothing becomes a builtin unrevi
 
 ## 8. AI skill (`packages/effectscript/core/skills/effectscript/`)
 
+**Status (Plan 14, ADR-0051):** built.
+
+- `references/syntax.md` and `references/effect-docs.md` are generated: from the fixtures, and
+  from the Effect docs in EffectScript (`@effectscript/docs`, ADR-0050).
+- Every hand-written example compiles and type-checks against `effect` in the tests.
+- `efx skill` installs the skill into `.claude/skills` (project), `~/.claude/skills`
+  (`--global`), or `--dir`.
+- `efx setup` (Plan 15) adds the other agents.
+
 - `SKILL.md`: when to use EffectScript, the core rules (`effect`/`await`/`throw`, services, errors,
   schemas, layers, `main`, `match`, `|>`), and a short decision table that maps the `LLMS.md`
   best practices to EffectScript ("prefer services", "errors are `error` declarations", "parse
@@ -1614,7 +1623,9 @@ The order was revised after the plan review (ADR-0016).
 8. **Language tooling completion (Plan 11):** the language server for other editors (`efx lsp`),
    the `await` guardrails in every editor, and the VS Code commands and `.vsix`
    (ADR-0039–0041).
-9. **AI skill:** `SKILL.md` + references, generated syntax reference, and `efx skill`.
+9. **AI skill (Plan 14, done):** `SKILL.md` + references, generated syntax reference, and
+   `efx skill` (ADR-0051). Also done: the Effect docs and examples in EffectScript, a parallel
+   corpus for agents and training (Plan 13, ADR-0050).
 10. **Site:** VS Code-style before/after gallery, Monaco two-way playground, and the narrative
    sections. Every claim links to evidence (review R15).
 11. **Monorepo registration and release prep:** §10 surfaces, changeset, README.

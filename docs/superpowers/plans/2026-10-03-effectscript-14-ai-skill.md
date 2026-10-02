@@ -101,3 +101,23 @@ it. It contains:
 ### Task 4: Docs
 
 - Spec §8 status, COMPATIBILITY row (shared, so ping first), and this plan's execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Generated references are dprint-formatted by the generator.** `pnpm lint` formats every
+  markdown file, so unformatted output would always look stale.
+- **The examples are type-checked against the workspace `effect`, not only compiled.** That
+  caught two mistakes before they shipped: a missing `needs Users`, and the compiler bug below.
+- **A compiler bug was found and fixed:** an `effect` arrow whose expression body starts on the
+  next line returned `undefined` (ASI after `return`). The body is now parenthesized
+  (`c45e4aa78`, with a regression test).
+- **The reverse compiler turns the new parenthesized form into a block-bodied arrow.** That is
+  correct, but `effect (x) =>\n expr` would read better. It is deferred to polish.
+- **Gates run per path during this plan,** because another session is editing the same working
+  tree. The repository-wide gates run again at the end.
+- **`main.efx` is shared** with the living-docs session (Plan 12). `skill` was added after its
+  `docs` command, coordinated by message.
