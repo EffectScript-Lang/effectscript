@@ -18,6 +18,15 @@ import { toTypeScript } from "../compile.ts"
 import { parse } from "../parser/parse.ts"
 import { bareTypes, excludedNames, preludeFunctions, preludeModules, serviceTags } from "../prelude/tables.ts"
 import type { ConvertOptions } from "./context.ts"
+import { runtimes } from "./main.ts"
+
+/** The runtime imports `main` adds (`NodeRuntime`, `NodeServices`, …). */
+const runtimeImports = new Map(
+  Object.values(runtimes).flatMap((r) => [
+    [r.runtime, r.module] as const,
+    ...(r.services === undefined ? [] : [[r.services, r.module] as const])
+  ])
+)
 
 interface Group {
   readonly name: string
@@ -50,7 +59,8 @@ const groupsOf = (program: Node): Array<Group> => {
       if (specifier.importKind === "type") continue
       const name = importedName(specifier)
       if (specifier.local.name !== name) continue
-      if ((preludeModules.get(name) ?? preludeFunctions.get(name)) !== statement.source.value) continue
+      const module = preludeModules.get(name) ?? preludeFunctions.get(name) ?? runtimeImports.get(name)
+      if (module !== statement.source.value) continue
       groups.set(name, { ...group(name), specifier: { statement, node: specifier } })
     }
   }

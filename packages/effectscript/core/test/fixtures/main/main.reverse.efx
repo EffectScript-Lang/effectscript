@@ -1,11 +1,9 @@
-import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Effect } from "effect"
-declare const program: Effect.Effect<void>
+declare const program: Effect<void>
 
 effect helper() {
   return 1
 }
-NodeRuntime.runMain(effect {
+main {
   await program
   globalThis.console.log("done")
-}.pipe(provide(Layer.empty), provide(NodeServices.layer)))
+} |> provide(Layer.empty)

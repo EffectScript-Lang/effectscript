@@ -15,6 +15,7 @@ import { classShape, convertClass } from "./classes.ts"
 import type { ConvertNote, ConvertOptions, ReverseCtx } from "./context.ts"
 import { makeVisit, visitProgram } from "./effects.ts"
 import { applyPrelude } from "./imports.ts"
+import { directive, leadingComments } from "./main.ts"
 import { importedLocal } from "./origin.ts"
 import { topicsRoundTrip } from "./pipes.ts"
 import { convertService } from "./service.ts"
@@ -38,7 +39,7 @@ export interface ConvertResult {
  * @category reverse
  */
 export const toEffectScript = (source: string, options: ConvertOptions = {}): ConvertResult =>
-  convert(source, options, false)
+  convert(source, options, new Set())
 
 const binderNames = new Set(["defect", "error"])
 
@@ -56,7 +57,7 @@ const bindersClash = (program: Node, binders: ReadonlySet<Node>): boolean => {
   return clash
 }
 
-const convert = (source: string, options: ConvertOptions, tryDisabled: boolean): ConvertResult => {
+const convert = (source: string, options: ConvertOptions, disabled: ReadonlySet<"try" | "main">): ConvertResult => {
   const parsed = parse(source)
   if (parsed._tag === "Failure") {
     return { code: source, notes: parsed.diagnostics.map((d) => ({ start: d.start, end: d.end, message: d.message })) }
@@ -78,7 +79,8 @@ const convert = (source: string, options: ConvertOptions, tryDisabled: boolean):
     topics: false,
     deferAllowed: false,
     binders: new Set(),
-    tryDisabled,
+    disabled,
+    telemetryDirective: false,
     namespace: "Effect",
     service: undefined
   }
@@ -115,7 +117,14 @@ const convert = (source: string, options: ConvertOptions, tryDisabled: boolean):
       (cls, visit) => topLevel.has(cls) && (convertService(ctx, cls, visit) || convertClass(ctx, cls, visit))
     )
   )
-  if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, true)
+  if (bindersClash(parsed.program, ctx.binders)) return convert(source, options, new Set([...disabled, "try"]))
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
-  return { code: applyPrelude(ctx.s.toString(), options), notes: ctx.notes }
+  if (!ctx.telemetryDirective) return { code: applyPrelude(ctx.s.toString(), options), notes: ctx.notes }
+  // the telemetry directive must end up leading: verify the imports with telemetry on, then check
+  const code = applyPrelude(ctx.s.toString(), { ...options, observability: "otlp" })
+  const found = directive.exec(code)
+  if (found === null || found.index >= leadingComments(code).length) {
+    return convert(source, options, new Set([...disabled, "main"]))
+  }
+  return { code, notes: ctx.notes }
 }

@@ -1,8 +1,4 @@
-import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Effect } from "effect"
-import { FetchHttpClient } from "effect/http"
-import { Otlp } from "effect/observability"
 // @efx observability otlp
-NodeRuntime.runMain(effect {
+main {
   await log("traced")
-}.pipe(provide(Otlp.layerFromConfig().pipe(Layer.provide([FetchHttpClient.layer, OtlpSerialization.layerJson]))), provide(NodeServices.layer)))
+}

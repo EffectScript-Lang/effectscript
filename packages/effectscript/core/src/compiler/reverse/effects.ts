@@ -19,6 +19,7 @@ import {
   slice,
   within
 } from "./context.ts"
+import { convertMain } from "./main.ts"
 import { convertMatch, matchShape } from "./match.ts"
 import { isMember } from "./origin.ts"
 import { convertPipe, inPosition, isPlainStep } from "./pipes.ts"
@@ -302,6 +303,7 @@ export const visitProgram = (ctx: ReverseCtx, program: Node, visit: Visit): void
       skip--
       return
     }
+    if (i === body.length - 1 && convertMain(ctx, program, visit)) return
     const consumed = convertSchemaRun(ctx, body, i)
     if (consumed > 0) {
       skip = consumed - 1

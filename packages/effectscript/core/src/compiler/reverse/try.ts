@@ -241,7 +241,7 @@ const typeFor = (ctx: ReverseCtx, tag: string): string | undefined => {
  * @category reverse
  */
 export const convertTry = (ctx: ReverseCtx, statement: Node, visit: Visit): boolean => {
-  if (ctx.tryDisabled) return false
+  if (ctx.disabled.has("try")) return false
   const shape = tryShape(ctx, statement)
   if (shape === undefined) return false
   // `{ self: this }` on every generated generator exactly when the `try` uses `this`

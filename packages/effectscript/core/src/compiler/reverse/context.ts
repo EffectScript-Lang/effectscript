@@ -23,6 +23,7 @@ export interface ConvertOptions {
   readonly packageRoot?: string | undefined
   readonly runtime?: Runtime | undefined
   readonly prelude?: boolean | undefined
+  readonly observability?: "otlp" | undefined
 }
 
 /**
@@ -66,8 +67,10 @@ export interface ReverseCtx {
    * them with `unused(…)`, so no other identifier may use those names (checked in `toEffectScript`).
    */
   readonly binders: Set<Node>
-  /** Set on the rerun when that check fails. */
-  readonly tryDisabled: boolean
+  /** Sugar turned off for a rerun, when a file-wide check fails after converting. */
+  readonly disabled: ReadonlySet<"try" | "main">
+  /** `main` telemetry depends on a directive that only becomes leading once imports are removed. */
+  telemetryDirective: boolean
   /** The namespace the forward compiler resolves bare builtins in at the visited position. */
   namespace: "Effect" | "Layer"
   /** The service whose layer is being visited: its `effect` members are named `Svc.member`. */
