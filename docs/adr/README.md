@@ -53,6 +53,8 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0039](0039-await-guardrails-in-the-editor.md) | The `await` guardrails in the editor | Accepted |
 | [0040](0040-standalone-language-server-and-efx-lsp.md) | A standalone language server, run by `efx lsp` | Accepted |
 | [0041](0041-vscode-extension-packaging-and-commands.md) | VS Code extension packaging and commands | Accepted |
+| [0042](0042-docs-are-tsdoc-documented-once-with-doctests.md) | Docs are TSDoc comments, written once at the definition, with Elixir-style doctests | Accepted |
+| [0043](0043-efx-docs-generator-and-blume.md) | `efx docs` is our own syntactic generator that writes Markdown for Blume | Accepted |
 
 ## Template
 
