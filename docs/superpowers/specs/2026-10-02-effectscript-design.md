@@ -1521,9 +1521,12 @@ The order was revised after the plan review (ADR-0016).
    - **6a (Plan 6):** the language-core shapes (§4.1–4.13), the §6.3 blockers, and the ADR-0030
      identity harness.
    - **6b (Plan 7):** library constructs and ambient forms (§4.14–4.15).
-7. **CLI, integrations and distribution:** the rest of `efx`, the Bun and Vite plugins, the
-   standalone binary, the Homebrew tap, the install script, `setup`/`doctor`/`convert --ai`, and
-   the examples package.
+7. **CLI, integrations and distribution (ADR-0032):**
+   - **7a (Plan 8):** the dogfooded `efx` CLI: `build`, `check`, `run`, `print`, `convert`,
+     `init`, `doctor`.
+   - **7b (Plan 9):** the Bun and Vite plugins and the examples package.
+   - **7c (Plan 10):** the standalone binary, Homebrew, the install script, `setup`,
+     `convert --ai` and `skill`.
 8. **Language tooling completion:** the language server for other editors, and VS Code commands
    and grammar polish.
 9. **AI skill:** `SKILL.md` + references, generated syntax reference, and `efx skill`.

@@ -43,6 +43,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0029](0029-otlp-through-layer-from-config.md)        | `main` telemetry uses `Otlp.layerFromConfig`                  | Accepted |
 | [0030](0030-reverse-rewrites-must-recompile-identically.md) | A reverse rewrite applies only where the forward compiler reproduces its input | Accepted |
 | [0031](0031-reverse-compiler-in-two-plans.md) | Deliver the full reverse compiler in two plans | Accepted |
+| [0032](0032-cli-integrations-distribution-in-three-plans.md) | Deliver phase 7 in three plans, with a dogfooded CLI that depends on `effect` | Accepted |
 
 ## Template
 
