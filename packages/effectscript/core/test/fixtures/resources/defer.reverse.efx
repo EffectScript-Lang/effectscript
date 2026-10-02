@@ -4,12 +4,12 @@ declare const acquire: Effect<{ readonly close: Effect<void> }, never, Scope.Sco
 
 export effect useResource() {
   const handle = await acquire
-  await addFinalizer(() => handle.close)
-  await addFinalizer(() => sync(() => {
+  defer handle.close
+  defer {
     globalThis.console.info("sync cleanup")
-  }))
+  }
   return 1
-} |> scoped
+}
 
 export effect sum(numbers: Stream.Stream<number>) {
   let total = 0
@@ -20,7 +20,7 @@ export effect sum(numbers: Stream.Stream<number>) {
   return total
 }
 
-export const block = scoped(effect {
-  await addFinalizer(() => Console.log("bye"))
+export const block = effect {
+  defer Console.log("bye")
   return 2
-})
+}

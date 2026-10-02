@@ -54,7 +54,8 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
     effectCandidates: new Set(),
     effects: new Set(),
     notes: [],
-    topics: false
+    topics: false,
+    deferAllowed: false
   }
   if (ctx.effect === undefined && ctx.schema === undefined) return { code: source, notes: [] }
   // classes first: bodies need to know which classes become `error` declarations

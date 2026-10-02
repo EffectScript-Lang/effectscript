@@ -19,6 +19,7 @@ import {
 } from "./context.ts"
 import { isMember } from "./origin.ts"
 import { convertPipe, isPlainStep } from "./pipes.ts"
+import { hasFinalizer, inFrame } from "./resources.ts"
 
 /**
  * `: Effect.fn.Return<A, E, R>` → `: A throws E needs R`. An explicit `never` error stays (`throws
@@ -68,9 +69,12 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
   if (declarator.id.type !== "Identifier" || call?.type !== "CallExpression") return false
   const head: Node = call.callee
   if (head.type !== "CallExpression" || !isMember(head.callee, ctx.effect, "fn")) return false
-  const [fn, ...pipes]: Array<Node> = call.arguments
+  const [fn, ...allPipes]: Array<Node> = call.arguments
   if (!isGenerator(fn) || declarator.id.typeAnnotation) return false
   const name: string = declarator.id.name
+  // the forward compiler adds `Effect.scoped` as the first pipe of a frame with `defer`
+  const scope = isScope(ctx, allPipes[0]) && hasFinalizer(ctx, fn.body) ? allPipes[0] : undefined
+  const pipes = scope === undefined ? allPipes : allPipes.slice(1)
   const span: Node | undefined = head.arguments[0]
   if (span?.type !== "Literal" || span.value !== name) {
     note(
@@ -96,6 +100,10 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
   declarations.add(statement)
   convertReturnType(ctx, fn.returnType)
   let previous = fn
+  if (scope !== undefined) {
+    removeKeepingComments(ctx, fn.end, scope.end)
+    previous = scope
+  }
   for (const pipe of pipes) {
     commaToPipe(ctx, separatorComma(ctx, previous.end, pipe.start), pipe)
     visit(pipe, call, false)
@@ -103,8 +111,20 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
   }
   removeKeepingComments(ctx, previous.end, call.end)
   for (const param of fn.params) visit(param, fn, false)
-  visit(fn.body, fn, true)
+  inFrame(ctx, scope !== undefined, () => visit(fn.body, fn, true))
   return true
+}
+
+const isScope = (ctx: ReverseCtx, node: Node | undefined): node is Node => isMember(node, ctx.effect, "scoped")
+
+/** `fn` alone, or `fn, Effect.scoped` when the frame has a finalizer that becomes `defer`. */
+const scopedArguments = (ctx: ReverseCtx, args: ReadonlyArray<Node>): { fn: Node; scoped: boolean } | undefined => {
+  const fn = args[0]
+  if (!isGenerator(fn)) return undefined
+  if (args.length === 1) return { fn: fn!, scoped: false }
+  return args.length === 2 && isScope(ctx, args[1]) && hasFinalizer(ctx, fn!.body)
+    ? { fn: fn!, scoped: true }
+    : undefined
 }
 
 /** `Effect.gen(function*() {…})` / `Effect.gen({ self: this }, function*() {…})` → `effect {…}`. */
@@ -117,15 +137,28 @@ const convertGen = (ctx: ReverseCtx, call: Node, parent: Node | undefined, visit
   }
   replaceKeepingComments(ctx, call.start, shape.fn.body.start, "effect ")
   removeKeepingComments(ctx, shape.fn.body.end, call.end)
-  visit(shape.fn.body, shape.fn, true)
+  inFrame(ctx, false, () => visit(shape.fn.body, shape.fn, true))
+  return true
+}
+
+/** `Effect.scoped(Effect.gen(…))` with a finalizer → `effect { … defer … }`. */
+const convertScopedGen = (ctx: ReverseCtx, call: Node, parent: Node | undefined): boolean => {
+  if (!isScope(ctx, call.callee) || call.arguments.length !== 1) return false
+  const inner: Node = call.arguments[0]
+  if (inner.type !== "CallExpression") return false
+  const shape = genShape(ctx, inner, parent)
+  if (shape === undefined || !("fn" in shape) || !hasFinalizer(ctx, shape.fn.body)) return false
+  replaceKeepingComments(ctx, call.start, shape.fn.body.start, "effect ")
+  removeKeepingComments(ctx, shape.fn.body.end, call.end)
   return true
 }
 
 /** `Effect.fnUntraced(function*(…) {…})` → `effect (…) => {…}`, or `=> e` for `{ return e }`. */
 const convertUntraced = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => {
-  if (!isMember(call.callee, ctx.effect, "fnUntraced") || call.arguments.length !== 1) return false
-  const fn: Node = call.arguments[0]
-  if (!isGenerator(fn)) return false
+  if (!isMember(call.callee, ctx.effect, "fnUntraced")) return false
+  const args = scopedArguments(ctx, call.arguments)
+  if (args === undefined) return false
+  const fn = args.fn
   if (blocked(ctx, call, "`Effect.fnUntraced`", fn, "arrow")) return false
   replaceKeepingComments(ctx, call.start, paramsOpen(ctx, fn), "effect ")
   convertReturnType(ctx, fn.returnType)
@@ -139,10 +172,10 @@ const convertUntraced = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => 
   if (expression) {
     ctx.s.update(body.start, value!.start, "=> ")
     ctx.s.remove(value!.end, body.end)
-    visit(value!, only, true)
+    inFrame(ctx, args.scoped, () => visit(value!, only, true))
   } else {
     ctx.s.appendLeft(body.start, "=> ")
-    visit(body, fn, true)
+    inFrame(ctx, args.scoped, () => visit(body, fn, true))
   }
   removeKeepingComments(ctx, body.end, call.end)
   return true
@@ -155,9 +188,10 @@ const propertyName = (key: Node): string | undefined =>
 const convertProperty = (ctx: ReverseCtx, property: Node, visit: Visit): boolean => {
   if (property.kind !== "init" || property.method === true || property.shorthand === true) return false
   const call: Node = property.value
-  if (call?.type !== "CallExpression" || call.arguments.length !== 1) return false
-  const fn: Node = call.arguments[0]
-  if (!isGenerator(fn)) return false
+  if (call?.type !== "CallExpression") return false
+  const args = scopedArguments(ctx, call.arguments)
+  if (args === undefined) return false
+  const fn = args.fn
   let keyEnd: number
   if (property.computed) {
     if (!isMember(call.callee, ctx.effect, "fnUntraced")) return false
@@ -176,7 +210,7 @@ const convertProperty = (ctx: ReverseCtx, property: Node, visit: Visit): boolean
   if (property.computed) visit(property.key, property, false)
   convertReturnType(ctx, fn.returnType)
   for (const param of fn.params) visit(param, fn, false)
-  visit(fn.body, fn, true)
+  inFrame(ctx, args.scoped, () => visit(fn.body, fn, true))
   removeKeepingComments(ctx, fn.end, call.end)
   return true
 }
@@ -206,6 +240,11 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node) => boolean)
     }
     if (node.type === "ClassDeclaration" && convertClass(node)) return
     if (node.type === "Property" && convertProperty(ctx, node, visit)) return
+    if (node.type === "CallExpression" && convertScopedGen(ctx, node, parent)) {
+      const shape = genShape(ctx, node.arguments[0], parent) as { readonly fn: Node }
+      inFrame(ctx, true, () => visit(shape.fn.body, shape.fn, true))
+      return
+    }
     if (
       node.type === "CallExpression" &&
       (convertPipe(ctx, node, parent, visit) || convertGen(ctx, node, parent, visit) ||

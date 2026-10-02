@@ -58,6 +58,8 @@ export interface ReverseCtx {
   readonly notes: Array<ConvertNote>
   /** Whether `($) => …` pipe steps become `%` steps (see `topicsRoundTrip`). */
   topics: boolean
+  /** Whether the generator frame being visited gets its scope back from the forward compiler. */
+  deferAllowed: boolean
 }
 
 /**
