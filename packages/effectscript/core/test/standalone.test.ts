@@ -4,6 +4,7 @@ import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { lspSession } from "./utils/lspScript.ts"
 
 const root = path.join(import.meta.dirname, "..")
 const examples = path.join(root, "../examples")
@@ -120,6 +121,22 @@ describe.skipIf(!hasBun)("the standalone binary (Plan 10 Task 3, ADR-0037)", () 
     } finally {
       fs.chmodSync(readonly, 0o700)
     }
+  })
+
+  it("serves LSP with its own TypeScript in a project without node_modules (ADR-0040)", async () => {
+    const text = "const n: number = 1\nexport effect f() {\n  return n\n}\n"
+    const dir = lone("a.efx", text)
+    const session = await lspSession(binary, ["lsp", "--stdio"], {
+      dir,
+      file: "a.efx",
+      text,
+      offset: text.indexOf("n\n}"),
+      env
+    })
+    expect(session.stderr).not.toMatch(/Error/)
+    expect(session.replies.get(1).result.capabilities.hoverProvider).toBeTruthy()
+    expect(JSON.stringify(session.replies.get(2).result.contents)).toContain("const n: number")
+    expect(session.logs.join("\n")).toMatch(/TypeScript 6\.\d+\.\d+, bundled with the language server/)
   })
 
   it("packages archives with matching checksums", () => {

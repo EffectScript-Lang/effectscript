@@ -13,6 +13,7 @@ import { run as runFile } from "./run.ts"
 import { convertProject } from "../convert/project.ts"
 import { doctor as checkSetup } from "./doctor.ts"
 import { initProject } from "./init.ts"
+import { lsp as runLanguageServer } from "./lsp.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
 export error ExitCode {
@@ -101,9 +102,16 @@ export command doctor() {
   await exitWith(checkSetup(process.cwd(), (line) => process.stdout.write(`${line}\n`)))
 }
 
+/** Run the EffectScript language server (for Neovim, Helix, Zed and other LSP editors) */
+export const lsp = Command.make("lsp", {
+  stdio: Flag.Boolean("stdio").pipe(Flag.withDefault(true), Flag.withDescription("Talk LSP over stdin and stdout (the default)"))
+}, effect () => {
+  await exitWith(runLanguageServer(process.cwd()))
+}) |> Command.withDescription("Run the EffectScript language server over stdio")
+
 export const efx = Command.make("efx")
   |> Command.withDescription("EffectScript: TypeScript with Effect as native syntax")
-  |> Command.withSubcommands([build, check, run, print, convert, init, doctor])
+  |> Command.withSubcommands([build, check, run, print, convert, init, doctor, lsp])
 
 main {
   // without a command, show the help; `run`/`check` pass their arguments through (ADR-0033)

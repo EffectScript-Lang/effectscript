@@ -4,6 +4,7 @@
  * @since 4.0.0
  */
 import { spawnSync } from "node:child_process"
+import * as fs from "node:fs"
 import { createRequire } from "node:module"
 import * as path from "node:path"
 import { standalone } from "./host.ts"
@@ -42,21 +43,31 @@ export const runCheck = (
 }
 
 /**
- * `efx-tsc` from `@effectscript/language`, resolved from the project, then from `efx` itself.
+ * A bin of `@effectscript/language` (default `efx-tsc`), resolved from the project, then from
+ * `efx` itself.
  *
  * @since 4.0.0
  * @category cli
  */
-export const languageBin = (cwd: string = process.cwd(), fromSelf = true): string | undefined => {
-  for (const base of [path.join(cwd, "package.json"), ...(fromSelf ? [import.meta.url] : [])]) {
-    try {
-      return path.join(
-        path.dirname(createRequire(base).resolve("@effectscript/language/package.json")),
-        "bin/efx-tsc.js"
-      )
-    } catch {
-      // try the next location
-    }
+export const languageBin = (
+  cwd: string = process.cwd(),
+  fromSelf = true,
+  bin = "efx-tsc.js"
+): string | undefined => {
+  // the project's own install, found by walking up: `require.resolve` would also search NODE_PATH
+  for (let dir = path.resolve(cwd);; dir = path.dirname(dir)) {
+    const language = path.join(dir, "node_modules", "@effectscript", "language")
+    if (fs.existsSync(path.join(language, "package.json"))) return path.join(language, "bin", bin)
+    if (path.dirname(dir) === dir) break
   }
-  return undefined
+  if (!fromSelf) return undefined
+  try {
+    return path.join(
+      path.dirname(createRequire(import.meta.url).resolve("@effectscript/language/package.json")),
+      "bin",
+      bin
+    )
+  } catch {
+    return undefined
+  }
 }

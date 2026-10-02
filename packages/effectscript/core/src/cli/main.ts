@@ -13,6 +13,7 @@ import { convertProject } from "../convert/project.ts"
 import { check as checkProject } from "./check.ts"
 import { doctor as checkSetup } from "./doctor.ts"
 import { initProject } from "./init.ts"
+import { lsp as runLanguageServer } from "./lsp.ts"
 import { buildProject, passthrough, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
 
@@ -170,10 +171,27 @@ export const doctor = Command.make(
   })
 ).pipe(Command.withDescription("Report what is installed and configured for EffectScript, and what is missing"))
 
+/** Run the EffectScript language server (for Neovim, Helix, Zed and other LSP editors) */
+export const lsp = pipe(
+  Command.make(
+    "lsp",
+    {
+      stdio: Flag.Boolean("stdio").pipe(
+        Flag.withDefault(true),
+        Flag.withDescription("Talk LSP over stdin and stdout (the default)")
+      )
+    },
+    Effect.fnUntraced(function*() {
+      yield* exitWith(runLanguageServer(process.cwd()))
+    })
+  ),
+  Command.withDescription("Run the EffectScript language server over stdio")
+)
+
 export const efx = pipe(
   Command.make("efx"),
   Command.withDescription("EffectScript: TypeScript with Effect as native syntax"),
-  Command.withSubcommands([build, check, run, print, convert, init, doctor])
+  Command.withSubcommands([build, check, run, print, convert, init, doctor, lsp])
 )
 
 NodeRuntime.runMain(

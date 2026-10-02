@@ -18,6 +18,13 @@ export interface StandaloneHost {
   readonly version: string
   /** The bundled Bun preload (`effectscript/bun` plus the runtime choice), as JavaScript. */
   readonly preload: string
+  /** The bundled language server, as JavaScript (ADR-0040). */
+  readonly languageServer: string
+  /** TypeScript 6 for the language server: `lib/` file names and their embedded paths. */
+  readonly typescript: {
+    readonly version: string
+    readonly files: ReadonlyArray<readonly [name: string, embedded: string]>
+  }
 }
 
 /**
@@ -75,4 +82,32 @@ export const unpack = (dir: string, name: string, content: string): string => {
     fs.rmSync(temp, { force: true })
   }
   return file
+}
+
+/**
+ * Copies files into `dir` (`[name, source path]`), rewriting each one whose content differs, with
+ * the same atomic write as `unpack`. Returns `dir`.
+ *
+ * @since 4.0.0
+ * @category host
+ */
+export const unpackFiles = (dir: string, files: ReadonlyArray<readonly [name: string, source: string]>): string => {
+  fs.mkdirSync(dir, { recursive: true })
+  for (const [name, source] of files) {
+    const content = fs.readFileSync(source)
+    const file = path.join(dir, name)
+    try {
+      if (fs.readFileSync(file).equals(content)) continue
+    } catch {
+      // missing or unreadable: write it
+    }
+    const temp = path.join(dir, `.${name}.${process.pid}.${Date.now()}.tmp`)
+    try {
+      fs.writeFileSync(temp, content)
+      fs.renameSync(temp, file)
+    } finally {
+      fs.rmSync(temp, { force: true })
+    }
+  }
+  return dir
 }

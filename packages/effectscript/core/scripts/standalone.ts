@@ -10,6 +10,7 @@
 import { spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import * as fs from "node:fs"
+import { createRequire } from "node:module"
 import * as os from "node:os"
 import * as path from "node:path"
 
@@ -60,9 +61,32 @@ const build = (args: ReadonlyArray<string>): void => {
     )
     exec("bun", ["build", "preload.ts", "--target", "bun", "--outfile", "preload.js"], work)
     const preload = fs.readFileSync(path.join(work, "preload.js"), "utf8")
+    // `efx lsp` (ADR-0040): the language server, run on the binary's Bun with the TypeScript 6 below
+    const language = path.join(root, "../language")
+    fs.writeFileSync(
+      path.join(work, "server.ts"),
+      "import { createRequire } from \"node:module\"\n" +
+        `import { startLanguageServer } from ${JSON.stringify(path.join(language, "src/languageServer.ts"))}\n` +
+        "const typescript = process.env.EFFECTSCRIPT_TYPESCRIPT!\n" +
+        "delete process.env.BUN_BE_BUN\n" +
+        "delete process.env.EFFECTSCRIPT_TYPESCRIPT\n" +
+        "startLanguageServer(() => createRequire(import.meta.url)(typescript))\n"
+    )
+    exec("bun", ["build", "server.ts", "--target", "bun", "--external", "typescript", "--outfile", "server.js"], work)
+    const languageServer = fs.readFileSync(path.join(work, "server.js"), "utf8")
+    const tsPackage = createRequire(path.join(language, "package.json")).resolve("typescript/package.json")
+    const tsLib = path.join(path.dirname(tsPackage), "lib")
+    const tsFiles = fs.readdirSync(tsLib).filter((f) => f === "typescript.js" || /^lib\..*\.d\.ts$/.test(f)).sort()
     fs.writeFileSync(
       path.join(work, "entry.ts"),
-      `;(globalThis as any).__effectscriptStandalone = ${JSON.stringify({ version, preload })}\n` +
+      tsFiles.map((f, i) => `import ts${i} from ${JSON.stringify(path.join(tsLib, f))} with { type: "file" }\n`).join(
+        ""
+      ) +
+        `;(globalThis as any).__effectscriptStandalone = { ...${
+          JSON.stringify({ version, preload, languageServer })
+        }, ` +
+        `typescript: { version: ${JSON.stringify(JSON.parse(fs.readFileSync(tsPackage, "utf8")).version)}, ` +
+        `files: [${tsFiles.map((f, i) => `[${JSON.stringify(f)}, ts${i}]`).join(", ")}] } }\n` +
         `await import(${JSON.stringify(path.join(root, "src/cli/main.ts"))})\n`
     )
     fs.mkdirSync(outdir, { recursive: true })
