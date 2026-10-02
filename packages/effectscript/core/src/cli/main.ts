@@ -13,7 +13,7 @@ import { convertProject } from "../convert/project.ts"
 import { check as checkProject } from "./check.ts"
 import { doctor as checkSetup } from "./doctor.ts"
 import { initProject } from "./init.ts"
-import { buildProject, printFile, version } from "./project.ts"
+import { buildProject, passthrough, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
 
 /** A command's exit code: `runMain` exits with it, without logging (Runtime.errorExitCode). */
@@ -177,8 +177,8 @@ export const efx = pipe(
 
 NodeRuntime.runMain(
   Effect.gen(function*() {
-    // without a command, show the help
+    // without a command, show the help; `run`/`check` pass their arguments through (ADR-0033)
     const argv = process.argv.slice(2)
-    yield* Command.runWith(efx, { version })(argv.length === 0 ? ["--help"] : argv)
+    yield* Command.runWith(efx, { version })(argv.length === 0 ? ["--help"] : passthrough(argv))
   }).pipe(Effect.provide(NodeServices.layer))
 )

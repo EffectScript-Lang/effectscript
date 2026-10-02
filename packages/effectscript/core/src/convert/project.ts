@@ -7,7 +7,7 @@
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import { check } from "../cli/check.ts"
+import { languageBin, runCheck } from "../cli/check.ts"
 import { lineColumn } from "../compiler/diagnostics.ts"
 import { packageInfo } from "../project.ts"
 import { type ConversionPlan, planConversion } from "./plan.ts"
@@ -97,10 +97,30 @@ const restore = (cwd: string, plan: ConversionPlan, files: ReadonlyMap<string, s
   for (const edit of plan.edits) fs.writeFileSync(path.join(cwd, edit.file), files.get(edit.file)!)
 }
 
-/** The verification steps that apply to this project: `efx check` (with a tsconfig) and tests. */
-const verifier = (cwd: string, options: ConvertCommandOptions, io: Output): (() => boolean) | undefined => {
-  const steps: Array<() => boolean> = []
-  if (fs.existsSync(path.join(cwd, "tsconfig.json"))) steps.push(() => check(["-p", "tsconfig.json"]) === 0)
+interface Step {
+  readonly name: string
+  readonly run: () => { readonly ok: boolean; readonly output: string }
+}
+
+/**
+ * The verification steps that apply to this project (ADR-0033): `efx check` when there is a
+ * tsconfig.json and `@effectscript/language` resolves, and the test command. They run quietly.
+ */
+const verifier = (cwd: string, options: ConvertCommandOptions, io: Output): (() => string | undefined) | undefined => {
+  const steps: Array<Step> = []
+  if (fs.existsSync(path.join(cwd, "tsconfig.json"))) {
+    if (languageBin(cwd, false) === undefined) {
+      io.out("Skipping efx check: @effectscript/language isn't installed in this project")
+    } else {
+      steps.push({
+        name: "efx check",
+        run: () => {
+          const result = runCheck(["-p", "tsconfig.json"], true)
+          return { ok: result.status === 0, output: result.output }
+        }
+      })
+    }
+  }
   let test = options.test
   if (test === undefined) {
     try {
@@ -111,13 +131,27 @@ const verifier = (cwd: string, options: ConvertCommandOptions, io: Output): (() 
     }
   }
   if (test !== undefined) {
-    steps.push(() => spawnSync(test, { cwd, shell: true, stdio: "ignore" }).status === 0)
+    const command = test
+    steps.push({
+      name: command,
+      run: () => {
+        const result = spawnSync(command, { cwd, shell: true, encoding: "utf8" })
+        return { ok: result.status === 0, output: `${result.stdout ?? ""}${result.stderr ?? ""}` }
+      }
+    })
   }
   if (steps.length === 0) {
     io.out("Nothing to verify with: no tsconfig.json and no test command (pass --test)")
     return undefined
   }
-  return () => steps.every((step) => step())
+  // the name and output of the first failing step, or `undefined` when all pass
+  return () => {
+    for (const step of steps) {
+      const result = step.run()
+      if (!result.ok) return `${step.name} failed:\n${result.output.trimEnd()}`
+    }
+    return undefined
+  }
 }
 
 /**
@@ -132,7 +166,11 @@ export const convertProject = (cwd: string, options: ConvertCommandOptions, io: 
     io.err("efx convert --write needs a git repository: it works on a new branch, so nothing is lost")
     return 1
   }
-  if (options.write && !options.force && gitIn(cwd, ["status", "--porcelain"]).stdout.trim() !== "") {
+  // every untracked file counts, whatever the user's status.showUntrackedFiles (ADR-0033)
+  if (
+    options.write && !options.force &&
+    gitIn(cwd, ["status", "--porcelain", "--untracked-files=all"]).stdout.trim() !== ""
+  ) {
     io.err("efx convert --write needs a clean working tree: commit or stash your uncommitted changes (or pass --force)")
     return 1
   }
@@ -146,35 +184,62 @@ export const convertProject = (cwd: string, options: ConvertCommandOptions, io: 
     packageName,
     packageRoot: packageRoot === undefined ? undefined : path.relative(cwd, packageRoot)
   }
-  let plan = planConversion(files, planOptions)
-  report(plan, files, options, io)
+  const full = planConversion(files, planOptions)
+  report(full, files, options, io)
   if (!options.write) {
     io.out("Dry run: rerun with --write to convert on a new branch")
     return 0
   }
-  if (plan.renames.length === 0) return 0
+  if (full.renames.length === 0) return 0
+  const verify = options.verify ? verifier(cwd, options, io) : undefined
+  // a red project can't tell which conversion broke it: refuse before touching anything
+  const baseline = verify?.()
+  if (baseline !== undefined) {
+    io.err(`efx convert: the project doesn't verify before converting, so nothing was changed\n${baseline}`)
+    return 1
+  }
+  const original = gitIn(cwd, ["branch", "--show-current"]).stdout.trim()
   const switched = gitIn(cwd, ["switch", "-c", branch])
   if (switched.status !== 0) {
     io.err(`efx convert couldn't create the branch ${branch}: ${switched.stderr.trim()}`)
     return 1
   }
+  let plan = full
   apply(cwd, plan)
-  const verify = options.verify ? verifier(cwd, options, io) : undefined
-  if (verify !== undefined && !verify()) {
-    // revert converted files newest first, down to the last green state
-    const kept = plan.renames.map((r) => r.from)
-    while (kept.length > 0) {
-      const reverted = kept.pop()!
+  if (verify !== undefined && verify() !== undefined) {
+    // bisect: groups that verify are kept, files that fail alone are reverted (ADR-0033)
+    const kept: Array<string> = []
+    const tryAdd = (group: ReadonlyArray<string>): void => {
+      if (group.length === 0) return
       restore(cwd, plan, files)
-      plan = planConversion(files, { ...planOptions, only: new Set(kept) })
+      plan = planConversion(files, { ...planOptions, only: new Set([...kept, ...group]) })
       apply(cwd, plan)
-      io.out(`reverted ${reverted}: the project didn't verify with it converted`)
-      if (verify()) break
+      if (verify() === undefined) {
+        kept.push(...group)
+        return
+      }
+      if (group.length === 1) {
+        io.out(`reverted ${group[0]}: the project didn't verify with it converted`)
+        return
+      }
+      const middle = group.length >> 1
+      tryAdd(group.slice(0, middle))
+      tryAdd(group.slice(middle))
     }
-    if (kept.length === 0 && !verify()) {
-      io.err("efx convert: the project doesn't verify even without conversions; nothing was converted")
-      return 1
-    }
+    const all = full.renames.map((r) => r.from)
+    const middle = all.length >> 1
+    tryAdd(all.slice(0, middle))
+    tryAdd(all.slice(middle))
+    restore(cwd, plan, files)
+    plan = planConversion(files, { ...planOptions, only: new Set(kept) })
+    apply(cwd, plan)
+  }
+  if (plan.renames.length === 0) {
+    // nothing converted: leave the user where they were
+    gitIn(cwd, ["switch", original])
+    gitIn(cwd, ["branch", "-D", branch])
+    io.out("Nothing could be converted while keeping the project green")
+    return 0
   }
   io.out(`Converted ${plan.renames.length} file(s) on branch ${branch}: review with git status and git diff`)
   return 0

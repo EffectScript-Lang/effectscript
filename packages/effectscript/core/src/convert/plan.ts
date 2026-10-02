@@ -124,7 +124,7 @@ const rewrite = (
   const s = new MagicString(code)
   for (const literal of specifiers(code)) {
     const spec: string = literal.value
-    if (!spec.startsWith("./") && !spec.startsWith("../")) continue
+    if (!spec.startsWith("./") && !spec.startsWith("../") && spec !== "." && spec !== "..") continue
     const target = resolve(file, spec, exists)
     const to = target === undefined ? undefined : renamed.get(target)
     if (to === undefined) continue
@@ -159,6 +159,24 @@ export const planConversion = (files: ReadonlyMap<string, string>, options: Plan
     })
     if (result.code === source) skipped.push({ file, reason: "nothing to re-sugar" })
     else converted.set(file, result)
+  }
+  // never overwrite an existing file, and never let two files share a target (ADR-0033)
+  const targets = new Map<string, Array<string>>()
+  for (const file of converted.keys()) {
+    const target = file.replace(/\.tsx?$/, ".efx")
+    targets.set(target, [...(targets.get(target) ?? []), file])
+  }
+  for (const [target, sources] of targets) {
+    const reason = files.has(target)
+      ? `${target} already exists`
+      : sources.length > 1
+      ? `${sources.join(" and ")} would both become ${target}`
+      : undefined
+    if (reason === undefined) continue
+    for (const file of sources) {
+      converted.delete(file)
+      skipped.push({ file, reason })
+    }
   }
   const renamed = new Map([...converted.keys()].map((file) => [file, file.replace(/\.tsx?$/, ".efx")]))
   const renames = [...converted].map(([from, result]) => ({

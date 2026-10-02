@@ -162,3 +162,36 @@ verification and revert), `init` and `doctor`.
   - `override` and `super` are allowed in `schema`/`error`/`service` bodies.
   - `toEffectScript` moved to `reverse/convert.ts`, since the barrel rule flags `index.ts`
     modules.
+
+**Final review** (fresh Opus reviewer): 0 Critical, 5 Important. One fix pass, with tests in
+`core/test/plan8-review.test.ts`. The decisions are recorded in ADR-0033.
+
+- **Fixed:**
+  - **I1:** verification bisects the converted files and reverts only those that fail alone.
+  - **I2:** a baseline verification runs before any change, and a red project is refused. When
+    nothing converts, `convert` switches back and deletes the branch. A missing
+    `@effectscript/language` skips `efx check` with a message, and steps run quietly.
+  - **I3:** the dirty-tree check uses `--untracked-files=all`.
+  - **I4:** an existing target or a shared target is skipped, never overwritten.
+  - **I5:** `run` and `check` pass their arguments through again.
+- **Minors fixed:**
+  - `..` specifiers are rewritten.
+  - `init` reports a malformed tsconfig.json or package.json instead of claiming the project is
+    set up or crashing.
+  - The `doctor` Bun hint is corrected.
+  - The lint override covers only the generated `main.ts`, and `project.ts` imports specific
+    modules.
+
+**Deferred minors:**
+
+- Specifier forms that `convert` doesn't rewrite:
+  - `typeof import()`, `require()`, `import x = require()`;
+  - `/// <reference path>`, `vi.mock()`;
+  - template-literal `import()`, tsconfig `paths` aliases.
+
+  A green verification catches the cases that break.
+- `.mjs` maps to `.ts`; TypeScript would map it to `.mts`.
+- **JSONC edits:**
+  - Cosmetic: tabs, CRLF, and compact one-line files.
+  - `"compilerOptions": null` or `"plugins": null` produce a duplicate key.
+  - package.json is rewritten with LF line endings.

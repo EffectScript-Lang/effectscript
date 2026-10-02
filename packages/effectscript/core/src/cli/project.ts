@@ -6,7 +6,9 @@
  */
 import { readFileSync } from "node:fs"
 import * as path from "node:path"
-import { formatDiagnostic, lineColumn, toEffectScript, toTypeScript } from "../compiler/index.ts"
+import { toTypeScript } from "../compiler/compile.ts"
+import { formatDiagnostic, lineColumn } from "../compiler/diagnostics.ts"
+import { toEffectScript } from "../compiler/reverse/convert.ts"
 import { packageInfo } from "../project.ts"
 import { loadTypeScript } from "./typescript.ts"
 
@@ -81,4 +83,22 @@ export const printFile = (file: string, to: "ts" | "efx" | undefined): Printed =
     }),
     ok: true
   }
+}
+
+/**
+ * ADR-0033: `efx run <file> …` passes everything after the file to the program, and `efx check …`
+ * passes everything to `efx-tsc`, so the `--` is added before `effect/cli` parses.
+ *
+ * @since 4.0.0
+ * @category cli
+ */
+export const passthrough = (argv: ReadonlyArray<string>): ReadonlyArray<string> => {
+  const [command, ...rest] = argv
+  if (rest.includes("--")) return argv
+  if (command === "run" && rest.length > 1 && !rest[0]!.startsWith("-")) {
+    return ["run", rest[0]!, "--", ...rest.slice(1)]
+  }
+  const help = rest.length === 1 && (rest[0] === "--help" || rest[0] === "-h")
+  if (command === "check" && rest.length > 0 && !help) return ["check", "--", ...rest]
+  return argv
 }

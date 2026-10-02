@@ -8,7 +8,7 @@
 import { Runtime } from "effect"
 import { Argument, Command, Flag } from "effect/cli"
 import { check as checkProject } from "./check.ts"
-import { buildProject, printFile, version } from "./project.ts"
+import { buildProject, passthrough, printFile, version } from "./project.ts"
 import { run as runFile } from "./run.ts"
 import { convertProject } from "../convert/project.ts"
 import { doctor as checkSetup } from "./doctor.ts"
@@ -105,7 +105,7 @@ export const efx = Command.make("efx")
   |> Command.withSubcommands([build, check, run, print, convert, init, doctor])
 
 main {
-  // without a command, show the help
+  // without a command, show the help; `run`/`check` pass their arguments through (ADR-0033)
   const argv = process.argv.slice(2)
-  await Command.runWith(efx, { version })(argv.length === 0 ? ["--help"] : argv)
+  await Command.runWith(efx, { version })(argv.length === 0 ? ["--help"] : passthrough(argv))
 }

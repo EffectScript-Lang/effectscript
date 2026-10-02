@@ -56,8 +56,14 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
   let changed = false
   const tsconfigPath = path.join(cwd, "tsconfig.json")
   if (fs.existsSync(tsconfigPath)) {
-    const updated = withPlugin(fs.readFileSync(tsconfigPath, "utf8"))
-    if (updated !== undefined) {
+    const text = fs.readFileSync(tsconfigPath, "utf8")
+    const updated = withPlugin(text)
+    if (parseJsonc(text)?.kind !== "object") {
+      out(
+        `tsconfig.json isn't valid JSON (with comments): add { "name": "${plugin}" } to compilerOptions.plugins by hand`
+      )
+      changed = true
+    } else if (updated !== undefined) {
       fs.writeFileSync(tsconfigPath, updated)
       out(`tsconfig.json: added the ${plugin} plugin (editor support for .efx)`)
       changed = true
@@ -69,7 +75,13 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
   let missing: Array<string> = []
   if (fs.existsSync(pkgPath)) {
     const text = fs.readFileSync(pkgPath, "utf8")
-    const pkg = JSON.parse(text)
+    let pkg: { scripts?: Record<string, string>; dependencies?: object; devDependencies?: object }
+    try {
+      pkg = JSON.parse(text)
+    } catch {
+      out("package.json isn't valid JSON: fix it, then run efx init again")
+      return 1
+    }
     const indent = /^\{\s*\n([ \t]+)/.exec(text)?.[1] ?? "  "
     const added = scripts.filter(([name]) => pkg.scripts?.[name] === undefined)
     if (added.length > 0) {
@@ -78,7 +90,7 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
       out(`package.json: added the ${added.map(([name]) => `"${name}"`).join(" and ")} script(s)`)
       changed = true
     }
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+    const deps: Record<string, unknown> = { ...pkg.dependencies, ...pkg.devDependencies }
     missing = ["effectscript", plugin, "typescript"].filter((name) => deps[name] === undefined)
   }
   if (!changed) out("This project is already set up for EffectScript")

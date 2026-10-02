@@ -34,7 +34,7 @@
       "effect/no-import-from-barrel-package": "off"
     }
   }, {
-    "files": ["packages/effectscript/core/src/cli/**"],
+    "files": ["packages/effectscript/core/src/cli/main.ts"],
     "rules": {
       "effect/no-import-from-barrel-package": "off"
     }

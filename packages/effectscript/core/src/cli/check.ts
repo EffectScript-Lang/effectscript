@@ -11,22 +11,49 @@ import * as path from "node:path"
  * @since 4.0.0
  * @category cli
  */
-export const check = (args: ReadonlyArray<string>): number => {
-  let packageJson: string | undefined
-  for (const base of [path.join(process.cwd(), "package.json"), import.meta.url]) {
+export const check = (args: ReadonlyArray<string>): number => runCheck(args, false).status
+
+/**
+ * `efx check` with its output captured (`quiet`) for `efx convert`'s verification.
+ *
+ * @since 4.0.0
+ * @category cli
+ */
+export const runCheck = (
+  args: ReadonlyArray<string>,
+  quiet: boolean
+): { readonly status: number; readonly output: string } => {
+  const bin = languageBin()
+  if (bin === undefined) {
+    const message = "efx check needs @effectscript/language: npm i -D @effectscript/language typescript@6\n"
+    if (!quiet) process.stderr.write(message)
+    return { status: 1, output: message }
+  }
+  // `efx check` never writes files (review I2)
+  const noEmit = args.includes("--noEmit") ? [] : ["--noEmit"]
+  const result = spawnSync(process.execPath, [bin, ...args, ...noEmit], {
+    stdio: quiet ? "pipe" : "inherit",
+    encoding: "utf8"
+  })
+  return { status: result.status ?? 1, output: quiet ? `${result.stdout}${result.stderr}` : "" }
+}
+
+/**
+ * `efx-tsc` from `@effectscript/language`, resolved from the project, then from `efx` itself.
+ *
+ * @since 4.0.0
+ * @category cli
+ */
+export const languageBin = (cwd: string = process.cwd(), fromSelf = true): string | undefined => {
+  for (const base of [path.join(cwd, "package.json"), ...(fromSelf ? [import.meta.url] : [])]) {
     try {
-      packageJson = createRequire(base).resolve("@effectscript/language/package.json")
-      break
+      return path.join(
+        path.dirname(createRequire(base).resolve("@effectscript/language/package.json")),
+        "bin/efx-tsc.js"
+      )
     } catch {
       // try the next location
     }
   }
-  if (packageJson === undefined) {
-    process.stderr.write("efx check needs @effectscript/language: npm i -D @effectscript/language typescript@6\n")
-    return 1
-  }
-  const bin = path.join(path.dirname(packageJson), "bin/efx-tsc.js")
-  // `efx check` never writes files (review I2)
-  const noEmit = args.includes("--noEmit") ? [] : ["--noEmit"]
-  return spawnSync(process.execPath, [bin, ...args, ...noEmit], { stdio: "inherit" }).status ?? 1
+  return undefined
 }

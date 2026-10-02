@@ -52,7 +52,7 @@ export const doctor = (cwd: string, out: (line: string) => void): number => {
     name: bun.status === 0 ? `Bun ${bun.stdout.trim()}` : "Bun",
     ok: bun.status === 0,
     optional: true,
-    detail: "optional: efx run uses Bun when it is installed (https://bun.sh)"
+    detail: "optional: the Bun integration (bun run, bun test) uses it (https://bun.sh)"
   })
   const hasPackage = fs.existsSync(path.join(cwd, "package.json"))
   checks.push({ name: "package.json", ok: hasPackage, detail: "run efx in a project: npm init, then efx init" })
