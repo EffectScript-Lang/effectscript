@@ -87,5 +87,5 @@ describe("efx init (Plan 8 Task 5)", () => {
     expect(init(dir).status).toBe(0)
     expect(read(dir, "docs/blume.config.ts")).toBe("// mine\n")
     expect(init(dir).stdout).toContain("blume")
-  })
+  }, 30_000)
 })

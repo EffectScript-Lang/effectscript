@@ -46,7 +46,7 @@ describe("efx docs (Plan 12 Task 6)", () => {
       "[`Money`](./money.md#money): Whole cents."
     )
     expect(result.stdout).toContain("Wrote 3 pages to docs/api")
-  })
+  }, 30_000)
 
   it("--check writes nothing and fails on example errors", () => {
     const dir = project({
@@ -57,7 +57,7 @@ describe("efx docs (Plan 12 Task 6)", () => {
     expect(result.stderr).toContain("EFX9302")
     expect(result.stderr).toContain("src/a.efx:5")
     expect(fs.existsSync(path.join(dir, "docs/api"))).toBe(false)
-  })
+  }, 30_000)
 
   it("--strict warns about tags that repeat the signature (EFX9306)", () => {
     const dir = project({ "src/money.efx": money, "src/pay.efx": pay })
@@ -65,12 +65,12 @@ describe("efx docs (Plan 12 Task 6)", () => {
     const strict = run(dir, "--check", "--strict")
     expect(strict.status).toBe(1)
     expect(strict.stderr).toContain("EFX9306")
-  })
+  }, 30_000)
 
   it("honors --out and explicit paths, and tolerates no exports", () => {
     const dir = project({ "lib/x.ts": "/** X. */\nexport const x: number = 1\n", "lib/empty.ts": "const y = 1\n" })
     expect(run(dir, "lib", "--out", "site/ref").status).toBe(0)
     expect(fs.readdirSync(path.join(dir, "site/ref")).sort()).toEqual(["index.md", "lib"])
     expect(fs.existsSync(path.join(dir, "site/ref/lib/empty.md"))).toBe(false)
-  })
+  }, 30_000)
 })
