@@ -1,4 +1,4 @@
-import { type Detected } from "effectscript/setup/detect"
+import type { Detected } from "effectscript/setup/detect"
 import { type Action, plan } from "effectscript/setup/plan"
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
