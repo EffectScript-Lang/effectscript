@@ -82,7 +82,7 @@ export const decorateGuardrails = (
           const bind = bindAt(compiled(fileName)?.binds ?? [], position)
           if (bind === undefined) return getQuickInfoAtPosition(fileName, position, ...rest)
           return {
-            kind: "keyword",
+            kind: "keyword" as ts.ScriptElementKind,
             kindModifiers: "",
             textSpan: { start: bind.start, length: bind.end - bind.start },
             displayParts: [{ text: "await", kind: "keyword" }, { text: " (effect bind)", kind: "text" }],

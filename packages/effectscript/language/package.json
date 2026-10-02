@@ -41,8 +41,12 @@
   },
   "dependencies": {
     "@volar/language-core": "2.4.28",
+    "@volar/language-server": "2.4.28",
+    "@volar/language-service": "2.4.28",
     "@volar/typescript": "2.4.28",
-    "effectscript": "workspace:^"
+    "effectscript": "workspace:^",
+    "volar-service-typescript": "0.0.71",
+    "vscode-uri": "^3.2.0"
   },
   "peerDependencies": {
     "typescript": "^6.0.3"
@@ -56,6 +60,7 @@
   },
   "main": "./bin/typescript-plugin.cjs",
   "bin": {
-    "efx-tsc": "./bin/efx-tsc.js"
+    "efx-tsc": "./bin/efx-tsc.js",
+    "efx-language-server": "./bin/efx-language-server.js"
   }
 }

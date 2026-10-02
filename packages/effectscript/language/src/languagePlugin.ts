@@ -18,6 +18,8 @@ export interface EffectScriptVirtualCode extends VirtualCode {
   readonly mode: "ts" | "tsx"
   /** The effect binds of the source (ADR-0039). */
   readonly binds: ReadonlyArray<SourceRange>
+  /** The EffectScript compiler diagnostics, in source positions. */
+  readonly diagnostics: ReadonlyArray<Diagnostic>
 }
 
 /** A snapshot over a string; `runTsc` passes the `tsc.js` namespace, which has no `ScriptSnapshot`. */
@@ -60,6 +62,7 @@ export const createLanguagePlugin = (
       languageId: result.mode === "tsx" ? "typescriptreact" : "typescript",
       mode: result.mode,
       binds: result.binds,
+      diagnostics: result.diagnostics,
       snapshot: stringSnapshot(result.code),
       mappings: result.mappings as Array<CodeMapping>
     }
