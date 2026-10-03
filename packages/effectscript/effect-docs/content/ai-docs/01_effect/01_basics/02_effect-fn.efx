@@ -1,0 +1,49 @@
+/**
+ * @title Using Effect.fn and Effect.fnUntraced
+ *
+ * When writing reusable functions that return an Effect, use `Effect.fn` or
+ * `Effect.fnUntraced` to use the generator syntax.
+ *
+ * Use `Effect.fn("name")` when the function should create a tracing span. Prefer
+ * `Effect.fnUntraced` when tracing is not needed, particularly for library
+ * implementations and hot paths.
+ *
+ * **Avoid creating functions that only wrap and return an `Effect.gen`**.
+ */
+
+
+// Pass a string to Effect.fn, which will improve stack traces and also
+// attach a tracing span (using Effect.withSpan behind the scenes).
+//
+// The name string should match the function name.
+//
+// You can use `Effect.fn.Return` to specify the return type of the function.
+// It accepts the same type parameters as `Effect.Effect`.
+export effect effectFunction(n: number): string throws SomeError {
+    console.info("Received number:", n)
+
+    // Always return when raising an error, to ensure typescript understands that
+    // the function will not continue executing.
+    throw new SomeError({ message: "Failed to read the file" })
+  }
+  // Add additional functionality by passing in additional arguments.
+  // **Do not** use .pipe with Effect.fn
+  |> Effect.catch((error) => logError(`An error occurred: ${error}`))
+  |> annotateLogs({
+    method: "effectFunction"
+  })
+
+// Effect.fnUntraced avoids tracing and stack-frame capture while still reusing
+// the generator body. This is preferred for library functions that do not
+// represent a useful tracing boundary.
+export const validateBatchSize = effect (size: number): number throws SomeError => {
+  if (!Number.isInteger(size) || size <= 0) {
+    throw new SomeError({ message: "Batch size must be a positive integer" })
+  }
+  return size
+}
+
+// Use Schema.TaggedError to define a custom error
+export error SomeError {
+  message: string
+}

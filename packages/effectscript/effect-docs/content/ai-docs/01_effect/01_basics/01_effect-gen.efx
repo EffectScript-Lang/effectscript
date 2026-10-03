@@ -1,0 +1,28 @@
+/**
+ * @title Using Effect.gen
+ *
+ * Use `Effect.gen` to write code in an imperative style similar to async await.
+ * You can use `yield*` to access the result of an effect.
+ */
+
+
+effect {
+  console.log("Starting the file processing...")
+  console.log("Reading file...")
+
+  // Always return when raising an error, to ensure typescript understands that
+  // the function will not continue executing.
+  throw new FileProcessingError({ message: "Failed to read the file" })
+}
+  // Add additional functionality with .pipe
+  |> Effect.catch((error) => logError(`An error occurred: ${error}`))
+  |> withSpan("fileProcessing", {
+    attributes: {
+      method: "Effect.gen"
+    }
+  })
+
+// Use Schema.TaggedError to define a custom error
+export error FileProcessingError {
+  message: string
+}

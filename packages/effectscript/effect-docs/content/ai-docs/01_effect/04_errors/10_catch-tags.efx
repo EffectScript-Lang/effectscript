@@ -1,0 +1,24 @@
+/**
+ * @title Catch multiple errors with Effect.catchTags
+ *
+ * Use `Effect.catchTags` to handle several tagged errors in one place.
+ */
+
+import { Effect } from "effect"
+
+export error ValidationError {
+  message: string
+}
+
+export error NetworkError {
+  statusCode: Int
+}
+
+declare const fetchUser: (id: string) => Effect.Effect<string, ValidationError | NetworkError>
+
+export const userOrFallback = fetchUser("123").pipe(
+  catchTags({
+    ValidationError: (error) => succeed(`Validation failed: ${error.message}`),
+    NetworkError: (error) => succeed(`Network request failed with status ${error.statusCode}`)
+  })
+)

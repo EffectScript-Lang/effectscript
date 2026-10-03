@@ -47,6 +47,11 @@ dist-pack/
 # EffectScript VS Code packages (packages/effectscript/vscode/scripts/package.ts)
 *.vsix
 
+# EffectScript sources that the generic rules above would hide: the site's lib/ (not a build
+# output) and the EffectScript edition of ai-docs (ADR-0050), which isn't agent instructions
+!packages/effectscript/site/src/lib/
+!packages/effectscript/effect-docs/content/ai-docs/
+
 # EffectScript site: generated inputs and output (packages/effectscript/site/scripts/content.ts)
 packages/effectscript/site/public/
 packages/effectscript/site/src/assets/

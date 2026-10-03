@@ -1,0 +1,51 @@
+/**
+ * @title Broadcasting domain events with PubSub
+ *
+ * Build an in-process event bus with `PubSub` and expose it as a service.
+ */
+
+export type OrderEvent =
+  | { readonly _tag: "OrderPlaced"; readonly orderId: string }
+  | { readonly _tag: "PaymentCaptured"; readonly orderId: string }
+  | { readonly _tag: "OrderShipped"; readonly orderId: string }
+
+export service OrderEvents as "acme/OrderEvents" {
+  publish(event: OrderEvent): Effect<void>
+  publishAll(events: ReadonlyArray<OrderEvent>): Effect<void>
+  readonly subscribe: Stream<OrderEvent>
+  layer = effect {
+      // Use PubSub.bounded to create a PubSub with backpressure support.
+      // You can also use PubSub.unbounded if you don't need backpressure.
+      const pubsub = await PubSub.bounded<OrderEvent>({
+        capacity: 256,
+        // Optionally add a replay buffer to let late subscribers catch up on
+        // recent events after restarts.
+        replay: 50
+      })
+
+      // Ensure the PubSub is properly shut down when the service is no longer
+      // needed.
+      defer PubSub.shutdown(pubsub)
+
+      effect publish(event: OrderEvent) {
+        await PubSub.publish(pubsub, event)
+      }
+
+      effect publishAll(events: ReadonlyArray<OrderEvent>) {
+        await PubSub.publishAll(pubsub, events)
+      }
+
+      // Create a Stream that emits events published to the PubSub.
+      //
+      // Each subscriber will receive all events published after they subscribe,
+      // and if a replay buffer is configured, they will also receive the most
+      // recent events that were published before they subscribed.
+      const subscribe = Stream.fromPubSub(pubsub)
+
+      return {
+        publish,
+        publishAll,
+        subscribe
+      }
+    }
+}

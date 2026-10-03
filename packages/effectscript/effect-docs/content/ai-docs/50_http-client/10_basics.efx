@@ -1,0 +1,97 @@
+/**
+ * @title Getting started with HttpClient
+ *
+ * Define a service that uses the HttpClient module to fetch data from an external API
+ */
+import { Context, Effect, flow } from "effect"
+import { FetchHttpClient } from "effect/http"
+
+schema Todo {
+  userId: Int
+  id: Int
+  title: string
+  completed: boolean
+}
+
+export service JsonPlaceholder as "app/JsonPlaceholder" {
+  readonly allTodos: Effect.Effect<ReadonlyArray<Todo>, JsonPlaceholderError>
+  getTodo(id: number): Effect.Effect<Todo, JsonPlaceholderError>
+  createTodo(todo: Omit<Todo, "id">): Effect.Effect<Todo, JsonPlaceholderError>
+  layer = effect {
+      // Access the HttpClient service, and apply some common middleware to all
+      // requests:
+      const client = (await HttpClient).pipe(
+        // Add a base URL to all requests made with this client, and set the
+        // Accept header to expect JSON responses
+        HttpClient.mapRequest(flow(
+          HttpClientRequest.prependUrl("https://jsonplaceholder.typicode.com"),
+          HttpClientRequest.acceptJson
+        )),
+        // Fail if the response status is not 2xx
+        HttpClient.filterStatusOk,
+        // Retry transient errors (network issues, 5xx responses) with an
+        // exponential backoff.
+        //
+        // See the schedule documentation for more complex retry strategies.
+        HttpClient.retryTransient({
+          schedule: Schedule.exponential(100),
+          times: 3
+        })
+      )
+
+      const allTodos = client.get("/todos").pipe(
+        flatMap(HttpClientResponse.schemaBodyJson(Schema.Array(Todo))),
+        mapError((cause) => new JsonPlaceholderError({ cause })),
+        withSpan("JsonPlaceholder.allTodos")
+      )
+
+      // Use the HttpClient to fetch a todo item by id, and decode the response
+      // using the Todo schema.
+      effect getTodo(id: number) {
+        // Annotate the current span with the id of the todo being fetched, so
+        // that it shows up in telemetry for this request.
+        await annotateCurrentSpan({ id })
+
+        const todo = await client.get(`/todos/${id}`, {
+          // You can pass additional options to individual requests.
+          // There are options for query parameters, request body, headers, and
+          // more.
+          urlParams: { format: "json" }
+        }).pipe(
+          flatMap(HttpClientResponse.schemaBodyJson(Todo)),
+          mapError((cause) => new JsonPlaceholderError({ cause }))
+        )
+
+        return todo
+      }
+
+      // You can use the HttpClientRequest module to build up more complex
+      // requests:
+      effect createTodo(todo: Omit<Todo, "id">) {
+        await annotateCurrentSpan({ title: todo.title })
+
+        const createdTodo = await HttpClientRequest.post("/todos").pipe(
+          // The HttpClientRequest module has many helper functions for building requests.
+          HttpClientRequest.setUrlParams({ format: "json" }),
+          HttpClientRequest.bodyJsonUnsafe(todo),
+          client.execute,
+          flatMap(HttpClientResponse.schemaBodyJson(Todo)),
+          mapError((cause) => new JsonPlaceholderError({ cause }))
+        )
+
+        return createdTodo
+      }
+
+      return {
+        allTodos,
+        getTodo,
+        createTodo
+      }
+    }
+    // Provide the fetch-based HttpClient implementation
+    |> provide(FetchHttpClient.layer)
+}
+
+export error JsonPlaceholderError {
+  cause: Defect
+}

@@ -1,0 +1,91 @@
+/**
+ * @title Setting up tracing with Otlp modules
+ *
+ * Configure Otlp tracing + log export with a reusable observability layer.
+ */
+import { NodeRuntime } from "@effect/platform-node"
+import { Context } from "effect"
+import { FetchHttpClient } from "effect/http"
+import { OtlpLogger } from "effect/observability"
+
+// Configure OTLP span export.
+export const OtlpTracingLayer = OtlpTracer.layer({
+  url: "http://localhost:4318/v1/traces",
+  resource: {
+    serviceName: "checkout-api",
+    serviceVersion: "1.0.0",
+    attributes: {
+      "deployment.environment": "staging"
+    }
+  }
+})
+
+// Configure OTLP log export.
+export const OtlpLoggingLayer = OtlpLogger.layer({
+  url: "http://localhost:4318/v1/logs",
+  resource: {
+    serviceName: "checkout-api",
+    serviceVersion: "1.0.0"
+  }
+})
+
+// Reusable app-wide observability layer.
+//
+// - OtlpTracer/OtlpLogger require an OTLP serializer and an HttpClient.
+// - FetchHttpClient.layer provides the HttpClient used by the exporter.
+export const ObservabilityLayer = Layer.merge(OtlpTracingLayer, OtlpLoggingLayer).pipe(
+  Layer.provide(OtlpSerialization.layerJson),
+  Layer.provide(FetchHttpClient.layer)
+)
+
+export service Checkout as "acme/Checkout" {
+  processCheckout(orderId: string): Effect<void>
+  layer = effect {
+      console.info("setting up checkout service")
+
+      return {
+        effect processCheckout(orderId: string) {
+          console.info("starting checkout", { orderId })
+
+          await sleep("50 millis").pipe(
+            withSpan("checkout.charge-card"),
+            annotateSpans({
+              "checkout.order_id": orderId,
+              "checkout.provider": "acme-pay"
+            })
+          )
+
+          await sleep("20 millis").pipe(
+            withSpan("checkout.persist-order")
+          )
+
+          console.info("checkout completed", { orderId })
+        }
+      }
+    }
+}
+
+// Example usage of the Checkout service.
+const CheckoutTest = Layer.effectDiscard(
+  effect {
+    const checkout = await Checkout
+    await checkout.processCheckout("ord_123")
+  }.pipe(
+    withSpan("checkout-test-run")
+  )
+).pipe(
+  // You can also attach spans to Layers
+  Layer.withSpan("checkout-test"),
+  Layer.provide(Checkout.layer)
+)
+
+const Main = CheckoutTest.pipe(
+  // Provide the observability layer at the very end, so that all spans created
+  // by the app are exported.
+  Layer.provide(ObservabilityLayer)
+)
+
+// Launch the app
+Layer.launch(Main).pipe(
+  NodeRuntime.runMain
+)

@@ -1,0 +1,96 @@
+/**
+ * @title Acquiring resources with Effect.acquireRelease
+ *
+ * Define a service that uses `Effect.acquireRelease` to manage the lifecycle of
+ * a resource, ensuring that it is properly cleaned up when the service is no
+ * longer needed.
+ */
+import * as NodeMailer from "nodemailer"
+
+export class SmtpError extends Schema.Error<SmtpError>("SmtpError")({
+  cause: Schema.Defect()
+}) {}
+
+export service Smtp as "app/Smtp" {
+  send(message: {
+    readonly to: string
+    readonly subject: string
+    readonly body: string
+  }): Effect<void, SmtpError>
+  layer = effect {
+      const user = await Config.String("SMTP_USER")
+      const pass = await Config.Redacted("SMTP_PASS")
+
+      // Use `Effect.acquireRelease` to manage the lifecycle of the SMTP
+      // transporter.
+      //
+      // When the Layer is built, the transporter will be created. When the
+      // Layer is torn down, the transporter will be closed, ensuring that
+      // resources are always cleaned up properly.
+      const transporter = await acquireRelease(
+        sync(() =>
+          NodeMailer.createTransport({
+            host: "smtp.example.com",
+            port: 587,
+            secure: false,
+            auth: { user, pass: Redacted.value(pass) }
+          })
+        ),
+        (transporter) => sync(() => transporter.close())
+      )
+
+      const send = Effect.fn("Smtp.send")((message: {
+        readonly to: string
+        readonly subject: string
+        readonly body: string
+      }) =>
+        tryPromise({
+          try: () =>
+            transporter.sendMail({
+              from: "Acme Cloud <cloud@acme.com>",
+              to: message.to,
+              subject: message.subject,
+              text: message.body
+            }),
+          catch: (cause) => new SmtpError({ cause })
+        }).pipe(
+          asVoid
+        )
+      )
+
+      return { send }
+    }
+}
+
+// We can then use the `Smtp` service in another service, and the transporter
+// will be properly managed by the Layer system.
+
+export error MailerError {
+  reason: SmtpError
+}
+
+export service Mailer as "app/Mailer" {
+  sendWelcomeEmail(to: string): Effect<void, MailerError>
+  layer noDeps = effect {
+      const smtp = await Smtp
+
+      effect sendWelcomeEmail(to: string) {
+        await smtp.send({
+          to,
+          subject: "Welcome to Acme Cloud!",
+          body: "Thanks for signing up for Acme Cloud. We're glad to have you!"
+        }).pipe(
+          mapError((reason) => new MailerError({ reason }))
+        )
+        console.info(`Sent welcome email to ${to}`)
+      }
+
+      return { sendWelcomeEmail }
+    }
+
+  // Locally provide the Smtp layer to the Mailer layer, to eliminate all the
+  // requirements
+  layer = this.layerNoDeps.pipe(
+    Layer.provide(Smtp.layer)
+  )
+}
