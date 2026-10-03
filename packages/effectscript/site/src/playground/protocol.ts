@@ -32,7 +32,9 @@ export interface Note {
 
 export interface Response {
   readonly seq: number
-  readonly code: string
+  readonly direction: Request["direction"]
+  /** The other pane's new code, or `undefined` when the source was refused or the compiler failed. */
+  readonly code: string | undefined
   readonly diagnostics: ReadonlyArray<Problem>
   readonly notes: ReadonlyArray<Note>
 }
@@ -55,7 +57,8 @@ export const compile = (request: Request): Response => {
   if (source.length > maxSource) {
     return {
       seq,
-      code: "",
+      direction,
+      code: undefined,
       notes: [],
       diagnostics: [{
         code: "EFX0000",
@@ -73,6 +76,7 @@ export const compile = (request: Request): Response => {
       const result = toTypeScript(source, { filename: "playground.efx", recover: true })
       return {
         seq,
+        direction,
         code: result.code,
         notes: [],
         diagnostics: result.diagnostics.map((d) => {
@@ -93,6 +97,7 @@ export const compile = (request: Request): Response => {
     const result = toEffectScript(source, { filename: "playground.ts" })
     return {
       seq,
+      direction,
       code: result.code,
       diagnostics: [],
       notes: result.notes.map((n) => ({ message: n.message, ...position(source, n.start) }))
@@ -100,7 +105,8 @@ export const compile = (request: Request): Response => {
   } catch (error) {
     return {
       seq,
-      code: "",
+      direction,
+      code: undefined,
       notes: [],
       diagnostics: [{
         code: "EFX1000",
@@ -114,6 +120,13 @@ export const compile = (request: Request): Response => {
     }
   }
 }
+
+/**
+ * The pane a response rewrites: the other side of its request, or none when there is no code
+ * (review I7: a refusal must not wipe what the user wrote).
+ */
+export const paneToUpdate = (response: Response): "efx" | "ts" | undefined =>
+  response.code === undefined ? undefined : response.direction === "toTypeScript" ? "ts" : "efx"
 
 /** Sequence numbers for requests: only the newest request's result is applied. */
 export const createTracker = () => {

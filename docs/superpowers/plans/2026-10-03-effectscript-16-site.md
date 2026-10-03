@@ -153,3 +153,29 @@ ADR-0036.
 - **The numbers:** 42% fewer tokens than Effect TypeScript and 40% fewer than plain TypeScript
   across the ten scenarios. The corpus: 4,019 examples, with 20.3% fewer tokens in the 1,714 that
   changed.
+
+**Final review (fresh reviewer, no Critical, 13 Important), fixed in one pass,** each by a test in
+`test/build.test.ts` or `test/playground.test.ts` that failed before the fix:
+
+- I1 the docs logo has a light-mode lockup; I2 pitfalls' wrong blocks are titled "Wrong: EFXnnnn";
+  I3 `/install` serves `core/distribution/install.sh` byte for byte;
+- I4 each landing number names its counter (GPT-4o tokens, or the EffectScript parser for the
+  corpus); I5 no "you would write by hand" claim, and the hero says "than the Effect TypeScript it
+  compiles to"; I6 the tools list drops Astro and "any LSP editor";
+- I7 a playground refusal or internal error never overwrites the other pane, and responses carry
+  their direction (`paneToUpdate`);
+- I8 muted text is `#8e8e96` (≥ 4.5:1 on every background it sits on); I9 the scenario tabs follow
+  the ARIA tabs pattern (ids, roving tabindex, arrows, Home/End), with the toggle outside the tablist;
+- I10 fonts are Latin-subset WOFF2 (about 45 KB each, from about 620 KB), with their OFL texts;
+- I11 new guides: editor setup (from the language README), strict rules (each rule's example and
+  the compiler's own message, generated) and migrating with `efx convert` (hand-written);
+- I12 republished Effect pages drop Effectful's calls to action and credit Effect (MIT,
+  © Effectful Technologies Inc.); I13 titles have no literal backticks.
+
+**Deferred minors:** the playground's same-page `hashchange`, preset label and clipboard feedback;
+a compile watchdog and editor `ariaLabel`s; the install block highlighted as efx; the `errors`
+sample's retry count wording and the `http` sample's routes and 404; lowercase sidebar groups and
+the `|>` ligature; corpus links to GitHub instead of site pages, the `#declare` anchor, and no
+playground links on Effect pages; per-token `decode` on non-ASCII; link test skipping anchors; the
+playground's weight (full Shiki bundle); ADR-0054's wording on the reference's source and the
+renamed components; "most common complaint" and `--write --ai` as a first step.

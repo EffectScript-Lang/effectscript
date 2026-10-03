@@ -1,4 +1,11 @@
-import { compile, createTracker, decodeHash, encodeHash, maxSource } from "@effectscript/site/playground/protocol"
+import {
+  compile,
+  createTracker,
+  decodeHash,
+  encodeHash,
+  maxSource,
+  paneToUpdate
+} from "@effectscript/site/playground/protocol"
 import { describe, expect, it } from "vitest"
 
 describe("the playground protocol (Plan 16 Task 4, ADR-0054)", () => {
@@ -41,5 +48,13 @@ describe("the playground protocol (Plan 16 Task 4, ADR-0054)", () => {
     expect(decodeHash("#code=%%%")).toBeUndefined()
     expect(decodeHash("#nothing")).toBeUndefined()
     expect(decodeHash(`#code=${"A".repeat(Math.ceil((maxSource * 4) / 3) + 100)}`)).toBeUndefined()
+  })
+
+  it("review I7: a refusal or an internal error never overwrites the other pane", () => {
+    const huge = compile({ seq: 6, direction: "toEffectScript", source: "x".repeat(maxSource + 1) })
+    expect(huge.code).toBeUndefined()
+    expect(paneToUpdate(huge)).toBeUndefined()
+    expect(paneToUpdate(compile({ seq: 7, direction: "toEffectScript", source: "const a = 1\n" }))).toBe("efx")
+    expect(paneToUpdate(compile({ seq: 8, direction: "toTypeScript", source: "const a = 1\n" }))).toBe("ts")
   })
 })

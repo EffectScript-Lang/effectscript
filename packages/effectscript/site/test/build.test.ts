@@ -24,7 +24,7 @@ describe("the site build (Plan 16 Task 1, ADR-0054)", () => {
   })
 
   it("ships the brand: fonts, favicons, palette", () => {
-    for (const file of ["fonts/InterDisplay-Bold.otf", "favicon.svg", "og-image.jpg", "site.webmanifest"]) {
+    for (const file of ["fonts/InterDisplay-Bold.woff2", "favicon.svg", "og-image.jpg", "site.webmanifest"]) {
       expect(fs.existsSync(path.join(dist, file)), file).toBe(true)
     }
     const css = fs.readdirSync(path.join(dist, "_astro")).filter((f) => f.endsWith(".css"))
@@ -101,5 +101,119 @@ describe("the landing page (Plan 16 Task 3, ADR-0054)", () => {
   it("credits @gunta85 in the hero, after the playground and in the footer", () => {
     expect(read("index.html").match(/x\.com\/gunta85/g)!.length).toBeGreaterThanOrEqual(2)
     expect(read("playground/index.html")).toContain("Follow @gunta85")
+  })
+})
+
+/** WCAG relative luminance and contrast of two `#rrggbb` colours. */
+const contrast = (a: string, b: string) => {
+  const luminance = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
+  }
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi! + 0.05) / (lo! + 0.05)
+}
+const generatedDocs = path.join(site, "src/content/docs/docs")
+
+describe("Plan 16 final review fixes", () => {
+  it("I1: the docs logo has a light-mode variant", () => {
+    const page = read("docs/index.html")
+    expect(page).toMatch(/lockup-black[^"]*\.svg/)
+    expect(page).toMatch(/lockup-white[^"]*\.svg/)
+  })
+
+  it("I2: wrong examples are marked visibly, and the intro says how", () => {
+    const pitfalls = fs.readFileSync(path.join(generatedDocs, "guides/pitfalls.md"), "utf8")
+    expect(pitfalls).not.toMatch(/```efx wrong/)
+    const marked = pitfalls.match(/```efx title="Wrong/g)?.length ?? 0
+    expect(marked).toBeGreaterThan(0)
+    expect(pitfalls).not.toContain("marked `efx wrong`")
+    expect(text("docs/guides/pitfalls/index.html").match(/Wrong/g)!.length).toBeGreaterThanOrEqual(marked)
+  })
+
+  it("I3: /install serves the install script, byte for byte", () => {
+    expect(fs.readFileSync(path.join(dist, "install"))).toEqual(
+      fs.readFileSync(path.join(site, "../core/distribution/install.sh"))
+    )
+  })
+
+  it("I4, I5: each number names how it was counted, and the hero makes no hand-written claim", () => {
+    const page = text("index.html")
+    // the page's own words, not the code samples
+    expect(read("index.html").replace(/<pre[\s\S]*?<\/pre>/g, "").replace(/<[^>]+>/g, "")).not.toContain("by hand")
+    expect(page).toContain("than the Effect TypeScript it compiles to")
+    expect(page).toMatch(/re-sugared examples, counted with the EffectScript parser/)
+    expect(page).not.toMatch(/Tokens are counted with the GPT-4o tokenizer \(o200k_base\) on the exact code shown/)
+  })
+
+  it("I6: the tools list claims only what is tested", () => {
+    const page = text("index.html")
+    expect(page).not.toContain("Astro")
+    expect(page).not.toContain("any LSP editor")
+  })
+
+  it("I8: small muted text meets WCAG AA on every background it sits on", () => {
+    const brand = fs.readFileSync(path.join(site, "src/styles/brand.css"), "utf8")
+    const muted = /--color-muted:\s*(#[0-9a-f]{6})/i.exec(brand)![1]!
+    for (const background of ["#09090b", "#18181a", "#181818", "#1e1e1e"]) {
+      expect(contrast(muted, background), `${muted} on ${background}`).toBeGreaterThanOrEqual(4.5)
+    }
+    const starlight = fs.readFileSync(path.join(site, "src/styles/starlight.css"), "utf8")
+    const gray3 = /--sl-color-gray-3:\s*(#[0-9a-f]{6})/i.exec(starlight)![1]!
+    expect(contrast(gray3, "#09090b")).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it("I9: the scenario tabs follow the ARIA tabs pattern", () => {
+    const page = read("index.html")
+    const tablist = /<div[^>]*role="tablist"[^>]*>([\s\S]*?)<\/div>/.exec(page)![1]!
+    expect(tablist).not.toContain("token-toggle")
+    const tabs = [...tablist.matchAll(/<button[^>]*>/g)].map((m) => m[0])
+    expect(tabs.length).toBe(10)
+    for (const [i, tab] of tabs.entries()) {
+      const id = /id="(tab-[\w-]+)"/.exec(tab)![1]!
+      expect(tab).toContain(i === 0 ? `tabindex="0"` : `tabindex="-1"`)
+      expect(page).toContain(`aria-labelledby="${id}"`)
+    }
+    const scripts = [...page.matchAll(/src="(\/_astro\/[^"]+\.js)"/g)].map((m) => read(m[1]!.slice(1))).join("\n")
+    expect(page + scripts).toContain("ArrowRight")
+  })
+
+  it("I10: fonts are subset WOFF2, and their licences ship with them", () => {
+    const fonts = fs.readdirSync(path.join(dist, "fonts"))
+    expect(fonts.filter((f) => /\.(otf|ttf)$/.test(f))).toEqual([])
+    const woff2 = fonts.filter((f) => f.endsWith(".woff2"))
+    expect(woff2.length).toBeGreaterThanOrEqual(4)
+    for (const f of woff2) expect(fs.statSync(path.join(dist, "fonts", f)).size, f).toBeLessThan(80_000)
+    expect(fonts).toEqual(expect.arrayContaining(["Inter-OFL.txt", "JetBrainsMono-OFL.txt"]))
+    const css = fs.readdirSync(path.join(dist, "_astro")).filter((f) => f.endsWith(".css"))
+      .map((f) => fs.readFileSync(path.join(dist, "_astro", f), "utf8")).join("\n")
+    expect(css).not.toMatch(/\.(otf|ttf)\b/)
+  })
+
+  it("I11: the editor setup, strict rules and migration guides exist", () => {
+    expect(text("docs/guides/editor-setup/index.html")).toContain("efx lsp")
+    expect(text("docs/guides/migrating/index.html")).toContain("efx convert")
+    const strict = text("docs/guides/strict-rules/index.html")
+    const codes = [...new Set(
+      fs.readFileSync(path.join(site, "../core/src/compiler/transform/strict.ts"), "utf8").match(/EFX8\d{3}/g)
+    )]
+    for (const code of codes) expect(strict, code).toContain(code)
+  })
+
+  it("I12: republished Effect pages carry no Effectful calls to action, and credit Effect", () => {
+    for (const file of htmlFiles(path.join(dist, "docs/effect"))) {
+      const page = text(path.join("docs/effect", file))
+      for (const phrase of ["contact@effectful.co", "adoption partners", "talk to the core team", "Let's talk"]) {
+        expect(page, `${file}: ${phrase}`).not.toContain(phrase)
+      }
+    }
+    expect(text("docs/effect/guide/index.html")).toContain("Effectful Technologies")
+    expect(text("docs/effect/guides/packages/vitest/readme/index.html")).toContain("Effectful Technologies")
+  })
+
+  it("I13: titles have no literal backticks", () => {
+    expect(/<title>([^<]*)<\/title>/.exec(read("docs/reference/effect/index.html"))![1]).not.toContain("`")
+    expect(read("llms.txt")).not.toContain("[`")
   })
 })

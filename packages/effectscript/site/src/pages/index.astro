@@ -29,7 +29,7 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
         <p class="label">// TypeScript, with Effect as syntax</p>
         <h1 class="headline-fade mt-4 max-w-4xl font-display text-5xl font-bold tracking-[-0.025em] sm:text-7xl">All of Effect. None of the ceremony.</h1>
         <p class="mt-6 max-w-2xl text-lg text-subtle">
-          Effect is the right foundation for serious TypeScript, and its ceremony is the most common complaint about it. EffectScript makes Effect the language: write <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, and get typed errors, services, retries and tracing, compiled to the idiomatic Effect TypeScript you would write by hand.
+          Effect is the right foundation for serious TypeScript, and its ceremony is the most common complaint about it. EffectScript makes Effect the language: write <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, and get typed errors, services, retries and tracing, compiled to plain, idiomatic Effect TypeScript.
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
           <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install/">Get started</a>
@@ -37,7 +37,7 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
           <a class="rounded-md px-5 py-2.5 text-sm font-medium text-subtle hover:text-white" href="https://x.com/gunta85">Follow @gunta85 →</a>
         </div>
         <div class="mt-14">
-          <CodeWindow title={`${hero.panes[2].name}: ${saving(hero.panes[1].tokens, hero.panes[2].tokens)}% fewer tokens than the same Effect TypeScript`} panes={[hero.panes[1], hero.panes[2]]} />
+          <CodeWindow title={`${hero.panes[2].name}: ${saving(hero.panes[1].tokens, hero.panes[2].tokens)}% fewer tokens than the Effect TypeScript it compiles to`} panes={[hero.panes[1], hero.panes[2]]} />
         </div>
       </div>
     </section>
@@ -47,37 +47,39 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
         <div class="bg-ink px-4 py-8">
           <dt class="label">vs Effect TypeScript</dt>
           <dd class="mt-2 font-display text-4xl font-bold">{saving(totals.effect, totals.efx)}% fewer tokens</dd>
-          <dd class="mt-1 text-sm text-subtle">{totals.effect} → {totals.efx} across the ten scenarios below</dd>
+          <dd class="mt-1 text-sm text-subtle">{totals.effect} → {totals.efx} GPT-4o tokens (o200k_base) across the ten scenarios below</dd>
         </div>
         <div class="bg-ink px-4 py-8">
           <dt class="label">vs plain TypeScript</dt>
           <dd class="mt-2 font-display text-4xl font-bold">{saving(totals.plain, totals.efx)}% fewer tokens</dd>
-          <dd class="mt-1 text-sm text-subtle">with typed errors, services and retries the plain version doesn't have</dd>
+          <dd class="mt-1 text-sm text-subtle">GPT-4o tokens, with typed errors, services and retries the plain version doesn't have</dd>
         </div>
         <div class="bg-ink px-4 py-8">
           <dt class="label">Effect's own docs, converted</dt>
           <dd class="mt-2 font-display text-4xl font-bold">{corpus.examples.toLocaleString("en-US")} examples</dd>
-          <dd class="mt-1 text-sm text-subtle">{corpus.resugared.toLocaleString("en-US")} re-sugared, {corpus.saved} fewer tokens, each compiling back to the original</dd>
+          <dd class="mt-1 text-sm text-subtle">{corpus.resugared.toLocaleString("en-US")} re-sugared, each compiling back to the original: {corpus.saved} fewer tokens in the re-sugared examples, counted with the EffectScript parser</dd>
         </div>
       </dl>
-      <p class="mx-auto max-w-7xl px-4 pb-6 text-xs text-muted">Tokens are counted with the GPT-4o tokenizer (o200k_base) on the exact code shown, when this site is built.</p>
+      <p class="mx-auto max-w-7xl px-4 pb-6 text-xs text-muted">The first two numbers count GPT-4o tokens (o200k_base) on the exact code shown, when this site is built.</p>
     </section>
 
     <section id="gallery" class="mx-auto max-w-7xl px-4 py-20" data-gallery data-show-tokens="false">
       <p class="label">// the same program, three ways</p>
       <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">Plain TypeScript. Effect TypeScript. EffectScript.</h2>
-      <p class="mt-4 max-w-3xl text-subtle">The Effect TypeScript in the middle is not written by hand: it is the EffectScript on the right, compiled when this page was built. Every sample type-checks against Effect.</p>
-      <div class="mt-8 flex flex-wrap items-center gap-2" role="tablist" aria-label="Scenarios">
-        {scenarios.map((s, i) => (
-          <button type="button" role="tab" class="scenario-tab rounded-full border border-line px-3 py-1 text-sm text-subtle aria-selected:border-white aria-selected:text-white" aria-selected={i === 0 ? "true" : "false"} aria-controls={`scenario-${s.id}`} data-scenario={s.id}>{s.title}</button>
-        ))}
+      <p class="mt-4 max-w-3xl text-subtle">The Effect TypeScript in the middle is the EffectScript on the right, compiled when this page was built, so it includes what the compiler generates, such as service accessors. Every sample type-checks against Effect.</p>
+      <div class="mt-8 flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Scenarios">
+          {scenarios.map((s, i) => (
+            <button type="button" role="tab" id={`tab-${s.id}`} tabindex={i === 0 ? "0" : "-1"} class="scenario-tab rounded-full border border-line px-3 py-1 text-sm text-subtle aria-selected:border-white aria-selected:text-white" aria-selected={i === 0 ? "true" : "false"} aria-controls={`scenario-${s.id}`} data-scenario={s.id}>{s.title}</button>
+          ))}
+        </div>
         <label class="ml-auto flex cursor-pointer items-center gap-2 text-sm text-subtle">
           <input type="checkbox" class="token-toggle accent-white" /> Show tokens
         </label>
       </div>
       <div class="mt-6">
         {scenarios.map((s, i) => (
-          <div id={`scenario-${s.id}`} role="tabpanel" class="scenario" hidden={i !== 0} data-scenario-panel={s.id}>
+          <div id={`scenario-${s.id}`} role="tabpanel" aria-labelledby={`tab-${s.id}`} tabindex="0" class="scenario" hidden={i !== 0} data-scenario-panel={s.id}>
             <CodeWindow title={`${s.title}: ${saving(s.panes[1].tokens, s.panes[2].tokens)}% fewer tokens than Effect TypeScript, ${saving(s.panes[0].tokens, s.panes[2].tokens)}% fewer than plain`} panes={s.panes} />
           </div>
         ))}
@@ -122,8 +124,8 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
         <div class="mt-10 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-2 lg:grid-cols-4">
           <div class="bg-ink p-5"><h3 class="font-medium">A superset</h3><p class="mt-2 text-sm text-subtle">Rename <code>.ts</code> to <code>.efx</code> and nothing changes. Use the new syntax where it helps.</p></div>
           <div class="bg-ink p-5"><h3 class="font-medium">Two-way</h3><p class="mt-2 text-sm text-subtle"><code>efx convert</code> turns Effect TypeScript into EffectScript, and every <code>.efx</code> compiles back to plain TypeScript. Leave any time.</p></div>
-          <div class="bg-ink p-5"><h3 class="font-medium">Mixed projects</h3><p class="mt-2 text-sm text-subtle"><code>.ts</code> imports <code>.efx</code> and back, with full IntelliSense in VS Code and any LSP editor.</p></div>
-          <div class="bg-ink p-5"><h3 class="font-medium">Your tools</h3><p class="mt-2 text-sm text-subtle">tsc, Vite, Vitest, Bun, Node, Astro, VS Code, Neovim, Helix. No new runtime: the output is Effect.</p></div>
+          <div class="bg-ink p-5"><h3 class="font-medium">Mixed projects</h3><p class="mt-2 text-sm text-subtle"><code>.ts</code> imports <code>.efx</code> and back, with full IntelliSense in VS Code, Neovim, Helix and other LSP clients.</p></div>
+          <div class="bg-ink p-5"><h3 class="font-medium">Your tools</h3><p class="mt-2 text-sm text-subtle">tsc, Vite, Vitest, Bun, Node, VS Code, Neovim, Helix. No new runtime: the output is Effect.</p></div>
         </div>
       </div>
     </section>
@@ -158,10 +160,32 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
     const tabs = [...gallery.querySelectorAll<HTMLButtonElement>(".scenario-tab")]
     const panels = [...gallery.querySelectorAll<HTMLElement>("[data-scenario-panel]")]
     const select = (id: string) => {
-      for (const tab of tabs) tab.setAttribute("aria-selected", String(tab.dataset.scenario === id))
+      for (const tab of tabs) {
+        const selected = tab.dataset.scenario === id
+        tab.setAttribute("aria-selected", String(selected))
+        tab.tabIndex = selected ? 0 : -1
+      }
       for (const panel of panels) panel.hidden = panel.dataset.scenarioPanel !== id
     }
-    for (const tab of tabs) tab.addEventListener("click", () => select(tab.dataset.scenario!))
+    for (const [i, tab] of tabs.entries()) {
+      tab.addEventListener("click", () => select(tab.dataset.scenario!))
+      // the ARIA tabs pattern: arrows move between tabs, Home and End jump to the ends
+      tab.addEventListener("keydown", (event) => {
+        const next = event.key === "ArrowRight"
+          ? (i + 1) % tabs.length
+          : event.key === "ArrowLeft"
+          ? (i - 1 + tabs.length) % tabs.length
+          : event.key === "Home"
+          ? 0
+          : event.key === "End"
+          ? tabs.length - 1
+          : undefined
+        if (next === undefined) return
+        event.preventDefault()
+        select(tabs[next]!.dataset.scenario!)
+        tabs[next]!.focus()
+      })
+    }
     gallery.querySelector<HTMLInputElement>(".token-toggle")?.addEventListener("change", (event) => {
       gallery.dataset.showTokens = String((event.target as HTMLInputElement).checked)
     })

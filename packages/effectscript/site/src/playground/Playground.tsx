@@ -11,7 +11,15 @@ import tsx from "shiki/langs/tsx.mjs"
 import typescript from "shiki/langs/typescript.mjs"
 import { efxGrammars } from "./grammar.ts"
 import { presets } from "./presets.ts"
-import { createTracker, decodeHash, encodeHash, type Note, type Problem, type Response } from "./protocol.ts"
+import {
+  createTracker,
+  decodeHash,
+  encodeHash,
+  type Note,
+  paneToUpdate,
+  type Problem,
+  type Response
+} from "./protocol.ts"
 
 type Side = "efx" | "ts"
 
@@ -71,10 +79,13 @@ export default function Playground() {
       worker.onmessage = (event: MessageEvent<Response>) => {
         const response = event.data
         if (!tracker.accept(response.seq)) return // a newer request is on its way
-        const target = lastEdited === "efx" ? ts : efx
-        applying = true
-        if (target.getValue() !== response.code) target.setValue(response.code)
-        applying = false
+        const pane = paneToUpdate(response)
+        if (pane !== undefined) {
+          const target = pane === "ts" ? ts : efx
+          applying = true
+          if (target.getValue() !== response.code) target.setValue(response.code!)
+          applying = false
+        }
         monaco.editor.setModelMarkers(
           efx.getModel()!,
           "effectscript",

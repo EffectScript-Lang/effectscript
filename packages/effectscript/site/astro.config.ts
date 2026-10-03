@@ -27,7 +27,7 @@ export default defineConfig({
     starlight({
       title: "EffectScript",
       description: "All of Effect. None of the ceremony.",
-      logo: { src: "./src/assets/lockup-white.svg", replacesTitle: true },
+      logo: { light: "./src/assets/lockup-black.svg", dark: "./src/assets/lockup-white.svg", replacesTitle: true },
       favicon: "/favicon.svg",
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/EffectScript-Lang/effect-lang" },

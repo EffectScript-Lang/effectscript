@@ -55,5 +55,7 @@ packages/effectscript/site/src/content/docs/docs/reference
 packages/effectscript/site/src/content/docs/docs/guides/patterns
 packages/effectscript/site/src/content/docs/docs/guides/pitfalls.md
 packages/effectscript/site/src/content/docs/docs/guides/writing-effectscript.md
+packages/effectscript/site/src/content/docs/docs/guides/editor-setup.md
+packages/effectscript/site/src/content/docs/docs/guides/strict-rules.md
 packages/effectscript/site/src/content/docs/docs/effect
 packages/effectscript/site/.tsc/
