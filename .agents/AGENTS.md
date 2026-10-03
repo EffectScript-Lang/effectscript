@@ -72,7 +72,7 @@ something is the way it is, not only what it is.
   ADRs record _why_. When a spec or plan section follows from an ADR, link it (`ADR-0010`). When
   they disagree, the newest accepted ADR wins and the spec is updated to match.
 - **Private material:** research notes, strategy and other non-public notes go to the private repo
-  `EffectScript-Lang/internal` (cloned at `../effectscript-internal`), never here. ADRs here may cite
-  a note by its title but never quote private sources (ADR-0045).
+  `EffectScript-Lang/effectscript-internal` (cloned at `../effectscript-internal`), never here. ADRs here may cite
+  a note by its title but never quote private sources (ADR-0045, ADR-0061).
 - **Reviews:** external reviews live in `docs/reviews/`. Every finding that changes a decision
   ends in an ADR that cites the review.

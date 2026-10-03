@@ -1,6 +1,6 @@
 # ADR-0045: Research and strategy live in a private repository
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-0061 (the repository name; the rule stands)
 - **Date:** 2026-10-04
 - **Deciders:** the user
 - **Related:** ADR-0008 (public fork), ADR-0036 (EffectScript-Lang organization)

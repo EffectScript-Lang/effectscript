@@ -56,7 +56,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0042](0042-docs-are-tsdoc-documented-once-with-doctests.md) | Docs are TSDoc comments, written once at the definition, with Elixir-style doctests | Accepted, amended by 0044 |
 | [0043](0043-efx-docs-generator-and-blume.md) | `efx docs` is our own syntactic generator that writes Markdown for Blume | Accepted, amended by 0044 |
 | [0044](0044-living-docs-review-amendments.md) | Living-docs amendments from the Plan 12 review | Accepted |
-| [0045](0045-private-research-and-strategy-repo.md) | Research and strategy live in a private repository | Accepted |
+| [0045](0045-private-research-and-strategy-repo.md) | Research and strategy live in a private repository | Superseded by 0061 |
 | [0050](0050-effect-docs-corpus-in-effectscript.md) | The Effect docs, translated to EffectScript by the reverse compiler | Accepted |
 | [0051](0051-the-effectscript-agent-skill.md) | The EffectScript agent skill: generated where it can be, type-checked where it's written | Accepted |
 | [0052](0052-efx-setup-targets-links-and-consent.md) | `efx setup`: what it touches, how it links the skill, and when it asks | Accepted, amended by 0059 |
@@ -68,6 +68,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0058](0058-tree-sitter-grammar-and-zed.md) | A tree-sitter grammar that extends TypeScript's, and a Zed extension on it | Accepted |
 | [0059](0059-efx-setup-upgrades-and-config-locations.md) | `efx setup` upgrades what it installed, and follows the tools' config variables | Accepted |
 | [0060](0060-the-repository-is-effectscript-lang-effectscript.md) | The repository is `EffectScript-Lang/effectscript` | Accepted |
+| [0061](0061-the-private-repository-is-effectscript-internal.md) | The private repository is `EffectScript-Lang/effectscript-internal` | Accepted |
 
 ## Template
 
