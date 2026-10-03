@@ -28,6 +28,15 @@ const linkPublishedEffect = (dir: string) => {
   fs.mkdirSync(target, { recursive: true })
   const pkg = JSON.parse(fs.readFileSync(path.join(packages, "effect/package.json"), "utf8"))
   fs.writeFileSync(path.join(target, "package.json"), JSON.stringify({ ...pkg, exports: pkg.publishConfig.exports }))
+  // a fresh checkout has no dist/ yet: build it as `pnpm build` does (tsc; the pure-call annotations
+  // babel adds don't matter here)
+  if (!fs.existsSync(path.join(packages, "effect/dist/index.js"))) {
+    const built = spawnSync("pnpm", ["exec", "tsc", "-b", "tsconfig.json"], {
+      cwd: path.join(packages, "effect"),
+      encoding: "utf8"
+    })
+    if (built.status !== 0) throw new Error(`building effect failed:\n${built.stdout}${built.stderr}`)
+  }
   // copied, not linked: a link's real path would sit under the workspace package.json (exports → src)
   fs.cpSync(path.join(packages, "effect/dist"), path.join(target, "dist"), {
     recursive: true,
@@ -109,7 +118,7 @@ describe("adoption slice, end to end (ADR-0016)", () => {
     expect(checked.stdout).toBe("")
     expect(checked.status).toBe(0)
     expect(node(consumer, ["app.ts"]).stdout.trim()).toBe(`${expected} / Grace`)
-  }, 180_000)
+  }, 600_000)
 
   it("5. converting the compiled module back to EffectScript and recompiling is a fixed point", () => {
     const source = fs.readFileSync(path.join(fixture, "src/users.efx"), "utf8")

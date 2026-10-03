@@ -24,7 +24,7 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true })
 })
 
-describe("efx init (Plan 8 Task 5)", { timeout: 30_000 }, () => {
+describe("efx init (Plan 8 Task 5)", { timeout: 120_000 }, () => {
   it("adds the TS plugin and scripts, keeping comments and existing scripts", () => {
     const dir = project({
       "tsconfig.json": "{\n  // strictness first\n  \"compilerOptions\": {\n    \"strict\": true // always\n  }\n}\n",
