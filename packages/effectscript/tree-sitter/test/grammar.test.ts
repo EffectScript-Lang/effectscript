@@ -73,4 +73,13 @@ describe("tree-sitter-effectscript (Plan 19, ADR-0058)", () => {
     expect(result.stdout).toMatch(/successful parses: (\d+); failed parses: 0/)
     expect(result.status).toBe(0)
   }, 300_000)
+
+  it("ships queries generated from JavaScript's, TypeScript's and its own", () => {
+    const check = spawnSync(process.execPath, [path.join(root, "scripts/queries.mjs"), "--check"], { encoding: "utf8" })
+    expect(check.stderr).toBe("")
+    expect(check.status).toBe(0)
+    // every pattern compiles against the grammar
+    const query = run(["query", "queries/highlights.scm", path.join(root, "test/corpus/effects.txt")])
+    expect(query.stderr).not.toMatch(/error/i)
+  })
 })
