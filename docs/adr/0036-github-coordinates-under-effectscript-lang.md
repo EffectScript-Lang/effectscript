@@ -1,6 +1,6 @@
 # ADR-0036: GitHub coordinates live under the EffectScript-Lang organization
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-0060 (the repository name; the organization stands)
 - **Date:** 2026-10-03
 - **Deciders:** the user ("no gunta/ stuff"); agent ruling on the names
 - **Related:** spec §7.5; ADR-0008, ADR-0038

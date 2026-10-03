@@ -34,7 +34,7 @@ describe("the Homebrew formula (Plan 10 Task 5, ADR-0038)", () => {
     const result = generated()
     expect(result.stderr).toBe("")
     expect(result.status).toBe(0)
-    const base = "https://github.com/EffectScript-Lang/effect-lang/releases/download/effectscript@4.0.0-alpha.1"
+    const base = "https://github.com/EffectScript-Lang/effectscript/releases/download/effectscript@4.0.0-alpha.1"
     for (const [target, n] of [["darwin-arm64", 1], ["darwin-x64", 2], ["linux-arm64", 3], ["linux-x64", 5]] as const) {
       expect(result.stdout).toContain(`url "${base}/efx-${target}.tar.gz"\n      sha256 "${hash(n)}"`)
     }

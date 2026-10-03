@@ -2,7 +2,7 @@
 
 - **Status:** Draft for review
 - **Date:** 2026-10-02
-- **Location:** `packages/effectscript/*` in the `EffectScript-Lang/effect-lang` fork of the Effect monorepo (ADR-0036)
+- **Location:** `packages/effectscript/*` in the `EffectScript-Lang/effectscript` fork of the Effect monorepo (ADR-0036)
 - **Decisions:** the reasons behind this design are recorded as ADRs in `docs/adr/`. When this
   spec and an accepted ADR disagree, the ADR wins and this spec is fixed.
 
@@ -1333,7 +1333,7 @@ efx convert                 # this repo → EffectScript (mechanical; add --ai f
   darwin-x64, linux-x64, linux-arm64, linux-x64-musl, linux-arm64-musl and windows-x64. On Alpine,
   the musl builds need `apk add libstdc++ libgcc`.
 - **Publishing:** `.github/workflows/effectscript-release.yml` publishes them on GitHub Releases
-  of `EffectScript-Lang/effect-lang` (tag `effectscript@<version>`) as `efx-<target>.tar.gz` or
+  of `EffectScript-Lang/effectscript` (tag `effectscript@<version>`) as `efx-<target>.tar.gz` or
   `.zip`, with `SHASUMS256.txt` and `install.sh`, and updates the tap's formula.
 - **Contents:** the Bun runtime, the compiler and the Bun plugin. The language server (phase 8)
   and the skill files (phase 9) join later. Users need no Node, Bun or npm to run `.efx` files.

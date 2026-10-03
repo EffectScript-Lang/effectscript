@@ -12,17 +12,17 @@ Run every command from the repository root, on the `effectscript` branch.
 ## 1. Move the repository (once)
 
 The release workflow, the install script, the Homebrew formula and every package's `repository`
-field point at `EffectScript-Lang/effect-lang` (ADR-0036).
+field point at `EffectScript-Lang/effectscript` (ADR-0036, ADR-0060).
 
-1. Transfer the fork to the organization:
+1. Transfer the fork to the organization, renamed `effectscript` (ADR-0060):
 
    ```bash
-   gh api repos/gunta/effect-lang/transfer -f new_owner=EffectScript-Lang
+   gh api repos/gunta/effect-lang/transfer -f new_owner=EffectScript-Lang -f new_name=effectscript
    ```
 
 2. Create the empty tap repository, `EffectScript-Lang/homebrew-tap`, with a `Formula/` folder.
 3. Check that `git remote -v` follows the move (GitHub redirects the old URL), and update it with
-   `git remote set-url origin git@github.com:EffectScript-Lang/effect-lang.git`.
+   `git remote set-url origin git@github.com:EffectScript-Lang/effectscript.git`.
 
 ## 2. Secrets and accounts (once)
 

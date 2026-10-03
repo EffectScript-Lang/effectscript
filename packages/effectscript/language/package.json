@@ -4,10 +4,10 @@
   "type": "module",
   "license": "MIT",
   "description": "EffectScript language tooling: Volar language plugin, TypeScript server plugin and efx-tsc",
-  "homepage": "https://github.com/EffectScript-Lang/effect-lang/tree/effectscript/packages/effectscript/language",
+  "homepage": "https://github.com/EffectScript-Lang/effectscript/tree/effectscript/packages/effectscript/language",
   "repository": {
     "type": "git",
-    "url": "https://github.com/EffectScript-Lang/effect-lang.git",
+    "url": "https://github.com/EffectScript-Lang/effectscript.git",
     "directory": "packages/effectscript/language"
   },
   "sideEffects": [],

@@ -80,7 +80,7 @@ const effectDocs = (): string => {
   // the examples it links live in the docs package, not in the installed skill: link them on GitHub
   const llms = fs.readFileSync(path.join(root, "../effect-docs/content/LLMS.efx.md"), "utf8").replaceAll(
     "](./ai-docs/",
-    "](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/"
+    "](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/"
   )
   return [
     "<!-- Generated from @effectscript/effect-docs content/LLMS.efx.md (ADR-0050): Effect's guide for agents, with EffectScript code. -->",

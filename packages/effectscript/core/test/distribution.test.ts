@@ -13,9 +13,9 @@ describe("GitHub coordinates (ADR-0036)", () => {
       const pkg = JSON.parse(fs.readFileSync(file, "utf8"))
       if (pkg.repository === undefined) continue
       found.push(dir)
-      expect(pkg.repository.url, dir).toBe("https://github.com/EffectScript-Lang/effect-lang.git")
+      expect(pkg.repository.url, dir).toBe("https://github.com/EffectScript-Lang/effectscript.git")
       if (pkg.homepage !== undefined) {
-        expect(pkg.homepage, dir).toMatch(/^https:\/\/(effectscript\.dev|github\.com\/EffectScript-Lang\/effect-lang)/)
+        expect(pkg.homepage, dir).toMatch(/^https:\/\/(effectscript\.dev|github\.com\/EffectScript-Lang\/effectscript)/)
       }
     }
     expect(found).toEqual(expect.arrayContaining(["core", "language", "vscode"]))

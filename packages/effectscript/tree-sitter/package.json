@@ -7,7 +7,7 @@
   "description": "EffectScript grammar for tree-sitter: TypeScript with Effect as syntax",
   "repository": {
     "type": "git",
-    "url": "https://github.com/EffectScript-Lang/effect-lang.git",
+    "url": "https://github.com/EffectScript-Lang/effectscript.git",
     "directory": "packages/effectscript/tree-sitter"
   },
   "scripts": {

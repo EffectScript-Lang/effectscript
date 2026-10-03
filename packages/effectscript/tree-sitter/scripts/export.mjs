@@ -71,7 +71,7 @@ fs.writeFileSync(
 The [EffectScript](https://effectscript.dev) grammar for tree-sitter: TypeScript's grammar plus Effect
 as syntax. \`src/\` holds the generated parser, so editors compile it as is.
 
-Generated from [EffectScript-Lang/effect-lang](https://github.com/EffectScript-Lang/effect-lang/tree/effectscript/packages/effectscript/tree-sitter);
+Generated from [EffectScript-Lang/effectscript](https://github.com/EffectScript-Lang/effectscript/tree/effectscript/packages/effectscript/tree-sitter);
 change the grammar there.
 
 \`queries/highlights.scm\` is self-contained (JavaScript's, TypeScript's, then EffectScript's patterns;

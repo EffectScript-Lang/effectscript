@@ -30,7 +30,7 @@ export default defineConfig({
       logo: { light: "./src/assets/lockup-black.svg", dark: "./src/assets/lockup-white.svg", replacesTitle: true },
       favicon: "/favicon.svg",
       social: [
-        { icon: "github", label: "GitHub", href: "https://github.com/EffectScript-Lang/effect-lang" },
+        { icon: "github", label: "GitHub", href: "https://github.com/EffectScript-Lang/effectscript" },
         { icon: "x.com", label: "@gunta85", href: "https://x.com/gunta85" }
       ],
       customCss: ["./src/styles/starlight.css"],

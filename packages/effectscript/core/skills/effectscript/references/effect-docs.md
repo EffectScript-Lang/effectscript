@@ -107,7 +107,7 @@ export error SomeError {
 
 ### More examples
 
-- **[Creating effects from common sources](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/01_basics/10_creating-effects.efx)**:
+- **[Creating effects from common sources](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/01_basics/10_creating-effects.efx)**:
   Learn how to create effects from various sources, including plain values,
   synchronous code, Promise APIs, optional values, and callback-based APIs.
 
@@ -119,7 +119,7 @@ All validation and domain modeling in Effect is done with `Schema`.
 
 For a comprehensive guide, see [SCHEMA.md](https://github.com/Effect-TS/effect/blob/main/packages/effect/SCHEMA.md). Make sure to read the guide in chunks, as it is a large document.
 
-- **[Schema basics](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/02_schema/10_schema-basics.efx)**:
+- **[Schema basics](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/02_schema/10_schema-basics.efx)**:
   Define `Schema.Class`s, decode unknown input into typed values, and
   encode typed values back into their external representation.
 
@@ -177,11 +177,11 @@ export type DatabaseService = Database["Service"]
 
 ### More examples
 
-- **[Context.Reference](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/03_services/10_reference.efx)**: For defining configuration values, feature flags, or any other service that has a default value.
-- **[Composing services with the Layer module](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/03_services/20_layer-composition.efx)**:
+- **[Context.Reference](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/03_services/10_reference.efx)**: For defining configuration values, feature flags, or any other service that has a default value.
+- **[Composing services with the Layer module](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/03_services/20_layer-composition.efx)**:
   Build focused service layers, then compose them with `Layer.provide` and
   `Layer.provideMerge` based on what services you want to expose.
-- **[Creating Layers from configuration and/or Effects](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/03_services/20_layer-unwrap.efx)**: Build a layer dynamically from an Effect / Config with `Layer.unwrap`.
+- **[Creating Layers from configuration and/or Effects](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/03_services/20_layer-unwrap.efx)**: Build a layer dynamically from an Effect / Config with `Layer.unwrap`.
 
 ## Error handling
 
@@ -219,8 +219,8 @@ export const withFinalFallback = loadPort("invalid").pipe(
 
 ### More examples
 
-- **[Catch multiple errors with Effect.catchTags](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/04_errors/10_catch-tags.efx)**: Use `Effect.catchTags` to handle several tagged errors in one place.
-- **[Creating and handling errors with reasons](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/04_errors/20_reason-errors.efx)**:
+- **[Catch multiple errors with Effect.catchTags](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/04_errors/10_catch-tags.efx)**: Use `Effect.catchTags` to handle several tagged errors in one place.
+- **[Creating and handling errors with reasons](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/04_errors/20_reason-errors.efx)**:
   Define a tagged error with a tagged `reason` field, then recover with
   `Effect.catchReason`, `Effect.catchReasons`, or by unwrapping the reason into
   the error channel with `Effect.unwrapReason`.
@@ -229,32 +229,32 @@ export const withFinalFallback = loadPort("invalid").pipe(
 
 Learn how to safely manage resources in Effect using `Scope`s and finalizers.
 
-- **[Acquiring resources with Effect.acquireRelease](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/05_resources/10_acquire-release.efx)**:
+- **[Acquiring resources with Effect.acquireRelease](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/05_resources/10_acquire-release.efx)**:
   Define a service that uses `Effect.acquireRelease` to manage the lifecycle of
   a resource, ensuring that it is properly cleaned up when the service is no
   longer needed.
-- **[Creating Layers that run background tasks](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/05_resources/20_layer-side-effects.efx)**: Use Layer.effectDiscard to encapsulate background tasks without a service interface.
-- **[Dynamic resources with LayerMap](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/05_resources/30_layer-map.efx)**:
+- **[Creating Layers that run background tasks](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/05_resources/20_layer-side-effects.efx)**: Use Layer.effectDiscard to encapsulate background tasks without a service interface.
+- **[Dynamic resources with LayerMap](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/05_resources/30_layer-map.efx)**:
   Use `LayerMap.Service` to dynamically build and manage resources that are
   keyed by some identifier, such as a tenant ID.
 
 ## Running Effect programs
 
-- **[Running effects with NodeRuntime and BunRuntime](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/06_running/10_run-main.efx)**: Use `NodeRuntime.runMain` to run an Effect program as your process entrypoint.
-- **[Using Layer.launch as the application entry point](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/06_running/20_layer-launch.efx)**: Use `Layer.launch` to run a long-running Effect program as your process entrypoint.
+- **[Running effects with NodeRuntime and BunRuntime](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/06_running/10_run-main.efx)**: Use `NodeRuntime.runMain` to run an Effect program as your process entrypoint.
+- **[Using Layer.launch as the application entry point](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/06_running/20_layer-launch.efx)**: Use `Layer.launch` to run a long-running Effect program as your process entrypoint.
 
 ## Broadcasting messages with PubSub
 
 Use `PubSub` when you need one producer to fan out messages to many consumers.
 
-- **[Broadcasting domain events with PubSub](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/07_pubsub/10_pubsub.efx)**: Build an in-process event bus with `PubSub` and expose it as a service.
+- **[Broadcasting domain events with PubSub](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/01_effect/07_pubsub/10_pubsub.efx)**: Build an in-process event bus with `PubSub` and expose it as a service.
 
 ## Working with Streams
 
 Effect Streams represent effectful, pull-based sequences of values over time.
 They let you model finite or infinite data sources.
 
-- **[Creating streams from common data sources](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/03_stream/10_creating-streams.efx)**:
+- **[Creating streams from common data sources](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/03_stream/10_creating-streams.efx)**:
   Learn how to create streams from various data sources. Includes:
 
   - `Stream.fromIterable` for arrays and other iterables
@@ -264,8 +264,8 @@ They let you model finite or infinite data sources.
   - `Stream.fromEventListener` for DOM events
   - `Stream.callback` for any callback-based API
   - `NodeStream.fromReadable` for Node.js readable streams
-- **[Consuming and transforming streams](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/03_stream/20_consuming-streams.efx)**: How to transform and consume streams using operators like `map`, `flatMap`, `filter`, `mapEffect`, and various `run*` methods.
-- **[Decoding and encoding streams](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/03_stream/30_encoding.efx)**:
+- **[Consuming and transforming streams](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/03_stream/20_consuming-streams.efx)**: How to transform and consume streams using operators like `map`, `flatMap`, `filter`, `mapEffect`, and various `run*` methods.
+- **[Decoding and encoding streams](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/03_stream/30_encoding.efx)**:
   Use `Stream.pipeThroughChannel` with the `Ndjson` and `SchemaBinary` modules to
   decode and encode streams of structured data.
 
@@ -275,19 +275,19 @@ They let you model finite or infinite data sources.
 from your application Layer, then use it anywhere you need imperative execution,
 like web handlers, framework hooks, worker queues, or legacy callback APIs.
 
-- **[Using ManagedRuntime with Hono](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/04_integration/10_managed-runtime.efx)**: Use `ManagedRuntime` to run Effect programs from external frameworks while keeping your domain logic in services and Layers.
+- **[Using ManagedRuntime with Hono](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/04_integration/10_managed-runtime.efx)**: Use `ManagedRuntime` to run Effect programs from external frameworks while keeping your domain logic in services and Layers.
 
 ## Batching external requests
 
 Learn how to batch multiple requests into fewer external calls.
 
-- **[Batching requests with RequestResolver](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/05_batching/10_request-resolver.efx)**: Define request types with `Request.Class`, resolve them in batches with `RequestResolver`.
+- **[Batching requests with RequestResolver](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/05_batching/10_request-resolver.efx)**: Define request types with `Request.Class`, resolve them in batches with `RequestResolver`.
 
 ## Working with Schedules
 
 Schedules define recurring patterns for retries, repeats and polling.
 
-- **[Working with the Schedule module](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/06_schedule/10_schedules.efx)**: Build schedules, compose them, and use them with `Effect.retry` and `Effect.repeat`.
+- **[Working with the Schedule module](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/06_schedule/10_schedules.efx)**: Build schedules, compose them, and use them with `Effect.retry` and `Effect.repeat`.
 
 ## Working with DateTime
 
@@ -295,10 +295,10 @@ When working with dates and time, use the `DateTime` module instead of `Date` an
 
 Use it when your Effect programs need testable current time, safe parsing, stable ISO formatting, time-zone conversion, or calendar arithmetic.
 
-- **[Creating and formatting DateTime values](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/07_datetime/10_creating-and-formatting.efx)**:
+- **[Creating and formatting DateTime values](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/07_datetime/10_creating-and-formatting.efx)**:
   Parse incoming date values safely, use Clock-powered current time, and format
   instants for API payloads or user-facing labels.
-- **[Working with time zones](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/07_datetime/20_time-zones.efx)**:
+- **[Working with time zones](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/07_datetime/20_time-zones.efx)**:
   Attach IANA zones to instants, render zoned ISO strings, and provide a
   CurrentTimeZone service for code that should use the workspace/user zone.
 
@@ -310,13 +310,13 @@ metrics. For exporting telemetry, use the lightweight Otlp modules from
 `@effect/opentelemetry` NodeSdk when integrating with an existing OpenTelemetry
 setup.
 
-- **[Customizing logging](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/08_observability/10_logging.efx)**: Configure loggers & log-level filtering for production applications.
-- **[Setting up tracing with Otlp modules](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/08_observability/20_otlp-tracing.efx)**: Configure Otlp tracing + log export with a reusable observability layer.
+- **[Customizing logging](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/08_observability/10_logging.efx)**: Configure loggers & log-level filtering for production applications.
+- **[Setting up tracing with Otlp modules](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/08_observability/20_otlp-tracing.efx)**: Configure Otlp tracing + log export with a reusable observability layer.
 
 ## Testing Effect programs
 
-- **[Writing Effect tests with @effect/vitest](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/09_testing/10_effect-tests.efx)**: Using `it.effect` for Effect-based tests.
-- **[Testing services with shared layers](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/09_testing/20_layer-tests.efx)**: How to test Effect services that depend on other services.
+- **[Writing Effect tests with @effect/vitest](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/09_testing/10_effect-tests.efx)**: Using `it.effect` for Effect-based tests.
+- **[Testing services with shared layers](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/09_testing/20_layer-tests.efx)**: How to test Effect services that depend on other services.
 
 ## Runtime type guards
 
@@ -351,7 +351,7 @@ Use the `effect/sql` modules together with a driver package such as
 `Model.Class` to derive schemas for the database and JSON boundaries, run
 migrations, and write type-safe queries.
 
-- **[Getting started with SQL](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/40_sql/10_basics.efx)**:
+- **[Getting started with SQL](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/40_sql/10_basics.efx)**:
   Define a schema-backed domain model, run migrations against a SQLite
   database, and expose a derived repository through a service.
 
@@ -359,16 +359,16 @@ migrations, and write type-safe queries.
 
 Build http clients with the `HttpClient` module.
 
-- **[Getting started with HttpClient](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/50_http-client/10_basics.efx)**: Define a service that uses the HttpClient module to fetch data from an external API
+- **[Getting started with HttpClient](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/50_http-client/10_basics.efx)**: Define a service that uses the HttpClient module to fetch data from an external API
 
 ## Building HttpApi servers
 
 `HttpApi` gives you schema-first, type-safe HTTP APIs with runtime validation, typed clients, and OpenAPI docs from one definition.
 
-- **[Getting started with HttpApi](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/51_http-server/10_basics.efx)**:
+- **[Getting started with HttpApi](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/51_http-server/10_basics.efx)**:
   Define a schema-first API, implement handlers, secure endpoints with
   middleware, serve it over HTTP, and call it using a generated typed client.
-- **[Testing HttpApi implementations](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/51_http-server/20_testing.efx)**:
+- **[Testing HttpApi implementations](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/51_http-server/20_testing.efx)**:
   Test handlers through an in-memory typed client with `HttpApiTest`, without
   starting an HTTP server or touching a real database.
 
@@ -376,7 +376,7 @@ Build http clients with the `HttpClient` module.
 
 Use the `effect/process` modules to define child processes and run them with `ChildProcessSpawner`.
 
-- **[Working with child processes](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/60_child-process/10_working-with-child-processes.efx)**: This example shows how to collect process output, compose pipelines, and stream long-running command output.
+- **[Working with child processes](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/60_child-process/10_working-with-child-processes.efx)**: This example shows how to collect process output, compose pipelines, and stream long-running command output.
 
 ## Building CLI applications
 
@@ -384,7 +384,7 @@ Use the "effect/cli" modules to build CLI applications. These modules
 provide utilities for parsing command-line arguments, handling user input, and
 managing the flow of a CLI application.
 
-- **[Getting started with Effect CLI modules](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/70_cli/10_basics.efx)**:
+- **[Getting started with Effect CLI modules](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/70_cli/10_basics.efx)**:
   Build a command-line app with typed arguments and flags, then wire subcommand
   handlers into a single executable command.
 
@@ -394,13 +394,13 @@ Effect's AI modules provide a provider-agnostic interface for language models.
 You can generate text, decode structured objects with `Schema` and stream partial
 responses.
 
-- **[Using LanguageModel for text, objects, and streams](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/71_ai/10_language-model.efx)**:
+- **[Using LanguageModel for text, objects, and streams](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/71_ai/10_language-model.efx)**:
   Configure a provider once, then use `LanguageModel` for plain text
   generation, schema-validated object generation, and streaming responses.
-- **[Defining and using AI tools](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/71_ai/20_tools.efx)**:
+- **[Defining and using AI tools](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/71_ai/20_tools.efx)**:
   Define tools with schemas, group them into toolkits, implement handlers,
   and pass them to `LanguageModel.generateText`.
-- **[Stateful chat sessions](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/71_ai/30_chat.efx)**:
+- **[Stateful chat sessions](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/71_ai/30_chat.efx)**:
   The AI `Chat` module maintains conversation history automatically. Build
   AI agents or chat assistants.
 
@@ -409,4 +409,4 @@ responses.
 The cluster modules let you model stateful services as entities and distribute
 them across multiple machines.
 
-- **[Defining cluster entities](https://github.com/EffectScript-Lang/effect-lang/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/80_cluster/10_entities.efx)**: Define distributed entity RPCs and run them in a cluster.
+- **[Defining cluster entities](https://github.com/EffectScript-Lang/effectscript/blob/effectscript/packages/effectscript/effect-docs/content/ai-docs/80_cluster/10_entities.efx)**: Define distributed entity RPCs and run them in a cluster.

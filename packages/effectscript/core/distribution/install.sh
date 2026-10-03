@@ -6,7 +6,7 @@
 # Settings (environment variables):
 #   EFX_VERSION        a released version, such as 4.0.0-alpha.1 (default: the latest release)
 #   EFX_INSTALL        where to install (default: ~/.effectscript); efx goes in $EFX_INSTALL/bin
-#   EFX_DOWNLOAD_BASE  where releases live (default: the EffectScript-Lang/effect-lang releases)
+#   EFX_DOWNLOAD_BASE  where releases live (default: the EffectScript-Lang/effectscript releases)
 #
 # The archive must match the release's SHASUMS256.txt, and the binary must run before it replaces
 # anything. Shell startup files are never edited: the script prints the PATH line to add.
@@ -51,7 +51,7 @@ is_musl() {
 
 # Everything runs from main, so a download cut short never runs half a script.
 main() {
-  base="${EFX_DOWNLOAD_BASE:-https://github.com/EffectScript-Lang/effect-lang/releases}"
+  base="${EFX_DOWNLOAD_BASE:-https://github.com/EffectScript-Lang/effectscript/releases}"
   version="${EFX_VERSION:-latest}"
   dir="${EFX_INSTALL:-$HOME/.effectscript}"
   # the PATH line must work from any directory

@@ -74,7 +74,7 @@ export const brandAssets = async () => {
 const docs = path.join(site, "src/content/docs/docs")
 const skill = path.join(site, "../core/skills/effectscript")
 const corpus = path.join(site, "../effect-docs/content")
-const github = "https://github.com/EffectScript-Lang/effect-lang/blob/effectscript"
+const github = "https://github.com/EffectScript-Lang/effectscript/blob/effectscript"
 
 /** The generated docs paths (gitignored; everything else under src/content/docs is hand-written). */
 export const generated = [

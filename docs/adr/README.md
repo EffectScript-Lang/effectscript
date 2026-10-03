@@ -47,7 +47,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0033](0033-cli-conventions-and-convert-verification.md) | CLI argument passthrough and `efx convert` verification | Accepted |
 | [0034](0034-efx-run-runtime-selection.md) | `efx run` picks Bun only when the project can run `main` on Bun | Accepted |
 | [0035](0035-import-efx-with-its-extension.md) | Import `.efx` modules with their extension | Accepted |
-| [0036](0036-github-coordinates-under-effectscript-lang.md) | GitHub coordinates live under the EffectScript-Lang organization | Accepted |
+| [0036](0036-github-coordinates-under-effectscript-lang.md) | GitHub coordinates live under the EffectScript-Lang organization | Superseded by 0060 |
 | [0037](0037-standalone-binary-runs-on-its-own-bun.md) | The standalone binary runs programs on its own Bun | Accepted |
 | [0038](0038-install-channels-and-plan-10b.md) | Install channels, release assets, and moving `setup`/`--ai`/`skill` to Plan 10b | Accepted |
 | [0039](0039-await-guardrails-in-the-editor.md) | The `await` guardrails in the editor | Accepted |
@@ -66,6 +66,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0057](0057-first-run-defaults.md) | The CLI's defaults for a first run | Accepted |
 | [0058](0058-tree-sitter-grammar-and-zed.md) | A tree-sitter grammar that extends TypeScript's, and a Zed extension on it | Accepted |
 | [0059](0059-efx-setup-upgrades-and-config-locations.md) | `efx setup` upgrades what it installed, and follows the tools' config variables | Accepted |
+| [0060](0060-the-repository-is-effectscript-lang-effectscript.md) | The repository is `EffectScript-Lang/effectscript` | Accepted |
 
 ## Template
 
