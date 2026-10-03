@@ -10,7 +10,7 @@ import * as path from "node:path"
 import { languageBin, runCheck } from "../cli/check.ts"
 import { lineColumn } from "../compiler/diagnostics.ts"
 import { packageInfo } from "../project.ts"
-import { aiPass, findAgent } from "./ai.ts"
+import { agents, aiPass, findAgent } from "./ai.ts"
 import { type ConversionPlan, planConversion } from "./plan.ts"
 
 /**
@@ -167,6 +167,15 @@ const verifier = (cwd: string, options: ConvertCommandOptions, io: Output): (() 
  * @category convert
  */
 export const convertProject = async (cwd: string, options: ConvertCommandOptions, io: Output): Promise<number> => {
+  // flags are checked before anything is read or written (Plan 18 Task 5)
+  if (options.agent !== undefined && !agents.some((a) => a.id === options.agent)) {
+    io.err(`efx convert --agent: unknown "${options.agent}"; choose from ${agents.map((a) => a.id).join(", ")}`)
+    return 1
+  }
+  if (options.timeout !== undefined && !(options.timeout >= 1)) {
+    io.err(`efx convert --timeout must be at least 1 (seconds per file), not ${options.timeout}`)
+    return 1
+  }
   const isGit = gitIn(cwd, ["rev-parse", "--is-inside-work-tree"]).stdout.trim() === "true"
   if (options.write && !isGit) {
     io.err("efx convert --write needs a git repository: it works on a new branch, so nothing is lost")

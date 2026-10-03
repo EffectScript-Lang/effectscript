@@ -144,11 +144,33 @@ const symbol = { done: "✓", skipped: "·", manual: "→", failed: "✗" } as c
  * @since 4.0.0
  * @category setup
  */
+/** What `--only` accepts: the agents, then the editors (Plan 18 Task 5). */
+const targetIds: ReadonlyArray<Detected["id"]> = [
+  "claude",
+  "codex",
+  "cursor-agent",
+  "gemini",
+  "opencode",
+  "vscode",
+  "cursor",
+  "windsurf",
+  "vscodium",
+  "neovim",
+  "helix",
+  "zed",
+  "jetbrains"
+]
+
 export const setup = async (
   options: SetupOptions,
   out: (line: string) => void,
   err: (line: string) => void
 ): Promise<number> => {
+  const unknown = options.only?.find((id) => !(targetIds as ReadonlyArray<string>).includes(id))
+  if (unknown !== undefined) {
+    err(`efx setup --only: unknown "${unknown}"; choose from ${targetIds.join(", ")}`)
+    return 1
+  }
   const found: ReadonlyArray<Detected> = options.project
     ? []
     : detect(machine(options.home)).filter((d) => options.only === undefined || options.only.includes(d.id))

@@ -118,6 +118,10 @@ export const installSkill = (
   out: (line: string) => void,
   err: (line: string) => void
 ): number => {
+  if (options.global && options.dir !== undefined) {
+    err("efx skill: --global and --dir both choose where to install; pass one")
+    return 1
+  }
   const target = options.dir !== undefined
     ? path.resolve(options.cwd, options.dir)
     : path.join(options.global ? options.home : options.cwd, ".claude", "skills", "effectscript")
