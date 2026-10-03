@@ -73,3 +73,13 @@ plan's execution record.
 
 **Found while doing it:** `.gitattributes`, including the earlier `*.efx` Linguist rules, had never
 been tracked: the root `.gitignore` hides every dotfile except a list. It is re-included.
+
+**Final review (fresh reviewer, 0 Critical, 3 Important), fixed in one pass with tests that failed
+first:** the agent's output pipes are released after it exits (a process that escaped its group
+kept `efx` running); empty or relative config variables are ignored; ADR-0059 records the
+`efx setup` changes. Regraded to Important and fixed: a stale skill's upgrade says "updated".
+
+**Deferred minors:** `marketplaceVersion` throws on a non-release version; the npm-installed
+`efx` message for an older extension; one shared output tail and unstripped control characters;
+a list summary followed by a paragraph; `ln -s self self` crashes `efx fix`; `efx skill --global`
+ignores `CLAUDE_CONFIG_DIR`.

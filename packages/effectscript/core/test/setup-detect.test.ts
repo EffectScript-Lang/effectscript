@@ -43,6 +43,24 @@ describe("efx setup detection (Plan 15 Task 1, ADR-0052)", () => {
     expect(found.find((d) => d.id === "codex")!.skillsDir).toBe("/opt/codex/skills")
   })
 
+  it("ignores empty or relative config variables (Plan 20 review I2)", () => {
+    for (const value of ["", "relative/dir"]) {
+      const found = detect(env(["/usr/bin/nvim", "/usr/bin/claude", "/usr/bin/codex"], {
+        vars: {
+          CLAUDE_CONFIG_DIR: value,
+          CODEX_HOME: value,
+          XDG_CONFIG_HOME: value,
+          NVIM_APPNAME: value === "" ? "" : "lazy"
+        }
+      }))
+      expect(found.find((d) => d.id === "claude")!.skillsDir, value).toBe("/home/u/.claude/skills")
+      expect(found.find((d) => d.id === "codex")!.skillsDir, value).toBe("/home/u/.codex/skills")
+      expect(found.find((d) => d.id === "neovim")!.configDir, value).toBe(
+        value === "" ? "/home/u/.config/nvim" : "/home/u/.config/lazy"
+      )
+    }
+  })
+
   it("honours XDG_CONFIG_HOME", () => {
     const found = detect(env(["/usr/bin/nvim"], { vars: { XDG_CONFIG_HOME: "/xdg" } }))
     expect(found[0]!.configDir).toBe("/xdg/nvim")

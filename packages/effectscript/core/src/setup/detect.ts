@@ -81,11 +81,22 @@ const app = (env: SetupEnv, bundle: string, inside: string): string | undefined 
   return undefined
 }
 
+/**
+ * A directory from an environment variable, when it is set to an absolute path: an empty or
+ * relative value would put files wherever efx happens to run (Plan 20 review I2).
+ */
+const directoryVar = (env: SetupEnv, name: string): string | undefined => {
+  const value = env.vars[name]
+  if (value === undefined || value === "") return undefined
+  const absolute = env.platform === "win32" ? path.win32.isAbsolute(value) : path.posix.isAbsolute(value)
+  return absolute ? value : undefined
+}
+
 /** `$XDG_CONFIG_HOME`, `%APPDATA%` or `%LOCALAPPDATA%`, by the tool's convention. */
 const configHome = (env: SetupEnv, windows: "APPDATA" | "LOCALAPPDATA") =>
   env.platform === "win32"
-    ? env.vars[windows] ?? join(env, env.home, "AppData", windows === "APPDATA" ? "Roaming" : "Local")
-    : env.vars.XDG_CONFIG_HOME ?? join(env, env.home, ".config")
+    ? directoryVar(env, windows) ?? join(env, env.home, "AppData", windows === "APPDATA" ? "Roaming" : "Local")
+    : directoryVar(env, "XDG_CONFIG_HOME") ?? join(env, env.home, ".config")
 
 const vscodeFamily: ReadonlyArray<readonly [Detected["id"], string, string, string]> = [
   ["vscode", "VS Code", "code", "Visual Studio Code.app"],
@@ -116,7 +127,7 @@ export const detect = (env: SetupEnv): Array<Detected> => {
       name: "Neovim",
       cli: nvim,
       // NVIM_APPNAME picks another config directory (LazyVim, AstroNvim, …)
-      configDir: join(env, configHome(env, "LOCALAPPDATA"), env.vars.NVIM_APPNAME ?? "nvim"),
+      configDir: join(env, configHome(env, "LOCALAPPDATA"), env.vars.NVIM_APPNAME || "nvim"),
       evidence: nvim
     })
   }
@@ -147,8 +158,8 @@ export const detect = (env: SetupEnv): Array<Detected> => {
     if (cli === undefined && !env.exists(home)) return
     found.push({ kind: "agent", id, name, cli, skillsDir: join(env, home, "skills"), evidence: cli ?? home })
   }
-  agent("claude", "Claude Code", "claude", env.vars.CLAUDE_CONFIG_DIR ?? join(env, env.home, ".claude"))
-  agent("codex", "Codex", "codex", env.vars.CODEX_HOME ?? join(env, env.home, ".codex"))
+  agent("claude", "Claude Code", "claude", directoryVar(env, "CLAUDE_CONFIG_DIR") ?? join(env, env.home, ".claude"))
+  agent("codex", "Codex", "codex", directoryVar(env, "CODEX_HOME") ?? join(env, env.home, ".codex"))
   agent("cursor-agent", "Cursor (agent)", undefined, join(env, env.home, ".cursor"))
   agent("gemini", "Gemini CLI", "gemini", join(env, env.home, ".gemini"))
   agent("opencode", "opencode", "opencode", join(env, configHome(env, "APPDATA"), "opencode"))

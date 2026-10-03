@@ -113,8 +113,9 @@ const skillActions = (agents: ReadonlyArray<Detected>, options: PlanOptions): Ar
           if (sameFiles(shared, options.skill) && fs.readdirSync(shared).length > 0) {
             return { status: "skipped", detail: "already installed" }
           }
+          const upgrade = fs.existsSync(shared) && fs.readdirSync(shared).length > 0
           writeSkill(shared, options.skill)
-          return { status: "done", detail: shared }
+          return { status: "done", detail: upgrade ? `updated ${shared} to this efx's skill` : shared }
         })
     },
     ...agents.map((agent): Action => {

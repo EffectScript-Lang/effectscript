@@ -58,13 +58,14 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0044](0044-living-docs-review-amendments.md) | Living-docs amendments from the Plan 12 review | Accepted |
 | [0050](0050-effect-docs-corpus-in-effectscript.md) | The Effect docs, translated to EffectScript by the reverse compiler | Accepted |
 | [0051](0051-the-effectscript-agent-skill.md) | The EffectScript agent skill: generated where it can be, type-checked where it's written | Accepted |
-| [0052](0052-efx-setup-targets-links-and-consent.md) | `efx setup`: what it touches, how it links the skill, and when it asks | Accepted |
+| [0052](0052-efx-setup-targets-links-and-consent.md) | `efx setup`: what it touches, how it links the skill, and when it asks | Accepted, amended by 0059 |
 | [0053](0053-efx8112-await-on-a-runtime-array.md) | EFX8112 warns when `await` gets an array built at runtime | Accepted |
 | [0054](0054-site-stack-and-content-sources.md) | The site's stack deviations and where its content comes from | Accepted |
 | [0055](0055-versioning-notes-and-packing-in-the-fork.md) | How EffectScript is versioned, noted and packed in a fork whose changesets are upstream's | Accepted, amended |
 | [0056](0056-efx-fix.md) | `efx fix` rewrites through the round trip, and only EFX8101 | Accepted |
 | [0057](0057-first-run-defaults.md) | The CLI's defaults for a first run | Accepted |
 | [0058](0058-tree-sitter-grammar-and-zed.md) | A tree-sitter grammar that extends TypeScript's, and a Zed extension on it | Accepted |
+| [0059](0059-efx-setup-upgrades-and-config-locations.md) | `efx setup` upgrades what it installed, and follows the tools' config variables | Accepted |
 
 ## Template
 

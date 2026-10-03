@@ -54,6 +54,7 @@ case "$FAKE_MODE" in
   child) (sleep 2; printf '// late\\n' >> src/a.efx) & sleep 30 ;;
   rename) mv src/a.efx src/a.ts ;;
   fail) printf '// partial\\n' >> src/a.efx; exit 1 ;;
+  orphan) node -e "require('child_process').spawn('sleep', ['8'], { detached: true, stdio: ['ignore', 'inherit', 'inherit'] }).unref()"; echo "gave up" >&2; exit 1 ;;
   quota) echo "working on src/a.efx"; echo "Error: usage limit reached, try again at 5pm" >&2; exit 1 ;;
 esac
 `,
@@ -91,6 +92,14 @@ describe("efx convert --ai (Plan 15 Task 4, ADR-0052)", () => {
     expect(result.stdout).toMatch(/reverted|no change/)
     expect(result.stdout + result.stderr).toContain("usage limit reached, try again at 5pm")
     expect(result.stdout + result.stderr).toContain("working on src/a.efx")
+  })
+
+  it("doesn't wait for a process the agent left holding its output (Plan 20 review I1)", () => {
+    const p = setupProject()
+    const started = Date.now()
+    const result = convert(p, "orphan")
+    expect(result.stdout + result.stderr).toContain("gave up")
+    expect(Date.now() - started).toBeLessThan(6000)
   })
 
   it("hands the agent the file and its notes, and keeps an edit that verifies", () => {

@@ -1,6 +1,6 @@
 # ADR-0052: `efx setup`: what it touches, how it links the skill, and when it asks
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by ADR-0059 (upgrades, config variables)
 - **Date:** 2026-10-03
 - **Deciders:** agent ruling for Plan 15 (the Plan 10b part of ADR-0038)
 - **Related:** spec §7.5, §8; ADR-0038, ADR-0040, ADR-0041, ADR-0051

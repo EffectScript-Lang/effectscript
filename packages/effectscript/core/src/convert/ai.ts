@@ -143,8 +143,8 @@ const runAgent = (
 ): Promise<{ readonly outcome: number | "timeout" | Error; readonly output: string }> =>
   new Promise((resolve) => {
     let output = ""
-    const keep = (chunk: Buffer) => {
-      output = (output + chunk.toString("utf8")).slice(-outputLimit)
+    const keep = (chunk: string) => {
+      output = (output + chunk).slice(-outputLimit)
     }
     const windows = process.platform === "win32"
     // Windows: npm installs agents as .cmd shims, which need a shell, with every part quoted, and
@@ -179,11 +179,24 @@ const runAgent = (
       clearTimeout(timer)
       resolve({ outcome: error, output })
     })
+    child.stdout?.setEncoding("utf8")
+    child.stderr?.setEncoding("utf8")
     child.on("exit", (code) => {
       clearTimeout(timer)
       // whatever it left running in the background must not edit files after we verify
       stopTree()
-      resolve({ outcome: timedOut ? "timeout" : code ?? 1, output })
+      const done = () => {
+        // a process that escaped the group may still hold the pipes: let go of them (review I1)
+        child.stdout?.destroy()
+        child.stderr?.destroy()
+        resolve({ outcome: timedOut ? "timeout" : code ?? 1, output })
+      }
+      // the last output can still be in flight when `exit` fires: wait briefly for `close`
+      const grace = setTimeout(done, 1000)
+      child.once("close", () => {
+        clearTimeout(grace)
+        done()
+      })
     })
   })
 
