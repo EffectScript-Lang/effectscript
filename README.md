@@ -53,6 +53,20 @@ Stable APIs reserve breaking changes for major releases. APIs marked unstable ma
 
 The Effect v3 source code is available on the [`v3`](https://github.com/Effect-TS/effect/tree/v3) branch, which is also where issues and pull requests meant for Effect v3 should be targeted. To upgrade, see the [migration guide](MIGRATION.md).
 
+## EffectScript
+
+This fork also hosts **EffectScript**: TypeScript with Effect as native syntax. `.efx` files compile
+to idiomatic Effect TypeScript, and every `.ts` file is valid EffectScript. It is built on Effect;
+it is not an official Effect project.
+
+| Package                                                    | Description                                                                    | Docs                                                    |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| [`effectscript`](packages/effectscript/core)               | The compiler (both directions), the `efx` CLI, and the Bun and Vite plugins    | [docs](https://effectscript.dev/docs/)                  |
+| [`@effectscript/language`](packages/effectscript/language) | Editor support: the TypeScript server plugin, `efx-tsc`, `efx-language-server` | [editors](https://effectscript.dev/docs/start/install/) |
+
+The VS Code extension, the site, the Effect docs in EffectScript and the examples live next to
+them in [`packages/effectscript`](packages/effectscript).
+
 ## Packages
 
 This monorepo contains the core `effect` package alongside integration packages that extend it. All packages listed below are released together with synchronized versions.

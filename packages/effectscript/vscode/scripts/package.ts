@@ -58,7 +58,7 @@ try {
   for (const file of ["README.md", "language-configuration.json"]) {
     fs.copyFileSync(path.join(root, file), path.join(stage, file))
   }
-  fs.copyFileSync(path.join(root, "../../../LICENSE"), path.join(stage, "LICENSE"))
+  fs.copyFileSync(path.join(root, "LICENSE"), path.join(stage, "LICENSE"))
   fs.cpSync(path.join(root, "syntaxes"), path.join(stage, "syntaxes"), { recursive: true })
   fs.mkdirSync(path.join(stage, "images"))
   for (const icon of ["extension-icon-128.png", "file-efx-dark.svg", "file-efx-light.svg"]) {
