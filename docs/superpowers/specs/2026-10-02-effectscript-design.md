@@ -258,7 +258,26 @@ Scoping: `defer` and `using … await` mark the enclosing `effect` as scoped:
   This is the idiomatic acquire-in-layer pattern.
 
 `for await`: `continue` becomes `return`. `break`, labeled jumps, and `return` inside the loop are
-errors (**EFX2010**).
+errors (**EFX2010**). A single-statement body becomes the generator's block.
+
+**Generator streams** (ADR-0067). `effect* name(…): A throws E needs R { … }` declares a function
+that returns a `Stream<A, E, R>`. Its body is `effect` code in which `yield x` emits an element:
+
+```ts
+const name = (…): Stream.Stream<A, E, R> => Stream.callback((queue) => Effect.gen(function*() {
+  … yield* Queue.offer(queue, x) …
+}).pipe(Queue.into(queue)), { bufferSize: 1 })
+```
+
+- The stream pulls one element at a time (a buffer of one), ends when the body returns, fails with
+  what the body throws, and stops the body when the consumer stops (`Stream.take`). The stream
+  provides the scope, so `defer` and `using` need no `Effect.scoped`.
+- The element type is required (**EFX2006**): `Stream.callback` can only learn it from the return
+  type. `yield*` inside is **EFX2007** (`for await (const x of s) yield x` forwards a stream), and
+  `|>` after the declaration is **EFX2008**.
+- `yield` in a nested function, and plain `function*` generators, keep their JavaScript meaning.
+- `effect * name(…)` is a stream only when `:` or `{` follows the parameters; otherwise it stays a
+  multiplication.
 
 ### 4.4 `try` / `catch` / `finally` inside `effect`
 
@@ -1703,7 +1722,6 @@ The order was revised after the plan review (ADR-0016).
 
 ## 14. Roadmap (explicitly out of v0.1)
 
-- Generator streams (`effect*` with `yield` → `Stream`).
 - More library constructs: `rpc` (RpcGroup), `workflow` (effect/workflow), `tool`/`toolkit`
   (effect/ai), `entity` (cluster), and a Foldkit-style `app` (Model/Message/update/view).
 - Automatic layer wiring for `main` (whole-program analysis of which services are used).

@@ -235,3 +235,12 @@ export const endsAt = (ctx: ReverseCtx, statement: Node, end: number): boolean =
  */
 export const isCanonicalString = (ctx: ReverseCtx, node: Node | null | undefined): node is Node =>
   node?.type === "Literal" && typeof node.value === "string" && slice(ctx, node) === JSON.stringify(node.value)
+
+/**
+ * `yield* Queue.offer(queue, x)` steps of a generator stream being converted back (ADR-0067): they
+ * become `yield x`, not `await`.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const streamOffers: WeakSet<Node> = new WeakSet()

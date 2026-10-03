@@ -8,7 +8,7 @@ import type { Node } from "../ast.ts"
 import { excludedNames, namespaceExports, preludeFunctions, preludeModules } from "../prelude/tables.ts"
 import { isParenthesized } from "../transform/await.ts"
 import { convertAmbient } from "./ambient.ts"
-import { commentsIn, removeKeepingComments, type ReverseCtx } from "./context.ts"
+import { commentsIn, removeKeepingComments, type ReverseCtx, streamOffers } from "./context.ts"
 import { convertMatch, matchShape } from "./match.ts"
 import { importedLocal, isMember } from "./origin.ts"
 import { inPosition, pipeShape } from "./pipes.ts"
@@ -132,6 +132,11 @@ const parenRange = (ctx: ReverseCtx, node: Node): { readonly open: number; reado
  * @category reverse
  */
 export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node | undefined, visit: Visit): boolean => {
+  // a stream's `yield* Queue.offer(queue, x)`, already rewritten to `yield x`
+  if (streamOffers.has(node)) {
+    visit(node.argument.arguments[1], node.argument, true)
+    return true
+  }
   // `return yield* Effect.fail(e)` / `return yield* new E(…)` → `throw …` (the forward `throw` lowering)
   if (node.type === "ReturnStatement" && node.argument?.type === "YieldExpression" && node.argument.delegate) {
     const yielded: Node = node.argument

@@ -21,13 +21,14 @@ import {
   type ReverseCtx,
   separatorComma,
   slice,
+  streamOffers,
   within
 } from "./context.ts"
 import { convertImpl } from "./httpApi.ts"
 import { convertLayer } from "./layer.ts"
 import { convertMain } from "./main.ts"
 import { convertMatch, matchShape } from "./match.ts"
-import { isMember } from "./origin.ts"
+import { importedLocal, isMember } from "./origin.ts"
 import { convertPipe, inPosition, isPlainStep } from "./pipes.ts"
 import { hasFinalizer, inFrame } from "./resources.ts"
 import { convertReferenceService } from "./service.ts"
@@ -161,6 +162,121 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
   removeKeepingComments(ctx, previous.end, call.end)
   for (const param of fn.params) visit(param, fn, false)
   within(ctx, "Effect", () => inFrame(ctx, scope !== undefined, () => visit(fn.body, fn, true)))
+  return true
+}
+
+/** `yield*` steps at a generator's own level, not inside a nested function. */
+const ownDelegations = (body: Node): Array<Node> => {
+  const found: Array<Node> = []
+  const walkOwn = (node: Node): void => {
+    if (/Function|Method|Class/.test(node.type)) return
+    if (node.type === "YieldExpression" && node.delegate) found.push(node)
+    for (const child of children(node)) walkOwn(child)
+  }
+  for (const child of children(body)) walkOwn(child)
+  return found
+}
+
+/** Whether `name` occurs as an identifier anywhere under `node`. */
+const mentions = (node: Node, name: string): boolean =>
+  (node.type === "Identifier" && node.name === name) || children(node).some((child) => mentions(child, name))
+
+/**
+ * `const f = (…): Stream.Stream<A, E> => Stream.callback((queue) => Effect.gen(function*() { …
+ * yield* Queue.offer(queue, x) … }).pipe(Queue.into(queue)), { bufferSize: 1 })` → `effect* f(…): A
+ * throws E { … yield x … }` (ADR-0067).
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertStreamDeclaration = (ctx: ReverseCtx, statement: Node, visit: Visit): boolean => {
+  const stream = importedLocal(ctx.analysis, "effect", "Stream")
+  const queueModule = importedLocal(ctx.analysis, "effect", "Queue")
+  if (stream === undefined || queueModule === undefined) return false
+  if (statement.kind !== "const" || statement.declarations.length !== 1) return false
+  const declarator: Node = statement.declarations[0]
+  const arrow: Node | null = declarator.init
+  if (
+    declarator.id.type !== "Identifier" || declarator.id.typeAnnotation || arrow?.type !== "ArrowFunctionExpression" ||
+    arrow.async || arrow.typeParameters || arrow.returnType === undefined || arrow.body.type !== "CallExpression"
+  ) {
+    return false
+  }
+  // the element, error and requirement types
+  const type: Node = arrow.returnType.typeAnnotation
+  const typeArgs: Array<Node> = (type.typeArguments ?? type.typeParameters)?.params ?? []
+  if (
+    type.type !== "TSTypeReference" || slice(ctx, type.typeName) !== `${stream}.Stream` || typeArgs.length < 1 ||
+    typeArgs.length > 3
+  ) {
+    return false
+  }
+  const call: Node = arrow.body
+  const [producer, options]: Array<Node> = call.arguments
+  if (
+    !isMember(call.callee, stream, "callback") || call.arguments.length !== 2 ||
+    producer?.type !== "ArrowFunctionExpression" || producer.params.length !== 1 ||
+    producer.params[0].type !== "Identifier" || slice(ctx, options!) !== "{ bufferSize: 1 }"
+  ) {
+    return false
+  }
+  const queue: string = producer.params[0].name
+  const into: Node = producer.body
+  if (
+    into?.type !== "CallExpression" || into.callee.type !== "MemberExpression" ||
+    into.callee.property?.name !== "pipe" ||
+    into.arguments.length !== 1 || slice(ctx, into.arguments[0]) !== `${queueModule}.into(${queue})`
+  ) {
+    return false
+  }
+  const gen: Node = into.callee.object
+  const shape = gen.type === "CallExpression" ? genShape(ctx, gen, into) : undefined
+  if (shape === undefined || !("fn" in shape) || gen.arguments.length !== 1) return false
+  const body: Node = shape.fn.body
+  if (
+    ctx.source.slice(arrow.returnType.end, body.start) !==
+      ` => ${stream}.callback((${queue}) => ${ctx.effect}.gen(function*() ` ||
+    ctx.source.slice(body.end, statement.end) !== `).pipe(${queueModule}.into(${queue})), { bufferSize: 1 })` ||
+    ctx.source.slice(declarator.id.end, arrow.start) !== " = " ||
+    commentsIn(ctx, arrow.returnType.end, body.start).length > 0
+  ) {
+    return false
+  }
+  // every use of the queue is an offer at the generator's own level
+  const offers = ownDelegations(body).filter((y) =>
+    y.argument.type === "CallExpression" && isMember(y.argument.callee, queueModule, "offer") &&
+    y.argument.arguments.length === 2 && y.argument.arguments[0].type === "Identifier" &&
+    y.argument.arguments[0].name === queue
+  )
+  const offered = new Set(offers.map((y) => y.argument.arguments[0]))
+  const stray = (node: Node): boolean =>
+    (node.type === "Identifier" && node.name === queue && !offered.has(node)) || children(node).some(stray)
+  if (offers.length === 0 || stray(body) || mentions(arrow.returnType, queue)) return false
+  const reason = blocker(shape.fn, "declaration", ctx)
+  if (reason !== undefined) return false
+  // the header
+  replaceKeepingComments(ctx, statement.start, declarator.id.start, "effect* ")
+  ctx.s.remove(declarator.id.end, arrow.start)
+  const [success, error, requirements] = typeArgs
+  const omitError = error === undefined || (requirements !== undefined && error.type === "TSNeverKeyword")
+  ctx.s.update(
+    type.start,
+    type.end,
+    `${slice(ctx, success!)}${omitError ? "" : ` throws ${slice(ctx, error!)}`}${
+      requirements === undefined ? "" : ` needs ${slice(ctx, requirements)}`
+    }`
+  )
+  ctx.s.update(arrow.returnType.end, body.start, " ")
+  ctx.s.remove(body.end, statement.end)
+  for (const offer of offers) {
+    const value: Node = offer.argument.arguments[1]
+    ctx.s.update(offer.start, value.start, "yield ")
+    ctx.s.remove(value.end, offer.end)
+    streamOffers.add(offer)
+  }
+  declarations.add(statement)
+  for (const param of arrow.params) visit(param, arrow, false)
+  within(ctx, "Effect", () => inFrame(ctx, false, () => visit(body, shape.fn, true)))
   return true
 }
 
@@ -408,7 +524,8 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     if (
       node.type === "VariableDeclaration" &&
       (parent?.type === "Program" || parent?.type === "BlockStatement" || parent?.type === "ExportNamedDeclaration") &&
-      convertDeclaration(ctx, node, parent.type === "ExportNamedDeclaration" ? parent.start : node.start, visit)
+      (convertStreamDeclaration(ctx, node, visit) ||
+        convertDeclaration(ctx, node, parent.type === "ExportNamedDeclaration" ? parent.start : node.start, visit))
     ) {
       return
     }

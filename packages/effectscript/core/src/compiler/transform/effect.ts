@@ -6,12 +6,12 @@
 import { containsThis, type Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
-import { ref } from "../names.ts"
+import { ref, unused } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
 import { walk, walkChildren } from "../walk.ts"
 import { topicsOf } from "./pipeline.ts"
 import type { HandlerGroup } from "./registry.ts"
-import { rewriteReturnType } from "./returnType.ts"
+import { rewriteReturnType, rewriteReturnTypeAs } from "./returnType.ts"
 
 /**
  * @since 0.1.0
@@ -77,8 +77,107 @@ export const lastEnd = (node: Node): number => {
   return pipes.length > 0 ? pipes[pipes.length - 1]!.end : node.end
 }
 
+/** The `yield`s that belong to a function itself, not to a function nested in it. */
+const ownYields = (fn: Node): Array<Node> => {
+  const found: Array<Node> = []
+  const visit = (node: Node, top: boolean): void => {
+    if (node === null || typeof node !== "object") return
+    if (!top && /Function|Method/.test(node.type ?? "")) return
+    if (node.type === "YieldExpression") found.push(node)
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "loc") continue
+      for (const child of Array.isArray(value) ? value : [value]) {
+        if (child !== null && typeof child === "object" && typeof child.type === "string") visit(child, false)
+      }
+    }
+  }
+  visit(fn.body, false)
+  return found
+}
+
+/**
+ * `effect* name(…): A throws E { … yield x … }` → `const name = (…): Stream.Stream<A, E> =>
+ * Stream.callback((queue) => Effect.gen(function*() { … yield* Queue.offer(queue, x) … })
+ * .pipe(Queue.into(queue)), { bufferSize: 1 })` (ADR-0067). The stream pulls one element at a
+ * time, ends when the body returns, and fails with what it throws.
+ */
+const streamDeclaration = (node: Node, parent: Node | undefined, ctx: Ctx): true => {
+  const keyword: { start: number; end: number } = node.efx.keyword
+  const name: string = node.id.name
+  if (node.returnType === undefined || node.returnType === null) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX2006",
+        "An `effect*` stream needs its element type",
+        keyword.start,
+        node.id.end,
+        `write \`effect* ${name}(…): Element\``
+      )
+    )
+    return true
+  }
+  if ((node.efxPipes ?? []).length > 0) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX2008",
+        "An `effect*` stream takes no `|>` pipes",
+        node.efxPipeOps[0].start,
+        lastEnd(node),
+        "pipe the stream where it is used"
+      )
+    )
+    return true
+  }
+  const E = ref(ctx, "effect", "Effect")
+  const Q = ref(ctx, "effect", "Queue")
+  const S = ref(ctx, "effect", "Stream")
+  // each stream binds its own parameter, so sibling streams may share the name
+  const queue = unused(ctx, "queue")
+  const yields = ownYields(node)
+  for (const y of yields) {
+    if (y.delegate) {
+      ctx.diagnostics.push(
+        diagnosticError(
+          "EFX2007",
+          "`yield*` in an `effect*` stream",
+          y.start,
+          y.end,
+          "write `for await (const x of stream) yield x`"
+        )
+      )
+      return true
+    }
+    y.efxStreamQueue = queue
+  }
+  const exportDefault = node.efx.exportDefault === true
+  ctx.s.update(exportDefault ? parent!.start : keyword.start, node.id.start, "const ")
+  ctx.s.appendLeft(node.id.end, " = ")
+  rewriteReturnTypeAs(ctx, node.returnType, () => `${S}.Stream`)
+  ctx.s.update(node.returnType.end, node.body.start, ` => ${S}.callback((${queue}) => ${E}.gen(function*() `)
+  const frame = makeFrame(node, "declaration")
+  withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walkChildren(node, ctx, new Set([node.id]))))
+  // a stream provides the scope its body runs in: `defer` and `using` need no `Effect.scoped`
+  ctx.s.appendLeft(node.end, `).pipe(${Q}.into(${queue})), { bufferSize: 1 })`)
+  if (exportDefault) ctx.s.appendLeft(node.end, `\nexport default ${name}`)
+  return true
+}
+
+const streamYield: Handler = (node, _parent, ctx) => {
+  const queue: string | undefined = node.efxStreamQueue
+  if (queue === undefined) return
+  const Q = ref(ctx, "effect", "Queue")
+  if (node.argument === null) ctx.s.update(node.start, node.end, `yield* ${Q}.offer(${queue}, undefined)`)
+  else {
+    ctx.s.update(node.start, node.argument.start, `yield* ${Q}.offer(${queue}, `)
+    ctx.s.appendLeft(node.argument.end, ")")
+    walk(node.argument, node, ctx)
+  }
+  return true
+}
+
 const effectDeclaration: Handler = (node, parent, ctx) => {
   if (node.efx?.kind !== "declaration") return
+  if (node.efx.stream === true && node.type !== "TSDeclareFunction") return streamDeclaration(node, parent, ctx)
   if (node.type === "TSDeclareFunction") {
     ctx.diagnostics.push(diagnosticError("EFX2005", "An `effect` declaration needs a body", node.start, node.end))
     return true
@@ -282,6 +381,7 @@ export const effectHandlers: HandlerGroup = {
   EffectBlock: effectBlock,
   ArrowFunctionExpression: effectArrow,
   Property: effectProperty,
+  YieldExpression: streamYield,
   MethodDefinition: effectClassMember,
   TSDeclareMethod: effectClassMember
 }

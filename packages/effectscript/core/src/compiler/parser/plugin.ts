@@ -120,7 +120,34 @@ export const efxPlugin = (Base: any): any =>
     }
 
     efxIsEffectDeclarationStart(): boolean {
-      return this.efxIsWord("effect") && this.efxNextIsNameSameLine()
+      return this.efxIsWord("effect") && (this.efxNextIsNameSameLine() || this.efxIsStreamDeclarationAhead())
+    }
+
+    /**
+     * `effect* name(…) {` or `effect* name(…): A {` (ADR-0067): a generator stream. Without the `:`
+     * or `{` after the parameters, `effect * name(…)` stays a multiplication.
+     */
+    efxIsStreamDeclarationAhead(): boolean {
+      const next = this.lookahead()
+      if (next.type !== tt.star || !this.efxSameLine(next)) return false
+      const name = /^[ \t]*[A-Za-z_$][\w$]*[ \t]*(<)?/.exec(this.input.slice(next.end))
+      if (name === null) return false
+      let i = next.end + name[0].length
+      if (name[1] !== undefined) {
+        // type parameters: skip to their closing `>`
+        let depth = 1
+        while (i < this.input.length && depth > 0) {
+          if (this.input[i] === "<") depth++
+          else if (this.input[i] === ">") depth--
+          i++
+        }
+      }
+      i = skipSpace(this.input, i)
+      if (this.input[i] !== "(") return false
+      const end = skipBalancedTokens(this.input, i)
+      if (end === -1) return false
+      const after = this.input[skipSpace(this.input, end)]
+      return after === ":" || after === "{"
     }
 
     /** A block in which `await` is allowed: the body of an effect. */
@@ -168,8 +195,10 @@ export const efxPlugin = (Base: any): any =>
       const node = this.startNode()
       const keyword = { start: this.start, end: this.end }
       this.next()
+      // after `effect*`, acorn reads the `*` itself: an async generator, so `yield` and `await` parse
       const fn = this.parseFunction(node, 1, /* FUNC_STATEMENT */ false, true)
       fn.efx = exportDefault ? { kind: "declaration", keyword, exportDefault: true } : { kind: "declaration", keyword }
+      if (fn.generator === true) fn.efx.stream = true
       this.efxAttachPipes(fn)
       return fn
     }

@@ -173,3 +173,29 @@ effect f() {
                   (arguments
                     (string
                       (string_fragment))))))))))))
+
+==============================
+Generator stream declaration
+==============================
+
+export effect* ticks(n: number): number {
+  yield n
+}
+
+---
+
+(program
+  (export_statement
+    (effect_declaration
+      (identifier)
+      (formal_parameters
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))))
+      (type_annotation
+        (predefined_type))
+      (statement_block
+        (expression_statement
+          (yield_expression
+            (identifier)))))))

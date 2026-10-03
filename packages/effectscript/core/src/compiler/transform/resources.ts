@@ -106,6 +106,11 @@ const forAwait: Handler = (node, _parent, ctx) => {
   ctx.s.appendRight(left.start, ", (")
   ctx.s.update(left.end, node.right.start, `) => ${gen}`)
   ctx.s.remove(node.right.end, node.body.start)
+  // a single-statement body becomes the generator's block
+  if (node.body.type !== "BlockStatement") {
+    ctx.s.appendRight(node.body.start, "{ ")
+    ctx.s.appendLeft(node.body.end, " }")
+  }
   ctx.s.appendLeft(node.end, "))")
   for (const statement of loopContinues(node.body)) ctx.s.update(statement.start, statement.start + 8, "return")
   walk(node.right, node, ctx)

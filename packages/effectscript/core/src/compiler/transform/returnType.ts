@@ -14,11 +14,24 @@ import type { HandlerGroup } from "./registry.ts"
  * @since 0.1.0
  * @category transforms
  */
-export const rewriteReturnType = (ctx: Ctx, annotation: Node | null | undefined, member: string): void => {
+export const rewriteReturnType = (ctx: Ctx, annotation: Node | null | undefined, member: string): void =>
+  rewriteReturnTypeAs(ctx, annotation, () => `${ref(ctx, "effect", "Effect")}.${member}`)
+
+/**
+ * Like `rewriteReturnType`, with the wrapper's text given (`Stream.Stream`, ADR-0067).
+ *
+ * @since 0.1.0
+ * @category transforms
+ */
+export const rewriteReturnTypeAs = (
+  ctx: Ctx,
+  annotation: Node | null | undefined,
+  wrapper: () => string
+): void => {
   if (annotation === null || annotation === undefined || annotation.typeAnnotation === undefined) return
   annotation.efxHandled = true
   const success: Node = annotation.typeAnnotation
-  ctx.s.appendRight(success.start, `${ref(ctx, "effect", "Effect")}.${member}<`)
+  ctx.s.appendRight(success.start, `${wrapper()}<`)
   let end: number = success.end
   if (annotation.efxThrows !== undefined) {
     ctx.s.update(success.end, annotation.efxThrowsKeyword.end, ",")

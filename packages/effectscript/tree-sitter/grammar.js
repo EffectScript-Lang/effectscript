@@ -57,6 +57,8 @@ export default grammar(TypeScript, {
       [$.primary_expression, $.internal_module],
       [$.primary_expression, $.function_expression, $.generator_function],
       [$._property_name, $.effect_declaration],
+      // `effect * name(…)` is a multiplication until a `:` or `{` makes it a stream (ADR-0067)
+      [$.primary_expression, $.effect_declaration],
       [$.method_definition, $._property_name],
       [$.method_definition, $._property_name, $.effect_method],
       [$.method_definition, $._property_name, $.schema_field],
@@ -365,6 +367,8 @@ export default grammar(TypeScript, {
         "declaration",
         seq(
           "effect",
+          // `effect*`: a generator stream (ADR-0067)
+          optional("*"),
           field("name", $.identifier),
           $._call_signature,
           optional($.effect_clauses),
