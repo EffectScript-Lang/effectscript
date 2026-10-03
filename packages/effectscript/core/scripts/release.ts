@@ -3,15 +3,19 @@
  *
  *   node scripts/release.ts version [--effect x.y] [--prerelease alpha|none]
  *   node scripts/release.ts changelog
+ *   node scripts/release.ts pack [--out dir]
  *
  * - `version` writes the next version to every package in `packages/effectscript`. Its major.minor
  *   is Effect's (ADR-0015); the patch and the `alpha.N` number are EffectScript's own. It is computed
  *   from the last released version (the changelog's newest heading), so running it twice is safe.
  * - `changelog` moves the `.changeset` notes that name only EffectScript packages into
  *   `packages/effectscript/CHANGELOG.md`, under the packages' version. Upstream notes stay.
+ * - `pack` builds `effectscript` and `@effectscript/language` from clean and packs them, refusing a
+ *   tarball that misses its `dist`, README, LICENSE or bins, or that holds tests or build files.
  *
  * `--root <dir>` replaces the repository root (for tests).
  */
+import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
 
@@ -184,6 +188,61 @@ const changelog = (root: string) => {
   return `CHANGELOG.md: ${current} (${ours.map((n) => path.basename(n.file)).join(", ")})`
 }
 
+/**
+ * What is wrong with a package's tarball, given its manifest and the tarball's paths
+ * (`package/...`): each missing required file, then each file that shouldn't ship.
+ */
+export const tarballProblems = (
+  manifest: { readonly bin?: Readonly<Record<string, string>> },
+  files: ReadonlyArray<string>
+): Array<string> => {
+  const inside = files.map((f) => f.replace(/^package\//, ""))
+  const required = [
+    "package.json",
+    "README.md",
+    "LICENSE",
+    "dist/index.js",
+    "dist/index.d.ts",
+    ...Object.values(manifest.bin ?? {}).map((b) => path.posix.normalize(b))
+  ]
+  return [
+    ...required.filter((f) => !inside.includes(f)).map((f) => `missing ${f}`),
+    ...inside
+      .filter((f) => /(^|\/)(test|typetest|fixtures|node_modules|dist-bin|scripts)\/|\.tsbuildinfo$/.test(f))
+      .map((f) => `unexpected ${f}`)
+  ]
+}
+
+const run = (command: string, args: ReadonlyArray<string>, cwd: string): string => {
+  const result = spawnSync(command, [...args], { cwd, encoding: "utf8", maxBuffer: 1 << 28 })
+  if (result.status !== 0) {
+    throw new Error(`${command} ${args.join(" ")} failed:\n${result.error?.message ?? ""}${result.stdout}${result.stderr}`)
+  }
+  return result.stdout
+}
+
+const pack = (root: string, out: string) => {
+  const dirs = ["core", "language"].map((dir) => path.join(root, "packages/effectscript", dir))
+  // from clean, so nothing stale from a removed source ships
+  for (const dir of dirs) {
+    fs.rmSync(path.join(dir, "dist"), { recursive: true, force: true })
+    fs.rmSync(path.join(dir, "tsconfig.tsbuildinfo"), { force: true })
+  }
+  run("pnpm", ["exec", "tsc", "-b", path.join(dirs[1]!, "tsconfig.json")], root)
+  fs.mkdirSync(out, { recursive: true })
+  return dirs.map((dir) => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"))
+    const before = new Set(fs.readdirSync(out))
+    run("pnpm", ["pack", "--pack-destination", out], dir)
+    const tarball = fs.readdirSync(out).find((f) => f.endsWith(".tgz") && !before.has(f)) ??
+      `${manifest.name.replace(/^@/, "").replace("/", "-")}-${manifest.version}.tgz`
+    const full = path.join(out, tarball)
+    const problems = tarballProblems(manifest, run("tar", ["-tzf", full], root).trim().split("\n"))
+    if (problems.length > 0) throw new Error(`${tarball}: ${problems.join(", ")}`)
+    return full
+  }).join("\n")
+}
+
 const option = (argv: ReadonlyArray<string>, name: string): string | undefined => {
   const i = argv.indexOf(name)
   return i === -1 ? undefined : argv[i + 1] ?? ""
@@ -197,8 +256,10 @@ if (import.meta.main) {
       ? version(root, option(argv, "--effect"), option(argv, "--prerelease"))
       : argv[0] === "changelog"
       ? changelog(root)
+      : argv[0] === "pack"
+      ? pack(root, path.resolve(option(argv, "--out") ?? path.join(root, "packages/effectscript/dist-pack")))
       : (() => {
-        throw new Error("usage: release.ts version [--effect x.y] [--prerelease alpha|none] | changelog")
+        throw new Error("usage: release.ts version [--effect x.y] [--prerelease alpha|none] | changelog | pack [--out dir]")
       })()
     process.stdout.write(`${output}\n`)
   } catch (error) {

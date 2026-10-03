@@ -3,7 +3,7 @@ import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
 import { afterAll, describe, expect, it } from "vitest"
-import { nextVersion } from "../scripts/release.ts"
+import { nextVersion, tarballProblems } from "../scripts/release.ts"
 
 const script = path.join(import.meta.dirname, "../scripts/release.ts")
 const work = fs.mkdtempSync(path.join(os.tmpdir(), "efx-release-"))
@@ -175,4 +175,85 @@ describe("release.ts changelog", () => {
     expect(release(released, "changelog").stderr).toMatch(/already in the changelog.*release\.ts version/)
     expect(release(repo(), "changelog").stderr).toMatch(/no EffectScript notes/)
   })
+})
+
+describe("tarballProblems (Plan 17 Task 3)", () => {
+  const manifest = { bin: { efx: "./bin/efx.js" } }
+  const good = [
+    "package/package.json",
+    "package/README.md",
+    "package/LICENSE",
+    "package/bin/efx.js",
+    "package/dist/index.js",
+    "package/dist/index.d.ts",
+    "package/src/index.ts"
+  ]
+
+  it("accepts dist, the README, the LICENSE and the bins", () => {
+    expect(tarballProblems(manifest, good)).toEqual([])
+  })
+
+  it("names what is missing", () => {
+    expect(tarballProblems(manifest, good.filter((f) => !f.endsWith("LICENSE") && !f.endsWith("efx.js")))).toEqual([
+      "missing LICENSE",
+      "missing bin/efx.js"
+    ])
+  })
+
+  it("names tests, fixtures, build info and binaries that leaked in", () => {
+    expect(tarballProblems(manifest, [
+      ...good,
+      "package/test/a.test.ts",
+      "package/src/x/fixtures/a.efx",
+      "package/tsconfig.tsbuildinfo",
+      "package/dist-bin/efx-darwin-arm64"
+    ])).toEqual([
+      "unexpected test/a.test.ts",
+      "unexpected src/x/fixtures/a.efx",
+      "unexpected tsconfig.tsbuildinfo",
+      "unexpected dist-bin/efx-darwin-arm64"
+    ])
+  })
+})
+
+describe.runIf(process.env.EFX_PACK === "1")("release.ts pack, installed in a clean project (EFX_PACK=1)", () => {
+  it("builds and packs both packages, and the installed efx runs", () => {
+    const out = path.join(work, "packed")
+    const packed = spawnSync(process.execPath, [script, "pack", "--out", out], { encoding: "utf8" })
+    expect(packed.stderr).toBe("")
+    expect(packed.status).toBe(0)
+    const tarballs = packed.stdout.trim().split("\n")
+    expect(tarballs.map((t) => path.basename(t))).toEqual([
+      expect.stringMatching(/^effectscript-\d.*\.tgz$/),
+      expect.stringMatching(/^effectscript-language-\d.*\.tgz$/)
+    ])
+    const project = path.join(work, "clean")
+    fs.mkdirSync(project)
+    fs.writeFileSync(
+      path.join(project, "package.json"),
+      JSON.stringify({ name: "clean", private: true, type: "module", dependencies: Object.fromEntries(
+        tarballs.map((t, i) => [i === 0 ? "effectscript" : "@effectscript/language", `file:${t}`])
+      ) })
+    )
+    // effect and its platform packages come from the registry, as they do for users
+    const install = spawnSync("npm", ["install", "--no-audit", "--no-fund", "--loglevel=error"], {
+      cwd: project,
+      encoding: "utf8"
+    })
+    expect(install.stderr).toBe("")
+    const bin = (name: string) => path.join(project, "node_modules/.bin", name)
+    const efxVersion = spawnSync(bin("efx"), ["--version"], { cwd: project, encoding: "utf8" })
+    expect(efxVersion.stdout).toContain(version(path.join(import.meta.dirname, "../../../.."), "core"))
+    fs.writeFileSync(path.join(project, "app.efx"), "export effect hello(name: string) {\n  return `hi ${name}`\n}\n")
+    const printed = spawnSync(bin("efx"), ["print", "app.efx"], { cwd: project, encoding: "utf8" })
+    expect(printed.stderr).toBe("")
+    expect(printed.stdout).toContain("Effect.fn")
+    // the installed compiler is the published build, not the sources
+    expect(fs.realpathSync(path.join(project, "node_modules/effectscript/dist/cli/main.js"))).toBeTruthy()
+    const server = spawnSync(process.execPath, ["-e", "import('@effectscript/language').then((m) => console.log(Object.keys(m).length > 0))"], {
+      cwd: project,
+      encoding: "utf8"
+    })
+    expect(server.stdout.trim()).toBe("true")
+  }, 600_000)
 })
