@@ -56,6 +56,10 @@ describe("the Zed extension (Plan 19 Task 5, ADR-0058)", () => {
       })
       expect(query.status, `${file}: ${query.stderr}`).toBe(0)
     }
+    // strings and comments are scopes, so `not_in` in config.toml takes effect (Plan 21)
+    expect(fs.readFileSync(path.join(languages, "overrides.scm"), "utf8")).toMatch(
+      /@string[\s\S]*@comment|@comment[\s\S]*@string/
+    )
     // the outline finds the service and its effects
     const outline = spawnSync(cli, ["query", path.join(languages, "outline.scm"), sample], {
       cwd: grammar,

@@ -11,7 +11,7 @@
     "directory": "packages/effectscript/tree-sitter"
   },
   "scripts": {
-    "generate": "tree-sitter generate",
+    "generate": "tree-sitter generate --abi 14",
     "test": "tree-sitter test"
   },
   "devDependencies": {

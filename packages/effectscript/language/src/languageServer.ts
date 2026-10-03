@@ -34,6 +34,8 @@ export interface LoadedTypeScript {
   readonly diagnosticMessages: ts.MapLike<string> | undefined
   /** Where it came from, for the log. */
   readonly from: string
+  /** The TypeScripts it passed over, and why, for the log (Plan 21). */
+  readonly skipped: ReadonlyArray<string>
 }
 
 /** The nearest `node_modules/typescript/lib` from `dir` up (never NODE_PATH, which pnpm sets). */
@@ -66,21 +68,29 @@ export const loadTypeScript = (params: InitializeParams, own: () => TypeScript):
       return lib === undefined ? [] : [["the workspace", lib] as const]
     })
   ]
+  const skipped: Array<string> = []
+  const seen = new Set<string>()
   for (const [label, lib] of candidates) {
+    // the root folder is often a workspace folder too
+    if (seen.has(lib)) continue
+    seen.add(lib)
     try {
       const loaded = loadTsdkByPath(lib, params.locale)
       if (loaded.typescript.version.startsWith("6.")) {
         return {
           typescript: loaded.typescript as TypeScript,
           diagnosticMessages: loaded.diagnosticMessages as ts.MapLike<string> | undefined,
-          from: `${label} (${lib})`
+          from: `${label} (${lib})`,
+          skipped
         }
       }
-    } catch {
-      // not a usable TypeScript: try the next one
+      // the server needs TypeScript 6's JS API (ADR-0019)
+      skipped.push(`${label} (${lib}): TypeScript ${loaded.typescript.version}, not 6`)
+    } catch (error) {
+      skipped.push(`${label} (${lib}): ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`)
     }
   }
-  return { typescript: own(), diagnosticMessages: undefined, from: "bundled with the language server" }
+  return { typescript: own(), diagnosticMessages: undefined, from: "bundled with the language server", skipped }
 }
 
 /** The language plugin over URIs, as the server addresses scripts. */
@@ -298,6 +308,7 @@ export const startLanguageServer = (
   connection.onInitialized(() => {
     server.initialized()
     connection.console.info(`EffectScript language server: TypeScript ${loaded!.typescript.version}, ${loaded!.from}`)
+    for (const reason of loaded!.skipped) connection.console.info(`  skipped ${reason}`)
   })
   connection.onShutdown(() => server.shutdown())
   connection.listen()

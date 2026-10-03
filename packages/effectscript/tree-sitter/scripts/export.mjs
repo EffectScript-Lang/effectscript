@@ -32,7 +32,8 @@ const run = (command, args, cwd) => {
 // regenerate only when the grammar changed since the last parser (tests share one generation)
 const mtime = (file) => fs.statSync(path.join(root, file), { throwIfNoEntry: false })?.mtimeMs ?? 0
 if (mtime("src/parser.c") === 0 || mtime("src/parser.c") < Math.max(mtime("grammar.js"), mtime("src/scanner.c"))) {
-  run(path.join(root, "node_modules/.bin/tree-sitter"), ["generate"], root)
+  // ABI 14: Neovim 0.10 loads it too (Plan 21)
+  run(path.join(root, "node_modules/.bin/tree-sitter"), ["generate", "--abi", "14"], root)
 }
 // an existing clone of the grammar repository keeps its history (review I8): only its files go
 fs.mkdirSync(out, { recursive: true })

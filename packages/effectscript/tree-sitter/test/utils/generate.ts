@@ -36,7 +36,7 @@ export const generateOnce = async (): Promise<void> => {
   }
   try {
     if (fresh()) return
-    const result = spawnSync(cli, ["generate"], { cwd: grammarRoot, encoding: "utf8", env })
+    const result = spawnSync(cli, ["generate", "--abi", "14"], { cwd: grammarRoot, encoding: "utf8", env })
     if (result.status !== 0) throw new Error(`tree-sitter generate failed:\n${result.stderr}`)
   } finally {
     fs.rmSync(lock, { recursive: true, force: true })

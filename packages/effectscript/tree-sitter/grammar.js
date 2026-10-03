@@ -41,18 +41,9 @@ export default grammar(TypeScript, {
   conflicts: ($, previous) =>
     previous.concat([
       [$.primary_expression, $.effect_arrow_function],
-      [$.schema_field, $._property_name],
-      [$.schema_field, $.method_definition],
       [$.schema_variant, $.primary_type],
-      [$.schema_variant, $.nested_type_identifier],
-      [$.schema_variant, $.generic_type],
-      [$.throw_statement, $.throw_expression],
-      [$.service_property, $._property_name],
-      [$.route, $.primary_expression],
       [$.primary_expression, $.test_statement],
       [$.primary_expression, $.describe_statement],
-      [$.primary_expression, $.doctest_statement],
-      [$.primary_expression, $.main_statement],
       [$.primary_expression, $.defer_statement],
       [$.primary_expression, $.effect_block],
       [$.primary_expression, $.match_expression],

@@ -5,6 +5,7 @@
  *
  * @since 4.0.0
  */
+import { editorsToDecorate } from "@effectscript/language/decorations"
 import { toTypeScript } from "effectscript/compiler"
 import { planConversion, retargetImports } from "effectscript/convert/plan"
 import { packageInfo } from "effectscript/project"
@@ -175,25 +176,35 @@ const bindDecorations = (context: vscode.ExtensionContext) => {
     color: new vscode.ThemeColor("effectscript.effectAwait"),
     fontStyle: "italic"
   })
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const update = (editor: vscode.TextEditor | undefined) => {
-    if (editor === undefined || !isEffectScript(editor.document)) return
+  const update = (editor: vscode.TextEditor) => {
     const { binds } = toTypeScript(editor.document.getText(), { recover: true })
     editor.setDecorations(
       decoration,
       binds.map((b) => new vscode.Range(editor.document.positionAt(b.start), editor.document.positionAt(b.end)))
     )
   }
-  const later = (editor: vscode.TextEditor | undefined) => {
-    if (timer !== undefined) clearTimeout(timer)
-    timer = setTimeout(() => update(editor), 150)
+  const updateAll = (edited?: vscode.TextDocument) => {
+    for (const editor of editorsToDecorate(vscode.window.visibleTextEditors, edited, isEffectScript)) update(editor)
   }
-  update(vscode.window.activeTextEditor)
+  // edits are coalesced per document; the editors are looked up when the timer fires
+  const timers = new Map<vscode.TextDocument, ReturnType<typeof setTimeout>>()
+  const later = (document: vscode.TextDocument) => {
+    clearTimeout(timers.get(document))
+    timers.set(
+      document,
+      setTimeout(() => {
+        timers.delete(document)
+        updateAll(document)
+      }, 150)
+    )
+  }
+  updateAll()
   context.subscriptions.push(
     decoration,
-    vscode.window.onDidChangeActiveTextEditor(update),
+    { dispose: () => timers.forEach((timer) => clearTimeout(timer)) },
+    vscode.window.onDidChangeVisibleTextEditors(() => updateAll()),
     vscode.workspace.onDidChangeTextDocument((e) => {
-      if (e.document === vscode.window.activeTextEditor?.document) later(vscode.window.activeTextEditor)
+      if (isEffectScript(e.document)) later(e.document)
     })
   )
 }
