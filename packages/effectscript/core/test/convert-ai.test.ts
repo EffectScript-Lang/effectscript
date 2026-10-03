@@ -54,6 +54,7 @@ case "$FAKE_MODE" in
   child) (sleep 2; printf '// late\\n' >> src/a.efx) & sleep 30 ;;
   rename) mv src/a.efx src/a.ts ;;
   fail) printf '// partial\\n' >> src/a.efx; exit 1 ;;
+  quota) echo "working on src/a.efx"; echo "Error: usage limit reached, try again at 5pm" >&2; exit 1 ;;
 esac
 `,
     { mode: 0o755 }
@@ -84,6 +85,14 @@ const convert = (p: { dir: string; bin: string }, mode: string, extra: ReadonlyA
 const read = (p: { dir: string }, file: string) => fs.readFileSync(path.join(p.dir, file), "utf8")
 
 describe("efx convert --ai (Plan 15 Task 4, ADR-0052)", () => {
+  it("shows the end of the agent's output when it fails (Plan 20 Task 2)", () => {
+    const p = setupProject()
+    const result = convert(p, "quota")
+    expect(result.stdout).toMatch(/reverted|no change/)
+    expect(result.stdout + result.stderr).toContain("usage limit reached, try again at 5pm")
+    expect(result.stdout + result.stderr).toContain("working on src/a.efx")
+  })
+
   it("hands the agent the file and its notes, and keeps an edit that verifies", () => {
     const p = setupProject()
     const result = convert(p, "improve")

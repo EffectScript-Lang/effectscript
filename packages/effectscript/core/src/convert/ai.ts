@@ -128,26 +128,35 @@ const restoreOthers = (cwd: string, before: Snapshot, keep: string) => {
   }
 }
 
+/** How much of an agent's output is kept, from the end: enough to say why it failed. */
+const outputLimit = 4096
+
 /**
  * Runs the agent in its own process group, so a timeout, or its end, stops everything it started
- * (review I3). Resolves with its exit code, or `"timeout"`.
+ * (review I3). Resolves with its exit code, or `"timeout"`, and the end of what it printed.
  */
 const runAgent = (
   command: string,
   args: ReadonlyArray<string>,
   cwd: string,
   timeoutSeconds: number
-): Promise<number | "timeout" | Error> =>
+): Promise<{ readonly outcome: number | "timeout" | Error; readonly output: string }> =>
   new Promise((resolve) => {
+    let output = ""
+    const keep = (chunk: Buffer) => {
+      output = (output + chunk.toString("utf8")).slice(-outputLimit)
+    }
     const windows = process.platform === "win32"
     // Windows: npm installs agents as .cmd shims, which need a shell, with every part quoted, and
     // a single-line prompt (review I11)
     const child = windows
       ? spawn(
         [command, ...args].map((part) => `"${part.replace(/\n/g, " ").replace(/"/g, "\\\"")}"`).join(" "),
-        { cwd, stdio: "ignore", shell: true }
+        { cwd, stdio: ["ignore", "pipe", "pipe"], shell: true }
       )
-      : spawn(command, [...args], { cwd, detached: true, stdio: "ignore" })
+      : spawn(command, [...args], { cwd, detached: true, stdio: ["ignore", "pipe", "pipe"] })
+    child.stdout?.on("data", keep)
+    child.stderr?.on("data", keep)
     const stopTree = () => {
       if (child.pid === undefined) return
       if (windows) spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" })
@@ -168,13 +177,13 @@ const runAgent = (
       : undefined
     child.on("error", (error) => {
       clearTimeout(timer)
-      resolve(error)
+      resolve({ outcome: error, output })
     })
     child.on("exit", (code) => {
       clearTimeout(timer)
       // whatever it left running in the background must not edit files after we verify
       stopTree()
-      resolve(timedOut ? "timeout" : code ?? 1)
+      resolve({ outcome: timedOut ? "timeout" : code ?? 1, output })
     })
   })
 
@@ -239,7 +248,7 @@ export const aiPass = async (
       const original = fs.readFileSync(full)
       const args = agent.args(prompt(target, skill), skill)
       io.out(`AI pass: ${agent.command} ${args.filter((a) => !a.includes("\n")).join(" ")} (${target.file})`)
-      const outcome = await runAgent(agent.command, args, cwd, timeoutSeconds)
+      const { outcome, output } = await runAgent(agent.command, args, cwd, timeoutSeconds)
       restoreOthers(cwd, before, target.file)
       const edited = read(full)
       let problem: string | undefined = outcome === "timeout"
@@ -269,6 +278,14 @@ export const aiPass = async (
       if (problem !== "no change") {
         reverted++
         io.out(`reverted the AI edit of ${target.file}: ${problem.split("\n")[0]}`)
+        // when the agent itself failed, its last words usually say why (a quota, a login, a flag)
+        if (outcome !== 0) {
+          const last = output.trim().split(/\r?\n/).slice(-10)
+          if (last.length > 0 && last[0] !== "") {
+            io.out(`  ${agent.command} said:`)
+            for (const line of last) io.out(`    ${line}`)
+          }
+        }
       }
     }
   } catch (error) {
