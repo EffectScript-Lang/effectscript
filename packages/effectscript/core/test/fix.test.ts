@@ -119,4 +119,12 @@ export effect twice(n: number) {
     expect(result.status).toBe(1)
     expect(result.stderr).toMatch(/scr: no such file or directory/)
   })
+
+  it("doesn't follow directory links into loops (Plan 20 Task 3)", () => {
+    const dir = project({ "src/a.efx": longWay })
+    fs.symlinkSync("..", path.join(dir, "src/loop"))
+    const result = fix(dir)
+    expect(result.status).toBe(0)
+    expect(result.stdout.match(/a\.efx: fixed/g)).toHaveLength(1)
+  })
 })

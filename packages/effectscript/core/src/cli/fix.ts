@@ -23,6 +23,10 @@ const collect = (entry: string, files: Array<string>): void => {
   }
   for (const child of fs.readdirSync(entry, { withFileTypes: true })) {
     if (child.isDirectory() && (skippedDirs.has(child.name) || child.name.startsWith("."))) continue
+    // a linked file is fixed, a linked directory isn't entered: it can loop back (Plan 20)
+    if (child.isSymbolicLink() && fs.statSync(path.join(entry, child.name), { throwIfNoEntry: false })?.isDirectory()) {
+      continue
+    }
     collect(path.join(entry, child.name), files)
   }
 }

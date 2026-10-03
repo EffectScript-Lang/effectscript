@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import * as fs from "node:fs"
 import * as os from "node:os"
@@ -166,4 +166,67 @@ describe("install.sh (Plan 10 Task 4, ADR-0038)", () => {
     expect(result.stdout).toBe("")
     expect(result.status).toBe(0)
   })
+})
+
+describe("install.sh polish (Plan 20 Task 3)", () => {
+  it("prints an absolute PATH line for a relative EFX_INSTALL", () => {
+    const base = release(["darwin-arm64"])
+    const cwd = temp()
+    const fake = temp()
+    fs.writeFileSync(path.join(fake, "uname"), "#!/bin/sh\ncase \"$1\" in -s) echo Darwin ;; *) echo arm64 ;; esac\n", {
+      mode: 0o755
+    })
+    fs.writeFileSync(path.join(fake, "sysctl"), "#!/bin/sh\necho 0\n", { mode: 0o755 })
+    const result = spawnSync("sh", [script], {
+      cwd,
+      encoding: "utf8",
+      env: {
+        HOME: temp(),
+        PATH: `${fake}:/usr/bin:/bin:/usr/sbin:/sbin`,
+        EFX_DOWNLOAD_BASE: base,
+        EFX_INSTALL: "tools/efx"
+      }
+    })
+    expect(result.status, result.stderr).toBe(0)
+    expect(result.stdout).toContain(`export PATH="${fs.realpathSync(cwd)}/tools/efx/bin:$PATH"`)
+  })
+
+  it("exits 130 on Ctrl-C and leaves no temp directory", async () => {
+    // its own directories: the file's afterEach must not remove them while the script runs
+    const own = fs.mkdtempSync(path.join(os.tmpdir(), "efx-install-sigint-"))
+    try {
+      const fake = path.join(own, "bin")
+      const tmp = path.join(own, "tmp")
+      fs.mkdirSync(fake)
+      fs.mkdirSync(tmp)
+      fs.writeFileSync(
+        path.join(fake, "uname"),
+        "#!/bin/sh\ncase \"$1\" in -s) echo Linux ;; *) echo x86_64 ;; esac\n",
+        {
+          mode: 0o755
+        }
+      )
+      fs.writeFileSync(path.join(fake, "ldd"), "#!/bin/sh\necho 'ldd (GNU libc) 2.36' >&2\n", { mode: 0o755 })
+      // a download that hangs until interrupted
+      const started = path.join(own, "downloading")
+      fs.writeFileSync(path.join(fake, "curl"), `#!/bin/sh\n: > "${started}"\nsleep 30\n`, { mode: 0o755 })
+      const child = spawn("sh", [script], {
+        detached: true,
+        env: { HOME: own, TMPDIR: tmp, PATH: `${fake}:/usr/bin:/bin:/usr/sbin:/sbin` },
+        stdio: "ignore"
+      })
+      const exited = new Promise<number | null>((resolve) => child.on("exit", (c) => resolve(c)))
+      // once the download runs, the traps are set
+      for (let i = 0; !fs.existsSync(started); i++) {
+        if (i > 400) throw new Error("the download never started")
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      }
+      // Ctrl-C signals the whole foreground process group
+      process.kill(-child.pid!, "SIGINT")
+      expect(await exited).toBe(130)
+      expect(fs.readdirSync(tmp)).toEqual([])
+    } finally {
+      fs.rmSync(own, { recursive: true, force: true })
+    }
+  }, 30_000)
 })

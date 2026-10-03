@@ -122,9 +122,15 @@ const version = (root: string, effectOption: string | undefined, prereleaseOptio
   const list = packages(root)
   const current = agreed(list)
   const { pending, released: last } = releases(root, readChangelog(root))
-  const effect = effectOption ??
-    JSON.parse(fs.readFileSync(path.join(root, "packages/effect/package.json"), "utf8")).version
-      .split(".").slice(0, 2).join(".")
+  const workspace = JSON.parse(fs.readFileSync(path.join(root, "packages/effect/package.json"), "utf8")).version
+    .split(".").slice(0, 2).join(".")
+  if (effectOption !== undefined) {
+    const [a, b] = [effectOption, workspace].map((v) => v.split(".").map(Number))
+    if (a![0]! < b![0]! || (a![0] === b![0] && a![1]! < b![1]!)) {
+      throw new Error(`--effect ${effectOption} is older than the workspace's effect ${workspace}`)
+    }
+  }
+  const effect = effectOption ?? workspace
   // by default, a release stays on the channel of the last one
   const prerelease = prereleaseOption as "alpha" | "none" | undefined ??
     (last === undefined || parse(last).alpha !== undefined ? "alpha" : "none")
@@ -207,7 +213,10 @@ const isEffectScript = (name: string, family: ReadonlySet<string>) =>
   family.has(name) || name === "effectscript" || name === "effectscript-vscode" || name.startsWith("@effectscript/")
 
 const item = (summary: string) =>
-  `- ${summary.split("\n").map((line, i) => i === 0 || line === "" ? line : `  ${line}`).join("\n")}\n`
+  // a summary that is already a list stays one
+  /^[-*] /.test(summary)
+    ? `${summary}\n`
+    : `- ${summary.split("\n").map((line, i) => i === 0 || line === "" ? line : `  ${line}`).join("\n")}\n`
 
 const changelog = (root: string) => {
   const list = packages(root)
@@ -231,6 +240,7 @@ const changelog = (root: string) => {
     if (mine.length > 0 && mine.length < names.length) {
       throw new Error(`${name} names both EffectScript and upstream packages: split it in two`)
     }
+    if (mine.length > 0 && note.summary === "") throw new Error(`${name} has no summary`)
     if (mine.length > 0 && note.unread.length > 0) {
       throw new Error(`${name}: can't read "${note.unread[0]}" (use "package": major, minor or patch)`)
     }

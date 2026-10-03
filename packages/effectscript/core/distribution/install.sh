@@ -54,6 +54,8 @@ main() {
   base="${EFX_DOWNLOAD_BASE:-https://github.com/EffectScript-Lang/effect-lang/releases}"
   version="${EFX_VERSION:-latest}"
   dir="${EFX_INSTALL:-$HOME/.effectscript}"
+  # the PATH line must work from any directory
+  case "$dir" in /*) ;; *) dir="$(pwd)/$dir" ;; esac
 
   system="$(uname -s)"
   machine="$(uname -m)"
@@ -89,7 +91,10 @@ main() {
   fi
   asset="efx-$target.tar.gz"
   tmp="$(mktemp -d "${TMPDIR:-/tmp}/efx-install.XXXXXX")"
-  trap 'rm -rf "$tmp"' EXIT INT TERM
+  trap 'rm -rf "$tmp"' EXIT
+  # Ctrl-C and kill stop with the usual exit codes; the EXIT trap still cleans up
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
 
   printf 'Downloading %s (%s)\n' "$asset" "$version"
   download "$url/$asset" "$tmp/$asset" ||

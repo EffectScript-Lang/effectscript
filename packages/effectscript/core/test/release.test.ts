@@ -183,6 +183,13 @@ describe("release.ts version", () => {
     expect(core.peerDependencies).toEqual({ "@effect/platform-node": "~4.1.0", effect: "~4.1.0", typescript: "^6.0.3" })
   })
 
+  it("refuses --effect below the workspace's Effect (Plan 20 Task 3)", () => {
+    const root = repo({ effect: "4.1.0" })
+    const result = release(root, "version", "--effect", "4.0")
+    expect(result.status).toBe(1)
+    expect(result.stderr).toMatch(/--effect 4\.0 is older than the workspace's effect 4\.1/)
+  })
+
   it("refuses an Effect older than the released version, and bad options", () => {
     const root = repo({ changelog: "## 4.1.0\n" })
     expect(release(root, "version").stderr).toMatch(/older than/)
@@ -215,6 +222,18 @@ describe("release.ts changelog", () => {
     )
     expect(fs.readdirSync(path.join(root, ".changeset")).sort()).toEqual(["config.json", "fix-sharding.md"])
     expect(fs.readFileSync(path.join(root, ".changeset/fix-sharding.md"), "utf8")).toBe(upstream)
+  })
+
+  it("keeps a list summary a list, and refuses a note with no summary (Plan 20 Task 3)", () => {
+    const root = repo({ notes: { "effectscript-a.md": note({ effectscript: "patch" }, "- one\n- two") } })
+    expect(release(root, "changelog").status).toBe(0)
+    expect(fs.readFileSync(path.join(root, "packages/effectscript/CHANGELOG.md"), "utf8")).toContain(
+      "### Patch changes\n\n- one\n- two\n"
+    )
+    const empty = repo({ notes: { "effectscript-b.md": note({ effectscript: "patch" }, "") } })
+    const result = release(empty, "changelog")
+    expect(result.status).toBe(1)
+    expect(result.stderr).toMatch(/effectscript-b\.md has no summary/)
   })
 
   it("creates the changelog for the first release", () => {
