@@ -899,8 +899,9 @@ Errors apply only to `effect` code, so the superset guarantee holds:
 | EFX8005 | `catch (e: any)`                                                                                  |
 | EFX8111 | `await` on a visible Promise inside `effect` (`fetch(…)`, `new Promise`, `Promise.*`, `.then(…)`, a call to a local `async` function). Hint: `await tryPromise(() => …)` |
 
-Warnings apply anywhere in `.efx`. The `strict: true` option turns them into errors, and `efx fix`
-applies the fixes:
+Warnings apply anywhere in `.efx`. The `strict: true` option turns them into errors. `efx fix`
+applies the EFX8101 fix; the others need a person's judgment, and their hints say what to write
+(ADR-0056):
 
 | Code    | Rule                                                                                          |
 | ------- | --------------------------------------------------------------------------------------------- |
@@ -1193,6 +1194,8 @@ All live under `packages/effectscript/`, registered in the monorepo (§10).
   one up (§7.5).
 - `efx convert --ai`: after the mechanical conversion, hand the leftovers to a locally installed
   coding agent along with the skill (§7.5).
+- `efx fix [paths] [--check]`: rewrite the Effect TypeScript inside `.efx` files as EffectScript
+  (EFX8101), keeping a rewrite only when it compiles to the same TypeScript (ADR-0056, Plan 18).
 - `efx doctor`: report what is installed and configured (runtime, editors, agents, project) and
   what is missing.
 - `efx skill [--dir]`: install the AI skill (default `.claude/skills/effectscript`).

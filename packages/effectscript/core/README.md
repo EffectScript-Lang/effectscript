@@ -34,6 +34,7 @@ The standalone binary carries its own Bun, so it needs no Node or npm (ADR-0037)
 efx setup              # your editors and coding agents, once per machine (asks before each change)
 efx init               # in a project: the editor plugin and scripts
 efx convert --write    # convert existing TypeScript on a new git branch; add --ai for the rest
+efx fix                # rewrite Effect TypeScript left inside .efx files as EffectScript
 ```
 
 ## Compiler API

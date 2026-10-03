@@ -13,6 +13,7 @@ import { run as runFile } from "./run.ts"
 import { convertProject } from "../convert/project.ts"
 import { docsProject } from "./docs.ts"
 import { doctor as checkSetup } from "./doctor.ts"
+import { fixProject } from "./fix.ts"
 import { initProject } from "./init.ts"
 import { lsp as runLanguageServer } from "./lsp.ts"
 import { installSkill } from "./skill.ts"
@@ -115,6 +116,17 @@ export const docs = Command.make("docs", {
   }))
 }) |> Command.withDescription("Generate API docs from doc comments")
 
+/** Rewrite the Effect TypeScript in .efx files as EffectScript (ADR-0056) */
+export const fix = Command.make("fix", {
+  paths: Argument.String("paths").pipe(Argument.variadic(), Argument.withDescription("Files or directories (default: the project)")),
+  check: Flag.Boolean("check").pipe(Flag.withDefault(false), Flag.withDescription("Only report what would change; write nothing"))
+}, effect ({ paths, check }) => {
+  await exitWith(fixProject(process.cwd(), { paths, check }, {
+    out: (line) => process.stdout.write(`${line}\n`),
+    err: (line) => process.stderr.write(`${line}\n`)
+  }))
+}) |> Command.withDescription("Rewrite the Effect TypeScript in .efx files as EffectScript")
+
 /** Set up this project for EffectScript */
 export command init() {
   await exitWith(initProject(process.cwd(), (line) => process.stdout.write(`${line}\n`)))
@@ -174,7 +186,7 @@ export const setup = Command.make("setup", {
 
 export const efx = Command.make("efx")
   |> Command.withDescription("EffectScript: TypeScript with Effect as native syntax")
-  |> Command.withSubcommands([build, check, run, print, convert, docs, init, doctor, lsp, skill, setup])
+  |> Command.withSubcommands([build, check, run, print, convert, fix, docs, init, doctor, lsp, skill, setup])
 
 main {
   // without a command, show the help; `run`/`check` pass their arguments through (ADR-0033)

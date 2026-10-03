@@ -62,6 +62,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0053](0053-efx8112-await-on-a-runtime-array.md) | EFX8112 warns when `await` gets an array built at runtime | Accepted |
 | [0054](0054-site-stack-and-content-sources.md) | The site's stack deviations and where its content comes from | Accepted |
 | [0055](0055-versioning-notes-and-packing-in-the-fork.md) | How EffectScript is versioned, noted and packed in a fork whose changesets are upstream's | Accepted, amended |
+| [0056](0056-efx-fix.md) | `efx fix` rewrites through the round trip, and only EFX8101 | Accepted |
 | [0057](0057-first-run-defaults.md) | The CLI's defaults for a first run | Accepted |
 
 ## Template

@@ -20,7 +20,8 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
    runner: `vitest` with the `effectscript/vite` plugin, or `bun test` with the
    `effectscript/bun-preload` preload. `efx run src/main.efx` runs a program.
 5. **Convert:** `efx print src/x.ts` prints the EffectScript of a TypeScript file.
-   `efx convert --write` converts a project on a new git branch and keeps it green.
+   `efx convert --write` converts a project on a new git branch and keeps it green. Inside `.efx`,
+   `efx fix` rewrites leftover Effect TypeScript (`Effect.gen`, `Effect.fn`) as EffectScript.
 
 ## Core rules
 
