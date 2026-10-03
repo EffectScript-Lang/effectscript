@@ -1,0 +1,105 @@
+=====
+Match
+=====
+
+const area = match (shape) {
+  when Circle({ radius }): radius * 2
+  when "square": 1; default: 0
+}
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (match_expression
+        (parenthesized_expression
+          (identifier))
+        (match_arm
+          (call_expression
+            (identifier)
+            (arguments
+              (object
+                (shorthand_property_identifier))))
+          (binary_expression
+            (identifier)
+            (number)))
+        (match_arm
+          (string
+            (string_fragment))
+          (number))
+        (match_arm
+          (number))))))
+
+=======================
+Pipelines and the topic
+=======================
+
+const n = task |> Effect.map(%, (x) => x + 1) |> orDie
+const twice = 21 |> % + %
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (pipeline_expression
+        (pipeline_expression
+          (identifier)
+          (call_expression
+            (member_expression
+              (identifier)
+              (property_identifier))
+            (arguments
+              (topic_reference)
+              (arrow_function
+                (formal_parameters
+                  (required_parameter
+                    (identifier)))
+                (binary_expression
+                  (identifier)
+                  (number))))))
+        (identifier))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (pipeline_expression
+        (number)
+        (binary_expression
+          (topic_reference)
+          (topic_reference))))))
+
+========================
+Throw and do expressions
+========================
+
+const v = find(id) ?? throw new Missing()
+const size = do {
+  "large"
+}
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (binary_expression
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)))
+        (throw_expression
+          (new_expression
+            (identifier)
+            (arguments))))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (do_expression
+        (statement_block
+          (expression_statement
+            (string
+              (string_fragment))))))))

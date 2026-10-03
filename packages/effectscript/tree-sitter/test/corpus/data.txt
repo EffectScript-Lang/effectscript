@@ -1,0 +1,123 @@
+==========================================
+Schema with fields, a default and a getter
+==========================================
+
+export schema User {
+  id: string
+  email?: string
+  age = Int
+  get label() {
+    return this.id
+  }
+}
+
+---
+
+(program
+  (export_statement
+    (schema_declaration
+      (identifier)
+      (schema_body
+        (schema_field
+          (property_identifier)
+          (type_annotation
+            (predefined_type)))
+        (schema_field
+          (property_identifier)
+          (type_annotation
+            (predefined_type)))
+        (schema_field
+          (property_identifier)
+          (identifier))
+        (method_definition
+          (property_identifier)
+          (formal_parameters)
+          (statement_block
+            (return_statement
+              (member_expression
+                (this)
+                (property_identifier)))))))))
+
+=========================
+Schema alias and variants
+=========================
+
+schema UserId = string & Brand<"UserId">
+schema Shape =
+  | Circle { radius: number }
+  | Square { side: number }
+
+---
+
+(program
+  (schema_declaration
+    (identifier)
+    (intersection_type
+      (predefined_type)
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (literal_type
+            (string
+              (string_fragment)))))))
+  (schema_declaration
+    (identifier)
+    (schema_variants
+      (schema_variant
+        (identifier)
+        (schema_body
+          (schema_field
+            (property_identifier)
+            (type_annotation
+              (predefined_type)))))
+      (schema_variant
+        (identifier)
+        (schema_body
+          (schema_field
+            (property_identifier)
+            (type_annotation
+              (predefined_type))))))))
+
+================
+Error and config
+================
+
+export error NotFound { id: string }
+error Empty {}
+config App {
+  port: Port = 3000
+  region?: "eu" | "us"
+}
+
+---
+
+(program
+  (export_statement
+    (error_declaration
+      (identifier)
+      (schema_body
+        (schema_field
+          (property_identifier)
+          (type_annotation
+            (predefined_type))))))
+  (error_declaration
+    (identifier)
+    (schema_body))
+  (config_declaration
+    (identifier)
+    (schema_body
+      (schema_field
+        (property_identifier)
+        (type_annotation
+          (type_identifier))
+        (number))
+      (schema_field
+        (property_identifier)
+        (type_annotation
+          (union_type
+            (literal_type
+              (string
+                (string_fragment)))
+            (literal_type
+              (string
+                (string_fragment)))))))))

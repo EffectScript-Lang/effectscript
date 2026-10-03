@@ -1,0 +1,175 @@
+====================================================
+Effect declaration with throws, needs and a pipeline
+====================================================
+
+export effect getUser(id: string): User throws NotFound needs Db {
+  return await load(id)
+} |> retry(1) |> orDie
+
+---
+
+(program
+  (export_statement
+    (effect_declaration
+      (identifier)
+      (formal_parameters
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))))
+      (type_annotation
+        (type_identifier))
+      (effect_clauses
+        (type_identifier)
+        (type_identifier))
+      (statement_block
+        (return_statement
+          (await_expression
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier))))))
+      (pipeline_expression
+        (call_expression
+          (identifier)
+          (arguments
+            (number)))
+        (identifier)))))
+
+===============================
+Effect block, arrow and methods
+===============================
+
+const p = effect {
+  return await task
+}
+const add = effect (n: number): number => n + 1
+const api = {
+  effect fetch(id: string) {
+    return id
+  }
+}
+class C {
+  readonly get = effect { return 1 }
+}
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (effect_block
+        (statement_block
+          (return_statement
+            (await_expression
+              (identifier)))))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (effect_arrow_function
+        (formal_parameters
+          (required_parameter
+            (identifier)
+            (type_annotation
+              (predefined_type))))
+        (type_annotation
+          (predefined_type))
+        (binary_expression
+          (identifier)
+          (number)))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (object
+        (method_definition
+          (effect_method
+            (property_identifier)
+            (formal_parameters
+              (required_parameter
+                (identifier)
+                (type_annotation
+                  (predefined_type))))
+            (statement_block
+              (return_statement
+                (identifier))))))))
+  (class_declaration
+    (type_identifier)
+    (class_body
+      (public_field_definition
+        (property_identifier)
+        (effect_block
+          (statement_block
+            (return_statement
+              (number))))))))
+
+==============
+Default export
+==============
+
+export default effect main() {
+  return 1
+}
+
+---
+
+(program
+  (export_statement
+    (effect_declaration
+      (identifier)
+      (formal_parameters)
+      (statement_block
+        (return_statement
+          (number))))))
+
+==========================
+Try with a catch per error
+==========================
+
+effect f() {
+  try {
+    return await load()
+  } catch (e: NotFound) {
+    return 1
+  } catch (e) {
+    return 2
+  } finally {
+    await log("done")
+  }
+}
+
+---
+
+(program
+  (effect_declaration
+    (identifier)
+    (formal_parameters)
+    (statement_block
+      (try_statement
+        (statement_block
+          (return_statement
+            (await_expression
+              (call_expression
+                (identifier)
+                (arguments)))))
+        (catch_clause
+          (identifier)
+          (type_annotation
+            (type_identifier))
+          (statement_block
+            (return_statement
+              (number))))
+        (catch_clause
+          (identifier)
+          (statement_block
+            (return_statement
+              (number))))
+        (finally_clause
+          (statement_block
+            (expression_statement
+              (await_expression
+                (call_expression
+                  (identifier)
+                  (arguments
+                    (string
+                      (string_fragment))))))))))))

@@ -1,0 +1,91 @@
+==============================================
+Service with signatures, a property and layers
+==============================================
+
+export service Users {
+  effect find(id: string): User throws NotFound
+  readonly size: number
+  layer = effect {
+    return { size: 0 }
+  } |> provide(Db)
+  layer test = { size: 1 }
+}
+
+---
+
+(program
+  (export_statement
+    (service_declaration
+      (identifier)
+      (service_body
+        (effect_method_signature
+          (property_identifier)
+          (formal_parameters
+            (required_parameter
+              (identifier)
+              (type_annotation
+                (predefined_type))))
+          (type_annotation
+            (type_identifier))
+          (effect_clauses
+            (type_identifier)))
+        (service_property
+          (property_identifier)
+          (type_annotation
+            (predefined_type)))
+        (layer_member
+          (pipeline_expression
+            (effect_block
+              (statement_block
+                (return_statement
+                  (object
+                    (pair
+                      (property_identifier)
+                      (number))))))
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier)))))
+        (layer_member
+          (identifier)
+          (object
+            (pair
+              (property_identifier)
+              (number))))))))
+
+================
+Layers and atoms
+================
+
+export layer App = Users.layer & Posts.layer
+atom count = 0
+atom doubled = (get) => get(count) * 2
+
+---
+
+(program
+  (export_statement
+    (layer_declaration
+      (identifier)
+      (binary_expression
+        (member_expression
+          (identifier)
+          (property_identifier))
+        (member_expression
+          (identifier)
+          (property_identifier)))))
+  (atom_declaration
+    (identifier)
+    (number))
+  (atom_declaration
+    (identifier)
+    (arrow_function
+      (formal_parameters
+        (required_parameter
+          (identifier)))
+      (binary_expression
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)))
+        (number)))))

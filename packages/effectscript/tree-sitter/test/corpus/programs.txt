@@ -1,0 +1,218 @@
+==============
+Main and defer
+==============
+
+main {
+  defer log("bye")
+  defer {
+    cleanup()
+  }
+  await program
+} |> provide(Live)
+
+---
+
+(program
+  (main_statement
+    (statement_block
+      (defer_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (string
+              (string_fragment)))))
+      (defer_statement
+        (statement_block
+          (expression_statement
+            (call_expression
+              (identifier)
+              (arguments)))))
+      (expression_statement
+        (await_expression
+          (identifier))))
+    (call_expression
+      (identifier)
+      (arguments
+        (identifier)))))
+
+==================
+Tests and doctests
+==================
+
+describe "Users" with Users.layerTest {
+  test "finds" {
+    expect(await find("1")).toBe(1)
+  }
+  test.live "uses the clock" {
+    await sleep("1 millis")
+  }
+}
+doctest "./bank.efx" with Live
+
+---
+
+(program
+  (describe_statement
+    (string
+      (string_fragment))
+    (member_expression
+      (identifier)
+      (property_identifier))
+    (statement_block
+      (test_statement
+        (string
+          (string_fragment))
+        (statement_block
+          (expression_statement
+            (call_expression
+              (member_expression
+                (call_expression
+                  (identifier)
+                  (arguments
+                    (await_expression
+                      (call_expression
+                        (identifier)
+                        (arguments
+                          (string
+                            (string_fragment)))))))
+                (property_identifier))
+              (arguments
+                (number))))))
+      (test_statement
+        (identifier)
+        (string
+          (string_fragment))
+        (statement_block
+          (expression_statement
+            (await_expression
+              (call_expression
+                (identifier)
+                (arguments
+                  (string
+                    (string_fragment))))))))))
+  (doctest_statement
+    (string
+      (string_fragment))
+    (identifier)))
+
+==================
+Command with flags
+==================
+
+export command create(
+  /** Title */ title: string,
+  --priority: "low" | "high" = "low",
+  --dryRun?: boolean,
+) {
+  console.log(title)
+}
+
+---
+
+(program
+  (export_statement
+    (command_declaration
+      (identifier)
+      (command_parameters
+        (comment)
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type)))
+        (flag_parameter
+          (identifier)
+          (type_annotation
+            (union_type
+              (literal_type
+                (string
+                  (string_fragment)))
+              (literal_type
+                (string
+                  (string_fragment)))))
+          (string
+            (string_fragment)))
+        (flag_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))))
+      (statement_block
+        (expression_statement
+          (call_expression
+            (member_expression
+              (identifier)
+              (property_identifier))
+            (arguments
+              (identifier))))))))
+
+===================
+Group, api and impl
+===================
+
+export group UsersApi "users" {
+  get list "/" (query: { q?: string }): User[]
+  del remove "/:id" (params: { id: string }) throws NotFound
+  middleware Auth
+}
+export api Api { UsersApi, SystemApi }
+const handlers = impl Api.users {
+  return {}
+}
+
+---
+
+(program
+  (export_statement
+    (group_declaration
+      (identifier)
+      (string
+        (string_fragment))
+      (route
+        (identifier)
+        (identifier)
+        (string
+          (string_fragment))
+        (formal_parameters
+          (required_parameter
+            (identifier)
+            (type_annotation
+              (object_type
+                (property_signature
+                  (property_identifier)
+                  (type_annotation
+                    (predefined_type)))))))
+        (type_annotation
+          (array_type
+            (type_identifier))))
+      (route
+        (identifier)
+        (identifier)
+        (string
+          (string_fragment))
+        (formal_parameters
+          (required_parameter
+            (identifier)
+            (type_annotation
+              (object_type
+                (property_signature
+                  (property_identifier)
+                  (type_annotation
+                    (predefined_type)))))))
+        (effect_clauses
+          (type_identifier)))
+      (middleware_clause
+        (identifier))))
+  (export_statement
+    (api_declaration
+      (identifier)
+      (identifier)
+      (identifier)))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (impl_expression
+        (member_expression
+          (identifier)
+          (property_identifier))
+        (statement_block
+          (return_statement
+            (object)))))))
