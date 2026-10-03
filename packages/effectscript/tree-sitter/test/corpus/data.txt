@@ -78,6 +78,30 @@ schema Shape =
             (type_annotation
               (predefined_type))))))))
 
+==================
+Error with a status
+==================
+
+export error TodoNotFound status 404 { id: string }
+const status = 200
+
+---
+
+(program
+  (export_statement
+    (error_declaration
+      (identifier)
+      (number)
+      (schema_body
+        (schema_field
+          (property_identifier)
+          (type_annotation
+            (predefined_type))))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (number))))
+
 ================
 Error and config
 ================

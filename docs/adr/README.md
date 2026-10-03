@@ -71,6 +71,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0061](0061-the-private-repository-is-effectscript-internal.md) | The private repository is `EffectScript-Lang/effectscript-internal` | Accepted |
 | [0062](0062-release-order-grammar-pin-and-latest.md) | The grammar is pinned before the tag, and only the newest release is latest | Accepted |
 | [0063](0063-match-guards-and-object-patterns.md) | `match` guards and object patterns | Accepted |
+| [0064](0064-http-status-on-errors.md) | An error declares its HTTP status in its header | Accepted |
 
 ## Template
 

@@ -46,6 +46,28 @@ describe("group / api (§4.14)", () => {
     expect(mod.result).toEqual(["x", "Ada", "UserNotFound"])
   }, 180_000)
 
+  it("answers with an error's status (ADR-0064)", async () => {
+    const mod = await runCompiled(`${httpTestPrelude}
+      import { HttpRouter } from "effect/http"
+      schema Todo { id: string }
+      error TodoNotFound status 404 { id: string }
+      group TodosApi {
+        get byId "/todos/:id" (params: { id: string }): Todo throws TodoNotFound
+      }
+      api Api { TodosApi }
+      const TodosLive = HttpApiBuilder.group(Api, "todos", (handlers) => handlers.handleAll({
+        byId: ({ params }) => Effect.fail(new TodoNotFound({ id: params.id }))
+      }))
+      const { handler, dispose } = HttpRouter.toWebHandler(
+        HttpApiBuilder.layer(Api).pipe(Layer.provide(TodosLive), Layer.provide(TestServices))
+      )
+      const response = await handler(new Request("http://localhost/todos/2"))
+      export const result = [response.status, await response.json()]
+      await dispose()
+    `)
+    expect(mod.result).toEqual([404, { _tag: "TodoNotFound", id: "2" }])
+  }, 180_000)
+
   it("impl compiles to HttpApiBuilder.group with handleAll and span names", () => {
     const { code } = toTypeScript(
       "export const H = impl Api.users {\n  const users = await Users\n  return {\n    effect getById({ params }) {\n      return await users.find(params.id)\n    }\n  }\n} |> provide(Users.layer)\n"

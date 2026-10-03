@@ -29,7 +29,8 @@ const keywords = [
   "needs",
   "match",
   "when",
-  "middleware"
+  "middleware",
+  "status"
 ]
 
 /** One or more `rule`, separated by `separator`. */
@@ -439,7 +440,14 @@ export default grammar(TypeScript, {
 
     error_declaration: ($) =>
       prec.right(
-        seq("error", field("name", $.identifier), optional(field("body", $.schema_body)), optional($._semicolon))
+        seq(
+          "error",
+          field("name", $.identifier),
+          // the HTTP status it answers with (ADR-0064)
+          optional(seq("status", field("status", $.number))),
+          optional(field("body", $.schema_body)),
+          optional($._semicolon)
+        )
       ),
 
     config_declaration: ($) => seq("config", field("name", $.identifier), field("body", $.schema_body)),

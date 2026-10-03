@@ -3,7 +3,7 @@ export schema Todo {
   title: string
 }
 
-export error TodoNotFound { id: string }
+export error TodoNotFound status 404 { id: string }
 
 export group TodosApi {
   get list "/todos": Todo[]

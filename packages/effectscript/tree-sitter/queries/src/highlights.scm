@@ -23,6 +23,7 @@
   "match"
   "when"
   "middleware"
+  "status"
 ] @keyword
 
 (match_arm "default" @keyword)

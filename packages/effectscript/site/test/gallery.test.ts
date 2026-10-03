@@ -70,5 +70,8 @@ describe("token pieces (Plan 21)", () => {
     const byId = (id: string) => scenarios.find((s) => s.id === id)!
     expect(byId("errors").panes[2].code).toContain("times: 2")
     expect(byId("http").panes[2].code).toContain("\"/todos/:id\"")
+    // a missing todo answers 404 in each one (ADR-0064)
+    expect(byId("http").panes[2].code).toContain("error TodoNotFound status 404")
+    expect(byId("http").panes[1].code).toContain("{ httpApiStatus: 404 }")
   })
 })

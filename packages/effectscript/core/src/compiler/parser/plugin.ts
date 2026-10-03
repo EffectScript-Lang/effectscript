@@ -519,6 +519,14 @@ export const efxPlugin = (Base: any): any =>
         this.next()
         node.efxServiceKey = this.parseExprAtom(null, false, false)
       }
+      // `error Name status 404 { … }`: the HTTP status it answers with (ADR-0064)
+      if (node.efxKind === "error" && this.efxIsWord("status")) {
+        this.next()
+        if (this.type !== tt.num || !Number.isInteger(this.value) || this.value < 100 || this.value > 599) {
+          this.raise(this.start, "An error's status is an HTTP status code, from 100 to 599")
+        }
+        node.efxStatus = this.parseExprAtom(null, false, false)
+      }
       return super.parseClassSuper(node)
     }
 

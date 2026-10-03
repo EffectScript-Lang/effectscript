@@ -425,6 +425,11 @@ class DbError extends Schema.TaggedError<DbError>()("DbError", { cause: Schema.D
 The body uses the same rules as the `schema` class form: fields, `=` fields, and methods. A
 `_tag: "X"` field overrides the tag.
 
+**HTTP status** (ADR-0064): `error TodoNotFound status 404 { id: string }` adds Effect's own
+annotation, which `HttpApi` answers with: `Schema.TaggedError<TodoNotFound>()("TodoNotFound", { id:
+Schema.String }, { httpApiStatus: 404 })`. The code is an integer from 100 to 599. `status` is a
+keyword only between an error's name and its body.
+
 ### 4.8 `service` and `layer`
 
 ```ts

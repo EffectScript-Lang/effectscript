@@ -78,6 +78,7 @@
   "match"
   "when"
   "middleware"
+  "status"
 ] @keyword
 
 [ "abstract"

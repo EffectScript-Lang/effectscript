@@ -28,10 +28,30 @@ interface ClassShape {
   readonly keyword: "error" | "schema"
   readonly name: string
   readonly tag: string | undefined
+  /** An error's HTTP status code, as written (ADR-0064). */
+  readonly status: string | undefined
   /** Whether the declaration needs a `_tag` field (an error whose tag isn't its name, a tagged schema). */
   readonly tagField: boolean
   readonly fields: Node
   readonly entries: ReadonlyArray<Field>
+}
+
+/** The status code of `{ httpApiStatus: 404 }`, the only annotation an `error` declaration writes. */
+const statusOf = (node: Node | undefined): string | undefined => {
+  const property: Node | undefined = node?.type === "ObjectExpression" && node.properties.length === 1
+    ? node.properties[0]
+    : undefined
+  if (
+    property?.type !== "Property" || property.computed || property.method || property.shorthand ||
+    property.key.type !== "Identifier" || property.key.name !== "httpApiStatus"
+  ) {
+    return undefined
+  }
+  const value: Node = property.value
+  return value.type === "Literal" && Number.isInteger(value.value) && value.value >= 100 && value.value <= 599 &&
+      /^\d+$/.test(value.raw)
+    ? value.raw
+    : undefined
 }
 
 /** `Schema.TaggedError<X>()` / `Schema.TaggedClass<X>()` / `Schema.Class<X>("X")` */
@@ -53,15 +73,24 @@ const superShape = (ctx: ReverseCtx, cls: Node) => {
   }
   const tagged = (member: string) => isMember(inner.callee, ctx.schema, member) && inner.arguments.length === 0
   if (tagged("TaggedError") || tagged("TaggedClass")) {
-    const [tag, fields] = outer.arguments
-    if (tag?.type !== "Literal" || typeof tag.value !== "string" || outer.arguments.length !== 2) return undefined
+    const [tag, fields, annotations] = outer.arguments
+    if (tag?.type !== "Literal" || typeof tag.value !== "string") return undefined
     const keyword = tagged("TaggedError") ? "error" as const : "schema" as const
-    return { keyword, name, tag: tag.value as string, fields: fields as Node | undefined }
+    // `{ httpApiStatus: 404 }` alone is an error's `status 404` (ADR-0064)
+    const status = keyword === "error" && outer.arguments.length === 3 ? statusOf(annotations) : undefined
+    if (outer.arguments.length !== 2 && status === undefined) return undefined
+    return { keyword, name, tag: tag.value as string, fields: fields as Node | undefined, status }
   }
   if (
     isMember(inner.callee, ctx.schema, "Class") && inner.arguments[0]?.value === name && outer.arguments.length === 1
   ) {
-    return { keyword: "schema" as const, name, tag: undefined, fields: outer.arguments[0] as Node | undefined }
+    return {
+      keyword: "schema" as const,
+      name,
+      tag: undefined,
+      fields: outer.arguments[0] as Node | undefined,
+      status: undefined
+    }
   }
   return undefined
 }
@@ -164,7 +193,12 @@ export const convertClass = (ctx: ReverseCtx, cls: Node, visit: Visit): boolean 
   const { entries, fields, keyword, name } = shape
   // the text between the fields and the class body is removed, so it can't hold a comment
   if (commentsIn(ctx, fields.end, cls.body.start + 1).length > 0) return false
-  replaceKeepingComments(ctx, cls.start, fields.start, `${keyword} ${name} `)
+  replaceKeepingComments(
+    ctx,
+    cls.start,
+    fields.start,
+    `${keyword} ${name} ${shape.status === undefined ? "" : `status ${shape.status} `}`
+  )
   if (shape.tagField) {
     // the forward compiler drops the `_tag` field's whole line
     const first: Node | undefined = entries[0]?.property

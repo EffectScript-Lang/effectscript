@@ -36,7 +36,10 @@ const schemaClass: Handler = (node, _parent, ctx) => {
   ctx.s.update(node.id.end, node.body.start, ` extends ${header}`)
   if (tag !== undefined) removeLine(ctx, tag)
   fields.forEach((field, i) => rewriteField(ctx, field, i === fields.length - 1))
-  moveMembersAfter(ctx, node.body, members, "})")
+  // an error's HTTP status (`status 404`, replaced with the header above) is Effect's own
+  // annotation, read by HttpApi (ADR-0064)
+  const status: Node | undefined = node.efxStatus
+  moveMembersAfter(ctx, node.body, members, status === undefined ? "})" : `}, { httpApiStatus: ${status.raw} })`)
   for (const member of members) walk(member, node.body, ctx)
   return true
 }

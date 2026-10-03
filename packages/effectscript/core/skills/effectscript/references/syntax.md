@@ -658,6 +658,42 @@ const find = Effect.fn("find")(function*(id: string): Effect.fn.Return<string, U
 })
 ```
 
+### Status
+
+```efx
+export error TodoNotFound status 404 { id: string }
+export error Unauthorized status 401 {}
+error RateLimited status 429 {
+  retryAfter: number
+  get message() { return `retry after ${this.retryAfter}s` }
+}
+
+// `status` is still a name everywhere else
+const status = 200
+export schema Reply { status: number }
+```
+
+Compiles to:
+
+```ts
+import { Schema } from "effect"
+export class TodoNotFound
+  extends Schema.TaggedError<TodoNotFound>()("TodoNotFound", { id: Schema.String }, { httpApiStatus: 404 })
+{}
+export class Unauthorized extends Schema.TaggedError<Unauthorized>()("Unauthorized", {}, { httpApiStatus: 401 }) {}
+class RateLimited extends Schema.TaggedError<RateLimited>()("RateLimited", {
+  retryAfter: Schema.Number
+}, { httpApiStatus: 429 }) {
+  get message() {
+    return `retry after ${this.retryAfter}s`
+  }
+}
+
+// `status` is still a name everywhere else
+const status = 200
+export class Reply extends Schema.Class<Reply>("Reply")({ status: Schema.Number }) {}
+```
+
 ## `service`
 
 <!-- fixtures/service -->
