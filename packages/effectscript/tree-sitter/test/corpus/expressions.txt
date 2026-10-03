@@ -33,6 +33,49 @@ const area = match (shape) {
           (number))))))
 
 =======================
+Match guards and object patterns
+=======================
+
+const size = match (shape) {
+  when Circle(c) if c.radius > 10: 1
+  when { status: 404, body } if body !== "": body
+  default: 0
+}
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (match_expression
+        (parenthesized_expression
+          (identifier))
+        (match_arm
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))
+          (binary_expression
+            (member_expression
+              (identifier)
+              (property_identifier))
+            (number))
+          (number))
+        (match_arm
+          (object
+            (pair
+              (property_identifier)
+              (number))
+            (shorthand_property_identifier))
+          (binary_expression
+            (identifier)
+            (string))
+          (identifier))
+        (match_arm
+          (number))))))
+
+=======================
 Pipelines and the topic
 =======================
 

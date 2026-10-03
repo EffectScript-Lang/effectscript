@@ -22,6 +22,20 @@ export const pipelineToken: acorn.TokenType & { readonly binop: number } = new (
 
 const lineBreak = /[\n\r\u2028\u2029]/
 
+/** The first `await` in an expression, for refusing one in a guard. */
+const efxFindAwait = (node: any): any => {
+  if (node === null || typeof node !== "object") return undefined
+  if (node.type === "AwaitExpression") return node
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "loc") continue
+    const found = Array.isArray(value)
+      ? value.map(efxFindAwait).find((n) => n !== undefined)
+      : efxFindAwait(value)
+    if (found !== undefined) return found
+  }
+  return undefined
+}
+
 interface EfxState {
   pipeDepth: number
   readonly arrowStarts: Set<number>
@@ -739,7 +753,44 @@ export const efxPlugin = (Base: any): any =>
       return this.input[after] === "{" && !lineBreak.test(this.input.slice(end, after))
     }
 
+    /**
+     * An object pattern (ADR-0063): `{ key: literal | object pattern, name }`. A shorthand field
+     * binds it; any other value is a literal or a nested object pattern.
+     */
+    efxParseObjectMatchPattern(): any {
+      const node = this.startNode()
+      this.expect(tt.braceL)
+      node.properties = []
+      while (!this.eat(tt.braceR)) {
+        const property = this.startNode()
+        property.key = this.type === tt.string ? this.parseExprAtom(null, false, false) : this.parseIdent(true)
+        if (this.eat(tt.colon)) {
+          if (this.type === tt.braceL) property.value = this.efxParseObjectMatchPattern()
+          else {
+            const value = this.efxParseMatchPattern()
+            if (value.type !== "LiteralPattern") {
+              this.raise(
+                value.start,
+                "An object pattern's values are literals or object patterns: write `{ key }` to bind a field"
+              )
+            }
+            property.value = value
+          }
+        } else {
+          if (property.key.type !== "Identifier") this.unexpected()
+          property.value = null
+        }
+        node.properties.push(this.finishNode(property, "ObjectMatchProperty"))
+        if (!this.eat(tt.comma)) {
+          this.expect(tt.braceR)
+          break
+        }
+      }
+      return this.finishNode(node, "ObjectMatchPattern")
+    }
+
     efxParseMatchPattern(): any {
+      if (this.type === tt.braceL) return this.efxParseObjectMatchPattern()
       const node = this.startNode()
       if (
         this.type === tt.string || this.type === tt.num || this.type === tt._true || this.type === tt._false ||
@@ -784,6 +835,13 @@ export const efxPlugin = (Base: any): any =>
           arm.pattern = this.efxParseMatchPattern()
         } else {
           this.unexpected()
+        }
+        // a guard (ADR-0063): a predicate, so a binary-level expression with no `await`
+        arm.guard = null
+        if (arm.pattern !== null && this.eat(tt._if)) {
+          arm.guard = this.parseExprOps(false, null)
+          const found = efxFindAwait(arm.guard)
+          if (found !== undefined) this.raise(found.start, "A guard is a predicate: it can't `await`")
         }
         this.expect(tt.colon)
         arm.body = this.parseMaybeAssign()

@@ -963,6 +963,65 @@ NodeRuntime.runMain(
 
 <!-- fixtures/match -->
 
+### Guards
+
+```efx
+schema Shape =
+  | Circle { radius: number }
+  | Square { side: number }
+
+declare const shape: Shape
+declare const status: "active" | "banned" | "pending"
+declare const strict: boolean
+
+export const size = match (shape) {
+  when Circle(c) if c.radius > 10: `big circle ${c.radius}`
+  when Circle({ radius }): `circle ${radius}`
+  when Square({ side }) if side === 0: "dot"
+  when Square: "square"
+}
+
+export const label = match (status) {
+  when "banned" if strict: "✗"
+  default: "?"
+}
+```
+
+Compiles to:
+
+```ts
+import { Match, Schema } from "effect"
+class Circle extends Schema.TaggedClass<Circle>()("Circle", { radius: Schema.Number }) {}
+class Square extends Schema.TaggedClass<Square>()("Square", { side: Schema.Number }) {}
+const Shape = Schema.Union([Circle, Square])
+type Shape = typeof Shape.Type
+
+declare const shape: Shape
+declare const status: "active" | "banned" | "pending"
+declare const strict: boolean
+
+export const size = Match.value(shape).pipe(
+  Match.when(
+    (c): c is Extract<typeof c, { readonly _tag: "Circle" }> & { readonly "~effectscript/guard": true } =>
+      c._tag === "Circle" && c.radius > 10,
+    (c) => `big circle ${c.radius}`
+  ),
+  Match.tag("Circle", ({ radius }) => `circle ${radius}`),
+  Match.when(
+    (_): _ is Extract<typeof _, { readonly _tag: "Square" }> & { readonly "~effectscript/guard": true } =>
+      _._tag === "Square" && (({ side }) => side === 0)(_),
+    ({ side }) => "dot"
+  ),
+  Match.tag("Square", () => "square"),
+  Match.exhaustive
+)
+
+export const label = Match.value(status).pipe(
+  Match.when((_) => _ === "banned" && strict, () => "✗"),
+  Match.orElse(() => "?")
+)
+```
+
 ### Match
 
 ```efx
@@ -1025,6 +1084,50 @@ export const scaled = Effect.fn("scaled")(function*() {
       })
   }))
 })
+```
+
+### Objects
+
+```efx
+declare const res: { status: number; body: string }
+type Event = { type: "click"; x: number; y: number } | { type: "key"; key: string }
+declare const event: Event
+
+export const message = match (res) {
+  when { status: 404 }: "not found"
+  when { status: 500, body } if body !== "": `server: ${body}`
+  default: "ok"
+}
+
+export const describeEvent = match (event) {
+  when { type: "click", x, y }: `click at ${x},${y}`
+  when { type: "key", key }: `key ${key}`
+}
+```
+
+Compiles to:
+
+```ts
+import { Match } from "effect"
+declare const res: { status: number; body: string }
+type Event = { type: "click"; x: number; y: number } | { type: "key"; key: string }
+declare const event: Event
+
+export const message = Match.value(res).pipe(
+  Match.when({ status: 404 }, () => "not found"),
+  Match.when(
+    (_): _ is Match.Types.WhenMatch<typeof _, { readonly status: 500 }> & { readonly "~effectscript/guard": true } =>
+      _.status === 500 && (({ body }) => body !== "")(_ as Match.Types.WhenMatch<typeof _, { readonly status: 500 }>),
+    ({ body }) => `server: ${body}`
+  ),
+  Match.orElse(() => "ok")
+)
+
+export const describeEvent = Match.value(event).pipe(
+  Match.when({ type: "click" }, ({ x, y }) => `click at ${x},${y}`),
+  Match.when({ type: "key" }, ({ key }) => `key ${key}`),
+  Match.exhaustive
+)
 ```
 
 ## Other adopted proposals

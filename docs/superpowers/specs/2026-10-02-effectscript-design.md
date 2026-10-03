@@ -574,14 +574,22 @@ const label = Match.value(status).pipe(
 - **Patterns:**
   - `Tag`, `Tag(binding)`, or `Tag({ destructuring })`: matches `_tag`.
   - Literals: string, number, boolean, `null`, `undefined`.
+  - Object patterns (ADR-0063): `{ status: 404 }` matches fields whose values are literals or
+    nested object patterns, and a shorthand field binds it: `when { type: "click", x }: x`.
+    → `Match.when({ type: "click" }, ({ x }) => x)`.
   - `default`.
+- **Guards** (ADR-0063): `when Circle(c) if c.radius > 10: …`. A guard is a binary-level
+  expression with no `await`. A guarded arm never counts as handling its case, so exhaustiveness
+  still needs an unguarded arm or `default`. A guarded tag or object arm compiles to
+  `Match.when` with a refinement to the case intersected with a brand
+  (`{ readonly "~effectscript/guard": true }`), which types the handler without removing the
+  case; a guarded literal compiles to a plain predicate.
 - Arms are separated by newlines, `;`, or `,`.
 - **Output:** if every arm is a tag pattern and there is no `default` → `Match.valueTags`.
   Otherwise → `Match.value(x).pipe(Match.tag | Match.when …, Match.orElse | Match.exhaustive)`.
 - **Inside `effect`:** if any arm contains `await` or `throw`, every arm becomes
   `(binding) => Effect.gen(function*() { return arm })` and the whole match is yielded.
-- **Syntax:** `match (x) {` requires the `{` on the same line as `)`. Guards (`if (…)`) are on the
-  roadmap.
+- **Syntax:** `match (x) {` requires the `{` on the same line as `)`.
 
 ### 4.12 Other adopted proposals
 
@@ -1683,7 +1691,6 @@ The order was revised after the plan review (ADR-0016).
 
 - `effect` class methods and `effect` methods in `schema` classes.
 - Generator streams (`effect*` with `yield` → `Stream`).
-- `match` guards and object patterns (`when { status: 404 }`).
 - `Context.Reference` services with defaults.
 - More library constructs: `rpc` (RpcGroup), `workflow` (effect/workflow), `tool`/`toolkit`
   (effect/ai), `entity` (cluster), and a Foldkit-style `app` (Model/Message/update/view).

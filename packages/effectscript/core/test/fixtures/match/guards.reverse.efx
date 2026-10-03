@@ -1,0 +1,19 @@
+schema Shape =
+  | Circle { radius: number }
+  | Square { side: number }
+
+declare const shape: Shape
+declare const status: "active" | "banned" | "pending"
+declare const strict: boolean
+
+export const size = match (shape) {
+  when Circle(c) if c.radius > 10: `big circle ${c.radius}`
+  when Circle({ radius }): `circle ${radius}`
+  when Square({ side }) if side === 0: "dot"
+  when Square: "square"
+}
+
+export const label = match (status) {
+  when "banned" if strict: "✗"
+  default: "?"
+}

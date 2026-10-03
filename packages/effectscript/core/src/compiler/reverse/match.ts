@@ -46,6 +46,224 @@ const armFunction = (ctx: ReverseCtx, node: Node | undefined, maxParams: number)
   return node
 }
 
+/** An object pattern's literal fields, from `Match.when`'s object or a guard's refinement type. */
+interface Field {
+  readonly key: string
+  readonly value: string | ReadonlyArray<Field>
+}
+
+/** An object pattern's bindings: a shorthand name, or a nested pattern under a key. */
+interface Bind {
+  readonly key: string
+  readonly nested: ReadonlyArray<Bind> | undefined
+}
+
+const isKey = (key: Node): boolean =>
+  key.type === "Identifier" || (key.type === "Literal" && typeof key.value === "string")
+
+const isLiteralValue = (node: Node): boolean =>
+  (node.type === "Literal" && node.regex === undefined && node.bigint === undefined) ||
+  (node.type === "Identifier" && node.name === "undefined")
+
+/** `{ status: 404, user: { role: "admin" } }` as fields; `undefined` for anything else. */
+const fieldsOfObject = (ctx: ReverseCtx, node: Node): ReadonlyArray<Field> | undefined => {
+  const fields: Array<Field> = []
+  for (const property of node.properties as Array<Node>) {
+    if (
+      property.type !== "Property" || property.computed || property.shorthand || property.method ||
+      property.kind !== "init" || !isKey(property.key)
+    ) {
+      return undefined
+    }
+    if (property.value.type === "ObjectExpression") {
+      const nested = fieldsOfObject(ctx, property.value)
+      if (nested === undefined) return undefined
+      fields.push({ key: slice(ctx, property.key), value: nested })
+    } else if (isLiteralValue(property.value)) {
+      fields.push({ key: slice(ctx, property.key), value: slice(ctx, property.value) })
+    } else return undefined
+  }
+  return fields
+}
+
+/** `{ readonly status: 500; … }` as fields; `undefined` for anything else. */
+const fieldsOfType = (ctx: ReverseCtx, node: Node): ReadonlyArray<Field> | undefined => {
+  if (node.type !== "TSTypeLiteral") return undefined
+  const fields: Array<Field> = []
+  for (const member of node.members as Array<Node>) {
+    if (
+      member.type !== "TSPropertySignature" || !member.readonly || member.computed || member.optional ||
+      !isKey(member.key) || member.typeAnnotation === undefined
+    ) {
+      return undefined
+    }
+    const type: Node = member.typeAnnotation.typeAnnotation
+    if (type.type === "TSTypeLiteral") {
+      const nested = fieldsOfType(ctx, type)
+      if (nested === undefined) return undefined
+      fields.push({ key: slice(ctx, member.key), value: nested })
+    } else if (["TSLiteralType", "TSUndefinedKeyword", "TSNullKeyword"].includes(type.type)) {
+      fields.push({ key: slice(ctx, member.key), value: slice(ctx, type) })
+    } else return undefined
+  }
+  return fields
+}
+
+/** `({ x, user: { name } })`'s pattern as bindings; `undefined` for renames, defaults or rests. */
+const bindsOf = (ctx: ReverseCtx, node: Node): ReadonlyArray<Bind> | undefined => {
+  if (node.type !== "ObjectPattern") return undefined
+  const binds: Array<Bind> = []
+  for (const property of node.properties as Array<Node>) {
+    if (property.type !== "Property" || property.computed || !isKey(property.key)) return undefined
+    if (property.shorthand && property.value.type === "Identifier") {
+      binds.push({ key: property.key.name, nested: undefined })
+    } else if (!property.shorthand && property.value.type === "ObjectPattern") {
+      const nested = bindsOf(ctx, property.value)
+      if (nested === undefined) return undefined
+      binds.push({ key: slice(ctx, property.key), nested })
+    } else return undefined
+  }
+  return binds
+}
+
+/** The EffectScript object pattern: literal fields first, then the bindings the fields don't hold. */
+const objectPattern = (fields: ReadonlyArray<Field>, binds: ReadonlyArray<Bind>): string => {
+  const parts = fields.map((field) => {
+    if (typeof field.value === "string") return `${field.key}: ${field.value}`
+    const inner = binds.find((b) => b.key === field.key && b.nested !== undefined)
+    return `${field.key}: ${objectPattern(field.value, inner?.nested ?? [])}`
+  })
+  for (const bind of binds) {
+    if (fields.some((f) => f.key === bind.key && typeof f.value !== "string")) continue
+    parts.push(bind.nested === undefined ? bind.key : `${bind.key}: ${objectPattern([], bind.nested)}`)
+  }
+  return `{ ${parts.join(", ")} }`
+}
+
+/** The comparisons a guarded object arm makes before its guard, as the forward compiler writes them. */
+const fieldTests = (fields: ReadonlyArray<Field>, base: string, dot: string): Array<string> =>
+  fields.flatMap((field) => {
+    const access = field.key.startsWith("\"")
+      ? `${base}${dot === "." ? "" : dot}[${field.key}]`
+      : `${base}${dot}${field.key}`
+    return typeof field.value === "string" ? [`${access} === ${field.value}`] : fieldTests(field.value, access, "?.")
+  })
+
+/** The node spanning exactly `[start, end)` under `root`. */
+const nodeAt = (root: Node, start: number, end: number): Node | undefined => {
+  if (root === null || typeof root !== "object") return undefined
+  if (typeof root.type === "string" && root.start === start && root.end === end) return root
+  for (const [key, value] of Object.entries(root)) {
+    if (key === "loc") continue
+    for (const child of Array.isArray(value) ? value : [value]) {
+      if (child !== null && typeof child === "object" && (child.start ?? start) <= start && (child.end ?? end) >= end) {
+        const found = nodeAt(child, start, end)
+        if (found !== undefined) return found
+      }
+    }
+  }
+  return undefined
+}
+
+const loose = (node: Node | undefined): boolean =>
+  node !== undefined && ((node.type === "LogicalExpression" && node.operator !== "&&") ||
+    ["ConditionalExpression", "AssignmentExpression", "SequenceExpression", "ArrowFunctionExpression"].includes(
+      node.type
+    ))
+
+/** A guard's text from `[start, end)`, without the parentheses the forward compiler adds. */
+const guardText = (ctx: ReverseCtx, root: Node, start: number, end: number): string => {
+  const text = ctx.source.slice(start, end)
+  if (text.startsWith("(") && text.endsWith(")") && loose(nodeAt(root, start + 1, end - 1))) return text.slice(1, -1)
+  return text
+}
+
+const guardedBrand = "{ readonly \"~effectscript/guard\": true }"
+
+/**
+ * A guarded arm (ADR-0063): `Match.when((v): v is … & brand => tests && guard, handler)`, or a
+ * guarded literal `Match.when((v) => v === "x" && guard, () => e)`. Returns the arm's head.
+ */
+const guardedHead = (ctx: ReverseCtx, M: string, predicate: Node, handler: Node): string | undefined => {
+  if (
+    predicate.type !== "ArrowFunctionExpression" || predicate.async || predicate.params.length !== 1 ||
+    predicate.params[0].type !== "Identifier" || predicate.params[0].typeAnnotation ||
+    predicate.body.type === "BlockStatement"
+  ) {
+    return undefined
+  }
+  const v: string = predicate.params[0].name
+  const body: Node = predicate.body
+  const binding: Node | undefined = handler.params[0]
+  if (predicate.returnType === undefined) {
+    // a guarded literal
+    if (binding !== undefined || !ctx.source.startsWith(`${v} === `, body.start)) return undefined
+    const literalStart = body.start + v.length + 5
+    const literal = nodeAt(
+      body,
+      literalStart,
+      literalStart +
+        (/^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[\w.$-]+)/.exec(ctx.source.slice(literalStart))?.[0].length ?? 0)
+    )
+    if (literal === undefined || !isLiteralValue(literal) || !ctx.source.startsWith(" && ", literal.end)) {
+      return undefined
+    }
+    return `when ${slice(ctx, literal)} if ${guardText(ctx, body, literal.end + 4, body.end)}`
+  }
+  const predicateType: Node = predicate.returnType.typeAnnotation
+  if (predicateType.type !== "TSTypePredicate" || predicateType.parameterName?.name !== v) return undefined
+  const both: Node = predicateType.typeAnnotation?.typeAnnotation
+  if (both?.type !== "TSIntersectionType" || both.types.length !== 2 || slice(ctx, both.types[1]) !== guardedBrand) {
+    return undefined
+  }
+  const refined: Node = both.types[0]
+  const args: Array<Node> = refined.typeArguments?.params ?? []
+  if (refined.type !== "TSTypeReference" || args.length !== 2 || slice(ctx, args[0]!) !== `typeof ${v}`) {
+    return undefined
+  }
+  const name = slice(ctx, refined.typeName)
+  const fields = fieldsOfType(ctx, args[1]!)
+  if (fields === undefined) return undefined
+  let head: string
+  let tests: Array<string>
+  if (name === "Extract") {
+    const tag = fields.length === 1 ? fields[0]! : undefined
+    if (tag?.key !== "_tag" || typeof tag.value !== "string" || !isTagName(JSON.parse(tag.value))) return undefined
+    head = `when ${JSON.parse(tag.value)}`
+    tests = [`${v}._tag === ${tag.value}`]
+  } else if (name === `${M}.Types.WhenMatch`) {
+    head = "when "
+    tests = fieldTests(fields, v, ".")
+  } else return undefined
+  const prefix = tests.map((t) => `${t} && `).join("")
+  if (!ctx.source.startsWith(prefix, body.start)) return undefined
+  const rest = body.start + prefix.length
+  if (binding === undefined) {
+    return name === "Extract"
+      ? `${head} if ${guardText(ctx, body, rest, body.end)}`
+      : `when ${objectPattern(fields, [])} if ${guardText(ctx, body, rest, body.end)}`
+  }
+  if (binding.type === "Identifier") {
+    if (name !== "Extract" || binding.name !== v) return undefined
+    return `${head}(${v}) if ${guardText(ctx, body, rest, body.end)}`
+  }
+  // a destructured binding: `((binding) => guard)(v)`, or `(v as …)` for an object pattern
+  const call: Node | undefined = nodeAt(body, rest, body.end)
+  const fn: Node | undefined = call?.type === "CallExpression" ? call.callee : undefined
+  if (
+    fn?.type !== "ArrowFunctionExpression" || fn.params.length !== 1 ||
+    slice(ctx, fn.params[0]) !== slice(ctx, binding) ||
+    fn.body.type === "BlockStatement" || fn.body.type === "SequenceExpression"
+  ) {
+    return undefined
+  }
+  const argument = name === "Extract" ? v : `${v} as ${slice(ctx, refined)}`
+  if (call?.arguments.length !== 1 || slice(ctx, call.arguments[0]) !== argument) return undefined
+  if (name === "Extract") return `${head}(${slice(ctx, binding)}) if ${slice(ctx, fn.body)}`
+  const binds = bindsOf(ctx, binding)
+  return binds === undefined ? undefined : `when ${objectPattern(fields, binds)} if ${slice(ctx, fn.body)}`
+}
+
 const tagArm = (ctx: ReverseCtx, tag: string, start: number, fn: Node): Arm => {
   const binding: Node | undefined = fn.params[0]
   return {
@@ -108,6 +326,24 @@ const armsOf = (ctx: ReverseCtx, call: Node, M: string): MatchShape | undefined 
         end: fn.body.end,
         fn: undefined
       })
+    } else if (isMember(step.callee, M, "when") && args.length === 2 && first!.type === "ObjectExpression") {
+      // an object pattern: its fields, and the handler's bindings merged back in (ADR-0063)
+      const fn = armFunction(ctx, second, 1)
+      const fields = fieldsOfObject(ctx, first!)
+      const binds = fn?.params[0] === undefined ? [] : bindsOf(ctx, fn.params[0])
+      if (fn === undefined || fields === undefined || binds === undefined) return undefined
+      arms.push({
+        head: `when ${objectPattern(fields, binds)}`,
+        start: step.start,
+        value: fn.body,
+        end: fn.body.end,
+        fn: undefined
+      })
+    } else if (isMember(step.callee, M, "when") && args.length === 2 && first!.type === "ArrowFunctionExpression") {
+      const fn = armFunction(ctx, second, 1)
+      const head = fn === undefined ? undefined : guardedHead(ctx, M, first!, fn)
+      if (fn === undefined || head === undefined) return undefined
+      arms.push({ head, start: step.start, value: fn.body, end: fn.body.end, fn: undefined })
     } else if (
       isMember(step.callee, M, "tag") && args.length === 2 && first!.type === "Literal" &&
       typeof first!.value === "string" && isTagName(first!.value)

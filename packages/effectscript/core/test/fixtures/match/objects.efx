@@ -1,0 +1,14 @@
+declare const res: { status: number; body: string }
+type Event = { type: "click"; x: number; y: number } | { type: "key"; key: string }
+declare const event: Event
+
+export const message = match (res) {
+  when { status: 404 }: "not found"
+  when { status: 500, body } if body !== "": `server: ${body}`
+  default: "ok"
+}
+
+export const describeEvent = match (event) {
+  when { type: "click", x, y }: `click at ${x},${y}`
+  when { type: "key", key }: `key ${key}`
+}

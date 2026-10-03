@@ -634,7 +634,11 @@ export default grammar(TypeScript, {
     match_arm: ($) =>
       prec.right(
         seq(
-          choice(seq("when", field("pattern", $.expression)), "default"),
+          // a guard after the pattern (ADR-0063)
+          choice(
+            seq("when", field("pattern", $.expression), optional(seq("if", field("guard", $.expression)))),
+            "default"
+          ),
           ":",
           field("value", $.expression),
           optional(choice(";", ","))

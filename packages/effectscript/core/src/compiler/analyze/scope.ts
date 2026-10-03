@@ -66,6 +66,16 @@ export const isTypeFree = (scope: Scope, name: string): boolean => {
   return true
 }
 
+/** The names a `match` arm's pattern binds: a tag pattern's binding, an object pattern's shorthands. */
+const matchBindingNames = (pattern: Node | null | undefined, nodes: Set<Node>): Array<string> => {
+  if (pattern === null || pattern === undefined) return []
+  if (pattern.type === "TagPattern") return patternNames(pattern.binding, [], nodes)
+  if (pattern.type !== "ObjectMatchPattern") return []
+  return (pattern.properties as Array<Node>).flatMap((property) =>
+    property.value === null ? patternNames(property.key, [], nodes) : matchBindingNames(property.value, nodes)
+  )
+}
+
 /**
  * Binding names introduced by a destructuring pattern.
  *
@@ -309,7 +319,8 @@ export const analyze = (program: Node): ScopeAnalysis => {
         for (const arm of node.arms as Array<Node>) {
           const inner = makeScope(scope, "block")
           scopeOf.set(arm, inner)
-          for (const name of patternNames(arm.pattern?.binding, [], bindings)) inner.values.add(name)
+          for (const name of matchBindingNames(arm.pattern, bindings)) inner.values.add(name)
+          if (arm.guard !== null && arm.guard !== undefined) visit(arm.guard, inner)
           visit(arm.body, inner)
         }
         return
