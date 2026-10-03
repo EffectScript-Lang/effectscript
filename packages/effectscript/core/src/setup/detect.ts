@@ -15,7 +15,10 @@ export interface SetupEnv {
   readonly platform: NodeJS.Platform
   /** The PATH directories. */
   readonly path: ReadonlyArray<string>
-  /** Environment variables (`XDG_CONFIG_HOME`, `APPDATA`, `LOCALAPPDATA`). */
+  /**
+   * Environment variables (`XDG_CONFIG_HOME`, `APPDATA`, `LOCALAPPDATA`, `NVIM_APPNAME`,
+   * `CLAUDE_CONFIG_DIR`, `CODEX_HOME`).
+   */
   readonly vars: Readonly<Record<string, string | undefined>>
   readonly exists: (file: string) => boolean
   /** A directory's entry names (empty when it doesn't exist). */
@@ -112,7 +115,8 @@ export const detect = (env: SetupEnv): Array<Detected> => {
       id: "neovim",
       name: "Neovim",
       cli: nvim,
-      configDir: join(env, configHome(env, "LOCALAPPDATA"), "nvim"),
+      // NVIM_APPNAME picks another config directory (LazyVim, AstroNvim, …)
+      configDir: join(env, configHome(env, "LOCALAPPDATA"), env.vars.NVIM_APPNAME ?? "nvim"),
       evidence: nvim
     })
   }
@@ -143,8 +147,8 @@ export const detect = (env: SetupEnv): Array<Detected> => {
     if (cli === undefined && !env.exists(home)) return
     found.push({ kind: "agent", id, name, cli, skillsDir: join(env, home, "skills"), evidence: cli ?? home })
   }
-  agent("claude", "Claude Code", "claude", join(env, env.home, ".claude"))
-  agent("codex", "Codex", "codex", join(env, env.home, ".codex"))
+  agent("claude", "Claude Code", "claude", env.vars.CLAUDE_CONFIG_DIR ?? join(env, env.home, ".claude"))
+  agent("codex", "Codex", "codex", env.vars.CODEX_HOME ?? join(env, env.home, ".codex"))
   agent("cursor-agent", "Cursor (agent)", undefined, join(env, env.home, ".cursor"))
   agent("gemini", "Gemini CLI", "gemini", join(env, env.home, ".gemini"))
   agent("opencode", "opencode", "opencode", join(env, configHome(env, "APPDATA"), "opencode"))

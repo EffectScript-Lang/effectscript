@@ -12,8 +12,10 @@ import * as path from "node:path"
 import { createInterface } from "node:readline/promises"
 import { fileURLToPath } from "node:url"
 import { detect, type Detected, type SetupEnv } from "../setup/detect.ts"
+import { marketplaceVersion } from "../setup/marketplace.ts"
 import { type Action, plan } from "../setup/plan.ts"
 import { cacheDir, standalone, unpackFiles } from "./host.ts"
+import { version } from "./project.ts"
 import { isEffectScriptSkill, skillFiles, writeSkill } from "./skill.ts"
 
 /**
@@ -178,6 +180,7 @@ export const setup = async (
     home: options.home,
     skill: skillFiles(),
     vsix: () => vsixPath(options),
+    extensionVersion: marketplaceVersion(version).version,
     lsp: thisLspCommand(),
     exec: (command, args) => {
       const result = process.platform === "win32"

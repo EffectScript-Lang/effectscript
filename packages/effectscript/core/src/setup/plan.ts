@@ -47,6 +47,8 @@ export interface PlanOptions {
     command: string,
     args: ReadonlyArray<string>
   ) => { readonly status: number | null; readonly stdout: string; readonly stderr: string }
+  /** The Marketplace version of the `.vsix` this `efx` carries: an older installed one is upgraded. */
+  readonly extensionVersion?: string | undefined
   /** `fs.symlinkSync` by default; replaceable to test the copy fallback. */
   readonly symlink?: ((target: string, link: string) => void) | undefined
 }
@@ -56,14 +58,31 @@ const extensionId = "effectscript.effectscript-vscode"
 
 const isOurSkill = isEffectScriptSkill
 
-const sameFiles = (dir: string, files: PlanOptions["skill"]): boolean =>
-  files.every(([file, content]) => {
+/** Whether `dir` holds exactly these files: none differs, and none a previous version wrote is left. */
+const sameFiles = (dir: string, files: PlanOptions["skill"]): boolean => {
+  const same = files.every(([file, content]) => {
     try {
       return fs.readFileSync(path.join(dir, file), "utf8") === content
     } catch {
       return false
     }
   })
+  if (!same) return false
+  try {
+    const written: unknown = JSON.parse(fs.readFileSync(path.join(dir, ".efx-skill.json"), "utf8")).files
+    const expected = new Set(files.map(([file]) => file))
+    return !Array.isArray(written) || written.every((file) => expected.has(String(file)))
+  } catch {
+    return true
+  }
+}
+
+/** `a` < `b` for plain `x.y.z` versions. */
+const older = (a: string, b: string): boolean => {
+  const [x, y] = [a, b].map((v) => v.split(".").map(Number))
+  for (let i = 0; i < 3; i++) if (x![i] !== y![i]) return (x![i] ?? 0) < (y![i] ?? 0)
+  return false
+}
 
 const attempt = (f: () => Outcome): Outcome => {
   try {
@@ -143,10 +162,15 @@ const vscodeAction = (editor: Detected, options: PlanOptions): Action => ({
   description: `Install the EffectScript extension in ${editor.name}`,
   apply: () =>
     attempt(() => {
-      const listed = options.exec(editor.cli!, ["--list-extensions"])
-      if (listed.stdout.split(/\r?\n/).some((line) => line.trim().toLowerCase() === extensionId)) {
-        return { status: "skipped", detail: "already installed" }
-      }
+      const listed = options.exec(editor.cli!, ["--list-extensions", "--show-versions"])
+      const installed = listed.stdout.split(/\r?\n/).map((line) => line.trim().toLowerCase())
+        .filter((line) => line === extensionId || line.startsWith(`${extensionId}@`))
+        .map((line) => line.slice(extensionId.length + 1))
+        .pop()
+      // after updating efx, its newer extension replaces the installed one (Plan 20 Task 1)
+      const upgrade = installed !== undefined && installed !== "" && options.extensionVersion !== undefined &&
+        older(installed, options.extensionVersion)
+      if (installed !== undefined && !upgrade) return { status: "skipped", detail: "already installed" }
       const vsix = options.vsix()
       if (vsix === undefined) {
         return {
@@ -154,10 +178,15 @@ const vscodeAction = (editor: Detected, options: PlanOptions): Action => ({
           detail: "no .vsix at hand: the standalone efx carries one, or pass --vsix <file>"
         }
       }
-      const installed = options.exec(editor.cli!, ["--install-extension", vsix])
-      return installed.status === 0
-        ? { status: "done", detail: `${editor.cli} --install-extension` }
-        : { status: "failed", detail: `${installed.stdout}${installed.stderr}`.trim() }
+      const result = options.exec(editor.cli!, ["--install-extension", vsix, ...(upgrade ? ["--force"] : [])])
+      return result.status === 0
+        ? {
+          status: "done",
+          detail: upgrade
+            ? `upgraded ${installed} → ${options.extensionVersion}`
+            : `${editor.cli} --install-extension`
+        }
+        : { status: "failed", detail: `${result.stdout}${result.stderr}`.trim() }
     })
 })
 

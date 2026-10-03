@@ -26,7 +26,7 @@ const fakeCode = (dir: string) => {
   const cli = path.join(dir, "code")
   fs.writeFileSync(
     cli,
-    `#!/bin/sh\nlist="${dir}/extensions.txt"\ntouch "$list"\ncase "$1" in\n  --list-extensions) cat "$list" ;;\n  --install-extension) echo "effectscript.effectscript-vscode" >> "$list" ;;\nesac\n`,
+    `#!/bin/sh\nlist="${dir}/extensions.txt"\ntouch "$list"\necho "$@" >> "${dir}/calls.txt"\ncase "$1" in\n  --list-extensions) if [ "$2" = "--show-versions" ]; then cat "$list"; else sed 's/@.*//' "$list"; fi ;;\n  --install-extension) echo "effectscript.effectscript-vscode@\${FAKE_VERSION:-4.0.999}" >> "$list" ;;\nesac\n`,
     { mode: 0o755 }
   )
   return cli
@@ -280,5 +280,34 @@ describe("efx setup review fixes (Plan 15 final review)", () => {
     expect(resolved).toBe(0)
     actions[0]!.apply()
     expect(resolved).toBe(1)
+  })
+})
+
+describe("efx setup on upgrades (Plan 20 Task 1)", () => {
+  it("upgrades an older EffectScript extension, and skips a current one", () => {
+    const home = temp()
+    const code = fakeCode(home)
+    fs.writeFileSync(path.join(home, "extensions.txt"), "effectscript.effectscript-vscode@4.0.0\n")
+    const found: Array<Detected> = [{ kind: "editor", id: "vscode", name: "VS Code", cli: code, evidence: code }]
+    const upgraded = setup(home, found, { extensionVersion: "4.0.1" })[0]!.apply()
+    expect(upgraded).toMatchObject({ status: "done" })
+    expect(upgraded.detail).toMatch(/4\.0\.0 → 4\.0\.1/)
+    expect(fs.readFileSync(path.join(home, "calls.txt"), "utf8")).toMatch(/--install-extension \S+ --force/)
+    fs.writeFileSync(path.join(home, "extensions.txt"), "effectscript.effectscript-vscode@4.0.1\n")
+    expect(setup(home, found, { extensionVersion: "4.0.1" })[0]!.apply().status).toBe("skipped")
+  })
+
+  it("replaces a skill whose installed files include ones this version dropped", () => {
+    const home = temp()
+    const skillAction = () => setup(home, agents(home)).find((a) => a.id === "skill")!
+    expect(skillAction().apply().status).toBe("done")
+    const shared = path.join(home, ".agents/skills/effectscript")
+    fs.writeFileSync(path.join(shared, "references/old.md"), "# gone\n")
+    const manifest = path.join(shared, ".efx-skill.json")
+    const listed = JSON.parse(fs.readFileSync(manifest, "utf8"))
+    fs.writeFileSync(manifest, JSON.stringify({ ...listed, files: [...listed.files, "references/old.md"] }))
+    expect(skillAction().apply().status).toBe("done")
+    expect(fs.existsSync(path.join(shared, "references/old.md"))).toBe(false)
+    expect(skillAction().apply().status).toBe("skipped")
   })
 })
