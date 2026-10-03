@@ -244,6 +244,12 @@ importers:
         specifier: workspace:^
         version: link:../../effect
 
+  packages/ai/cloudflare:
+    devDependencies:
+      effect:
+        specifier: workspace:^
+        version: link:../../effect
+
   packages/ai/openai:
     devDependencies:
       effect:

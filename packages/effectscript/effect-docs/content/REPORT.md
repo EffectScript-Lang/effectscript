@@ -8,9 +8,9 @@ Tokens are the parser's tokens of the re-sugared examples, before and after.
 | area | examples | re-sugared | unchanged | left as TS | TS tokens | EffectScript tokens | saved |
 | ---- | -------: | ---------: | --------: | ---------: | --------: | ------------------: | ----: |
 | ai-docs | 40 | 38 | 2 | 0 | 15311 | 12639 | 17.5% |
-| guides | 564 | 140 | 351 | 73 | 21351 | 18554 | 13.1% |
+| guides | 565 | 141 | 351 | 73 | 21476 | 18671 | 13.1% |
 | api | 3415 | 1536 | 1876 | 3 | 154707 | 121287 | 21.6% |
-| **total** | **4019** | **1714** | **2229** | **76** | **191369** | **152480** | **20.3%** |
+| **total** | **4020** | **1715** | **2229** | **76** | **191494** | **152597** | **20.3%** |
 
 ## API examples by package
 
