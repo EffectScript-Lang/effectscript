@@ -72,14 +72,34 @@ describe("the generated docs (Plan 16 Task 2, ADR-0054)", () => {
     expect(read("llms-full.txt")).toContain("name: effectscript")
   })
 
-  it("has no broken internal links", () => {
+  it("has no broken internal links, anchors included (Plan 21)", () => {
     const broken: Array<string> = []
+    const ids = new Map<string, Set<string>>()
+    const idsOf = (page: string) => {
+      if (!ids.has(page)) {
+        ids.set(
+          page,
+          new Set([...fs.readFileSync(page, "utf8").matchAll(/ id="([^"]+)"/g)].map((m) => m[1]!))
+        )
+      }
+      return ids.get(page)!
+    }
+    const pageOf = (target: string) =>
+      [target, path.join(target, "index.html"), `${target}.html`].find((p) =>
+        fs.existsSync(p) && fs.statSync(p).isFile()
+      )
     for (const file of htmlFiles(dist)) {
-      for (const [, href] of read(file).matchAll(/href="(\/[^"#?]*)/g)) {
-        const target = path.join(dist, decodeURIComponent(href!))
-        const exists = fs.existsSync(target) || fs.existsSync(path.join(target, "index.html")) ||
-          fs.existsSync(`${target}.html`)
-        if (!exists) broken.push(`${file} → ${href}`)
+      for (const [, href] of read(file).matchAll(/href="(\/[^"?]*|#[^"]+)"/g)) {
+        const [route, anchor] = href!.split("#") as [string, string | undefined]
+        const page = route === "" ? path.join(dist, file) : pageOf(path.join(dist, decodeURIComponent(route)))
+        if (page === undefined) broken.push(`${file} → ${href}`)
+        // the playground reads `#code=` itself: it isn't a heading
+        else if (
+          anchor !== undefined && anchor !== "" && !route.startsWith("/playground") && page.endsWith(".html") &&
+          !idsOf(page).has(decodeURIComponent(anchor))
+        ) {
+          broken.push(`${file} → ${href} (no #${anchor})`)
+        }
       }
     }
     expect(broken.slice(0, 20)).toEqual([])
@@ -234,5 +254,29 @@ describe("Plan 18 Task 6: site polish", () => {
     expect(page).toContain("playground")
     expect(scripts.includes("EffectScript editor"), "ariaLabel").toBe(true)
     expect(scripts.includes("hashchange"), "hashchange").toBe(true)
+  })
+})
+
+describe("Plan 21: site polish", () => {
+  it("links Effect pages to each other on the site, and gives their examples playground links", () => {
+    expect(read("docs/effect/guides/migration/schema/index.html")).toContain(
+      "href=\"/docs/effect/guides/packages/effect/arbitrary/\""
+    )
+    expect(read("docs/effect/guide/index.html")).toContain("/playground/#code=")
+  })
+
+  it("capitalizes sidebar groups and draws |> without a ligature", () => {
+    const page = read("docs/index.html")
+    expect(page).toMatch(/>Patterns</)
+    expect(page).not.toMatch(/>patterns</)
+    const css = fs.readdirSync(path.join(dist, "_astro")).filter((f) => f.endsWith(".css"))
+      .map((f) => fs.readFileSync(path.join(dist, "_astro", f), "utf8")).join("\n")
+    expect(css).toMatch(/font-variant-ligatures:\s*none/)
+  })
+
+  it("keeps the copy measured", () => {
+    const page = text("index.html")
+    expect(page).not.toContain("most common complaint")
+    expect(read("index.html").replace(/<[^>]+>/g, "")).not.toContain("--write --ai")
   })
 })

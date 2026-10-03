@@ -6,8 +6,8 @@ export schema Todo {
 export error TodoNotFound { id: string }
 
 export group TodosApi {
-  get list "/": Todo[]
-  get byId "/:id" (params: { id: string }): Todo throws TodoNotFound
+  get list "/todos": Todo[]
+  get byId "/todos/:id" (params: { id: string }): Todo throws TodoNotFound
 }
 
 export api Api { TodosApi }

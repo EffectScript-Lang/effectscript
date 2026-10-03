@@ -17,7 +17,7 @@ const corpus = corpusTotals()
 
 import { constructs } from "../data/constructs.ts"
 const highlighted = await Promise.all(constructs.map(async (c) => ({ ...c, html: await highlight(c.code, "efx") })))
-const install = await highlight("curl -fsSL https://effectscript.dev/install | sh\nefx setup     # editors and coding agents\nefx init      # in a project\nefx convert --write --ai", "shell")
+const install = await highlight("curl -fsSL https://effectscript.dev/install | sh\nefx setup     # editors and coding agents\nefx init      # in a project\nefx convert   # see what would become EffectScript", "shell")
 ---
 
 <Base title="EffectScript: All of Effect. None of the ceremony." description="EffectScript is TypeScript with Effect as native syntax: typed errors, services and retries without the ceremony, compiled to idiomatic Effect TypeScript.">
@@ -29,7 +29,7 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
         <p class="label">// TypeScript, with Effect as syntax</p>
         <h1 class="headline-fade mt-4 max-w-4xl font-display text-5xl font-bold tracking-[-0.025em] sm:text-7xl">All of Effect. None of the ceremony.</h1>
         <p class="mt-6 max-w-2xl text-lg text-subtle">
-          Effect is the right foundation for serious TypeScript, and its ceremony is the most common complaint about it. EffectScript makes Effect the language: write <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, and get typed errors, services, retries and tracing, compiled to plain, idiomatic Effect TypeScript.
+          Effect is the right foundation for serious TypeScript, and its ceremony is what people trip over. EffectScript makes Effect the language: write <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, and get typed errors, services, retries and tracing, compiled to plain, idiomatic Effect TypeScript.
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
           <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install/">Get started</a>

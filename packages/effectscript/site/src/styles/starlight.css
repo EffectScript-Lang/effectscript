@@ -49,3 +49,10 @@ h3 {
   font-family: "Inter Display", var(--sl-font);
   letter-spacing: -0.025em;
 }
+
+/* `|>` and `=>` read as typed: no programming ligatures in code (Plan 21) */
+code,
+pre,
+kbd {
+  font-variant-ligatures: none;
+}

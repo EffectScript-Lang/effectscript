@@ -1,5 +1,5 @@
 import { constructs } from "@effectscript/site/data/constructs"
-import { gallery } from "@effectscript/site/data/gallery"
+import { gallery, tokenPieces } from "@effectscript/site/data/gallery"
 import { toTypeScript } from "effectscript/compiler"
 import { encode } from "gpt-tokenizer/encoding/o200k_base"
 import { describe, expect, it, vi } from "vitest"
@@ -49,5 +49,26 @@ describe("the gallery (Plan 16 Task 3, ADR-0054)", () => {
       const errors = toTypeScript(c.code, { filename: "card.efx" }).diagnostics.filter((d) => d.severity === "error")
       expect(errors, c.name).toEqual([])
     }
+  })
+})
+
+describe("token pieces (Plan 21)", () => {
+  it("split at token boundaries without breaking a character", () => {
+    const code = "const s = \"héllo ƒx 🎉 日本語\"\n"
+    const pieces = tokenPieces(code)
+    expect(pieces.join("")).toBe(code)
+    expect(pieces.join("")).not.toContain("\uFFFD")
+  })
+
+  it("match each sample's own text", () => {
+    for (const scenario of scenarios) {
+      for (const pane of scenario.panes) expect(pane.pieces.join(""), `${scenario.id}/${pane.name}`).toBe(pane.code)
+    }
+  })
+
+  it("tell the same story in every language (errors: three attempts; http: /todos)", () => {
+    const byId = (id: string) => scenarios.find((s) => s.id === id)!
+    expect(byId("errors").panes[2].code).toContain("times: 2")
+    expect(byId("http").panes[2].code).toContain("\"/todos/:id\"")
   })
 })

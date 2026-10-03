@@ -140,12 +140,42 @@ const republished = (markdown: string) =>
       .trimEnd()
   }\n\n---\n\n_From [Effect](https://effect.website)'s documentation (MIT License, © Effectful Technologies Inc.), with its examples converted to EffectScript. EffectScript is a separate project, not an official Effect one._\n`
 
-/** Relative links in a corpus page point at the original files on GitHub. */
-const githubLinks = (markdown: string, original: string) =>
+/**
+ * Relative links in a corpus page: to the site's own page for another guide it publishes, else to
+ * the original file on GitHub (Plan 21).
+ */
+const githubLinks = (markdown: string, original: string, published: ReadonlySet<string> = new Set()) =>
   markdown.replace(
     /\]\((?!https?:|#|\/|mailto:)([^)\s]+)\)/g,
-    (_, target: string) => `](${github}/${path.posix.normalize(path.posix.join(path.posix.dirname(original), target))})`
+    (_, link: string) => {
+      const [target, anchor] = link.split("#") as [string, string | undefined]
+      const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(original), target))
+      const hash = anchor === undefined ? "" : `#${anchor}`
+      return published.has(resolved)
+        ? `](/docs/effect/guides/${resolved.toLowerCase().replace(/\.md$/, "")}/${hash})`
+        : `](${github}/${resolved}${hash})`
+    }
   )
+
+/** A heading's anchor, as Starlight makes it (github-slugger). */
+const anchorOf = (heading: string) =>
+  heading.trim().toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc} -]/gu, "").replace(/ /g, "-")
+
+/**
+ * A link to a heading the page doesn't have becomes plain text: upstream's own pages have a few
+ * (Plan 21).
+ */
+const withoutDanglingAnchors = (markdown: string) => {
+  const anchors = new Set(
+    [...markdown.matchAll(/^#{1,6} (.+)$/gm)].map((m) =>
+      anchorOf(m[1]!.replace(/`/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1"))
+    )
+  )
+  return markdown.replace(
+    /\[([^\]]+)\]\(#([^)\s]+)\)/g,
+    (link, text: string, anchor: string) => anchors.has(decodeURIComponent(anchor)) ? link : text
+  )
+}
 
 const reference = () => {
   const { sections: constructs } = sections(fs.readFileSync(path.join(skill, "references/syntax.md"), "utf8"))
@@ -312,23 +342,33 @@ const effect = () => {
   page(
     path.join(docs, "effect/guide.md"),
     "Effect's guide, in EffectScript",
-    republished(githubLinks(titled(llms, "").body, "packages/effectscript/effect-docs/content/LLMS.efx.md")),
+    republished(
+      withPlaygroundLinks(githubLinks(titled(llms, "").body, "packages/effectscript/effect-docs/content/LLMS.efx.md"))
+    ),
     {
       description: "Effect's own guide for agents (LLMS.md), with every example converted to EffectScript.",
       sidebar: { order: 0 }
     }
   )
-  for (const file of walk(path.join(corpus, "guides"))) {
+  const guideFiles = walk(path.join(corpus, "guides"))
+  const published = new Set(
+    guideFiles.map((file) => path.relative(path.join(corpus, "guides"), file).split(path.sep).join("/"))
+  )
+  for (const file of guideFiles) {
     const original = path.relative(path.join(corpus, "guides"), file).split(path.sep).join("/")
     const { body, title } = titled(fs.readFileSync(file, "utf8"), original)
-    page(path.join(docs, "effect/guides", original.toLowerCase()), title, republished(githubLinks(body, original)))
+    page(
+      path.join(docs, "effect/guides", original.toLowerCase()),
+      title,
+      republished(withPlaygroundLinks(withoutDanglingAnchors(githubLinks(body, original, published))))
+    )
   }
   for (const file of walk(path.join(corpus, "api"))) {
     const relative = path.relative(path.join(corpus, "api"), file).split(path.sep).join("/")
     // `@effect/x` would slug to `effect/x`, next to the `effect` package's own modules
     const target = relative.replace(/^@effect\//, "effect-").toLowerCase()
     const { body, title } = titled(fs.readFileSync(file, "utf8"), relative)
-    page(path.join(docs, "effect/api", target), title, republished(body))
+    page(path.join(docs, "effect/api", target), title, republished(withPlaygroundLinks(body)))
   }
 }
 

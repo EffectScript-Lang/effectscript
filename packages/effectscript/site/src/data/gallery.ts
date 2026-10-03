@@ -34,10 +34,33 @@ export interface Scenario {
   readonly diagnostics: ReadonlyArray<string>
 }
 
-const pane = (kind: Pane["kind"], name: string, language: Pane["language"], code: string): Pane => {
-  const ids = encode(code)
-  return { kind, name, language, code, tokens: ids.length, pieces: ids.map((id) => decode([id])) }
+/**
+ * The code split at token boundaries. A character can span tokens (é, 🎉, 日): such tokens are
+ * shown together, so every piece is whole text (Plan 21).
+ */
+export const tokenPieces = (code: string): Array<string> => {
+  const pieces: Array<string> = []
+  let pending: Array<number> = []
+  for (const id of encode(code)) {
+    pending.push(id)
+    const text = decode(pending)
+    if (!text.includes("\uFFFD")) {
+      pieces.push(text)
+      pending = []
+    }
+  }
+  if (pending.length > 0) pieces.push(decode(pending))
+  return pieces
 }
+
+const pane = (kind: Pane["kind"], name: string, language: Pane["language"], code: string): Pane => ({
+  kind,
+  name,
+  language,
+  code,
+  tokens: encode(code).length,
+  pieces: tokenPieces(code)
+})
 
 export const gallery = (): Array<Scenario> =>
   scenarios.map(({ file, id, title }) => {
