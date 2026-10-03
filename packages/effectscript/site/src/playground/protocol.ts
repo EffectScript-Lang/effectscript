@@ -128,6 +128,28 @@ export const compile = (request: Request): Response => {
 export const paneToUpdate = (response: Response): "efx" | "ts" | undefined =>
   response.code === undefined ? undefined : response.direction === "toTypeScript" ? "ts" : "efx"
 
+/**
+ * Restarts a stuck compiler: `start` (re)arms the timer for the newest request, `stop` disarms it
+ * when its result arrives, and `onExpire` runs when a compile outlives `ms`.
+ */
+export const createWatchdog = (ms: number, onExpire: () => void) => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const stop = () => {
+    if (timer !== undefined) clearTimeout(timer)
+    timer = undefined
+  }
+  return {
+    start: () => {
+      stop()
+      timer = setTimeout(() => {
+        timer = undefined
+        onExpire()
+      }, ms)
+    },
+    stop
+  }
+}
+
 /** Sequence numbers for requests: only the newest request's result is applied. */
 export const createTracker = () => {
   let latest = 0

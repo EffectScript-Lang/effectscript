@@ -219,3 +219,20 @@ describe("Plan 16 final review fixes", () => {
     expect(read("llms.txt")).not.toContain("[`")
   })
 })
+
+describe("Plan 18 Task 6: site polish", () => {
+  it("highlights the install block as shell, so the URL isn't a comment", () => {
+    const comments = [...read("index.html").matchAll(/<span style="color:#6A9955">([^<]*)<\/span>/g)].map((m) => m[1]!)
+    expect(comments.filter((c) => c.includes("effectscript.dev/install"))).toEqual([])
+    expect(comments.some((c) => c.includes("# editors and coding agents"))).toBe(true)
+  })
+
+  it("labels the playground's editors and handles same-page share links", () => {
+    const page = read("playground/index.html")
+    const scripts = (fs.readdirSync(path.join(dist, "_astro")) as Array<string>).filter((f) => f.endsWith(".js"))
+      .map((f) => fs.readFileSync(path.join(dist, "_astro", f), "utf8")).join("\n")
+    expect(page).toContain("playground")
+    expect(scripts.includes("EffectScript editor"), "ariaLabel").toBe(true)
+    expect(scripts.includes("hashchange"), "hashchange").toBe(true)
+  })
+})

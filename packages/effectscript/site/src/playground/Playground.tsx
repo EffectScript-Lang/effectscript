@@ -13,6 +13,7 @@ import { efxGrammars } from "./grammar.ts"
 import { presets } from "./presets.ts"
 import {
   createTracker,
+  createWatchdog,
   decodeHash,
   encodeHash,
   type Note,
@@ -29,7 +30,10 @@ export default function Playground() {
   const [problems, setProblems] = useState<ReadonlyArray<Problem>>([])
   const [notes, setNotes] = useState<ReadonlyArray<Note>>([])
   const [source, setSource] = useState<Side>("efx")
-  const [shared, setShared] = useState(false)
+  const [shared, setShared] = useState<"no" | "copied" | string>("no")
+  const [preset, setPreset] = useState(() =>
+    typeof location !== "undefined" && decodeHash(location.hash) !== undefined ? "shared" : presets[0]!.id
+  )
   const [ready, setReady] = useState(false)
   const api = useRef<{ load: (code: string) => void; share: () => string } | undefined>(undefined)
 
@@ -59,26 +63,56 @@ export default function Playground() {
         tabSize: 2
       }
       const initial = decodeHash(location.hash) ?? presets[0]!.code
-      const efx = monaco.editor.create(efxHost.current!, { ...options, value: initial, language: "efx" })
-      const ts = monaco.editor.create(tsHost.current!, { ...options, value: "", language: "typescript" })
-      const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" })
+      const efx = monaco.editor.create(efxHost.current!, {
+        ...options,
+        value: initial,
+        language: "efx",
+        ariaLabel: "EffectScript editor"
+      })
+      const ts = monaco.editor.create(tsHost.current!, {
+        ...options,
+        value: "",
+        language: "typescript",
+        ariaLabel: "TypeScript editor"
+      })
       const tracker = createTracker()
       let applying = false
       let lastEdited: Side = "efx"
       let timer: ReturnType<typeof setTimeout> | undefined
 
+      // a compile that hangs (a pathological input) restarts the worker instead of freezing the panes
+      const spawn = () => {
+        const fresh = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" })
+        fresh.onmessage = onMessage
+        return fresh
+      }
+      const watchdog = createWatchdog(5000, () => {
+        worker.terminate()
+        worker = spawn()
+        setProblems([{
+          code: "EFX0000",
+          message: "The compiler took over 5 seconds on this code and was restarted",
+          severity: "error",
+          line: 1,
+          column: 1,
+          endLine: 1,
+          endColumn: 1
+        }])
+      })
       const request = (side: Side) => {
         const seq = tracker.next()
         const editor = side === "efx" ? efx : ts
+        watchdog.start()
         worker.postMessage({
           seq,
           direction: side === "efx" ? "toTypeScript" : "toEffectScript",
           source: editor.getValue()
         })
       }
-      worker.onmessage = (event: MessageEvent<Response>) => {
+      function onMessage(event: MessageEvent<Response>) {
         const response = event.data
         if (!tracker.accept(response.seq)) return // a newer request is on its way
+        watchdog.stop()
         const pane = paneToUpdate(response)
         if (pane !== undefined) {
           const target = pane === "ts" ? ts : efx
@@ -101,6 +135,7 @@ export default function Playground() {
         setProblems(response.diagnostics)
         setNotes(response.notes)
       }
+      let worker = spawn()
       const changed = (side: Side) => () => {
         if (applying) return
         lastEdited = side
@@ -118,9 +153,23 @@ export default function Playground() {
         },
         share: () => encodeHash(lastEdited === "efx" ? efx.getValue() : ts.getValue())
       }
+      // a share link opened while on this page
+      const onHash = () => {
+        const code = decodeHash(location.hash)
+        if (code === undefined) return
+        setPreset("shared")
+        api.current?.load(code)
+      }
+      window.addEventListener("hashchange", onHash)
       request("efx")
       setReady(true)
-      cleanups.push(() => worker.terminate(), () => efx.dispose(), () => ts.dispose())
+      cleanups.push(
+        () => window.removeEventListener("hashchange", onHash),
+        () => watchdog.stop(),
+        () => worker.terminate(),
+        () => efx.dispose(),
+        () => ts.dispose()
+      )
     })()
     return () => {
       disposed = true
@@ -132,9 +181,10 @@ export default function Playground() {
     const hash = api.current?.share()
     if (hash === undefined) return
     history.replaceState(null, "", hash)
-    await navigator.clipboard?.writeText(location.href).catch(() => undefined)
-    setShared(true)
-    setTimeout(() => setShared(false), 1500)
+    const copied = await (navigator.clipboard?.writeText(location.href).then(() => true, () => false) ?? false)
+    // without clipboard access, the link is shown to copy by hand
+    setShared(copied ? "copied" : location.href)
+    if (copied) setTimeout(() => setShared("no"), 1500)
   }
 
   return (
@@ -144,9 +194,14 @@ export default function Playground() {
         <select
           id="preset"
           className="rounded border border-line bg-tile px-2 py-1 text-sm"
-          onChange={(e) => api.current?.load(presets.find((p) => p.id === e.target.value)!.code)}
+          value={preset}
+          onChange={(e) => {
+            setPreset(e.target.value)
+            api.current?.load(presets.find((p) => p.id === e.target.value)!.code)
+          }}
           disabled={!ready}
         >
+          {preset === "shared" && <option value="shared" disabled>Shared code</option>}
           {presets.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
         </select>
         <button
@@ -155,8 +210,17 @@ export default function Playground() {
           className="rounded border border-line px-3 py-1 text-sm hover:bg-tile"
           disabled={!ready}
         >
-          {shared ? "Link copied" : "Share"}
+          {shared === "copied" ? "Link copied" : "Share"}
         </button>
+        {shared !== "no" && shared !== "copied" && (
+          <input
+            aria-label="Share link"
+            readOnly
+            value={shared}
+            onFocus={(e) => e.currentTarget.select()}
+            className="min-w-0 flex-1 rounded border border-line bg-tile px-2 py-1 font-mono text-xs"
+          />
+        )}
         <span className="label" aria-live="polite">
           {source === "efx" ? "Editing EffectScript → TypeScript" : "Editing TypeScript → EffectScript"}
         </span>

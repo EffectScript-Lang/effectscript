@@ -17,7 +17,7 @@ const corpus = corpusTotals()
 
 import { constructs } from "../data/constructs.ts"
 const highlighted = await Promise.all(constructs.map(async (c) => ({ ...c, html: await highlight(c.code, "efx") })))
-const install = await highlight("curl -fsSL https://effectscript.dev/install | sh\nefx setup     # editors and coding agents\nefx init      # in a project\nefx convert --write --ai", "efx")
+const install = await highlight("curl -fsSL https://effectscript.dev/install | sh\nefx setup     # editors and coding agents\nefx init      # in a project\nefx convert --write --ai", "shell")
 ---
 
 <Base title="EffectScript: All of Effect. None of the ceremony." description="EffectScript is TypeScript with Effect as native syntax: typed errors, services and retries without the ceremony, compiled to idiomatic Effect TypeScript.">

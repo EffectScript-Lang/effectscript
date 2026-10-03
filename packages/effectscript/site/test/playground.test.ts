@@ -1,12 +1,13 @@
 import {
   compile,
   createTracker,
+  createWatchdog,
   decodeHash,
   encodeHash,
   maxSource,
   paneToUpdate
 } from "@effectscript/site/playground/protocol"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 describe("the playground protocol (Plan 16 Task 4, ADR-0054)", () => {
   it("compiles EffectScript to TypeScript, with diagnostics at line and column", () => {
@@ -56,5 +57,27 @@ describe("the playground protocol (Plan 16 Task 4, ADR-0054)", () => {
     expect(paneToUpdate(huge)).toBeUndefined()
     expect(paneToUpdate(compile({ seq: 7, direction: "toEffectScript", source: "const a = 1\n" }))).toBe("efx")
     expect(paneToUpdate(compile({ seq: 8, direction: "toTypeScript", source: "const a = 1\n" }))).toBe("ts")
+  })
+
+  it("Plan 18: the watchdog fires only when a compile outlives its limit", () => {
+    vi.useFakeTimers()
+    try {
+      const fired: Array<string> = []
+      const dog = createWatchdog(5000, () => fired.push("restart"))
+      dog.start()
+      vi.advanceTimersByTime(4999)
+      dog.stop()
+      vi.advanceTimersByTime(10_000)
+      expect(fired).toEqual([])
+      dog.start()
+      vi.advanceTimersByTime(3000)
+      dog.start() // a newer request restarts the clock
+      vi.advanceTimersByTime(3000)
+      expect(fired).toEqual([])
+      vi.advanceTimersByTime(2000)
+      expect(fired).toEqual(["restart"])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
