@@ -276,6 +276,98 @@ const convertProperty = (ctx: ReverseCtx, property: Node, visit: Visit): boolean
   return true
 }
 
+/** Line starts in `[from, to)` outside template literals and strings, as the forward compiler indents them. */
+const indentedLineStarts = (ctx: ReverseCtx, root: Node, from: number, to: number): Array<number> => {
+  const verbatim: Array<readonly [number, number]> = []
+  const collect = (node: Node): void => {
+    if (node.type === "TemplateLiteral" || (node.type === "Literal" && typeof node.value === "string")) {
+      verbatim.push([node.start, node.end])
+      return
+    }
+    for (const child of children(node)) collect(child)
+  }
+  collect(root)
+  const starts: Array<number> = []
+  for (let i = ctx.source.indexOf("\n", from); i !== -1 && i < to; i = ctx.source.indexOf("\n", i + 1)) {
+    const start = i + 1
+    if (start < to && !verbatim.some(([a, b]) => start > a && start < b) && ctx.source[start] !== "\n") {
+      starts.push(start)
+    }
+  }
+  return starts
+}
+
+/**
+ * `m(…): Effect.Effect<A, E> { return Effect.gen({ self: this }, function*() {…}).pipe(Effect.withSpan("C.m")) }`
+ * in class `C` → `effect m(…): A throws E {…}` (ADR-0065), in the one-line or the indented layout.
+ */
+const convertMethod = (ctx: ReverseCtx, method: Node, className: string | undefined, visit: Visit): boolean => {
+  const fn: Node = method.value
+  if (
+    className === undefined || method.type !== "MethodDefinition" || method.kind !== "method" || method.static ||
+    method.computed || method.key.type !== "Identifier" || method.accessibility !== undefined ||
+    method.override === true || method.decorators?.length > 0 || fn?.type !== "FunctionExpression" ||
+    fn.async || fn.generator || fn.body === null || ctx.source.slice(method.start, method.key.start) !== ""
+  ) {
+    return false
+  }
+  const body: Node = fn.body
+  const only: Node | undefined = body.body.length === 1 ? body.body[0] : undefined
+  const piped: Node | undefined = only?.type === "ReturnStatement" ? only.argument ?? undefined : undefined
+  // `<gen>[.pipe(Effect.scoped)].pipe(Effect.withSpan("C.m"))`
+  const span = `${ctx.effect}.withSpan(${JSON.stringify(`${className}.${method.key.name}`)})`
+  if (piped?.type !== "CallExpression" || piped.arguments.length !== 1 || slice(ctx, piped.arguments[0]) !== span) {
+    return false
+  }
+  if (piped.callee.type !== "MemberExpression" || piped.callee.property.name !== "pipe") return false
+  let gen: Node = piped.callee.object
+  let scoped = false
+  if (
+    gen.type === "CallExpression" && gen.callee.type === "MemberExpression" && gen.callee.property?.name === "pipe" &&
+    gen.arguments.length === 1 && isScope(ctx, gen.arguments[0])
+  ) {
+    gen = gen.callee.object
+    scoped = true
+  }
+  if (gen.type !== "CallExpression") return false
+  const shape = genShape(ctx, gen, only)
+  if (shape === undefined || !("fn" in shape)) return false
+  const inner: Node = shape.fn.body
+  const tail = `)${scoped ? `.pipe(${ctx.effect}.scoped)` : ""}.pipe(${span})`
+  const lineStart = ctx.source.lastIndexOf("\n", method.start) + 1
+  const indent = /^[ \t]*/.exec(ctx.source.slice(lineStart))![0]
+  const step = indent.includes("\t") ? "\t" : "  "
+  const head = ctx.source.slice(gen.start, inner.start)
+  const oneLine = ctx.source.slice(body.start, gen.start) === "{ return " &&
+    ctx.source.slice(inner.end, body.end) === `${tail} }`
+  const closeLine = ctx.source.lastIndexOf("\n", inner.end - 1) + 1
+  const indented = ctx.source.slice(body.start, gen.start) === `{\n${indent}${step}return ` &&
+    ctx.source.slice(closeLine, body.end) === `${indent}${step}}${tail}\n${indent}}` &&
+    head.endsWith("function*() ") && ctx.source[inner.start + 1] === "\n"
+  if (!oneLine && !indented) return false
+  if (commentsIn(ctx, body.start, inner.start + 1).length > 0 || commentsIn(ctx, inner.end - 1, body.end).length > 0) {
+    return false
+  }
+  if (returnTypeProblem(ctx, fn.returnType, "Effect") !== undefined && fn.returnType !== undefined) return false
+  ctx.s.appendLeft(method.start, "effect ")
+  convertReturnType(ctx, fn.returnType, "Effect")
+  if (oneLine) {
+    ctx.s.remove(body.start, inner.start)
+    ctx.s.remove(inner.end, body.end)
+  } else {
+    ctx.s.remove(body.start + 1, inner.start + 1)
+    for (const start of indentedLineStarts(ctx, inner, inner.start + 1, closeLine)) {
+      if (ctx.source.startsWith(step, start)) ctx.s.remove(start, start + step.length)
+    }
+    ctx.s.remove(closeLine, body.end - 1 - indent.length)
+  }
+  within(ctx, "Effect", () => {
+    for (const param of fn.params) visit(param, fn, false)
+    inFrame(ctx, scoped, () => visit(inner, shape.fn, true))
+  })
+  return true
+}
+
 const testNames = new Set(["describe", "it", "layer"])
 
 const scopes = new Set([
@@ -293,7 +385,25 @@ const scopes = new Set([
  * @category reverse
  */
 export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visit) => boolean): Visit => {
+  // the enclosing classes' names, innermost last: an `effect` method's span names its class
+  const classes: Array<string | undefined> = []
   const visit: Visit = (node, parent, generator) => {
+    if (node.type === "ClassDeclaration" || node.type === "ClassExpression") {
+      classes.push(node.id?.name)
+      try {
+        visitClass(node, parent, generator)
+      } finally {
+        classes.pop()
+      }
+      return
+    }
+    visitNode(node, parent, generator)
+  }
+  const visitClass: Visit = (node, parent, generator) => {
+    visitNode(node, parent, generator)
+  }
+  const visitNode: Visit = (node, parent, generator) => {
+    if (node.type === "MethodDefinition" && convertMethod(ctx, node, classes.at(-1), visit)) return
     if (
       node.type === "VariableDeclaration" &&
       (parent?.type === "Program" || parent?.type === "BlockStatement" || parent?.type === "ExportNamedDeclaration") &&

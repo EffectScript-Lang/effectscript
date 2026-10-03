@@ -195,6 +195,7 @@ export const getUser = Effect.fn("getUser")(function*(id: UserId): Effect.fn.Ret
 | `effect { … }` (expression)                    | `Effect.gen(function*() { … })`                                             |
 | `effect { … }` using `this`                    | `Effect.gen({ self: this }, function*() { … })`                             |
 | `{ effect m(…) { … } }` (object method)        | `{ m: Effect.fn("m")(function*(…) { … }) }` (`"Service.m"` inside a service) |
+| `class C { effect m(…): A { … } }` (class or `schema` method) | `m(…): Effect.Effect<A> { return Effect.gen({ self: this }, function*() { … }).pipe(Effect.withSpan("C.m")) }` |
 | `effect … {…} \|> p1 \|> p2` (declaration)     | extra `Effect.fn` arguments: `…}, p1, p2)`                                 |
 
 Rules:
@@ -203,7 +204,9 @@ Rules:
 - `effect` declarations compile to `const`, so they are not hoisted. A `main` block (§4.10) always runs
   after the whole module has initialized.
 - `effect` arrows must not reference `this`. Use an `effect` block or method instead. Error **EFX2001**.
-- `effect` class methods are on the roadmap (§14). Error **EFX2002** with a hint.
+- `effect` methods in a `class`, `schema` or `error` body (ADR-0065) compile to prototype methods
+  that return an effect, spanned `Class.method`; the body keeps its lines, one level deeper. A
+  method without a body is error **EFX2002**.
 - `effect` blocks at statement level are rejected. Error **EFX2003**: "an effect that is never used;
   did you mean `main { … }`?"
 
@@ -1694,7 +1697,6 @@ The order was revised after the plan review (ADR-0016).
 
 ## 14. Roadmap (explicitly out of v0.1)
 
-- `effect` class methods and `effect` methods in `schema` classes.
 - Generator streams (`effect*` with `yield` → `Stream`).
 - `Context.Reference` services with defaults.
 - More library constructs: `rpc` (RpcGroup), `workflow` (effect/workflow), `tool`/`toolkit`

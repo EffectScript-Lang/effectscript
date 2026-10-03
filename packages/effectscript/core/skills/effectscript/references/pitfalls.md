@@ -181,19 +181,6 @@ export effect first(numbers: Stream<number>) {
 }
 ```
 
-## `effect` methods belong to objects and services, not classes
-
-`effect` class methods are on the roadmap (EFX2002). Use a `service`, an object literal with
-`effect` methods, or a class field holding an `effect` arrow.
-
-```efx wrong EFX2002
-class Cart {
-  effect total() {
-    return 1
-  }
-}
-```
-
 ## `using x = await …` only at the top of an `effect`
 
 A scoped resource must live as long as the whole `effect`. Inside a nested block it is an error

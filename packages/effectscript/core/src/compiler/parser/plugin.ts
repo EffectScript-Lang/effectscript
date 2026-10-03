@@ -40,6 +40,8 @@ interface EfxState {
   pipeDepth: number
   readonly arrowStarts: Set<number>
   readonly classKinds: Array<string>
+  /** The classes being parsed, innermost last: an `effect` method's span names its class. */
+  readonly classNodes: Array<any>
 }
 
 /**
@@ -48,7 +50,7 @@ interface EfxState {
 export const efxPlugin = (Base: any): any =>
   class EfxParser extends Base {
     efxState(): EfxState {
-      return (this.efx ??= { pipeDepth: 0, arrowStarts: new Set<number>(), classKinds: [] })
+      return (this.efx ??= { pipeDepth: 0, arrowStarts: new Set<number>(), classKinds: [], classNodes: [] })
     }
 
     // --- token helpers ---------------------------------------------------------------------------
@@ -346,7 +348,8 @@ export const efxPlugin = (Base: any): any =>
         const keyword = { start: this.start, end: this.end }
         this.value = "async"
         const element = super.parseClassElement(constructorAllowsSuper)
-        element.efx = { kind: "method", keyword }
+        const owner = this.efxState().classNodes.at(-1)
+        element.efx = { kind: "method", keyword, className: owner?.id?.name }
         if (element.value?.type === "FunctionExpression" || element.value?.type === "TSDeclareMethod") {
           element.value.efx = element.efx
         }
@@ -462,10 +465,12 @@ export const efxPlugin = (Base: any): any =>
     parseClass(node: any, isStatement: unknown): any {
       const state = this.efxState()
       state.classKinds.push(node.efxKind ?? "class")
+      state.classNodes.push(node)
       try {
         return super.parseClass(node, isStatement)
       } finally {
         state.classKinds.pop()
+        state.classNodes.pop()
       }
     }
 

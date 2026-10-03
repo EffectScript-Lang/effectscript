@@ -193,17 +193,83 @@ const effectProperty: Handler = (node, _parent, ctx) => {
   return true
 }
 
+/** Line starts inside `[from, to)` that aren't inside a template literal or string. */
+const lineStartsToIndent = (ctx: Ctx, body: Node, from: number, to: number): Array<number> => {
+  const verbatim: Array<readonly [number, number]> = []
+  const collect = (node: Node): void => {
+    if (node === null || typeof node !== "object") return
+    if (node.type === "TemplateLiteral" || (node.type === "Literal" && typeof node.value === "string")) {
+      verbatim.push([node.start, node.end])
+      return
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "loc") continue
+      for (const child of Array.isArray(value) ? value : [value]) {
+        if (child !== null && typeof child === "object" && typeof child.type === "string") collect(child)
+      }
+    }
+  }
+  collect(body)
+  const starts: Array<number> = []
+  for (let i = ctx.source.indexOf("\n", from); i !== -1 && i < to; i = ctx.source.indexOf("\n", i + 1)) {
+    const start = i + 1
+    if (start >= to || verbatim.some(([a, b]) => start > a && start < b)) continue
+    if (ctx.source[start] !== "\n") starts.push(start)
+  }
+  return starts
+}
+
+/**
+ * `effect name(…): A throws E { … }` in a class → a prototype method returning
+ * `Effect.gen({ self: this }, function*() { … }).pipe(Effect.withSpan("Class.name"))` (ADR-0065).
+ * A method rather than an `Effect.fn` field: instances stay plain data for `Equal` and encoding.
+ */
 const effectClassMember: Handler = (node, _parent, ctx) => {
   if (node.efx?.kind !== "method") return
-  ctx.diagnostics.push(
-    diagnosticError(
-      "EFX2002",
-      "`effect` class methods are not supported yet",
-      node.efx.keyword.start,
-      node.efx.keyword.end,
-      "use a property: `name = effect (…) => { … }`, or a `service`"
+  const keyword: { start: number; end: number } = node.efx.keyword
+  const fn: Node = node.value
+  if (node.type === "TSDeclareMethod" || fn.body === null || fn.body === undefined || node.kind !== "method") {
+    ctx.diagnostics.push(
+      diagnosticError("EFX2002", "An `effect` method needs a body", keyword.start, keyword.end)
     )
-  )
+    return true
+  }
+  if (fn.generator === true) {
+    ctx.diagnostics.push(
+      diagnosticError("EFX2002", "An `effect` method can't be a generator", keyword.start, keyword.end)
+    )
+    return true
+  }
+  const E = ref(ctx, "effect", "Effect")
+  ctx.s.remove(keyword.start, skipSpace(ctx.source, keyword.end))
+  rewriteReturnType(ctx, fn.returnType, "Effect")
+  const name: string | undefined = node.computed || node.key.type !== "Identifier" ? undefined : node.key.name
+  const span = name === undefined || node.efx.className === undefined
+    ? ""
+    : `.pipe(${E}.withSpan(${JSON.stringify(`${node.efx.className}.${name}`)}))`
+  const body: Node = fn.body
+  const gen = containsThis(body) ? `${E}.gen({ self: this }, function*() ` : `${E}.gen(function*() `
+  const open = body.start
+  const close = body.end - 1
+  const multiline = ctx.source.slice(open, close).includes("\n")
+  const frame = makeFrame(fn, "method")
+  if (!multiline) {
+    ctx.s.appendLeft(open, `{ return ${gen}`)
+    withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(fn, node, ctx)))
+    ctx.s.appendLeft(body.end, `${frame.scoped ? `.pipe(${E}.scoped)` : ""})${span} }`)
+    return true
+  }
+  // the generator gets the method's lines, one level deeper
+  const lineStart = ctx.source.lastIndexOf("\n", node.start) + 1
+  const indent = /^[ \t]*/.exec(ctx.source.slice(lineStart))![0]
+  const step = indent.includes("\t") ? "\t" : "  "
+  ctx.s.appendLeft(open + 1, `\n${indent}${step}return ${gen}{`)
+  for (const start of lineStartsToIndent(ctx, body, open, close)) {
+    if (ctx.source.slice(start, close).trim() !== "") ctx.s.prependRight(start, step)
+  }
+  withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(fn, node, ctx)))
+  ctx.s.prependLeft(close, `${step}})${frame.scoped ? `.pipe(${E}.scoped)` : ""}${span}\n${indent}`)
+  return true
 }
 
 /**

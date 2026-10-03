@@ -8,8 +8,9 @@ describe("effect diagnostics", () => {
     expect(codes("class A { x = 1; f = effect () => this.x }\n")).toEqual(["EFX2001"])
   })
 
-  it("EFX2002: effect class methods are not supported yet", () => {
-    expect(codes("class A {\n  effect m() { return 1 }\n}\n")).toEqual(["EFX2002"])
+  it("EFX2002: an effect class method needs a body (ADR-0065)", () => {
+    expect(codes("declare class A {\n  effect m(): number\n}\n")).toEqual(["EFX2002"])
+    expect(codes("class A {\n  effect m() { return 1 }\n}\n")).toEqual([])
   })
 
   it("EFX2003: unused effect block statement", () => {

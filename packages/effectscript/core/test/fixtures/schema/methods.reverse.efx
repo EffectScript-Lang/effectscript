@@ -1,0 +1,14 @@
+error Banned { name: string }
+
+export schema User {
+  name: string
+  banned: boolean
+
+  effect greet(greeting: string): string throws Banned {
+    if (this.banned) throw new Banned({ name: this.name })
+    await sleep("1 millis")
+    return `${greeting}, ${this.name}`
+  }
+
+  effect shout() { return (await this.greet("hey")).toUpperCase() }
+}

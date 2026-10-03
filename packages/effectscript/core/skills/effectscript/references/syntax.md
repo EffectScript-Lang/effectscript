@@ -161,6 +161,47 @@ const outer = Effect.fn("outer")(function*() {
 const notEffect = async () => await Promise.resolve(2)
 ```
 
+### Class methods
+
+```efx
+export class Counter {
+  #count = 0
+
+  effect bump(by: number): number {
+    this.#count += by
+    console.log(`count is ${this.#count}`)
+    return this.#count
+  }
+
+  effect reset() {
+    await sleep("1 millis")
+  }
+}
+```
+
+Compiles to:
+
+```ts
+import { Effect } from "effect"
+export class Counter {
+  #count = 0
+
+  bump(by: number): Effect.Effect<number> {
+    return Effect.gen({ self: this }, function*() {
+      this.#count += by
+      yield* Effect.log(`count is ${this.#count}`)
+      return this.#count
+    }).pipe(Effect.withSpan("Counter.bump"))
+  }
+
+  reset() {
+    return Effect.gen(function*() {
+      yield* Effect.sleep("1 millis")
+    }).pipe(Effect.withSpan("Counter.reset"))
+  }
+}
+```
+
 ### Comments
 
 ```efx
@@ -613,6 +654,51 @@ export class Product extends Schema.Class<Product>("Product")({
   /** price in cents */
   price: Schema.Int
 }) {}
+```
+
+### Methods
+
+```efx
+error Banned { name: string }
+
+export schema User {
+  name: string
+  banned: boolean
+
+  effect greet(greeting: string): string throws Banned {
+    if (this.banned) throw new Banned({ name: this.name })
+    await sleep("1 millis")
+    return `${greeting}, ${this.name}`
+  }
+
+  effect shout() { return (await this.greet("hey")).toUpperCase() }
+}
+```
+
+Compiles to:
+
+```ts
+import { Effect, Schema } from "effect"
+class Banned extends Schema.TaggedError<Banned>()("Banned", { name: Schema.String }) {}
+
+export class User extends Schema.Class<User>("User")({
+  name: Schema.String,
+  banned: Schema.Boolean
+}) {
+  greet(greeting: string): Effect.Effect<string, Banned> {
+    return Effect.gen({ self: this }, function*() {
+      if (this.banned) return yield* new Banned({ name: this.name })
+      yield* Effect.sleep("1 millis")
+      return `${greeting}, ${this.name}`
+    }).pipe(Effect.withSpan("User.greet"))
+  }
+
+  shout() {
+    return Effect.gen({ self: this }, function*() {
+      return (yield* this.greet("hey")).toUpperCase()
+    }).pipe(Effect.withSpan("User.shout"))
+  }
+}
 ```
 
 ## `error`

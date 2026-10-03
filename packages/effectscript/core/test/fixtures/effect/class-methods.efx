@@ -1,0 +1,13 @@
+export class Counter {
+  #count = 0
+
+  effect bump(by: number): number {
+    this.#count += by
+    console.log(`count is ${this.#count}`)
+    return this.#count
+  }
+
+  effect reset() {
+    await sleep("1 millis")
+  }
+}
