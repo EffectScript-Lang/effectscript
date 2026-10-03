@@ -33,6 +33,7 @@ const setupProject = () => {
   fs.writeFileSync(path.join(dir, "src/a.ts"), source)
   fs.writeFileSync(path.join(dir, "src/b.ts"), "export const b = 1\n")
   fs.writeFileSync(path.join(dir, "package.json"), "{ \"type\": \"module\" }\n")
+  fs.writeFileSync(path.join(dir, "run.sh"), "#!/bin/sh\necho ok\n", { mode: 0o755 })
   const g = (...args: Array<string>) =>
     spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd: dir, encoding: "utf8" })
   g("init", "-q", "-b", "main")
@@ -55,6 +56,8 @@ case "$FAKE_MODE" in
   rename) mv src/a.efx src/a.ts ;;
   fail) printf '// partial\\n' >> src/a.efx; exit 1 ;;
   orphan) node -e "require('child_process').spawn('sleep', ['8'], { detached: true, stdio: ['ignore', 'inherit', 'inherit'] }).unref()"; echo "gave up" >&2; exit 1 ;;
+  noisy) node -e "process.stdout.write('x'.repeat(300000))"; printf '\\033[31mreal error\\033[0m\\n' >&2; exit 1 ;;
+  chmod) chmod -x run.sh; printf '// improved\\n' >> src/a.efx ;;
   quota) echo "working on src/a.efx"; echo "Error: usage limit reached, try again at 5pm" >&2; exit 1 ;;
 esac
 `,
@@ -100,6 +103,20 @@ describe("efx convert --ai (Plan 15 Task 4, ADR-0052)", () => {
     const result = convert(p, "orphan")
     expect(result.stdout + result.stderr).toContain("gave up")
     expect(Date.now() - started).toBeLessThan(6000)
+  })
+
+  it("keeps the end of each stream, without terminal control characters (Plan 21)", () => {
+    const p = setupProject()
+    const out = convert(p, "noisy")
+    const text = out.stdout + out.stderr
+    expect(text).toContain("real error")
+    expect(text).not.toContain("\u001b")
+  })
+
+  it("restores the mode of a file the agent changed (Plan 21)", () => {
+    const p = setupProject()
+    convert(p, "chmod")
+    expect(fs.statSync(path.join(p.dir, "run.sh")).mode & 0o111).not.toBe(0)
   })
 
   it("hands the agent the file and its notes, and keeps an edit that verifies", () => {

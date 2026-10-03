@@ -15,11 +15,11 @@ const temp = () => {
   dirs.push(dir)
   return dir
 }
-const run = (args: ReadonlyArray<string>, cwd: string, home = temp()) =>
+const run = (args: ReadonlyArray<string>, cwd: string, home = temp(), vars: Record<string, string> = {}) =>
   spawnSync(process.execPath, [efx, "skill", ...args], {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, EFFECTSCRIPT_DEV: "1", HOME: home }
+    env: { ...process.env, EFFECTSCRIPT_DEV: "1", HOME: home, CLAUDE_CONFIG_DIR: "", ...vars }
   })
 /** Relative path → content, for a directory tree. */
 export const tree = (dir: string): Record<string, string> => {
@@ -107,5 +107,13 @@ describe("efx skill (Plan 14 Task 3, ADR-0051)", () => {
     expect(fs.readFileSync(path.join(target, "SKILL.md"), "utf8")).toContain("something-else")
     expect(run(["--force"], project).status).toBe(0)
     expect(tree(target)).toEqual(tree(source))
+  })
+
+  it("installs --global where CLAUDE_CONFIG_DIR says, as efx setup does (Plan 21)", () => {
+    const home = temp()
+    const config = temp()
+    expect(run(["--global"], temp(), home, { CLAUDE_CONFIG_DIR: config }).status).toBe(0)
+    expect(tree(path.join(config, "skills/effectscript"))).toEqual(tree(source))
+    expect(fs.existsSync(path.join(home, ".claude"))).toBe(false)
   })
 })

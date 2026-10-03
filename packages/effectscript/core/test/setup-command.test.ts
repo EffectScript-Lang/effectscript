@@ -158,3 +158,31 @@ describe("the language server command in editor configs (review I9, I11)", async
       .toBe("\"C:\\Program Files\\Microsoft VS Code\\bin\\code.cmd\" \"--install-extension\" \"C:\\a b\\x.vsix\"")
   })
 })
+
+describe.skipIf(process.platform !== "darwin" && process.platform !== "linux")(
+  "efx setup at end of input (Plan 21)",
+  () => {
+    it("treats Ctrl-D at a prompt as no, and finishes", () => {
+      const m = machine()
+      const command = `${JSON.stringify(process.execPath)} ${JSON.stringify(efx)} setup --only claude`
+      // a terminal, so efx asks; Ctrl-D ends its input
+      const result = spawnSync(
+        "sh",
+        [
+          "-c",
+          `(sleep 4; printf '\\004') | script -q ${
+            process.platform === "darwin" ? `/dev/null ${command}` : `-c '${command}' /dev/null`
+          }`
+        ],
+        {
+          encoding: "utf8",
+          timeout: 40_000,
+          env: { EFFECTSCRIPT_DEV: "1", HOME: m.home, PATH: `${m.bin}:/usr/bin:/bin` }
+        }
+      )
+      expect(result.signal).toBe(null)
+      expect(result.stdout).toMatch(/not now/)
+      expect(fs.existsSync(path.join(m.home, ".agents/skills/effectscript"))).toBe(false)
+    })
+  }
+)

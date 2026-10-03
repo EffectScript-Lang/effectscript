@@ -46,6 +46,17 @@ describe("efx convert (Plan 8 Task 4)", () => {
     "src/plain.ts": "export const n = 1\n"
   }
 
+  it("says a file doesn't parse, instead of \"nothing to re-sugar\" (Plan 21)", () => {
+    const dir = project({
+      "src/broken.ts": "import { Effect } from \"effect\"\nexport const f = Effect.fn(\"f\")(function*( {\n",
+      "package.json": "{ \"name\": \"app\", \"type\": \"module\" }\n"
+    })
+    const result = efxIn(dir, ["convert", "--explain"])
+    expect(result.stdout + result.stderr).toMatch(
+      /src\/broken\.ts: stays TypeScript \(it doesn't parse as TypeScript, at line 3: Unexpected token/
+    )
+  })
+
   it("reports without writing by default", () => {
     const dir = project(files)
     const result = efxIn(dir, ["convert"])

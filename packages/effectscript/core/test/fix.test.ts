@@ -127,4 +127,13 @@ export effect twice(n: number) {
     expect(result.status).toBe(0)
     expect(result.stdout.match(/a\.efx: fixed/g)).toHaveLength(1)
   })
+
+  it("skips a link to itself (Plan 21)", () => {
+    const dir = project({ "src/a.efx": longWay })
+    fs.symlinkSync("self", path.join(dir, "src/self"))
+    const result = fix(dir)
+    expect(result.stderr).toBe("")
+    expect(result.status).toBe(0)
+    expect(result.stdout).toContain("src/a.efx: fixed")
+  })
 })

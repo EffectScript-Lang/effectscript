@@ -14,8 +14,17 @@ import { packageInfo } from "../project.ts"
 
 const skippedDirs = new Set(["node_modules", "dist", "build", "coverage"])
 
+/** A path's stat, or `undefined` when it is gone or a link loops (`ln -s self self`, Plan 21). */
+const statOf = (entry: string): fs.Stats | undefined => {
+  try {
+    return fs.statSync(entry, { throwIfNoEntry: false })
+  } catch {
+    return undefined
+  }
+}
+
 const collect = (entry: string, files: Array<string>): void => {
-  const stat = fs.statSync(entry, { throwIfNoEntry: false })
+  const stat = statOf(entry)
   if (stat === undefined) return
   if (stat.isFile()) {
     if (entry.endsWith(".efx")) files.push(entry)
@@ -24,7 +33,7 @@ const collect = (entry: string, files: Array<string>): void => {
   for (const child of fs.readdirSync(entry, { withFileTypes: true })) {
     if (child.isDirectory() && (skippedDirs.has(child.name) || child.name.startsWith("."))) continue
     // a linked file is fixed, a linked directory isn't entered: it can loop back (Plan 20)
-    if (child.isSymbolicLink() && fs.statSync(path.join(entry, child.name), { throwIfNoEntry: false })?.isDirectory()) {
+    if (child.isSymbolicLink() && statOf(path.join(entry, child.name))?.isDirectory() !== false) {
       continue
     }
     collect(path.join(entry, child.name), files)

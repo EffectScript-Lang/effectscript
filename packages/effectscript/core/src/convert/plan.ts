@@ -7,6 +7,7 @@
  */
 import { MagicString } from "magic-string"
 import { children, type Node } from "../compiler/ast.ts"
+import { lineColumn } from "../compiler/diagnostics.ts"
 import { parse } from "../compiler/parser/parse.ts"
 import { type ConvertNote, type ConvertOptions, toEffectScript } from "../compiler/reverse/convert.ts"
 
@@ -161,6 +162,16 @@ const rewrite = (
   return s.toString()
 }
 
+/** Why a file stays as it is: it doesn't parse (with where), or there is nothing to re-sugar (Plan 21). */
+const unchangedReason = (source: string, notes: ReadonlyArray<ConvertNote>): string => {
+  // only a file with notes can be a parse failure; most unchanged files have none
+  if (notes.length === 0) return "nothing to re-sugar"
+  const parsed = parse(source)
+  if (parsed._tag !== "Failure") return "nothing to re-sugar"
+  const first = parsed.diagnostics[0]!
+  return `it doesn't parse as TypeScript, at line ${lineColumn(source, first.start).line}: ${first.message}`
+}
+
 /**
  * Plans the conversion of `files` (project-relative path → source).
  *
@@ -184,7 +195,7 @@ export const planConversion = (files: ReadonlyMap<string, string>, options: Plan
       packageName: options.packageName,
       packageRoot: options.packageRoot
     })
-    if (result.code === source) skipped.push({ file, reason: "nothing to re-sugar" })
+    if (result.code === source) skipped.push({ file, reason: unchangedReason(source, result.notes) })
     else converted.set(file, result)
   }
   // never overwrite an existing file, and never let two files share a target (ADR-0033)

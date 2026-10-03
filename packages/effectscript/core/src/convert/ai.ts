@@ -86,13 +86,17 @@ interface Snapshot {
   readonly contents: ReadonlyMap<string, Buffer>
   /** Every path that exists, ignored ones included: none of these is ever deleted (review C1). */
   readonly paths: ReadonlySet<string>
+  /** The mode of each file in `contents`, so a `chmod` is undone too (Plan 21). */
+  readonly modes: ReadonlyMap<string, number>
 }
 
 const snapshot = (cwd: string): Snapshot => {
   const contents = new Map<string, Buffer>()
+  const modes = new Map<string, number>()
   for (const file of gitFiles(cwd, ["-co", "--exclude-standard"])) {
     try {
       contents.set(file, fs.readFileSync(path.join(cwd, file)))
+      modes.set(file, fs.statSync(path.join(cwd, file)).mode & 0o7777)
     } catch {
       // listed but gone (deleted in the working tree)
     }
@@ -100,7 +104,7 @@ const snapshot = (cwd: string): Snapshot => {
   const paths = new Set(
     [...gitFiles(cwd, ["-c"]), ...gitFiles(cwd, ["-o"])].filter((f) => fs.existsSync(path.join(cwd, f)))
   )
-  return { contents, paths }
+  return { contents, paths, modes }
 }
 
 /**
@@ -122,11 +126,29 @@ const restoreOthers = (cwd: string, before: Snapshot, keep: string) => {
       fs.mkdirSync(path.dirname(full), { recursive: true })
       fs.writeFileSync(full, content)
     }
+    const mode = before.modes.get(file)
+    if (mode !== undefined && (fs.statSync(full).mode & 0o7777) !== mode) fs.chmodSync(full, mode)
   }
   for (const file of [...gitFiles(cwd, ["-c"]), ...gitFiles(cwd, ["-o"])]) {
     if (file !== keep && !before.paths.has(file)) fs.rmSync(path.join(cwd, file), { force: true })
   }
 }
+
+/**
+ * An agent's output as plain lines: colours and other escape sequences removed, a spinner's
+ * carriage-return redraws reduced to their last state, and other control characters dropped.
+ */
+/* eslint-disable no-control-regex -- matching control characters is the point here */
+const printable = (text: string): string =>
+  text
+    .replace(/\u001b\][^\u0007\u001b]*(\u0007|\u001b\\)/g, "")
+    .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, "")
+    .replace(/\u001b[@-_]/g, "")
+    .split(/\r?\n/)
+    .map((line) => line.slice(line.lastIndexOf("\r") + 1))
+    .join("\n")
+    .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "")
+/* eslint-enable no-control-regex */
 
 /** How much of an agent's output is kept, from the end: enough to say why it failed. */
 const outputLimit = 4096
@@ -142,10 +164,12 @@ const runAgent = (
   timeoutSeconds: number
 ): Promise<{ readonly outcome: number | "timeout" | Error; readonly output: string }> =>
   new Promise((resolve) => {
-    let output = ""
-    const keep = (chunk: string) => {
-      output = (output + chunk).slice(-outputLimit)
+    // one tail per stream: a flood on stdout must not push the error on stderr out (Plan 21)
+    const tails = { stdout: "", stderr: "" }
+    const keep = (stream: "stdout" | "stderr") => (chunk: string) => {
+      tails[stream] = (tails[stream] + chunk).slice(-outputLimit)
     }
+    const output = () => [tails.stdout, tails.stderr].filter((t) => t !== "").join("\n")
     const windows = process.platform === "win32"
     // Windows: npm installs agents as .cmd shims, which need a shell, with every part quoted, and
     // a single-line prompt (review I11)
@@ -155,8 +179,8 @@ const runAgent = (
         { cwd, stdio: ["ignore", "pipe", "pipe"], shell: true }
       )
       : spawn(command, [...args], { cwd, detached: true, stdio: ["ignore", "pipe", "pipe"] })
-    child.stdout?.on("data", keep)
-    child.stderr?.on("data", keep)
+    child.stdout?.on("data", keep("stdout"))
+    child.stderr?.on("data", keep("stderr"))
     const stopTree = () => {
       if (child.pid === undefined) return
       if (windows) spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" })
@@ -177,7 +201,7 @@ const runAgent = (
       : undefined
     child.on("error", (error) => {
       clearTimeout(timer)
-      resolve({ outcome: error, output })
+      resolve({ outcome: error, output: output() })
     })
     child.stdout?.setEncoding("utf8")
     child.stderr?.setEncoding("utf8")
@@ -189,7 +213,7 @@ const runAgent = (
         // a process that escaped the group may still hold the pipes: let go of them (review I1)
         child.stdout?.destroy()
         child.stderr?.destroy()
-        resolve({ outcome: timedOut ? "timeout" : code ?? 1, output })
+        resolve({ outcome: timedOut ? "timeout" : code ?? 1, output: output() })
       }
       // the last output can still be in flight when `exit` fires: wait briefly for `close`
       const grace = setTimeout(done, 1000)
@@ -293,10 +317,10 @@ export const aiPass = async (
         io.out(`reverted the AI edit of ${target.file}: ${problem.split("\n")[0]}`)
         // when the agent itself failed, its last words usually say why (a quota, a login, a flag)
         if (outcome !== 0) {
-          const last = output.trim().split(/\r?\n/).slice(-10)
+          const last = printable(output).split("\n").filter((line) => line.trim() !== "").slice(-10)
           if (last.length > 0 && last[0] !== "") {
             io.out(`  ${agent.command} said:`)
-            for (const line of last) io.out(`    ${line}`)
+            for (const line of last) io.out(`    ${line.length > 200 ? `${line.slice(0, 200)}…` : line}`)
           }
         }
       }

@@ -107,6 +107,12 @@ const unsafe = (target: string, options: SkillOptions): string | undefined => {
   return undefined
 }
 
+/** Claude Code's configuration home: `CLAUDE_CONFIG_DIR` when it is an absolute path, as `efx setup` reads it. */
+const claudeHome = (home: string): string => {
+  const dir = process.env.CLAUDE_CONFIG_DIR
+  return dir !== undefined && dir !== "" && path.isAbsolute(dir) ? dir : path.join(home, ".claude")
+}
+
 /**
  * Installs the skill. Returns the exit code.
  *
@@ -124,7 +130,9 @@ export const installSkill = (
   }
   const target = options.dir !== undefined
     ? path.resolve(options.cwd, options.dir)
-    : path.join(options.global ? options.home : options.cwd, ".claude", "skills", "effectscript")
+    : options.global
+    ? path.join(claudeHome(options.home), "skills", "effectscript")
+    : path.join(options.cwd, ".claude", "skills", "effectscript")
   const why = unsafe(target, options)
   if (why !== undefined) {
     err(`efx won't install the skill into ${target}: ${why}`)

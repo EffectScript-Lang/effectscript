@@ -20,3 +20,18 @@ export const marketplaceVersion = (version: string): { readonly version: string;
   const number = Number(patch) * 1000 + (alpha === undefined ? 999 : Number(alpha))
   return { version: `${major}.${minor}.${number}`, preRelease: alpha !== undefined }
 }
+
+/**
+ * The extension version this `efx` carries, or `undefined` when its version has no Marketplace
+ * form (a development build): `efx setup` then doesn't compare versions, and still runs (Plan 21).
+ *
+ * @since 4.0.0
+ * @category setup
+ */
+export const extensionVersionFor = (version: string): string | undefined => {
+  try {
+    return marketplaceVersion(version).version
+  } catch {
+    return undefined
+  }
+}

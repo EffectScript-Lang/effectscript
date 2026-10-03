@@ -100,4 +100,14 @@ describe("effectscript/register (ADR-0021)", () => {
     expect(own.stdout).toBe("ok\n")
     expect(own.stderr).toContain("DeprecationWarning: mine")
   })
+
+  it("leaves Node's own warning errors alone (Plan 21)", () => {
+    const dir = project({
+      "app.efx":
+        "effect main() {\n  return await succeed(1)\n}\nconsole.log(Effect.runSync(main()))\ntry {\n  process.emitWarning(42 as never)\n} catch (e) {\n  console.log((e as { code?: string }).code)\n}\n"
+    })
+    dirs.push(dir)
+    const result = run(dir, "app.efx")
+    expect(result.stdout).toBe("1\nERR_INVALID_ARG_TYPE\n")
+  })
 })

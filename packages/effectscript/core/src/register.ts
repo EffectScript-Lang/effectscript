@@ -17,14 +17,25 @@ import { packageInfo } from "./project.ts"
 // Stack traces from `.efx` code point at `.efx` positions (review I6, ADR-0026).
 process.setSourceMapsEnabled(true)
 
-// Node warns that `stripTypeScriptTypes` is experimental. EffectScript uses it on purpose (ADR-0026),
-// and the warning would open every `efx run`; only that one warning is dropped (ADR-0057).
-const emitWarning = process.emitWarning
-process.emitWarning = function(this: unknown, warning: string | Error, ...rest: Array<unknown>) {
-  const text = typeof warning === "string" ? warning : warning.message
-  if (text.startsWith("stripTypeScriptTypes is an experimental feature")) return
-  return (emitWarning as (...args: Array<unknown>) => void).call(process, warning, ...rest)
-} as typeof process.emitWarning
+/**
+ * Runs `strip` with Node's "stripTypeScriptTypes is an experimental feature" warning dropped:
+ * EffectScript uses it on purpose (ADR-0026), and the warning would open every `efx run`
+ * (ADR-0057). The filter is only in place during the call; the program's own warnings, and Node's
+ * errors for bad arguments, are untouched (Plan 21).
+ */
+const quietly = <A>(strip: () => A): A => {
+  const emitWarning = process.emitWarning
+  process.emitWarning = function(this: unknown, warning: unknown, ...rest: Array<unknown>) {
+    const text = typeof warning === "string" ? warning : warning instanceof Error ? warning.message : undefined
+    if (text?.startsWith("stripTypeScriptTypes is an experimental feature")) return
+    return (emitWarning as (...args: Array<unknown>) => void).call(process, warning, ...rest)
+  } as typeof process.emitWarning
+  try {
+    return strip()
+  } finally {
+    process.emitWarning = emitWarning
+  }
+}
 
 registerHooks({
   load(url, context, nextLoad) {
@@ -59,12 +70,12 @@ registerHooks({
  */
 const stripTypes = (code: string, url: string): { readonly code: string; readonly positionsPreserved: boolean } => {
   try {
-    return { code: stripTypeScriptTypes(code, { mode: "strip" }), positionsPreserved: true }
+    return { code: quietly(() => stripTypeScriptTypes(code, { mode: "strip" })), positionsPreserved: true }
   } catch (strip) {
     if ((strip as { code?: unknown }).code !== "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX") throw strip
     try {
       const options = { mode: "transform", sourceMap: true, sourceUrl: url } as unknown as { mode: "strip" }
-      return { code: stripTypeScriptTypes(code, options), positionsPreserved: false }
+      return { code: quietly(() => stripTypeScriptTypes(code, options)), positionsPreserved: false }
     } catch (transform) {
       if ((transform as { code?: unknown }).code === "ERR_INVALID_ARG_VALUE") throw strip
       throw transform

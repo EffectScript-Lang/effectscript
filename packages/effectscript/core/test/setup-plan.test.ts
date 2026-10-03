@@ -284,6 +284,16 @@ describe("efx setup review fixes (Plan 15 final review)", () => {
 })
 
 describe("efx setup on upgrades (Plan 20 Task 1)", () => {
+  it("names both versions when an older extension can't be upgraded without a .vsix (Plan 21)", () => {
+    const home = temp()
+    const code = fakeCode(home)
+    fs.writeFileSync(path.join(home, "extensions.txt"), "effectscript.effectscript-vscode@4.0.0\n")
+    const found: Array<Detected> = [{ kind: "editor", id: "vscode", name: "VS Code", cli: code, evidence: code }]
+    const outcome = setup(home, found, { extensionVersion: "4.0.1", vsix: () => undefined })[0]!.apply()
+    expect(outcome.status).toBe("skipped")
+    expect(outcome.detail).toMatch(/4\.0\.0 installed; this efx carries 4\.0\.1: pass --vsix/)
+  })
+
   it("upgrades an older EffectScript extension, and skips a current one", () => {
     const home = temp()
     const code = fakeCode(home)

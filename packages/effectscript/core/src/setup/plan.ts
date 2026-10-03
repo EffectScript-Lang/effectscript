@@ -173,6 +173,12 @@ const vscodeAction = (editor: Detected, options: PlanOptions): Action => ({
         older(installed, options.extensionVersion)
       if (installed !== undefined && !upgrade) return { status: "skipped", detail: "already installed" }
       const vsix = options.vsix()
+      if (vsix === undefined && upgrade) {
+        return {
+          status: "skipped",
+          detail: `${installed} installed; this efx carries ${options.extensionVersion}: pass --vsix <file> to upgrade`
+        }
+      }
       if (vsix === undefined) {
         return {
           status: "skipped",

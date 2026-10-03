@@ -12,7 +12,7 @@ import * as path from "node:path"
 import { createInterface } from "node:readline/promises"
 import { fileURLToPath } from "node:url"
 import { detect, type Detected, type SetupEnv } from "../setup/detect.ts"
-import { marketplaceVersion } from "../setup/marketplace.ts"
+import { extensionVersionFor } from "../setup/marketplace.ts"
 import { type Action, plan } from "../setup/plan.ts"
 import { cacheDir, standalone, unpackFiles } from "./host.ts"
 import { version } from "./project.ts"
@@ -141,28 +141,32 @@ const projectActions = (options: SetupOptions): Array<Action> =>
 const symbol = { done: "✓", skipped: "·", manual: "→", failed: "✗" } as const
 
 /**
+ * What `--only` accepts: the agents, then the editors (Plan 18 Task 5). Every id `detect` can
+ * report is a key here, so a new one can't be forgotten (Plan 21).
+ */
+const targetOrder: Record<Detected["id"], number> = {
+  claude: 0,
+  codex: 1,
+  "cursor-agent": 2,
+  gemini: 3,
+  opencode: 4,
+  vscode: 5,
+  cursor: 6,
+  windsurf: 7,
+  vscodium: 8,
+  neovim: 9,
+  helix: 10,
+  zed: 11,
+  jetbrains: 12
+}
+const targetIds = (Object.keys(targetOrder) as Array<Detected["id"]>).sort((a, b) => targetOrder[a] - targetOrder[b])
+
+/**
  * Runs `efx setup`. Returns the exit code.
  *
  * @since 4.0.0
  * @category setup
  */
-/** What `--only` accepts: the agents, then the editors (Plan 18 Task 5). */
-const targetIds: ReadonlyArray<Detected["id"]> = [
-  "claude",
-  "codex",
-  "cursor-agent",
-  "gemini",
-  "opencode",
-  "vscode",
-  "cursor",
-  "windsurf",
-  "vscodium",
-  "neovim",
-  "helix",
-  "zed",
-  "jetbrains"
-]
-
 export const setup = async (
   options: SetupOptions,
   out: (line: string) => void,
@@ -180,7 +184,7 @@ export const setup = async (
     home: options.home,
     skill: skillFiles(),
     vsix: () => vsixPath(options),
-    extensionVersion: marketplaceVersion(version).version,
+    extensionVersion: extensionVersionFor(version),
     lsp: thisLspCommand(),
     exec: (command, args) => {
       const result = process.platform === "win32"
@@ -207,12 +211,20 @@ export const setup = async (
     return 0
   }
   const prompt = interactive ? createInterface({ input: process.stdin, output: process.stdout }) : undefined
+  // Ctrl-D ends the input: that answer, and every one after it, is no (Plan 21)
+  let ended = false
+  const closed = new Promise<undefined>((resolve) => prompt?.once("close", () => resolve(undefined)))
   let failed = false
   try {
     for (const action of actions) {
       if (prompt !== undefined) {
-        const answer = (await prompt.question(`${action.description}? [Y/n] `)).trim().toLowerCase()
-        if (answer !== "" && answer !== "y" && answer !== "yes") {
+        const answer = ended ? undefined : await Promise.race([
+          prompt.question(`${action.description}? [Y/n] `).catch(() => undefined),
+          closed
+        ])
+        if (answer === undefined) ended = true
+        const said = answer?.trim().toLowerCase()
+        if (said === undefined || (said !== "" && said !== "y" && said !== "yes")) {
           out(`${symbol.skipped} ${action.description}: not now`)
           continue
         }
