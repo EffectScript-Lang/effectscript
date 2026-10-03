@@ -306,3 +306,151 @@ export const layerPipes = (
   })
   removeKeepingComments(ctx, previous.end, pipe.end)
 }
+
+const unwrapExport = (top: Node | undefined): { readonly statement: Node | undefined; readonly exported: boolean } =>
+  top?.type === "ExportNamedDeclaration" && top.declaration !== null
+    ? { statement: top.declaration, exported: true }
+    : { statement: top, exported: false }
+
+/** `const <name> = <init>`, alone. */
+const constOf = (statement: Node | undefined): Node | undefined =>
+  statement?.type === "VariableDeclaration" && statement.kind === "const" && statement.declarations.length === 1 &&
+    statement.declarations[0].id.type === "Identifier" && !statement.declarations[0].id.typeAnnotation
+    ? statement.declarations[0]
+    : undefined
+
+/**
+ * A service with a default (ADR-0066): `interface N { … }`, `const R = Context.Reference<N>("key", {
+ * defaultValue: () => (…) })` and `const N = Object.assign(R, { layer…, accessors })` → `service N {
+ * …; default = …; layer … }`. Returns how many statements it consumed.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertReferenceService = (
+  ctx: ReverseCtx,
+  body: ReadonlyArray<Node>,
+  index: number,
+  visit: Visit
+): number => {
+  const context = importedLocal(ctx.analysis, "effect", "Context")
+  const [first, second, third] = [body[index], body[index + 1], body[index + 2]]
+  const { exported, statement: iface } = unwrapExport(first)
+  if (
+    context === undefined || iface?.type !== "TSInterfaceDeclaration" || iface.typeParameters || iface.extends?.length
+  ) {
+    return 0
+  }
+  const name: string = iface.id.name
+  const referenceDeclarator = second?.type === "VariableDeclaration" ? constOf(second) : undefined
+  const assign = unwrapExport(third)
+  const assignDeclarator = constOf(assign.statement)
+  if (referenceDeclarator === undefined || assignDeclarator === undefined || assign.exported !== exported) return 0
+  const reference: string = referenceDeclarator.id.name
+  const make: Node = referenceDeclarator.init
+  const typeArgs: Array<Node> = (make?.typeArguments ?? make?.typeParameters)?.params ?? []
+  const [key, options]: Array<Node> = make?.arguments ?? []
+  if (
+    make?.type !== "CallExpression" || !isMember(make.callee, context, "Reference") || make.arguments.length !== 2 ||
+    typeArgs.length !== 1 || slice(ctx, typeArgs[0]!) !== name || key?.type !== "Literal" ||
+    typeof key.value !== "string" || options?.type !== "ObjectExpression" || options.properties.length !== 1
+  ) {
+    return 0
+  }
+  const defaultProperty: Node = options.properties[0]
+  const thunk: Node = defaultProperty.value
+  if (
+    defaultProperty.type !== "Property" || defaultProperty.key?.name !== "defaultValue" ||
+    thunk?.type !== "ArrowFunctionExpression" || thunk.params.length > 0 || thunk.body.type === "BlockStatement"
+  ) {
+    return 0
+  }
+  const value: Node = thunk.body
+  const parenthesized = value.type === "ObjectExpression"
+  const header = `const ${reference} = ${context}.Reference<${name}>(${
+    JSON.stringify(key.value)
+  }, {\n  defaultValue: () => ${parenthesized ? "(" : ""}`
+  if (
+    assignDeclarator.id.name !== name || ctx.source.slice(second.start, value.start) !== header ||
+    ctx.source.slice(value.end, second.end) !== `${parenthesized ? ")" : ""}\n})`
+  ) {
+    return 0
+  }
+  const call: Node = assignDeclarator.init
+  const statics: Node | undefined = call?.arguments?.[1]
+  if (
+    call?.type !== "CallExpression" || call.callee.type !== "MemberExpression" ||
+    slice(ctx, call.callee) !== "Object.assign" || call.arguments.length !== 2 ||
+    slice(ctx, call.arguments[0]) !== reference ||
+    statics?.type !== "ObjectExpression"
+  ) {
+    return 0
+  }
+  if (ctx.source.slice(iface.end, second.start) !== "\n" || ctx.source.slice(second.end, third.start) !== "\n") return 0
+  if (commentsIn(ctx, iface.body.end - 1, third.end).length > 0) return 0
+  // the static object: layers, then one accessor per effect member, as generated
+  const layers: Array<Layer> = []
+  const accessors = new Map<string, Node>()
+  for (const property of statics.properties as Array<Node>) {
+    if (property.type !== "Property" || property.computed || property.shorthand || property.key.type !== "Identifier") {
+      return 0
+    }
+    const head = layerHead(property.key.name)
+    if (head !== undefined && accessors.size === 0) layers.push({ member: property, head })
+    else accessors.set(property.key.name, property)
+  }
+  const members: Array<Node> = iface.body.body
+  const effects: Array<Node> = []
+  for (const signature of members) {
+    if (
+      signature.type !== "TSMethodSignature" || signature.kind !== "method" || signature.computed ||
+      signature.key.type !== "Identifier" || !returnsEffect(ctx, signature) ||
+      reservedStatics.has(signature.key.name) ||
+      returnTypeProblem(ctx, returnTypeOf(signature), "Effect") !== undefined
+    ) {
+      continue
+    }
+    const accessor = accessors.get(signature.key.name)
+    const expected = accessorFor(ctx, reference, signature).replace(/^static readonly (\w+) = /, "$1: ")
+    if (accessor === undefined || slice(ctx, accessor) !== expected) return 0
+    effects.push(signature)
+    accessors.delete(signature.key.name)
+  }
+  if (accessors.size > 0) return 0
+  // the generated layout: `{` then `\n  layerX: value,` lines, then `\n  accessor` lines joined by `,`
+  let expectedText = "{"
+  for (const layer of layers) expectedText += `\n  ${layer.member.key.name}: ${slice(ctx, layer.member.value)},`
+  const accessorTexts = (statics.properties as Array<Node>).filter((p) => !layers.some((l) => l.member === p))
+  if (accessorTexts.length > 0) expectedText += `\n${accessorTexts.map((p) => `  ${slice(ctx, p)}`).join(",\n")}`
+  if (slice(ctx, statics) !== `${expectedText}\n}` || ctx.source.slice(statics.end, third.end) !== ")") return 0
+  const layerPlans = layers.map((layer) => layerPlan(ctx, reference, layer.member.value))
+  if (layerPlans.some((plan) => plan === undefined)) return 0
+
+  // rewrite: `interface N {` → `service N [as "key"] {`
+  const keyword = ctx.source.indexOf("interface", iface.start)
+  const as = key.value === serviceKey(ctx.options, name) ? "" : ` as ${JSON.stringify(key.value)}`
+  ctx.s.update(keyword, iface.id.end, `service ${name}${as}`)
+  for (const signature of effects) {
+    ctx.s.appendLeft(signature.start, "effect ")
+    convertReturnType(ctx, returnTypeOf(signature), "Effect")
+  }
+  // the default and the layers move back into the body, before its `}`
+  const close = iface.body.end - 1
+  ctx.s.appendLeft(close, "\n  default = ")
+  ctx.s.move(value.start, value.end, close)
+  ctx.s.appendLeft(value.end, "\n")
+  ctx.s.remove(iface.end, value.start)
+  let previous = value.end
+  layers.forEach((layer) => {
+    const layerValue: Node = layer.member.value
+    ctx.s.remove(previous, layerValue.start)
+    ctx.s.prependRight(layerValue.start, `\n  ${layer.head} = `)
+    ctx.s.move(layerValue.start, layerValue.end, close)
+    ctx.s.appendLeft(layerValue.end, "\n")
+    previous = layerValue.end
+  })
+  ctx.s.remove(previous, third.end)
+  within(ctx, "Effect", () => visit(value, thunk, false), name)
+  layers.forEach((_, i) => layerPlans[i]!(visit))
+  return 3
+}

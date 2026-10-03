@@ -471,6 +471,7 @@ export default grammar(TypeScript, {
             seq($.effect_method_signature, optional(choice(";", ","))),
             $.effect_method,
             seq($.layer_member, optional(choice(";", ","))),
+            seq($.default_member, optional(choice(";", ","))),
             seq($.service_property, optional(choice(";", ","))),
             $.method_definition,
             ";"
@@ -498,6 +499,9 @@ export default grammar(TypeScript, {
           field("type", $.type_annotation)
         )
       ),
+
+    // the value code gets when no layer provides the service (ADR-0066)
+    default_member: ($) => prec.right(seq("default", "=", field("value", $.expression))),
 
     layer_member: ($) =>
       prec.right(seq("layer", optional(field("name", $.identifier)), "=", field("value", $.expression))),

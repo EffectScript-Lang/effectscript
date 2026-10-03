@@ -494,7 +494,13 @@ Rules:
   and `src/a.efx` → `"myapp/a/Users"`. A relative filename keeps its directories; an absolute one outside the package root keeps only
   its file name, so keys never contain absolute paths (ADR-0018). Without package information, the key is `"<Name>"`. To override:
   `service Users as "acme/Users" { … }`.
-- `Context.Reference` services with defaults are on the roadmap.
+- **Defaults** (ADR-0066). A `default = <value>` member makes the service a `Context.Reference`:
+  code that uses it without a layer gets the default, so the service is never a requirement and
+  `needs` doesn't name it. The output is an `interface` for the shape, a reference whose
+  `defaultValue` returns the value, and `Object.assign(reference, { layer…, accessors })` under the
+  service's name, so `Greeter.greet(…)`, `await Greeter` and `Layer.succeed(Greeter, …)` work as
+  for any service. The default is a plain value: an `effect` block there is error **EFX4004**
+  (build it in a `layer` instead).
 
 ### 4.9 Pipeline `|>` (TC39 Stage 2, both flavors)
 
@@ -1698,7 +1704,6 @@ The order was revised after the plan review (ADR-0016).
 ## 14. Roadmap (explicitly out of v0.1)
 
 - Generator streams (`effect*` with `yield` → `Stream`).
-- `Context.Reference` services with defaults.
 - More library constructs: `rpc` (RpcGroup), `workflow` (effect/workflow), `tool`/`toolkit`
   (effect/ai), `entity` (cluster), and a Foldkit-style `app` (Model/Message/update/view).
 - Automatic layer wiring for `main` (whole-program analysis of which services are used).

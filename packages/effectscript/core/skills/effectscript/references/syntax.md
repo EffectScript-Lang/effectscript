@@ -883,6 +883,62 @@ export const firstName = Effect.fn("firstName")(function*(id: string) {
 })
 ```
 
+### Default
+
+```efx
+export service Greeter {
+  effect greet(name: string): string
+  readonly punctuation: string
+
+  default = {
+    punctuation: "!",
+    greet: effect (name: string) => `Hello, ${name}!`
+  }
+
+  layer test = { punctuation: ".", greet: effect (name: string) => `Hi, ${name}.` }
+}
+
+export effect welcome(name: string) {
+  const greeting = await Greeter.greet(name)
+  return `${greeting} Welcome.`
+}
+```
+
+Compiles to:
+
+```ts
+import { Context, Effect, Layer } from "effect"
+export interface Greeter {
+  greet(name: string): Effect.Effect<string>
+  readonly punctuation: string
+}
+const GreeterReference = Context.Reference<Greeter>("fixtures/service/default/Greeter", {
+  defaultValue: () => ({
+    punctuation: "!",
+    greet: Effect.fnUntraced(function*(name: string) {
+      return `Hello, ${name}!`
+    })
+  })
+})
+export const Greeter = Object.assign(GreeterReference, {
+  layerTest: Layer.succeed(
+    GreeterReference,
+    GreeterReference.of({
+      punctuation: ".",
+      greet: Effect.fnUntraced(function*(name: string) {
+        return `Hi, ${name}.`
+      })
+    })
+  ),
+  greet: (name: string) => GreeterReference.use((_) => _.greet(name))
+})
+
+export const welcome = Effect.fn("welcome")(function*(name: string) {
+  const greeting = yield* Greeter.greet(name)
+  return `${greeting} Welcome.`
+})
+```
+
 ## Top-level `layer`
 
 <!-- fixtures/layer -->

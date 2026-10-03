@@ -30,6 +30,7 @@ import { convertMatch, matchShape } from "./match.ts"
 import { isMember } from "./origin.ts"
 import { convertPipe, inPosition, isPlainStep } from "./pipes.ts"
 import { hasFinalizer, inFrame } from "./resources.ts"
+import { convertReferenceService } from "./service.ts"
 import { convertTestStatement } from "./test.ts"
 
 /**
@@ -482,7 +483,7 @@ export const visitProgram = (ctx: ReverseCtx, program: Node, visit: Visit): void
     }
     if (ctx.only !== undefined && !ctx.only.has(i)) return
     if (i === body.length - 1 && convertMain(ctx, program, visit)) return
-    const consumed = convertSchemaRun(ctx, body, i)
+    const consumed = convertSchemaRun(ctx, body, i) || convertReferenceService(ctx, body, i, visit)
     if (consumed > 0) {
       skip = consumed - 1
       return

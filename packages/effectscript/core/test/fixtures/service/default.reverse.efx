@@ -1,0 +1,16 @@
+export service Greeter {
+  effect greet(name: string): string
+  readonly punctuation: string
+
+  default = {
+    punctuation: "!",
+    greet: effect (name: string) => `Hello, ${name}!`
+  }
+
+  layer test = { punctuation: ".", greet: effect (name: string) => `Hi, ${name}.` }
+}
+
+export effect welcome(name: string) {
+  const greeting = await Greeter.greet(name)
+  return `${greeting} Welcome.`
+}

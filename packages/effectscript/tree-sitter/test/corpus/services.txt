@@ -89,3 +89,39 @@ atom doubled = (get) => get(count) * 2
           (arguments
             (identifier)))
         (number)))))
+
+=============================
+Service with a default value
+=============================
+
+service Greeter {
+  effect greet(name: string): string
+  default = { greet: effect (name: string) => name }
+}
+
+---
+
+(program
+  (service_declaration
+    (identifier)
+    (service_body
+      (effect_method_signature
+        (property_identifier)
+        (formal_parameters
+          (required_parameter
+            (identifier)
+            (type_annotation
+              (predefined_type))))
+        (type_annotation
+          (predefined_type)))
+      (default_member
+        (object
+          (pair
+            (property_identifier)
+            (effect_arrow_function
+              (formal_parameters
+                (required_parameter
+                  (identifier)
+                  (type_annotation
+                    (predefined_type))))
+              (identifier))))))))

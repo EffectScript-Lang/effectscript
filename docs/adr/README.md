@@ -73,6 +73,8 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0063](0063-match-guards-and-object-patterns.md) | `match` guards and object patterns | Accepted |
 | [0064](0064-http-status-on-errors.md) | An error declares its HTTP status in its header | Accepted |
 | [0065](0065-effect-methods-in-classes.md) | `effect` methods in classes are prototype methods returning `Effect.gen` | Accepted |
+| [0066](0066-services-with-defaults.md) | A service with a `default` compiles to a `Context.Reference` | Accepted |
+| [0068](0068-linked-dev-install-of-the-editor-extension.md) | The editor extension installs from the checkout as a symlink | Accepted |
 
 ## Template
 
