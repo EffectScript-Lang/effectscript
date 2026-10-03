@@ -82,3 +82,21 @@ install hints name exact versions.
 - The Monaco editors have `ariaLabel`s. The landing's install block is highlighted as shell.
 - **Tests:** the protocol pieces (hash parsing on change, the watchdog's timer logic) in
   `test/playground.test.ts`; then a browser check.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **`efx fix` canonicalises whole files,** not only the EFX8101 spans: the reverse compiler can't
+  parse fragments inside EffectScript, and the round trip proves the TypeScript is identical
+  (ADR-0056).
+- **The `efx check` hint test runs `efx lsp` only:** `efx check` falls back to `efx`'s own
+  language package, which the workspace always has. Both commands use the shared
+  `languageInstall`, which the test asserts.
+
+**Found while doing it:** the root `.gitignore` rules `lib/` and `/packages/**/ai-docs/` had kept
+`site/src/lib/highlight.ts` and the 63 files of `effect-docs/content/ai-docs` out of every commit,
+so a fresh clone couldn't build the site and lacked the ai-docs edition. Scoped negations in the
+EffectScript section re-include them, and a fresh worktree of `HEAD` is now tested.
