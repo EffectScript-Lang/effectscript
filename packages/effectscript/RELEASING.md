@@ -1,7 +1,8 @@
 # Releasing EffectScript
 
-These are the steps for publishing EffectScript, in order. Everything up to step 5 is local and
-can be re-run safely. From step 6 on, each step publishes something and can't be undone. The
+These are the steps for publishing EffectScript, in order. Steps 3 to 5 are local and can be re-run
+safely: a changelog section counts as released only once its `effectscript@<version>` tag exists.
+From step 6 on, each step publishes something and can't be undone. The
 decisions behind the steps are in ADR-0015 (lockstep versions), ADR-0036 (GitHub coordinates),
 ADR-0038 (install channels), ADR-0041 (the `.vsix`) and ADR-0055 (versions, notes and packing in
 this fork).
@@ -28,8 +29,8 @@ field point at `EffectScript-Lang/effect-lang` (ADR-0036).
 | Secret or account            | Where                                   | Used by                                   |
 | ---------------------------- | --------------------------------------- | ----------------------------------------- |
 | npm org `effectscript`       | npmjs.com (it exists; you're its owner) | `@effectscript/language`                  |
-| `NPM_TOKEN`                  | your machine (`npm login`)              | step 6                                    |
-| `HOMEBREW_TAP_TOKEN`         | repository secret                       | the release workflow's tap job (step 8)   |
+| `NPM_TOKEN`                  | your machine (`npm login`)              | step 8                                    |
+| `HOMEBREW_TAP_TOKEN`         | repository secret                       | the release workflow's tap job (step 7)   |
 | `VSCE_PAT`                   | your machine                            | step 9, publisher `effectscript`          |
 | `OVSX_PAT`                   | your machine                            | step 9, Open VSX namespace `effectscript` |
 | Cloudflare account and token | your machine                            | step 10                                   |
@@ -64,10 +65,15 @@ This moves the `.changeset` notes that name only EffectScript packages into
 `packages/effectscript/CHANGELOG.md`, under the new version. Upstream notes stay where they are.
 A note that names both families stops the step, so split it first.
 
-Commit the version and the changelog together:
+Commit the version and the changelog together, and nothing else (another change in the tree stays
+out of the release commit):
 
 ```bash
-git commit -am "chore(effectscript): release <version>"
+git add packages/effectscript/*/package.json packages/effectscript/CHANGELOG.md .changeset
+```
+
+```bash
+git commit -m "chore(effectscript): release <version>"
 ```
 
 ## 5. Check the packages
@@ -93,26 +99,13 @@ pnpm check
 ```
 
 ```bash
-pnpm vitest --run packages/effectscript
+pnpm vitest --run --project effectscript --project @effectscript/language --project @effectscript/vscode --project @effectscript/effect-docs --project @effectscript/site --project @effectscript/examples
 ```
 
-## 6. Publish to npm
+## 6. Tag the binaries
 
-`effectscript` goes first, because `@effectscript/language` depends on its exact version. A
-prerelease goes to the `alpha` tag, so `npm install effectscript` keeps installing the last stable
-version.
-
-```bash
-npm publish packages/effectscript/dist-pack/effectscript-<version>.tgz --tag alpha
-```
-
-```bash
-npm publish packages/effectscript/dist-pack/effectscript-language-<version>.tgz --tag alpha --access public
-```
-
-For a stable version, drop `--tag alpha`.
-
-## 7. Tag the binaries
+The tag goes first: if a binary fails to build, nothing is on npm yet, and the version can still
+be fixed and re-tagged. npm never lets a version be published twice.
 
 ```bash
 git tag effectscript@<version>
@@ -128,7 +121,9 @@ The tag starts `.github/workflows/effectscript-release.yml`, which:
 - builds the seven standalone binaries and smoke-tests the native ones;
 - creates the GitHub release with the archives, `SHASUMS256.txt` and `install.sh`.
 
-## 8. The Homebrew tap
+Wait for the workflow to pass before step 8.
+
+## 7. The Homebrew tap
 
 The same workflow's last job writes `Formula/effectscript.rb` to `EffectScript-Lang/homebrew-tap`
 with the new checksums. Check it afterwards:
@@ -136,6 +131,25 @@ with the new checksums. Check it afterwards:
 ```bash
 brew install EffectScript-Lang/tap/effectscript && efx --version
 ```
+
+## 8. Publish to npm
+
+`effectscript` goes first, because `@effectscript/language` depends on its exact version.
+
+npm needs a tag for a prerelease, and points `latest` at a new package's first version whatever
+the tag. Until the first stable release, every alpha goes to `latest`, so the documented
+`npm i -D effectscript` installs the newest alpha:
+
+```bash
+npm publish packages/effectscript/dist-pack/effectscript-<version>.tgz --tag latest
+```
+
+```bash
+npm publish packages/effectscript/dist-pack/effectscript-language-<version>.tgz --tag latest --access public
+```
+
+After the first stable release, a stable version goes to `latest` and an alpha to `--tag alpha`,
+so `latest` stays stable.
 
 ## 9. The VS Code extension
 

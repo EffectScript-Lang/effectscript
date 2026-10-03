@@ -195,9 +195,11 @@ describe("Plan 16 final review fixes", () => {
     expect(text("docs/guides/editor-setup/index.html")).toContain("efx lsp")
     expect(text("docs/guides/migrating/index.html")).toContain("efx convert")
     const strict = text("docs/guides/strict-rules/index.html")
-    const codes = [...new Set(
-      fs.readFileSync(path.join(site, "../core/src/compiler/transform/strict.ts"), "utf8").match(/EFX8\d{3}/g)
-    )]
+    const codes = [
+      ...new Set(
+        fs.readFileSync(path.join(site, "../core/src/compiler/transform/strict.ts"), "utf8").match(/EFX8\d{3}/g)
+      )
+    ]
     for (const code of codes) expect(strict, code).toContain(code)
   })
 

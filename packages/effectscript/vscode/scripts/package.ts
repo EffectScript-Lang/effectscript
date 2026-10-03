@@ -68,7 +68,10 @@ try {
     fs.copyFileSync(path.join(brand, icon), path.join(stage, "images", icon))
   }
   const vsce = path.join(root, "node_modules/.bin/vsce")
-  const result = spawnSync(vsce, ["package", "--out", out, ...(marketplace.preRelease ? ["--pre-release"] : [])], { cwd: stage, encoding: "utf8" })
+  const result = spawnSync(vsce, ["package", "--out", out, ...(marketplace.preRelease ? ["--pre-release"] : [])], {
+    cwd: stage,
+    encoding: "utf8"
+  })
   if (result.status !== 0) throw new Error(`vsce package failed:\n${result.stdout}${result.stderr}`)
   process.stdout.write(`${out}\n`)
 } catch (error) {

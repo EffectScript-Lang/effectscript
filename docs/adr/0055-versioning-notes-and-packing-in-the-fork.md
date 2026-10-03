@@ -25,8 +25,10 @@ EffectScript's own.
   format contributors know, but `core/scripts/release.ts` consumes them.
 - **`release.ts version [--effect x.y] [--prerelease alpha|none]`** writes one version to every
   package in `packages/effectscript`, private ones included:
-  - it is computed from the *released* version, the newest `## ` heading in
-    `packages/effectscript/CHANGELOG.md`, so running it twice gives the same result;
+  - it is computed from the *released* version: the newest section of
+    `packages/effectscript/CHANGELOG.md` whose `effectscript@<version>` tag exists. One newer,
+    untagged section is a release in progress, so running `version` twice, or after `changelog`,
+    gives the same result (Plan 17 review I4);
   - the same Effect minor bumps `alpha.N` or the patch; a new Effect minor starts at `x.y.0`; an
     Effect older than the released version is refused;
   - by default it stays on the last release's channel (alpha or stable);
@@ -69,8 +71,10 @@ Writing the runbook showed that `effectscript` shipped `effect` and `@effect/pla
 `^4.0.0` dependencies. Spec §7.6 makes `effect` a peer on the same minor, and a `^` dependency lets
 npm install a second, newer `effect` beside the project's, which splits Effect's services in two.
 
-- **Effect packages are peers on the same minor** (`workspace:~`, packed as `~4.0.0`), and dev
-  dependencies in the workspace.
+- **Effect packages are peers on the same minor,** written as the literal range `~x.y.0`
+  (`workspace:~` would pack as `~<the workspace Effect's exact version>`, which excludes earlier
+  patches; Plan 17 review I2). `release.ts version` moves them to the new minor. In the workspace
+  they are also dev dependencies (`workspace:^`).
 - **The EffectScript packages pin each other's exact version** (`workspace:*`): the language
   server and the compiler share internal APIs that may change in any alpha.
 - `release.ts pack` refuses a tarball whose manifest breaks either rule (`manifestProblems`).

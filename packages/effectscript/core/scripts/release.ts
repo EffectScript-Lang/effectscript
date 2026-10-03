@@ -5,9 +5,11 @@
  *   node scripts/release.ts changelog
  *   node scripts/release.ts pack [--out dir]
  *
- * - `version` writes the next version to every package in `packages/effectscript`. Its major.minor
- *   is Effect's (ADR-0015); the patch and the `alpha.N` number are EffectScript's own. It is computed
- *   from the last released version (the changelog's newest heading), so running it twice is safe.
+ * - `version` writes the next version to every package in `packages/effectscript`, and moves the
+ *   Effect peer ranges to `~x.y.0`. Its major.minor is Effect's (ADR-0015); the patch and the
+ *   `alpha.N` number are EffectScript's own. It is computed from the last released version (the
+ *   newest changelog section with an `effectscript@<version>` tag), so running it twice, or after
+ *   `changelog`, is safe.
  * - `changelog` moves the `.changeset` notes that name only EffectScript packages into
  *   `packages/effectscript/CHANGELOG.md`, under the packages' version. Upstream notes stay.
  * - `pack` builds `effectscript` and `@effectscript/language` from clean and packs them, refusing a
@@ -88,9 +90,27 @@ const readChangelog = (root: string): string | undefined => {
   }
 }
 
-/** The newest released version: the changelog's first `## ` heading. */
-const released = (changelog: string | undefined): string | undefined =>
-  changelog === undefined ? undefined : /^## (\S+)/m.exec(changelog)?.[1]
+const isTagged = (root: string, version: string): boolean => {
+  const result = spawnSync("git", ["tag", "--list", `effectscript@${version}`], { cwd: root, encoding: "utf8" })
+  if (result.status !== 0) throw new Error(`git tag failed in ${root}: ${result.stderr}`)
+  return result.stdout.trim() !== ""
+}
+
+/**
+ * The changelog's releases: the newest tagged section is the last release, and a newer section
+ * without a tag is a release in progress (review I4).
+ */
+const releases = (root: string, changelog: string | undefined) => {
+  const sections = changelog === undefined
+    ? []
+    : [...changelog.matchAll(/^## (\d+\.\d+\.\d+(?:-alpha\.\d+)?)\s*$/gm)].map((m) => m[1]!)
+  const last = sections.findIndex((v) => isTagged(root, v))
+  const pending = last === -1 ? sections : sections.slice(0, last)
+  if (pending.length > 1) {
+    throw new Error(`the changelog has more than one release without a tag: ${pending.join(", ")}`)
+  }
+  return { released: last === -1 ? undefined : sections[last], pending: pending[0] }
+}
 
 const version = (root: string, effectOption: string | undefined, prereleaseOption: string | undefined) => {
   if (effectOption !== undefined && !/^\d+\.\d+$/.test(effectOption)) {
@@ -101,7 +121,7 @@ const version = (root: string, effectOption: string | undefined, prereleaseOptio
   }
   const list = packages(root)
   const current = agreed(list)
-  const last = released(readChangelog(root))
+  const { pending, released: last } = releases(root, readChangelog(root))
   const effect = effectOption ??
     JSON.parse(fs.readFileSync(path.join(root, "packages/effect/package.json"), "utf8")).version
       .split(".").slice(0, 2).join(".")
@@ -109,11 +129,29 @@ const version = (root: string, effectOption: string | undefined, prereleaseOptio
   const prerelease = prereleaseOption as "alpha" | "none" | undefined ??
     (last === undefined || parse(last).alpha !== undefined ? "alpha" : "none")
   const next = nextVersion(last, effect, prerelease)
-  if (current === next) return `already ${next}`
+  if (pending !== undefined && pending !== next) {
+    throw new Error(
+      `${pending} is in the changelog but not tagged, and the next version is ${next}: ` +
+        `finish releasing ${pending}, or remove its section and put its notes back`
+    )
+  }
+  // Effect is a peer on the same minor (spec §7.6, ADR-0055 amendment 1)
+  const { major, minor } = parse(next)
+  let changed = false
   for (const p of list) {
     const text = fs.readFileSync(p.file, "utf8")
-    fs.writeFileSync(p.file, text.replace(/("version":\s*)"[^"]*"/, `$1"${next}"`))
+    const updated = text
+      .replace(/("version":\s*)"[^"]*"/, `$1"${next}"`)
+      .replace(
+        /("peerDependencies":\s*\{[^}]*\})/,
+        (peers) => peers.replace(/("(?:effect|@effect\/[\w-]+)":\s*)"~[^"]*"/g, `$1"~${major}.${minor}.0"`)
+      )
+    if (updated !== text) {
+      fs.writeFileSync(p.file, updated)
+      changed = true
+    }
   }
+  if (!changed) return `already ${next}`
   return `${current} -> ${next} (${list.map((p) => p.name).join(", ")})`
 }
 
@@ -126,16 +164,22 @@ interface Note {
   readonly summary: string
 }
 
-const readNote = (file: string): Note => {
+/**
+ * A changeset's packages and summary. Lines it can't read (comments, `none` bumps, YAML it doesn't
+ * know) are listed in `unread`: they only matter in EffectScript's own notes (review I6).
+ */
+const readNote = (file: string): Note & { readonly unread: ReadonlyArray<string> } => {
   const text = fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n")
   const match = /^---\n([\s\S]*?)\n?---\n?([\s\S]*)$/.exec(text)
-  if (match === null) throw new Error(`${path.basename(file)} has no front matter`)
-  const entries = match[1]!.split("\n").filter((line) => line.trim() !== "").map((line) => {
-    const entry = /^\s*["']?([^"':]+)["']?\s*:\s*(major|minor|patch)\s*$/.exec(line)
-    if (entry === null) throw new Error(`${path.basename(file)}: can't read "${line}"`)
-    return [entry[1]!, entry[2] as Bump] as const
-  })
-  return { file, packages: new Map(entries), summary: match[2]!.trim() }
+  const lines = match === null ? [] : match[1]!.split("\n").filter((line) => line.trim() !== "")
+  const packages = new Map<string, Bump>()
+  const unread: Array<string> = []
+  for (const line of lines) {
+    const entry = /^\s*["']?([^"':#]+)["']?\s*:\s*(major|minor|patch)\s*$/.exec(line)
+    if (entry !== null) packages.set(entry[1]!, entry[2] as Bump)
+    else if (!/^\s*#/.test(line)) unread.push(line)
+  }
+  return { file, packages, summary: match === null ? "" : match[2]!.trim(), unread }
 }
 
 const isEffectScript = (name: string, family: ReadonlySet<string>) =>
@@ -149,7 +193,11 @@ const changelog = (root: string) => {
   const current = agreed(list)
   const existing = readChangelog(root)
   if (existing !== undefined && new RegExp(`^## ${current.replace(/\./g, "\\.")}\\s*$`, "m").test(existing)) {
-    throw new Error(`${current} is already in the changelog: run release.ts version first`)
+    throw new Error(
+      isTagged(root, current)
+        ? `${current} is already in the changelog: run release.ts version first`
+        : `${current} is already in the changelog, not yet tagged: finish releasing it first`
+    )
   }
   const family = new Set(list.map((p) => p.name))
   const dir = path.join(root, ".changeset")
@@ -161,6 +209,9 @@ const changelog = (root: string) => {
     const mine = names.filter((n) => isEffectScript(n, family))
     if (mine.length > 0 && mine.length < names.length) {
       throw new Error(`${name} names both EffectScript and upstream packages: split it in two`)
+    }
+    if (mine.length > 0 && note.unread.length > 0) {
+      throw new Error(`${name}: can't read "${note.unread[0]}" (use "package": major, minor or patch)`)
     }
     if (mine.length > 0) ours.push(note)
   }
@@ -234,7 +285,9 @@ export const manifestProblems = (manifest: {
       isEffect(entry[0]) ? [`${entry[0]} must be a peer dependency, not a dependency`] : pinned(entry)
     ),
     ...Object.entries(manifest.peerDependencies ?? {}).flatMap((entry) =>
-      isEffect(entry[0]) && entry[1] !== effectRange ? [`${entry[0]} must be ${effectRange} (got ${entry[1]})`] : pinned(entry)
+      isEffect(entry[0]) && entry[1] !== effectRange
+        ? [`${entry[0]} must be ${effectRange} (got ${entry[1]})`]
+        : pinned(entry)
     )
   ]
 }
@@ -242,7 +295,9 @@ export const manifestProblems = (manifest: {
 const run = (command: string, args: ReadonlyArray<string>, cwd: string): string => {
   const result = spawnSync(command, [...args], { cwd, encoding: "utf8", maxBuffer: 1 << 28 })
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(" ")} failed:\n${result.error?.message ?? ""}${result.stdout}${result.stderr}`)
+    throw new Error(
+      `${command} ${args.join(" ")} failed:\n${result.error?.message ?? ""}${result.stdout}${result.stderr}`
+    )
   }
   return result.stdout
 }
@@ -289,7 +344,9 @@ if (import.meta.main) {
       : argv[0] === "pack"
       ? pack(root, path.resolve(option(argv, "--out") ?? path.join(root, "packages/effectscript/dist-pack")))
       : (() => {
-        throw new Error("usage: release.ts version [--effect x.y] [--prerelease alpha|none] | changelog | pack [--out dir]")
+        throw new Error(
+          "usage: release.ts version [--effect x.y] [--prerelease alpha|none] | changelog | pack [--out dir]"
+        )
       })()
     process.stdout.write(`${output}\n`)
   } catch (error) {

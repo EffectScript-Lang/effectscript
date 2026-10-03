@@ -15,6 +15,8 @@ const repo = (options: {
   readonly effect?: string
   readonly versions?: ReadonlyArray<string>
   readonly changelog?: string
+  /** Versions with an `effectscript@<version>` tag; by default, every version in the changelog. */
+  readonly tags?: ReadonlyArray<string>
   readonly notes?: Record<string, string>
 } = {}) => {
   const root = path.join(work, `repo-${repos++}`)
@@ -27,13 +29,31 @@ const repo = (options: {
   ;["core", "language", "site"].forEach((dir, i) =>
     write(
       `packages/effectscript/${dir}/package.json`,
-      `${JSON.stringify({ name: dir === "core" ? "effectscript" : `@effectscript/${dir}`, version: versions[i] }, null, 2)}\n`
+      `${
+        JSON.stringify(
+          dir === "core"
+            ? {
+              name: "effectscript",
+              version: versions[i],
+              peerDependencies: { "@effect/platform-node": "~4.0.0", effect: "~4.0.0", typescript: "^6.0.3" }
+            }
+            : { name: `@effectscript/${dir}`, version: versions[i] },
+          null,
+          2
+        )
+      }\n`
     )
   )
   write("packages/effectscript/brand/README.md", "no package here\n")
   if (options.changelog !== undefined) write("packages/effectscript/CHANGELOG.md", options.changelog)
   write(".changeset/config.json", "{}\n")
   for (const [name, content] of Object.entries(options.notes ?? {})) write(`.changeset/${name}`, content)
+  const git = (...args: ReadonlyArray<string>) =>
+    spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd: root, encoding: "utf8" })
+  git("init", "-q")
+  git("commit", "-q", "--allow-empty", "-m", "init")
+  const tags = options.tags ?? [...(options.changelog ?? "").matchAll(/^## (\S+)/gm)].map((m) => m[1]!)
+  for (const tag of tags) git("tag", `effectscript@${tag}`)
   return root
 }
 const release = (root: string, ...args: ReadonlyArray<string>) =>
@@ -114,6 +134,32 @@ describe("release.ts version", () => {
     expect(version(root)).toBe("4.0.0-alpha.1")
   })
 
+  it("treats an untagged changelog section as pending: running version again changes nothing (review I4)", () => {
+    const root = repo({ notes: { "effectscript-a.md": note({ effectscript: "patch" }, "Ok.") } })
+    expect(release(root, "changelog").status).toBe(0)
+    const again = release(root, "version")
+    expect(again.stderr).toBe("")
+    expect(again.stdout).toContain("already 4.0.0-alpha.0")
+    expect(version(root)).toBe("4.0.0-alpha.0")
+  })
+
+  it("refuses a pending section for another version than the next one", () => {
+    const root = repo({
+      changelog: "# EffectScript\n\n## 4.0.0-alpha.1\n\n## 4.0.0-alpha.0\n",
+      tags: ["4.0.0-alpha.0"]
+    })
+    const result = release(root, "version", "--prerelease", "none")
+    expect(result.status).toBe(1)
+    expect(result.stderr).toMatch(/4\.0\.0-alpha\.1 is in the changelog but not tagged/)
+  })
+
+  it("moves the Effect peer ranges to a new Effect minor (review I2)", () => {
+    const root = repo({ changelog: "## 4.0.0\n" })
+    expect(release(root, "version", "--effect", "4.1", "--prerelease", "none").status).toBe(0)
+    const core = JSON.parse(fs.readFileSync(path.join(root, "packages/effectscript/core/package.json"), "utf8"))
+    expect(core.peerDependencies).toEqual({ "@effect/platform-node": "~4.1.0", effect: "~4.1.0", typescript: "^6.0.3" })
+  })
+
   it("refuses an Effect older than the released version, and bad options", () => {
     const root = repo({ changelog: "## 4.1.0\n" })
     expect(release(root, "version").stderr).toMatch(/older than/)
@@ -154,6 +200,14 @@ describe("release.ts changelog", () => {
     expect(fs.readFileSync(path.join(root, "packages/effectscript/CHANGELOG.md"), "utf8")).toBe(
       "# EffectScript\n\n## 4.0.0-alpha.0\n\n### Patch changes\n\n- Icons.\n"
     )
+  })
+
+  it("reads past upstream notes it doesn't understand (review I6)", () => {
+    const odd = "---\n# an upstream comment\n\"effect\": none\n---\n\nInternal.\n"
+    const root = repo({ notes: { "effectscript-a.md": note({ effectscript: "patch" }, "Ok."), "odd.md": odd } })
+    const result = release(root, "changelog")
+    expect(result.stderr).toBe("")
+    expect(fs.readFileSync(path.join(root, ".changeset/odd.md"), "utf8")).toBe(odd)
   })
 
   it("refuses a note that names EffectScript and upstream packages, and changes nothing", () => {
@@ -226,7 +280,9 @@ describe("manifestProblems (spec §7.6, ADR-0055)", () => {
 
   it("accepts Effect as a ~major.minor peer and EffectScript packages pinned to the same version", () => {
     expect(manifestProblems(core)).toEqual([])
-    expect(manifestProblems({ name: "@effectscript/language", version: "4.1.2", dependencies: { effectscript: "4.1.2" } }))
+    expect(
+      manifestProblems({ name: "@effectscript/language", version: "4.1.2", dependencies: { effectscript: "4.1.2" } })
+    )
       .toEqual([])
   })
 
@@ -242,7 +298,9 @@ describe("manifestProblems (spec §7.6, ADR-0055)", () => {
   })
 
   it("names EffectScript packages on another version", () => {
-    expect(manifestProblems({ name: "@effectscript/language", version: "4.0.1", dependencies: { effectscript: "^4.0.0" } }))
+    expect(
+      manifestProblems({ name: "@effectscript/language", version: "4.0.1", dependencies: { effectscript: "^4.0.0" } })
+    )
       .toEqual(["effectscript must be 4.0.1 (got ^4.0.0)"])
   })
 
@@ -256,19 +314,20 @@ describe("manifestProblems (spec §7.6, ADR-0055)", () => {
             name,
             range === "workspace:*"
               ? manifest.version
-              : range === "workspace:~"
-              ? "~4.0.0"
-              : range.replace("workspace:", "") === "^"
-              ? "^4.0.0"
+              : range.startsWith("workspace:")
+              ? `${range.slice(10)}4.0.3`
               : range
           ])
         )
-      expect(manifestProblems({
-        ...manifest,
-        version: manifest.version,
-        dependencies: packed(manifest.dependencies),
-        peerDependencies: packed(manifest.peerDependencies)
-      }), dir).toEqual([])
+      expect(
+        manifestProblems({
+          ...manifest,
+          version: manifest.version,
+          dependencies: packed(manifest.dependencies),
+          peerDependencies: packed(manifest.peerDependencies)
+        }),
+        dir
+      ).toEqual([])
     }
   })
 })
@@ -285,16 +344,23 @@ describe.runIf(process.env.EFX_PACK === "1")("release.ts pack, installed in a cl
       expect.stringMatching(/^effectscript-language-\d.*\.tgz$/)
     ])
     for (const tarball of tarballs) {
-      const manifest = JSON.parse(spawnSync("tar", ["-xzOf", tarball, "package/package.json"], { encoding: "utf8" }).stdout)
+      const manifest = JSON.parse(
+        spawnSync("tar", ["-xzOf", tarball, "package/package.json"], { encoding: "utf8" }).stdout
+      )
       expect(manifestProblems(manifest), tarball).toEqual([])
     }
     const project = path.join(work, "clean")
     fs.mkdirSync(project)
     fs.writeFileSync(
       path.join(project, "package.json"),
-      JSON.stringify({ name: "clean", private: true, type: "module", dependencies: Object.fromEntries(
-        tarballs.map((t, i) => [i === 0 ? "effectscript" : "@effectscript/language", `file:${t}`])
-      ) })
+      JSON.stringify({
+        name: "clean",
+        private: true,
+        type: "module",
+        dependencies: Object.fromEntries(
+          tarballs.map((t, i) => [i === 0 ? "effectscript" : "@effectscript/language", `file:${t}`])
+        )
+      })
     )
     // effect and its platform packages come from the registry, as they do for users
     const install = spawnSync("npm", ["install", "--no-audit", "--no-fund", "--loglevel=error"], {
@@ -311,7 +377,10 @@ describe.runIf(process.env.EFX_PACK === "1")("release.ts pack, installed in a cl
     expect(printed.stdout).toContain("Effect.fn")
     // the installed compiler is the published build, not the sources
     expect(fs.realpathSync(path.join(project, "node_modules/effectscript/dist/cli/main.js"))).toBeTruthy()
-    const server = spawnSync(process.execPath, ["-e", "import('@effectscript/language').then((m) => console.log(Object.keys(m).length > 0))"], {
+    const server = spawnSync(process.execPath, [
+      "-e",
+      "import('@effectscript/language').then((m) => console.log(Object.keys(m).length > 0))"
+    ], {
       cwd: project,
       encoding: "utf8"
     })

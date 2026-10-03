@@ -128,3 +128,15 @@ changesets belong to upstream. Builds on ADR-0015, ADR-0036 and ADR-0038.
 
 - `efx run` on Node 24 prints Node's `ExperimentalWarning` for `stripTypeScriptTypes`.
 - `efx init` without a `tsconfig.json` says to create one, but still edits the rest of the project.
+
+**Final review (fresh reviewer, no Critical, 6 Important), fixed in one pass with tests that failed
+first:** formatting (and the commit gate that let it through); literal `~x.y.0` Effect peers that
+`version` moves (`workspace:~` packs the exact Effect version); an explicit `git add` in the
+runbook; "released" means tagged, so `version` after `changelog` is a no-op; alphas go to npm's
+`latest` until the first stable; upstream notes `release.ts` can't read are skipped. Regraded to
+Important and fixed: the runbook tags and builds the binaries before publishing to npm.
+
+**Deferred minors:** `--effect` isn't checked against the workspace Effect; an empty summary or a
+list summary renders oddly; install hints don't pin `@effectscript/language` to the CLI's version;
+Yarn Berry or pnpm without `auto-install-peers` don't install the Effect peers; the runbook's `npx`
+tools, `NPM_TOKEN` wording and PAT environment variables.

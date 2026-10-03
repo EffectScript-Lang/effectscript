@@ -184,7 +184,10 @@ const guides = () => {
   })
   // Expressive Code ignores the skill's `wrong` meta, so the site titles those blocks (review I2)
   const pitfalls = fs.readFileSync(path.join(skill, "references/pitfalls.md"), "utf8").replace(/^# .*\n/m, "")
-    .replace(/^```efx wrong( EFX\d+)?$/gm, (_, code: string | undefined) => `\`\`\`efx title="Wrong${code ? `:${code}` : ""}"`)
+    .replace(
+      /^```efx wrong( EFX\d+)?$/gm,
+      (_, code: string | undefined) => `\`\`\`efx title="Wrong${code ? `:${code}` : ""}"`
+    )
     .replace("Blocks marked `efx wrong` show the mistake", "Blocks titled “Wrong” show the mistake")
   page(path.join(docs, "guides/pitfalls.md"), "Pitfalls", pitfalls, { sidebar: { order: 2 } })
   editorSetup()
@@ -218,11 +221,27 @@ const editorSetup = () => {
  */
 const strictExamples: ReadonlyArray<readonly [code: string, title: string, source: string]> = [
   ["EFX8001", "An effect that is never run", `effect main() {\n  sleep("1 second")\n}`],
-  ["EFX8003", "Running an effect inside an effect", `import { Effect } from "effect"\n\neffect main() {\n  Effect.runPromise(sleep("1 second"))\n}`],
+  [
+    "EFX8003",
+    "Running an effect inside an effect",
+    `import { Effect } from "effect"\n\neffect main() {\n  Effect.runPromise(sleep("1 second"))\n}`
+  ],
   ["EFX8004", "Throwing a primitive", `effect main() {\n  throw "boom"\n}`],
-  ["EFX8005", "`catch (e: any)`", `effect main() {\n  try {\n    await sleep("1 second")\n  } catch (e: any) {\n    console.error(e)\n  }\n}`],
-  ["EFX8101", "Effect TypeScript written by hand", `import { Effect } from "effect"\n\nexport const main = Effect.gen(function*() {\n  yield* Effect.sleep("1 second")\n})`],
-  ["EFX8102", "Promises inside `effect` code", `effect main() {\n  const one = new Promise((resolve) => resolve(1))\n}`],
+  [
+    "EFX8005",
+    "`catch (e: any)`",
+    `effect main() {\n  try {\n    await sleep("1 second")\n  } catch (e: any) {\n    console.error(e)\n  }\n}`
+  ],
+  [
+    "EFX8101",
+    "Effect TypeScript written by hand",
+    `import { Effect } from "effect"\n\nexport const main = Effect.gen(function*() {\n  yield* Effect.sleep("1 second")\n})`
+  ],
+  [
+    "EFX8102",
+    "Promises inside `effect` code",
+    `effect main() {\n  const one = new Promise((resolve) => resolve(1))\n}`
+  ],
   ["EFX8103", "`throw new Error(…)`", `effect main() {\n  throw new Error("boom")\n}`],
   ["EFX8104", "Explicit `any`", `export const id = (x: any) => x`],
   ["EFX8105", "Timers", `effect main() {\n  setTimeout(() => {}, 10)\n}`],
@@ -232,7 +251,11 @@ const strictExamples: ReadonlyArray<readonly [code: string, title: string, sourc
   ["EFX8109", "`new Date()`", `effect main() {\n  const now = new Date()\n}`],
   ["EFX8110", "A nullable type in a service", `service Users {\n  effect find(id: string): string | undefined\n}`],
   ["EFX8111", "`await` on a Promise", `effect main() {\n  const response = await fetch("https://example.com")\n}`],
-  ["EFX8112", "`await` on an array built at runtime", `effect main(ids: ReadonlyArray<string>) {\n  await ids.map((id) => sleep("1 second"))\n}`]
+  [
+    "EFX8112",
+    "`await` on an array built at runtime",
+    `effect main(ids: ReadonlyArray<string>) {\n  await ids.map((id) => sleep("1 second"))\n}`
+  ]
 ]
 
 const strictRules = () => {
@@ -247,7 +270,9 @@ const strictRules = () => {
       source,
       "```",
       "",
-      ...reported.map((d) => `- **${d.code}** (${d.severity}): ${d.message}${d.hint === undefined ? "" : `. Fix: ${d.hint}.`}`),
+      ...reported.map((d) =>
+        `- **${d.code}** (${d.severity}): ${d.message}${d.hint === undefined ? "" : `. Fix: ${d.hint}.`}`
+      ),
       ""
     ].join("\n")
   })

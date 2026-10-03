@@ -78,9 +78,9 @@
     "efx": "./bin/efx.js"
   },
   "peerDependencies": {
-    "@effect/platform-node": "workspace:~",
+    "@effect/platform-node": "~4.0.0",
     "@effectscript/language": "workspace:*",
-    "effect": "workspace:~",
+    "effect": "~4.0.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.0"
   },

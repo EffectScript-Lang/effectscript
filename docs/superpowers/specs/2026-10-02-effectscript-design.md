@@ -1589,7 +1589,7 @@ implementation.
 record lists each). `jsdocs.config.json` excludes `packages/effectscript/**`. The changesets are
 EffectScript's own notes: `core/scripts/release.ts` versions the family in lockstep and moves the
 notes into `packages/effectscript/CHANGELOG.md`, and upstream's `changeset version` never touches
-EffectScript. `effect` and `@effect/platform-node` are `~major.minor` peers (§7.6), and the
+EffectScript. `effect` and `@effect/platform-node` are `~x.y.0` peers (§7.6), and the
 EffectScript packages pin each other's exact version. The publish steps are in
 `packages/effectscript/RELEASING.md`.
 
