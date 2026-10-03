@@ -55,3 +55,21 @@ plan's execution record.
 - The playground's manual share link updates or disappears after an edit.
 - **Tests:** the `.gitattributes` entries match existing paths; the playground piece in
   `protocol.ts`.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Task 1 retargeted:** the skill already upgraded when its content changed. The real gaps were
+  the VS Code extension (skipped whenever it was listed) and files an older skill version left
+  behind; both are fixed. Core carries a copy of the Marketplace version mapping, kept equal to the
+  extension's by a test.
+- **Task 2 ran first,** while the Plan 19 review used other files.
+- **The Ctrl-C test owns its directories:** the file's shared `afterEach` removed them mid-run.
+- **The share-link fix was checked in the browser** (clipboard forced to fail, then an edit),
+  not through `protocol.ts`.
+
+**Found while doing it:** `.gitattributes`, including the earlier `*.efx` Linguist rules, had never
+been tracked: the root `.gitignore` hides every dotfile except a list. It is re-included.
