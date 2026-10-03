@@ -1,4 +1,4 @@
-import { Match, Schema } from "effect"
+import { Match, Predicate, Schema } from "effect"
 class Circle extends Schema.TaggedClass<Circle>()("Circle", { radius: Schema.Number }) {}
 class Square extends Schema.TaggedClass<Square>()("Square", { side: Schema.Number }) {}
 const Shape = Schema.Union([Circle, Square])
@@ -9,9 +9,9 @@ declare const status: "active" | "banned" | "pending"
 declare const strict: boolean
 
 export const size = Match.value(shape).pipe(
-  Match.when((c): c is Extract<typeof c, { readonly _tag: "Circle" }> & { readonly "~effectscript/guard": true } => c._tag === "Circle" && c.radius > 10, (c) => `big circle ${c.radius}`),
+  Match.when((c): c is Extract<typeof c, { readonly _tag: "Circle" }> & { readonly "~effectscript/guard": true } => Predicate.isTagged(c, "Circle") && c.radius > 10, (c) => `big circle ${c.radius}`),
   Match.tag("Circle", ({ radius }) => `circle ${radius}`),
-  Match.when((_): _ is Extract<typeof _, { readonly _tag: "Square" }> & { readonly "~effectscript/guard": true } => _._tag === "Square" && (({ side }) => side === 0)(_), ({ side }) => "dot"),
+  Match.when((_): _ is Extract<typeof _, { readonly _tag: "Square" }> & { readonly "~effectscript/guard": true } => Predicate.isTagged(_, "Square") && (({ side }) => side === 0)(_), ({ side }) => "dot"),
   Match.tag("Square", () => "square"),
   Match.exhaustive
 )

@@ -292,6 +292,25 @@ const effectProperty: Handler = (node, _parent, ctx) => {
   return true
 }
 
+/** The first `super` or `arguments` a method body uses itself (arrows inherit both; functions don't). */
+const superOrArguments = (node: Node): Node | undefined => {
+  if (node === null || typeof node !== "object") return undefined
+  if (node.type === "Super" || (node.type === "Identifier" && node.name === "arguments")) return node
+  if (/^(FunctionDeclaration|FunctionExpression|ClassDeclaration|ClassExpression)$/.test(node.type ?? "")) {
+    return undefined
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "loc") continue
+    for (const child of Array.isArray(value) ? value : [value]) {
+      if (child !== null && typeof child === "object" && typeof child.type === "string") {
+        const found = superOrArguments(child)
+        if (found !== undefined) return found
+      }
+    }
+  }
+  return undefined
+}
+
 /** Line starts inside `[from, to)` that aren't inside a template literal or string. */
 const lineStartsToIndent = (ctx: Ctx, body: Node, from: number, to: number): Array<number> => {
   const verbatim: Array<readonly [number, number]> = []
@@ -339,6 +358,23 @@ const effectClassMember: Handler = (node, _parent, ctx) => {
     )
     return true
   }
+  // the body runs in a generator function: `super` doesn't parse there, and `arguments` would be
+  // the generator's (Plan 22 review I3)
+  const inherited = superOrArguments(fn.body)
+  if (inherited !== undefined) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX2009",
+        `An \`effect\` method can't use \`${inherited.type === "Super" ? "super" : "arguments"}\``,
+        inherited.start,
+        inherited.end,
+        inherited.type === "Super"
+          ? "read what you need from `super` in a plain method, and pass it in"
+          : "use a rest parameter: `effect m(...args: Array<A>)`"
+      )
+    )
+    return true
+  }
   const E = ref(ctx, "effect", "Effect")
   ctx.s.remove(keyword.start, skipSpace(ctx.source, keyword.end))
   rewriteReturnType(ctx, fn.returnType, "Effect")
@@ -355,7 +391,7 @@ const effectClassMember: Handler = (node, _parent, ctx) => {
   if (!multiline) {
     ctx.s.appendLeft(open, `{ return ${gen}`)
     withEffect(ctx, frame, () => withNamespace(ctx, "Effect", () => walk(fn, node, ctx)))
-    ctx.s.appendLeft(body.end, `${frame.scoped ? `.pipe(${E}.scoped)` : ""})${span} }`)
+    ctx.s.appendLeft(body.end, `)${frame.scoped ? `.pipe(${E}.scoped)` : ""}${span} }`)
     return true
   }
   // the generator gets the method's lines, one level deeper

@@ -53,6 +53,24 @@ const objectPatternType = (ctx: Ctx, pattern: Node): string => {
   return fields.length === 0 ? "{}" : `{ ${fields.join("; ")} }`
 }
 
+/**
+ * An object pattern's tests: for each top-level field, `Predicate.hasProperty` (so `null`, a
+ * primitive or a union member without the field doesn't get read), then its literal comparisons.
+ */
+const guardTests = (ctx: Ctx, pattern: Node, v: string): Array<string> => {
+  const P = ref(ctx, "effect", "Predicate")
+  return (pattern.properties as Array<Node>).flatMap((property) => {
+    if (property.value === null) return []
+    const key = property.key.type === "Identifier"
+      ? JSON.stringify(property.key.name)
+      : ctx.source.slice(property.key.start, property.key.end)
+    return [
+      `${P}.hasProperty(${v}, ${key})`,
+      ...objectPatternTests(ctx, { ...pattern, properties: [property] }, v, ".")
+    ]
+  })
+}
+
 /** An object pattern's literal fields as comparisons, so TypeScript narrows the value. */
 const objectPatternTests = (ctx: Ctx, pattern: Node, base: string, dot: string): Array<string> =>
   (pattern.properties as Array<Node>).flatMap((property) => {
@@ -64,6 +82,44 @@ const objectPatternTests = (ctx: Ctx, pattern: Node, base: string, dot: string):
       ? objectPatternTests(ctx, property.value, access, "?.")
       : [`${access} === ${ctx.source.slice(property.value.value.start, property.value.value.end)}`]
   })
+
+/**
+ * An object pattern's bindings as destructuring-parameter pieces in source order: text, and the
+ * user's own identifiers, so they keep their mapping (Plan 22 review I5).
+ */
+const bindingPieces = (ctx: Ctx, pattern: Node): Array<string | Node> => {
+  const items = (pattern.properties as Array<Node>).flatMap((property): Array<Array<string | Node>> => {
+    if (property.value === null) return [[property.key]]
+    if (property.value.type !== "ObjectMatchPattern") return []
+    const inner = bindingPieces(ctx, property.value)
+    return inner.length === 0 ? [] : [[`${ctx.source.slice(property.key.start, property.key.end)}: `, ...inner]]
+  })
+  if (items.length === 0) return []
+  return ["{ ", ...items.flatMap((item, i) => (i === 0 ? item : [", ", ...item])), " }"]
+}
+
+/** Writes `before`, the pieces (keeping the identifiers in place) and `after` over `[from, to)`. */
+const writeAroundBindings = (
+  ctx: Ctx,
+  pieces: ReadonlyArray<string | Node>,
+  from: number,
+  to: number,
+  before: string,
+  after: string
+): void => {
+  let text = before
+  let cursor = from
+  for (const piece of pieces) {
+    if (typeof piece === "string") text += piece
+    else {
+      if (text === "") ctx.s.remove(cursor, piece.start)
+      else ctx.s.update(cursor, piece.start, text)
+      text = ""
+      cursor = piece.end
+    }
+  }
+  ctx.s.update(cursor, to, `${text}${after}`)
+}
 
 /** An object pattern's bindings as a destructuring parameter, or "" when it binds nothing. */
 const objectBindingText = (ctx: Ctx, pattern: Node): string => {
@@ -128,23 +184,27 @@ const matchExpression: Handler = (node, _parent, ctx) => {
     } else if (pattern.type === "ObjectMatchPattern") {
       const test = objectPatternText(ctx, pattern)
       const bindings = objectBindingText(ctx, pattern)
-      if (guard === null) ctx.s.update(arm.start, arm.body.start, `${M}.when(${test}, (${bindings}${arrow}`)
-      else {
+      if (guard === null) {
+        writeAroundBindings(ctx, bindingPieces(ctx, pattern), arm.start, arm.body.start, `${M}.when(${test}, (`, arrow)
+      } else {
         // like a guarded tag arm: the fields are compared so TypeScript narrows a union, and the
         // handler is refined with Match's own type for the pattern (ADR-0063)
         const v = unused(ctx, "_")
         const matched = `${M}.Types.WhenMatch<typeof ${v}, ${objectPatternType(ctx, pattern)}>`
         const type = `${matched} & ${guarded}`
-        const tests = objectPatternTests(ctx, pattern, v, ".").map((t) => `${t} && `).join("")
+        const tests = guardTests(ctx, pattern, v).map((t) => `${t} && `).join("")
         const body = guard.type === "SequenceExpression" ? ["(", ")"] : ["", ""]
         if (bindings === "") {
           ctx.s.update(arm.start, guard.start, `${M}.when((${v}): ${v} is ${type} => ${tests}${open}`)
           ctx.s.update(guard.end, arm.body.start, `${shut}, (${arrow}`)
         } else {
-          ctx.s.update(
+          writeAroundBindings(
+            ctx,
+            bindingPieces(ctx, pattern),
             arm.start,
             guard.start,
-            `${M}.when((${v}): ${v} is ${type} => ${tests}((${bindings}) => ${body[0]}`
+            `${M}.when((${v}): ${v} is ${type} => ${tests}((`,
+            `) => ${body[0]}`
           )
           // the comparisons narrow a union but not a nested optional field: the guard's argument
           // is cast to what they just checked
@@ -161,7 +221,9 @@ const matchExpression: Handler = (node, _parent, ctx) => {
       const tag = JSON.stringify(tagName(pattern.tag))
       const binding: Node | null = pattern.binding
       const v = binding?.type === "Identifier" ? binding.name as string : unused(ctx, "_")
-      const refine = `${v} is Extract<typeof ${v}, { readonly _tag: ${tag} }> & ${guarded} => ${v}._tag === ${tag} && `
+      const refine = `${v} is Extract<typeof ${v}, { readonly _tag: ${tag} }> & ${guarded} => ${
+        ref(ctx, "effect", "Predicate")
+      }.isTagged(${v}, ${tag}) && `
       if (binding === null) {
         ctx.s.update(arm.start, guard!.start, `${M}.when((${v}): ${refine}${open}`)
         ctx.s.update(guard!.end, arm.body.start, `${shut}, (${arrow}`)

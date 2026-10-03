@@ -109,9 +109,10 @@ const accessor = (ctx: Ctx, name: string, member: Node): string => {
   }))\n`
 }
 
+// a field named `default` without a value is part of the shape (Plan 22 review I1)
 const isDefaultMember = (member: Node): boolean =>
   member.type === "PropertyDefinition" && member.efxLayer === undefined && member.static !== true &&
-  !member.computed && member.key?.name === "default"
+  !member.computed && member.key?.name === "default" && member.value !== null && member.value !== undefined
 
 /** The line range of a member, from its line's start to the end of its line. */
 const memberLine = (ctx: Ctx, member: Node): readonly [number, number] => {
@@ -227,6 +228,18 @@ const referenceService = (node: Node, parent: Node | undefined, ctx: Ctx, defaul
     ctx.s.appendLeft(member.value.end, ",")
   })
   for (const member of effects) {
+    // `Object.assign` would overwrite the reference's own properties (Plan 22 review C1)
+    if (reservedStatics.has(member.key.name) || member.key.name === "defaultValue") {
+      ctx.diagnostics.push(
+        diagnosticWarning(
+          "EFX4003",
+          `No accessor for \`${member.key.name}\`: the name clashes with a Context.Reference property`,
+          member.key.start,
+          member.key.end
+        )
+      )
+      continue
+    }
     entries.push(accessor(ctx, reference, member).replace(/^  static readonly (\w+) = /, "  $1: ").replace(/\n$/, ""))
   }
   ctx.s.appendRight(end, `${entries.length > 0 ? `\n${entries.join(",\n")}` : ""}\n})`)

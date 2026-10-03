@@ -60,3 +60,8 @@ Probing Effect v4:
 - **Inferring the element type:** `Stream.callback` can't; elements would be `unknown`.
 - **`effect* () => { … }` arrows and `effect*` methods:** possible later; declarations cover the
   common case and keep this change small.
+
+## Amendment 1 (Plan 22 final review)
+
+- `effect * name(…)` is a stream when `:` follows the parameters, or `{` on the same line; a `{`
+  on the next line starts a block after a multiplication, as in TypeScript.

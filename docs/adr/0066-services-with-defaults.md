@@ -62,3 +62,10 @@ the class, so a class-based service always shows up as a requirement. There is n
   working, and the service would read differently from every other one.
 - **An effectful default (`default = effect { … }`):** Effect's references build their default
   synchronously; effects belong in a layer.
+
+## Amendment 1 (Plan 22 final review)
+
+- An effect member whose name the reference owns (`name`, `length`, `key`, `use`, `of`, `pipe`,
+  `defaultValue`, …) gets no accessor, with warning EFX4003, as in a class-form service:
+  `Object.assign` would overwrite the reference's own property.
+- A field named `default` without a value is part of the shape, not a default.

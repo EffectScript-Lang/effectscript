@@ -146,8 +146,9 @@ export const efxPlugin = (Base: any): any =>
       if (this.input[i] !== "(") return false
       const end = skipBalancedTokens(this.input, i)
       if (end === -1) return false
-      const after = this.input[skipSpace(this.input, end)]
-      return after === ":" || after === "{"
+      const at = skipSpace(this.input, end)
+      // a `{` on the next line starts a block after a multiplication (Plan 22 review)
+      return this.input[at] === ":" || (this.input[at] === "{" && !lineBreak.test(this.input.slice(end, at)))
     }
 
     /** A block in which `await` is allowed: the body of an effect. */
@@ -820,6 +821,12 @@ export const efxPlugin = (Base: any): any =>
           }
         } else {
           if (property.key.type !== "Identifier") this.unexpected()
+          if (this.keywords.test(property.key.name) || this.reservedWordsStrict.test(property.key.name)) {
+            this.raise(
+              property.key.start,
+              `\`${property.key.name}\` can't be a binding: write \`{ ${property.key.name}: … }\` to match its value`
+            )
+          }
           property.value = null
         }
         node.properties.push(this.finishNode(property, "ObjectMatchProperty"))

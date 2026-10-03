@@ -1225,7 +1225,7 @@ export const label = match (status) {
 Compiles to:
 
 ```ts
-import { Match, Schema } from "effect"
+import { Match, Predicate, Schema } from "effect"
 class Circle extends Schema.TaggedClass<Circle>()("Circle", { radius: Schema.Number }) {}
 class Square extends Schema.TaggedClass<Square>()("Square", { side: Schema.Number }) {}
 const Shape = Schema.Union([Circle, Square])
@@ -1238,13 +1238,13 @@ declare const strict: boolean
 export const size = Match.value(shape).pipe(
   Match.when(
     (c): c is Extract<typeof c, { readonly _tag: "Circle" }> & { readonly "~effectscript/guard": true } =>
-      c._tag === "Circle" && c.radius > 10,
+      Predicate.isTagged(c, "Circle") && c.radius > 10,
     (c) => `big circle ${c.radius}`
   ),
   Match.tag("Circle", ({ radius }) => `circle ${radius}`),
   Match.when(
     (_): _ is Extract<typeof _, { readonly _tag: "Square" }> & { readonly "~effectscript/guard": true } =>
-      _._tag === "Square" && (({ side }) => side === 0)(_),
+      Predicate.isTagged(_, "Square") && (({ side }) => side === 0)(_),
     ({ side }) => "dot"
   ),
   Match.tag("Square", () => "square"),
@@ -1343,7 +1343,7 @@ export const describeEvent = match (event) {
 Compiles to:
 
 ```ts
-import { Match } from "effect"
+import { Match, Predicate } from "effect"
 declare const res: { status: number; body: string }
 type Event = { type: "click"; x: number; y: number } | { type: "key"; key: string }
 declare const event: Event
@@ -1352,7 +1352,8 @@ export const message = Match.value(res).pipe(
   Match.when({ status: 404 }, () => "not found"),
   Match.when(
     (_): _ is Match.Types.WhenMatch<typeof _, { readonly status: 500 }> & { readonly "~effectscript/guard": true } =>
-      _.status === 500 && (({ body }) => body !== "")(_ as Match.Types.WhenMatch<typeof _, { readonly status: 500 }>),
+      Predicate.hasProperty(_, "status") && _.status === 500 &&
+      (({ body }) => body !== "")(_ as Match.Types.WhenMatch<typeof _, { readonly status: 500 }>),
     ({ body }) => `server: ${body}`
   ),
   Match.orElse(() => "ok")

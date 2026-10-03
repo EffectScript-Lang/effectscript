@@ -47,3 +47,10 @@ schema's own data.
 - **A static `Effect.fn` plus a forwarding method:** two declarations for one method, and the
   output no longer reads as the source.
 - **Keeping EFX2002:** the roadmap item exists because people reach for methods on their data.
+
+## Amendment 1 (Plan 22 final review)
+
+- `super` and `arguments` in an `effect` method body (arrows included, nested functions not) are
+  error EFX2009: the body runs in a generator function, where `super` doesn't parse and
+  `arguments` is the generator's.
+- A one-line method with `defer` closes `Effect.gen(…)` before `.pipe(Effect.scoped)`.

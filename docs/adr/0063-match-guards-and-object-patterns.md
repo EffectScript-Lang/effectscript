@@ -67,3 +67,17 @@ Probing Effect v4's types showed:
 - **Identifiers as bindings in object patterns (`{ status: code }`), as in the TC39 proposal:**
   ambiguous with comparing to a constant, which reads the same; shorthand-only binding avoids the
   question.
+
+## Amendment 1 (Plan 22 final review)
+
+- **Tests before reads:** a guarded tag arm tests `Predicate.isTagged(c, "Circle")`, and a guarded
+  object arm tests `Predicate.hasProperty(v, "key")` for each top-level field before comparing it.
+  Reading `c._tag` or `v.status` directly failed to type-check on `Shape | null` or on a union
+  whose members don't all have the field, and would throw on `null` at runtime; `Match.when`'s own
+  object patterns already check this.
+- **Bindings keep their mapping:** an object pattern's shorthand bindings stay the user's text in
+  one parameter (the handler's, or the guard's for a guarded arm), so go-to-definition and rename
+  start from the pattern.
+- **Reserved words:** a reserved word can't be a shorthand binding (`when { default }`); match its
+  value with `{ default: … }`.
+

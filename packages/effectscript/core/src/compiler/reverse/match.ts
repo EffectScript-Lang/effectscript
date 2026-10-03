@@ -140,7 +140,17 @@ const objectPattern = (fields: ReadonlyArray<Field>, binds: ReadonlyArray<Bind>)
   return `{ ${parts.join(", ")} }`
 }
 
-/** The comparisons a guarded object arm makes before its guard, as the forward compiler writes them. */
+/**
+ * The tests a guarded object arm makes before its guard, as the forward compiler writes them:
+ * `Predicate.hasProperty` for each top-level field, then its comparisons.
+ */
+const guardTests = (fields: ReadonlyArray<Field>, P: string, v: string): Array<string> =>
+  fields.flatMap((field) => [
+    `${P}.hasProperty(${v}, ${field.key.startsWith("\"") ? field.key : JSON.stringify(field.key)})`,
+    ...fieldTests([field], v, ".")
+  ])
+
+/** The comparisons of an object pattern's literal fields. */
 const fieldTests = (fields: ReadonlyArray<Field>, base: string, dot: string): Array<string> =>
   fields.flatMap((field) => {
     const access = field.key.startsWith("\"")
@@ -222,6 +232,8 @@ const guardedHead = (ctx: ReverseCtx, M: string, predicate: Node, handler: Node)
     return undefined
   }
   const name = slice(ctx, refined.typeName)
+  const P = importedLocal(ctx.analysis, "effect", "Predicate")
+  if (P === undefined) return undefined
   const fields = fieldsOfType(ctx, args[1]!)
   if (fields === undefined) return undefined
   let head: string
@@ -230,10 +242,10 @@ const guardedHead = (ctx: ReverseCtx, M: string, predicate: Node, handler: Node)
     const tag = fields.length === 1 ? fields[0]! : undefined
     if (tag?.key !== "_tag" || typeof tag.value !== "string" || !isTagName(JSON.parse(tag.value))) return undefined
     head = `when ${JSON.parse(tag.value)}`
-    tests = [`${v}._tag === ${tag.value}`]
+    tests = [`${P}.isTagged(${v}, ${tag.value})`]
   } else if (name === `${M}.Types.WhenMatch`) {
     head = "when "
-    tests = fieldTests(fields, v, ".")
+    tests = guardTests(fields, P, v)
   } else return undefined
   const prefix = tests.map((t) => `${t} && `).join("")
   if (!ctx.source.startsWith(prefix, body.start)) return undefined

@@ -616,7 +616,9 @@ const label = Match.value(status).pipe(
   still needs an unguarded arm or `default`. A guarded tag or object arm compiles to
   `Match.when` with a refinement to the case intersected with a brand
   (`{ readonly "~effectscript/guard": true }`), which types the handler without removing the
-  case; a guarded literal compiles to a plain predicate.
+  case; the arm tests `Predicate.isTagged` or `Predicate.hasProperty` before reading a field, so
+  `null` and union members without the field are safe. A guarded literal compiles to a plain
+  predicate.
 - Arms are separated by newlines, `;`, or `,`.
 - **Output:** if every arm is a tag pattern and there is no `default` → `Match.valueTags`.
   Otherwise → `Match.value(x).pipe(Match.tag | Match.when …, Match.orElse | Match.exhaustive)`.

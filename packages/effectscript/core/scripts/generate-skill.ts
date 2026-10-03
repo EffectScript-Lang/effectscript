@@ -90,15 +90,23 @@ const effectDocs = (): string => {
   ].join("\n")
 }
 
-/** dprint-formatted, as `pnpm lint` keeps every markdown file in the repository. */
+/**
+ * dprint-formatted, as `pnpm lint` keeps every markdown file in the repository. A long line in a
+ * code block can format differently a second time, so it is formatted until it stops changing.
+ */
 const formatted = (file: string, text: string): string => {
-  const result = spawnSync("pnpm", ["exec", "dprint", "fmt", "--stdin", `skills/effectscript/references/${file}`], {
-    input: text,
-    encoding: "utf8",
-    cwd: root
-  })
-  if (result.status !== 0) throw new Error(`dprint failed on ${file}: ${result.stderr}`)
-  return result.stdout
+  let current = text
+  for (let pass = 0; pass < 4; pass++) {
+    const result = spawnSync("pnpm", ["exec", "dprint", "fmt", "--stdin", `skills/effectscript/references/${file}`], {
+      input: current,
+      encoding: "utf8",
+      cwd: root
+    })
+    if (result.status !== 0) throw new Error(`dprint failed on ${file}: ${result.stderr}`)
+    if (result.stdout === current) return current
+    current = result.stdout
+  }
+  throw new Error(`dprint didn't settle on ${file}`)
 }
 
 const files = new Map(
