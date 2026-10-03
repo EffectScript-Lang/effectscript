@@ -132,3 +132,15 @@ describe("reverse: blockers (§6.3)", () => {
     expect(result.again).toBe(result.ts)
   })
 })
+
+describe("reverse: a multi-line effect arrow (Plan 18 Task 4)", () => {
+  it.each([
+    "export const f = effect () =>\n  succeed(1)\n",
+    "export const g = effect (n: number) =>\n    succeed(n)\n      |> map((x) => x + 1)\n",
+    "export const h = effect (n: number) => succeed(n)\n"
+  ])("round-trips %j", (source) => {
+    const ts = toTypeScript(source, { filename: "a.efx" })
+    expect(ts.diagnostics.filter((d) => d.severity === "error")).toEqual([])
+    expect(toEffectScript(ts.code, { filename: "a.efx" }).code).toBe(source)
+  })
+})

@@ -219,11 +219,17 @@ const untracedBody = (ctx: ReverseCtx, call: Node, fn: Node, scoped: boolean, vi
   const body: Node = fn.body
   const only: Node | undefined = body.body.length === 1 ? body.body[0] : undefined
   const value: Node | undefined = only?.type === "ReturnStatement" ? only.argument ?? undefined : undefined
-  const expression = value !== undefined && value.type !== "ObjectExpression" &&
-    value.type !== "SequenceExpression" && ctx.source.slice(body.start, value.start) === "{ return " &&
-    ctx.source.slice(value.end, body.end) === " }"
-  if (expression) {
-    ctx.s.update(body.start, value!.start, "=> ")
+  const plain = value !== undefined && value.type !== "ObjectExpression" &&
+    value.type !== "SequenceExpression"
+  const expression = plain && ctx.source.slice(body.start, value!.start) === "{ return " &&
+    ctx.source.slice(value!.end, body.end) === " }"
+  // `=>` with the body on the next line compiles to `{ return (⏎ e) }` (the ASI guard in transform/effect.ts)
+  const lineBreak = plain && !expression
+    ? /^\{ return \((\s*[\n\r\u2028\u2029]\s*)$/.exec(ctx.source.slice(body.start, value!.start))
+    : null
+  const multiLine = lineBreak !== null && ctx.source.slice(value!.end, body.end) === ") }"
+  if (expression || multiLine) {
+    ctx.s.update(body.start, value!.start, multiLine ? `=>${lineBreak![1]}` : "=> ")
     ctx.s.remove(value!.end, body.end)
     inFrame(ctx, scoped, () => visit(value!, only, true))
   } else {
