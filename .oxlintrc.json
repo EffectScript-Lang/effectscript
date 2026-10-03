@@ -7,6 +7,7 @@
     "**/build",
     "**/docs",
     "packages/effectscript/effect-docs/content",
+    "packages/effectscript/site/src/samples/*/plain.ts",
     "packages/effectscript/**/fixtures/**",
     "**/*.tsbuildinfo",
     "**/CHANGELOG.md",

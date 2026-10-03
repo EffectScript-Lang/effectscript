@@ -1,5 +1,5 @@
 /** Starting points for the playground: a few small ones, then every gallery scenario. */
-import { scenarios } from "../samples/index.ts"
+import { scenarios } from "../samples/scenarios.ts"
 
 const samples = import.meta.glob<string>("../samples/*/app.efx", { query: "?raw", import: "default", eager: true })
 export interface Preset {

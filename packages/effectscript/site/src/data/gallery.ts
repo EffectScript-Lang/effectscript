@@ -5,7 +5,7 @@
  */
 import { toTypeScript } from "effectscript/compiler"
 import { decode, encode } from "gpt-tokenizer/encoding/o200k_base"
-import { scenarios } from "../samples/index.ts"
+import { scenarios } from "../samples/scenarios.ts"
 
 const sources = import.meta.glob<string>("../samples/*/*.{ts,efx}", { query: "?raw", import: "default", eager: true })
 
