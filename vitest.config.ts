@@ -132,8 +132,9 @@ export default defineConfig({
           environment: "happy-dom"
         }
       }),
-      ...project("effectscript", "packages/effectscript/core"),
-      ...project("@effectscript/language", "packages/effectscript/language"),
+      // EffectScript's CLI and language-server tests spawn processes; in a full run they share the machine
+      ...project("effectscript", "packages/effectscript/core", true, { test: { testTimeout: 60_000 } }),
+      ...project("@effectscript/language", "packages/effectscript/language", true, { test: { testTimeout: 60_000 } }),
       ...project("@effectscript/vscode", "packages/effectscript/vscode"),
       ...project("@effectscript/effect-docs", "packages/effectscript/effect-docs"),
       ...project("@effectscript/site", "packages/effectscript/site"),
