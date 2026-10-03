@@ -102,4 +102,21 @@ export effect twice(n: number) {
     expect(read(dir, "lib/b.efx")).toBe(longWay)
     expect(fix(dir, "lib/b.efx").stdout).toContain("lib/b.efx: fixed")
   })
+
+  it("fixes files in strict mode, where EFX8101 and the other strict rules are errors (review I2)", () => {
+    const strict = `// @efx strict\n${longWay}`
+    const dir = project({ "a.efx": strict, "b.efx": "// @efx strict\nexport const id = (x: any) => x\n" })
+    const result = fix(dir)
+    expect(result.stderr).toBe("")
+    expect(result.status).toBe(0)
+    expect(read(dir, "a.efx")).toContain("export const greet = effect {")
+    expect(read(dir, "b.efx")).toBe("// @efx strict\nexport const id = (x: any) => x\n")
+  })
+
+  it("refuses a path that doesn't exist", () => {
+    const dir = project({ "src/a.efx": longWay })
+    const result = fix(dir, "scr")
+    expect(result.status).toBe(1)
+    expect(result.stderr).toMatch(/scr: no such file or directory/)
+  })
 })

@@ -146,7 +146,8 @@ export const createWatchdog = (ms: number, onExpire: () => void) => {
         onExpire()
       }, ms)
     },
-    stop
+    stop,
+    running: () => timer !== undefined
   }
 }
 

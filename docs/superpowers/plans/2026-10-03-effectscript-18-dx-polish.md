@@ -100,3 +100,15 @@ install hints name exact versions.
 `site/src/lib/highlight.ts` and the 63 files of `effect-docs/content/ai-docs` out of every commit,
 so a fresh clone couldn't build the site and lacked the ai-docs edition. Scoped negations in the
 EffectScript section re-include them, and a fresh worktree of `HEAD` is now tested.
+
+**Final review (fresh reviewer, 1 Critical, 3 Important), fixed in one pass with tests that failed
+first:** the written `tsconfig.json` no longer has `rewriteRelativeImportExtensions` (TypeScript
+refused `.efx` imports) and gains Node's types; `efx init` writes an ES module `package.json` when
+there is none; `efx fix` works in strict mode. Regraded to Important and fixed: the playground's
+watchdog no longer trips on a slow first load or back-to-back compiles, and `efx fix` refuses a
+mistyped path.
+
+**Deferred minors:** the manual share-link box goes stale after edits; `setup`'s JSDoc placement
+and the unforced id list; `efx fix` follows directory symlinks without a loop guard; the
+`emitWarning` override is permanent and throws on unusual input; cosmetic differences in what
+`efx fix` drops.

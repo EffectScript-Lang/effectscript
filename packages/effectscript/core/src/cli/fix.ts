@@ -40,7 +40,9 @@ export const fixSource = (
 ): { readonly fixed: string | undefined } | { readonly problem: string } => {
   const options = { filename, ...packageInfo(filename) }
   const before = toTypeScript(source, options)
-  const error = before.diagnostics.find((d) => d.severity === "error")
+  // strict mode makes the strict rules (EFX8xxx) errors; they don't change what a file compiles to,
+  // and EFX8101 is the one this command fixes (review I2)
+  const error = before.diagnostics.find((d) => d.severity === "error" && !/^EFX8\d{3}$/.test(d.code))
   if (error !== undefined) return { problem: `doesn't compile (${error.code} ${error.message})` }
   const back = toEffectScript(before.code, { filename }).code
   // the round-trip contract (ADR-0030): the same TypeScript, or no change
@@ -63,7 +65,13 @@ export const fixProject = (
   io: { readonly out: (line: string) => void; readonly err: (line: string) => void }
 ): number => {
   const files: Array<string> = []
-  for (const entry of options.paths.length === 0 ? ["."] : options.paths) collect(path.resolve(cwd, entry), files)
+  for (const entry of options.paths.length === 0 ? ["."] : options.paths) {
+    if (!fs.existsSync(path.resolve(cwd, entry))) {
+      io.err(`${entry}: no such file or directory`)
+      return 1
+    }
+    collect(path.resolve(cwd, entry), files)
+  }
   let changed = 0
   let failed = 0
   for (const file of files.sort()) {

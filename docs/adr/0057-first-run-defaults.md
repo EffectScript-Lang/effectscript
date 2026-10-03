@@ -26,11 +26,16 @@ minutes:
   program's own included, still prints.
 - **`efx init` writes a `tsconfig.json` when there is none:** `strict`, `exactOptionalPropertyTypes`,
   `noUncheckedIndexedAccess`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`,
-  `verbatimModuleSyntax`, `NodeNext`, and the plugin. An existing `tsconfig.json` is only ever
-  given the plugin.
+  `verbatimModuleSyntax`, `NodeNext`, `types: ["node"]`, and the plugin. It has no
+  `rewriteRelativeImportExtensions`: `efx build` rewrites `./x.efx` imports itself, and with the
+  option TypeScript refuses them (TS2876). An existing `tsconfig.json` is only ever given the
+  plugin. (The Plan 18 review found both; tests now check and build a two-file project.)
+- **`efx init` without a `package.json` writes one,** `{ name, private, "type": "module" }`,
+  because EffectScript compiles to ES modules. An existing `package.json` that isn't an ES module
+  gets a note, not an edit.
 - **Install hints name exact versions and the peers:** `npm i effect @effect/platform-node` for
   what is missing at runtime, and `npm i -D effectscript@<v> @effectscript/language@<v>
-  typescript@6`, where `<v>` is the running `efx`'s version. `efx lsp`, `efx check` and
+  typescript@6 @types/node`, where `<v>` is the running `efx`'s version. `efx lsp`, `efx check` and
   `efx doctor` share the language hint.
 
 ## Consequences

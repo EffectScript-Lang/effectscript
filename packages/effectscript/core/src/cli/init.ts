@@ -113,13 +113,13 @@ const newTsconfig = `{
     "module": "NodeNext",
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
-    "rewriteRelativeImportExtensions": true,
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "skipLibCheck": true,
+    "types": ["node"],
     "outDir": "dist",
     "plugins": [{ "name": "${plugin}" }]
   },
@@ -171,6 +171,15 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
   }
   const pkgPath = path.join(cwd, "package.json")
   let missing: Array<string> = []
+  // EffectScript compiles to ES modules: a new project starts as one (review I3)
+  if (!fs.existsSync(pkgPath)) {
+    fs.writeFileSync(
+      pkgPath,
+      `${JSON.stringify({ name: path.basename(path.resolve(cwd)), private: true, type: "module" }, null, 2)}\n`
+    )
+    out("package.json: wrote a new ES module package")
+    changed = true
+  }
   if (fs.existsSync(pkgPath)) {
     const text = fs.readFileSync(pkgPath, "utf8")
     let pkg: {
@@ -186,6 +195,11 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
       out("package.json isn't valid JSON: fix it, then run efx init again")
       return 1
     }
+    if ((pkg as { type?: unknown }).type !== "module") {
+      out(
+        "package.json: add \"type\": \"module\"; EffectScript compiles to ES modules, which efx build and efx run need"
+      )
+    }
     const indent = /^\{\s*\n([ \t]+)/.exec(text)?.[1] ?? "  "
     const added = scripts.filter(([name]) => pkg.scripts?.[name] === undefined)
     if (added.length > 0) {
@@ -195,7 +209,7 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
       changed = true
     }
     const deps: Record<string, unknown> = { ...pkg.dependencies, ...pkg.devDependencies }
-    missing = ["effect", "@effect/platform-node", "effectscript", plugin, "typescript", "blume"]
+    missing = ["effect", "@effect/platform-node", "effectscript", plugin, "typescript", "@types/node", "blume"]
       .filter((name) => deps[name] === undefined)
     if (setUpDocs(cwd, pkg, out)) changed = true
   }

@@ -76,6 +76,12 @@ describe("the playground protocol (Plan 16 Task 4, ADR-0054)", () => {
       expect(fired).toEqual([])
       vi.advanceTimersByTime(2000)
       expect(fired).toEqual(["restart"])
+      // `running` lets the page arm it once per burst of requests, not on every keystroke
+      expect(dog.running()).toBe(false)
+      dog.start()
+      expect(dog.running()).toBe(true)
+      dog.stop()
+      expect(dog.running()).toBe(false)
     } finally {
       vi.useRealTimers()
     }

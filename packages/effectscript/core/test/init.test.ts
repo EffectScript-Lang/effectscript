@@ -93,11 +93,51 @@ describe("efx init (Plan 8 Task 5)", { timeout: 120_000 }, () => {
 const packages = path.resolve(import.meta.dirname, "../../..")
 const version = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "../package.json"), "utf8")).version
 
+/** The project's packages as npm installs them: `effect`'s published build, Node's types, the tools. */
+const installed = (dir: string) => {
+  const effectDir = path.join(packages, "effect")
+  // a fresh checkout has no dist/ yet (as in language/test/adoption.test.ts)
+  if (!fs.existsSync(path.join(effectDir, "dist/index.js"))) {
+    const built = spawnSync("pnpm", ["exec", "tsc", "-b", "tsconfig.json"], { cwd: effectDir, encoding: "utf8" })
+    if (built.status !== 0) throw new Error(`building effect failed:\n${built.stdout}${built.stderr}`)
+  }
+  const effect = path.join(dir, "node_modules/effect")
+  fs.mkdirSync(effect, { recursive: true })
+  const pkg = JSON.parse(fs.readFileSync(path.join(effectDir, "package.json"), "utf8"))
+  fs.writeFileSync(path.join(effect, "package.json"), JSON.stringify({ ...pkg, exports: pkg.publishConfig.exports }))
+  // copied, not linked: a link's real path sits under the workspace package.json, whose exports are src/
+  fs.cpSync(path.join(effectDir, "dist"), path.join(effect, "dist"), {
+    recursive: true,
+    filter: (file) => !file.endsWith(".map")
+  })
+  const language = path.join(packages, "effectscript/language")
+  fs.mkdirSync(path.join(dir, "node_modules/@effectscript"), { recursive: true })
+  fs.mkdirSync(path.join(dir, "node_modules/@types"), { recursive: true })
+  fs.symlinkSync(language, path.join(dir, "node_modules/@effectscript/language"))
+  fs.symlinkSync(
+    fs.realpathSync(path.join(language, "node_modules/typescript")),
+    path.join(dir, "node_modules/typescript")
+  )
+  fs.symlinkSync(
+    fs.realpathSync(path.join(language, "node_modules/@types/node")),
+    path.join(dir, "node_modules/@types/node")
+  )
+}
+const checkIn = (dir: string) =>
+  spawnSync(process.execPath, [efx, "check"], {
+    cwd: dir,
+    encoding: "utf8",
+    env: { ...process.env, EFFECTSCRIPT_DEV: "1" }
+  })
+
 describe("efx init in a new project (Plan 18 Task 2, ADR-0057)", { timeout: 120_000 }, () => {
-  it("writes the strictest tsconfig.json, with the plugin, and efx check uses it", () => {
+  it("writes the strictest tsconfig.json, with the plugin and Node's types, and efx check uses it", () => {
     const dir = project({
       "package.json": "{\n  \"name\": \"app\",\n  \"type\": \"module\"\n}\n",
-      "app.efx": "export effect hello(name: string) {\n  return `hi ${name}`\n}\n\nexport const n: number = \"no\"\n"
+      "util.efx": "export effect double(n: number) {\n  return n * 2\n}\n",
+      // an .efx import, and Node's globals (review C1, I4)
+      "app.efx":
+        "import { double } from \"./util.efx\"\n\nexport effect main() {\n  return await double(process.argv.length)\n}\n"
     })
     const result = init(dir)
     expect(result.status).toBe(0)
@@ -110,25 +150,42 @@ describe("efx init in a new project (Plan 18 Task 2, ADR-0057)", { timeout: 120_
       noImplicitOverride: true,
       noPropertyAccessFromIndexSignature: true,
       verbatimModuleSyntax: true,
+      types: ["node"],
       plugins: [{ name: "@effectscript/language" }]
     })
-    // the project's own packages, from the workspace
-    fs.mkdirSync(path.join(dir, "node_modules/@effectscript"), { recursive: true })
-    fs.symlinkSync(path.join(packages, "effect"), path.join(dir, "node_modules/effect"))
-    fs.symlinkSync(path.join(packages, "effectscript/language"), path.join(dir, "node_modules/@effectscript/language"))
-    fs.symlinkSync(
-      fs.realpathSync(path.join(packages, "effectscript/language/node_modules/typescript")),
-      path.join(dir, "node_modules/typescript")
-    )
-    const check = spawnSync(process.execPath, [efx, "check"], {
+    installed(dir)
+    const clean = checkIn(dir)
+    expect(clean.stdout + clean.stderr).toBe("")
+    expect(clean.status).toBe(0)
+    const build = spawnSync(process.execPath, [efx, "build"], {
       cwd: dir,
       encoding: "utf8",
       env: { ...process.env, EFFECTSCRIPT_DEV: "1" }
     })
-    expect(check.stdout + check.stderr).toMatch(
-      /app\.efx[:(]5[:,]\d+\)?:? - error TS2322|app\.efx\(5,\d+\): error TS2322/
-    )
-    expect(check.status).not.toBe(0)
+    expect(build.stderr).toBe("")
+    expect(build.status).toBe(0)
+    expect(fs.readFileSync(path.join(dir, "dist/app.js"), "utf8")).toContain("./util.js")
+    fs.writeFileSync(path.join(dir, "bad.efx"), "export const n: number = \"no\"\n")
+    const bad = checkIn(dir)
+    expect(bad.stdout + bad.stderr).toMatch(/bad\.efx[:(]1[:,]\d+\)?:? - error TS2322|bad\.efx\(1,\d+\): error TS2322/)
+    expect(bad.status).not.toBe(0)
+  })
+
+  it("starts a package.json as an ES module when there is none (review I3)", () => {
+    const dir = project({})
+    const result = init(dir)
+    expect(result.status).toBe(0)
+    expect(JSON.parse(read(dir, "package.json"))).toMatchObject({ private: true, type: "module" })
+    expect(result.stdout).toContain("package.json: wrote")
+    expect(result.stdout).toContain("npm i effect @effect/platform-node")
+  })
+
+  it("says when package.json isn't an ES module, without changing it", () => {
+    const text = "{\n  \"name\": \"app\"\n}\n"
+    const dir = project({ "package.json": text, "tsconfig.json": "{}\n" })
+    const result = init(dir)
+    expect(result.stdout).toContain("\"type\": \"module\"")
+    expect(JSON.parse(read(dir, "package.json")).type).toBeUndefined()
   })
 
   it("names the Effect peers and pins EffectScript's packages to this version", () => {

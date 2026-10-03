@@ -86,8 +86,12 @@ export default function Playground() {
         fresh.onmessage = onMessage
         return fresh
       }
+      // the watchdog guards compiles, not loading: it is armed only once the worker has answered,
+      // and any answer shows the worker is alive (Plan 18 review)
+      let ready = false
       const watchdog = createWatchdog(5000, () => {
         worker.terminate()
+        ready = false
         worker = spawn()
         setProblems([{
           code: "EFX0000",
@@ -98,11 +102,13 @@ export default function Playground() {
           endLine: 1,
           endColumn: 1
         }])
+        // the new worker gets the newest code, once
+        request(lastEdited)
       })
       const request = (side: Side) => {
         const seq = tracker.next()
         const editor = side === "efx" ? efx : ts
-        watchdog.start()
+        if (ready && !watchdog.running()) watchdog.start()
         worker.postMessage({
           seq,
           direction: side === "efx" ? "toTypeScript" : "toEffectScript",
@@ -111,7 +117,12 @@ export default function Playground() {
       }
       function onMessage(event: MessageEvent<Response>) {
         const response = event.data
-        if (!tracker.accept(response.seq)) return // a newer request is on its way
+        ready = true
+        if (!tracker.accept(response.seq)) {
+          // still working through older requests: alive, and a newer one is on its way
+          watchdog.start()
+          return
+        }
         watchdog.stop()
         const pane = paneToUpdate(response)
         if (pane !== undefined) {
@@ -165,6 +176,7 @@ export default function Playground() {
       setReady(true)
       cleanups.push(
         () => window.removeEventListener("hashchange", onHash),
+        () => clearTimeout(timer),
         () => watchdog.stop(),
         () => worker.terminate(),
         () => efx.dispose(),
