@@ -64,6 +64,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0055](0055-versioning-notes-and-packing-in-the-fork.md) | How EffectScript is versioned, noted and packed in a fork whose changesets are upstream's | Accepted, amended |
 | [0056](0056-efx-fix.md) | `efx fix` rewrites through the round trip, and only EFX8101 | Accepted |
 | [0057](0057-first-run-defaults.md) | The CLI's defaults for a first run | Accepted |
+| [0058](0058-tree-sitter-grammar-and-zed.md) | A tree-sitter grammar that extends TypeScript's, and a Zed extension on it | Accepted |
 
 ## Template
 

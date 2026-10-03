@@ -87,3 +87,28 @@ ADR-0036 (coordinates).
 - The language README's editor section, the site's editor guide (generated from it), and
   `RELEASING.md` steps for the grammar repository and the Zed extension.
 - ADR-0058, spec §7.4 status, COMPATIBILITY, and this plan's execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Tasks 2 and 3 were one change:** the declarations and expressions share rules and conflicts.
+- **The superset test compares files `tree-sitter-typescript` parses cleanly.** On its own ERROR
+  files the two grammars recover differently, and error recovery isn't a contract.
+- **`await a |> f` parses as `(await a) |> f`;** the compiler awaits the whole pipeline. Matching
+  it needs more than precedence, and highlighting is the same.
+- **Several `catch` clauses per `try`** (ADR-0010); a single-catch `try` keeps TypeScript's tree.
+- **One self-contained `highlights.scm`** in the order Neovim and Zed expect (later patterns win),
+  and a Helix variant that inherits Helix's TypeScript queries after EffectScript's patterns.
+- **`efx setup` writes the grammar settings only after the grammar repository is published:** a
+  config naming an unpublished repository fails. The README documents them, with
+  `scripts/export.mjs` as the local stand-in, and `efx setup` now points Zed users at the extension.
+- **The wasm32-wasip2 build test is opt-in:** installing a rustup target changes the user's
+  toolchain. `cargo test` checks the crate on the host, and Zed builds the wasm itself.
+- **The Zed extension starts the project's `efx`, then PATH's.**
+
+**Found while doing it:** named precedences only compare within one list, so `|>` first had no
+relation to calls or `+`; the auto-added conflicts hid that, and the trees were wrong until the
+pipeline joined JavaScript's operator list.

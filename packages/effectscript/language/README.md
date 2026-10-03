@@ -55,9 +55,54 @@ Helix highlights the language with the TypeScript grammar. Give it TypeScript's 
 line, `; inherits: typescript`, in each of `highlights.scm`, `textobjects.scm`, `indents.scm`,
 `locals.scm` and `injections.scm`, under `~/.config/helix/runtime/queries/effectscript/`.
 
-**Zed:** registering a new language takes a Zed extension, which is planned. **Other LSP
-clients** (Emacs, Sublime Text, JetBrains through LSP4IJ): run `efx lsp` over stdio for `*.efx`
-files, started in the project root.
+**Zed:** the EffectScript extension (`packages/effectscript/zed`) brings the grammar, the outline,
+indentation and `efx lsp`. Until it is in Zed's extension registry, build a dev extension with
+`node packages/effectscript/zed/scripts/dev.mjs --out <dir>`, then run "zed: install dev
+extension" and pick `<dir>/extension`.
+
+**Other LSP clients** (Emacs, Sublime Text, JetBrains through LSP4IJ): run `efx lsp` over stdio for
+`*.efx` files, started in the project root.
+
+### Tree-sitter
+
+The `tree-sitter-effectscript` grammar (`packages/effectscript/tree-sitter`, ADR-0058) parses
+every EffectScript construct, where TypeScript's grammar stops at the first `effect` or `|>`. Its
+repository, `EffectScript-Lang/tree-sitter-effectscript`, holds the generated parser and the
+queries. Until it is published, `node packages/effectscript/tree-sitter/scripts/export.mjs --out
+
+<dir> --git` writes the same repository locally, and the settings below take `<dir>` in place of
+the URL.
+
+- **Neovim, with nvim-treesitter (main branch):**
+
+  ```lua
+  vim.api.nvim_create_autocmd("User", {
+    pattern = "TSUpdate",
+    callback = function()
+      require("nvim-treesitter.parsers").effectscript = {
+        install_info = { url = "https://github.com/EffectScript-Lang/tree-sitter-effectscript", queries = "queries" },
+      }
+    end,
+  })
+  vim.treesitter.language.register("effectscript", "effectscript")
+  ```
+
+  Then `:TSInstall effectscript`.
+
+- **Helix:** in `languages.toml`, point the language at the grammar, then run `hx --grammar fetch`
+  and `hx --grammar build`. Copy the repository's `queries/helix/highlights.scm` to
+  `~/.config/helix/runtime/queries/effectscript/` (it puts EffectScript's patterns before Helix's
+  TypeScript ones, because in Helix the first pattern wins).
+
+  ```toml
+  [[language]]
+  name = "effectscript"
+  grammar = "effectscript"
+
+  [[grammar]]
+  name = "effectscript"
+  source = { git = "https://github.com/EffectScript-Lang/tree-sitter-effectscript", rev = "main" }
+  ```
 
 Requires `typescript@^6` (the JS compiler API). TypeScript 7 native has no plugin API yet. See
 `../COMPATIBILITY.md` for what is tested on which host.

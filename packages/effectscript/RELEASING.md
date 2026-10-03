@@ -33,7 +33,7 @@ field point at `EffectScript-Lang/effect-lang` (ADR-0036).
 | `HOMEBREW_TAP_TOKEN`         | repository secret                       | the release workflow's tap job (step 7)   |
 | `VSCE_PAT`                   | your machine                            | step 9, publisher `effectscript`          |
 | `OVSX_PAT`                   | your machine                            | step 9, Open VSX namespace `effectscript` |
-| Cloudflare account and token | your machine                            | step 10                                   |
+| Cloudflare account and token | your machine                            | step 12                                   |
 
 `HOMEBREW_TAP_TOKEN` is a fine-grained token with "Contents: read and write" on
 `EffectScript-Lang/homebrew-tap` only.
@@ -170,7 +170,29 @@ npx ovsx publish packages/effectscript/dist-pack/effectscript-<version>.vsix --p
 
 For a stable version, drop `--pre-release` from both.
 
-## 10. The site
+## 10. The tree-sitter grammar
+
+Neovim, Helix and Zed compile the grammar from a git repository that holds the generated parser
+(ADR-0058). Create `EffectScript-Lang/tree-sitter-effectscript` once, then for each release:
+
+```bash
+node packages/effectscript/tree-sitter/scripts/export.mjs --out ../tree-sitter-effectscript
+```
+
+Commit the result in that repository, tag it `v<version>`, and push. Note the commit's SHA for
+step 11.
+
+## 11. The Zed extension
+
+Set `rev` under `[grammars.effectscript]` in `packages/effectscript/zed/extension.toml` to the
+grammar's commit from step 10, and commit that. Then open a pull request to
+`zed-industries/extensions` that adds `packages/effectscript/zed` (as a submodule of this
+repository at that commit) under the id `effectscript`, as their README describes.
+
+Before that, `node packages/effectscript/zed/scripts/dev.mjs --out <dir>` builds a dev extension
+with the grammar from a local repository, to try in Zed with "zed: install dev extension".
+
+## 12. The site
 
 ```bash
 pnpm --filter @effectscript/site build

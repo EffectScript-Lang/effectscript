@@ -312,7 +312,8 @@ export const plan = (found: ReadonlyArray<Detected>, options: PlanOptions): Arra
         actions.push(
           manual(
             editor,
-            `Zed needs an EffectScript extension (planned); until then, use \`${command}\` as a language server for *.efx`
+            "install the EffectScript extension (Zed → Extensions → EffectScript): it highlights .efx with the " +
+              `EffectScript grammar and starts \`${command}\``
           )
         )
         break

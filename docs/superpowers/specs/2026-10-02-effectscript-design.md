@@ -1296,6 +1296,12 @@ Gaps that dogfooding found in the constructs, and how the CLI works around them:
   `require(esm)`. Icons come from `brand/icons/editor`.
 - **Tested:** the `.vsix` is tested end to end in VS Code 1.138, in a throwaway profile.
 
+**Other editors (Plan 19, ADR-0058):** `tree-sitter-effectscript` extends TypeScript's
+tree-sitter grammar with every EffectScript construct, for highlighting, folding, outlines and
+indentation in Neovim, Helix and Zed. A Zed extension (`packages/effectscript/zed`) uses it and
+starts `efx lsp`. The grammar repository and the Zed extension are publish steps
+(`RELEASING.md` steps 10–11).
+
 ---
 
 ### 7.5 Distribution and onboarding: from zero to EffectScript in one minute

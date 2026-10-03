@@ -1,8 +1,12 @@
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
+import * as os from "node:os"
 import * as path from "node:path"
 import { parse } from "smol-toml"
-import { describe, expect, it } from "vitest"
+import { afterAll, describe, expect, it, vi } from "vitest"
+
+// the grammar is generated and compiled alongside other tests
+vi.setConfig({ testTimeout: 120_000 })
 
 const root = path.join(import.meta.dirname, "..")
 const grammar = path.join(root, "../tree-sitter")
@@ -73,5 +77,23 @@ describe("the Zed extension (Plan 19 Task 5, ADR-0058)", () => {
       encoding: "utf8"
     })
     expect(result.status, result.stderr).toBe(0)
+  }, 600_000)
+
+  it("builds a dev extension whose grammar is a local repository (scripts/dev.mjs)", () => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), "efx-zed-dev-"))
+    afterAll(() => fs.rmSync(work, { recursive: true, force: true }))
+    const result = spawnSync(process.execPath, [path.join(root, "scripts/dev.mjs"), "--out", work], {
+      encoding: "utf8"
+    })
+    expect(result.stderr).toBe("")
+    const extension = result.stdout.trim()
+    const manifest = parse(fs.readFileSync(path.join(extension, "extension.toml"), "utf8")) as {
+      grammars: { effectscript: { repository: string; rev: string } }
+    }
+    const grammarRepo = path.join(work, "tree-sitter-effectscript")
+    expect(manifest.grammars.effectscript.repository).toBe(`file://${grammarRepo}`)
+    const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: grammarRepo, encoding: "utf8" }).stdout.trim()
+    expect(manifest.grammars.effectscript.rev).toBe(head)
+    expect(fs.existsSync(path.join(extension, "languages/effectscript/highlights.scm"))).toBe(true)
   }, 600_000)
 })
