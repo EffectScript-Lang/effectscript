@@ -69,6 +69,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0059](0059-efx-setup-upgrades-and-config-locations.md) | `efx setup` upgrades what it installed, and follows the tools' config variables | Accepted |
 | [0060](0060-the-repository-is-effectscript-lang-effectscript.md) | The repository is `EffectScript-Lang/effectscript` | Accepted |
 | [0061](0061-the-private-repository-is-effectscript-internal.md) | The private repository is `EffectScript-Lang/effectscript-internal` | Accepted |
+| [0062](0062-release-order-grammar-pin-and-latest.md) | The grammar is pinned before the tag, and only the newest release is latest | Accepted |
 
 ## Template
 

@@ -4,7 +4,7 @@ Generated from the compiler's test fixtures (`pnpm codegen`). Each example shows
 EffectScript and the TypeScript it compiles to, which the golden tests check. Read the
 EffectScript to learn the form; read the TypeScript to see exactly what it means.
 
-## `effect` functions, blocks, `await` and `throw` (§4.1–4.3)
+## `effect` functions, blocks, `await` and `throw`
 
 <!-- fixtures/effect -->
 
@@ -343,7 +343,7 @@ const check = Effect.fn("check")(function*(n: number): Effect.fn.Return<number, 
 })
 ```
 
-## Resources: `defer`, `using … await`, `for await` (§4.3)
+## Resources: `defer`, `using … await`, `for await`
 
 <!-- fixtures/resources -->
 
@@ -412,7 +412,7 @@ export const block = Effect.scoped(Effect.gen(function*() {
 }))
 ```
 
-## `try` / `catch` / `finally` inside `effect` (§4.4)
+## `try` / `catch` / `finally` inside `effect`
 
 <!-- fixtures/try -->
 
@@ -520,7 +520,7 @@ const plain = Effect.fn("plain")(function*(json: string) {
 })
 ```
 
-## `schema`: data types that are TypeScript types (§4.6)
+## `schema`: data types that are TypeScript types
 
 <!-- fixtures/schema -->
 
@@ -615,7 +615,7 @@ export class Product extends Schema.Class<Product>("Product")({
 }) {}
 ```
 
-## `error` (§4.7)
+## `error`
 
 <!-- fixtures/error -->
 
@@ -658,7 +658,7 @@ const find = Effect.fn("find")(function*(id: string): Effect.fn.Return<string, U
 })
 ```
 
-## `service` (§4.8)
+## `service`
 
 <!-- fixtures/service -->
 
@@ -761,7 +761,7 @@ export const firstName = Effect.fn("firstName")(function*(id: string) {
 })
 ```
 
-## Top-level `layer` (§4.8, §4.14)
+## Top-level `layer`
 
 <!-- fixtures/layer -->
 
@@ -830,7 +830,7 @@ export const Worker = Layer.effectDiscard(Effect.gen(function*() {
 }))
 ```
 
-## Pipeline `|>` (§4.9)
+## Pipeline `|>`
 
 <!-- fixtures/pipeline -->
 
@@ -896,7 +896,7 @@ const awaited = Effect.fn("awaited")(function*() {
 })
 ```
 
-## `main` (§4.10, §4.16)
+## `main`
 
 <!-- fixtures/main -->
 
@@ -959,7 +959,7 @@ NodeRuntime.runMain(
 )
 ```
 
-## `match` (§4.11)
+## `match`
 
 <!-- fixtures/match -->
 
@@ -1027,7 +1027,7 @@ export const scaled = Effect.fn("scaled")(function*() {
 })
 ```
 
-## Other adopted proposals (§4.12)
+## Other adopted proposals
 
 <!-- fixtures/proposals -->
 
@@ -1103,7 +1103,7 @@ const describeId = Effect.fn("describeId")(function*(id: string) {
 })
 ```
 
-## Prelude: automatic imports and builtins (§4.13)
+## Prelude: automatic imports and builtins
 
 <!-- fixtures/prelude -->
 
@@ -1160,7 +1160,7 @@ export const readConfig = Effect.fn("readConfig")(function*(path: string) {
 })
 ```
 
-## `config` (§4.14)
+## `config`
 
 <!-- fixtures/config -->
 
@@ -1191,7 +1191,7 @@ export const AppConfig = Config.all({
 })
 ```
 
-## `test` / `describe` on `@effect/vitest` (§4.14)
+## `test` / `describe` on `@effect/vitest`
 
 <!-- fixtures/test -->
 
@@ -1281,7 +1281,7 @@ layer(Users.layerTest)("with a shared layer", (it) => {
 })
 ```
 
-## `api` / `group` / `impl`: HttpApi (§4.14)
+## `api` / `group` / `impl`: HttpApi
 
 <!-- fixtures/http -->
 
@@ -1403,7 +1403,7 @@ export const UsersHandlers = HttpApiBuilder.group(
 ).pipe(Layer.provide(Users.layer))
 ```
 
-## `command`: CLIs on `effect/cli` (§4.14)
+## `command`: CLIs on `effect/cli`
 
 <!-- fixtures/cli -->
 
@@ -1459,7 +1459,7 @@ export const create = Command.make(
 ).pipe(Command.withDescription("Create a task"))
 ```
 
-## `atom`: reactive state (§4.14)
+## `atom`: reactive state
 
 <!-- fixtures/atom -->
 
@@ -1493,7 +1493,7 @@ export const greeting = Atom.make(Effect.gen(function*() {
 }))
 ```
 
-## Ambient capture: `console`, `Date`, `Math`, `process.env` (§4.15)
+## Ambient capture: `console`, `Date`, `Math`, `process.env`
 
 <!-- fixtures/ambient -->
 
@@ -1534,7 +1534,7 @@ export function plain() {
 }
 ```
 
-## Name hygiene: what the compiler generates never clashes with your names (§5)
+## Name hygiene: what the compiler generates never clashes with your names
 
 <!-- fixtures/hygiene -->
 

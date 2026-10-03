@@ -2,7 +2,7 @@
 
 These are the steps for publishing EffectScript, in order. Steps 3 to 5 are local and can be re-run
 safely: a changelog section counts as released only once its `effectscript@<version>` tag exists.
-From step 6 on, each step publishes something and can't be undone. The
+From step 6 on, most steps publish something that can't be undone. The
 decisions behind the steps are in ADR-0015 (lockstep versions), ADR-0036 (GitHub coordinates),
 ADR-0038 (install channels), ADR-0041 (the `.vsix`) and ADR-0055 (versions, notes and packing in
 this fork).
@@ -26,14 +26,14 @@ field point at `EffectScript-Lang/effectscript` (ADR-0036, ADR-0060).
 
 ## 2. Secrets and accounts (once)
 
-| Secret or account            | Where                                   | Used by                                   |
-| ---------------------------- | --------------------------------------- | ----------------------------------------- |
-| npm org `effectscript`       | npmjs.com (it exists; you're its owner) | `@effectscript/language`                  |
-| npm login                    | your machine: `npm login`               | step 8                                    |
-| `HOMEBREW_TAP_TOKEN`         | repository secret                       | the release workflow's tap job (step 7)   |
-| `VSCE_PAT`                   | exported in your shell                  | step 9, publisher `effectscript`          |
-| `OVSX_PAT`                   | exported in your shell                  | step 9, Open VSX namespace `effectscript` |
-| Cloudflare account and token | your machine                            | step 12                                   |
+| Secret or account            | Where                                   | Used by                                    |
+| ---------------------------- | --------------------------------------- | ------------------------------------------ |
+| npm org `effectscript`       | npmjs.com (it exists; you're its owner) | `@effectscript/language`                   |
+| npm login                    | your machine: `npm login`               | step 10                                    |
+| `HOMEBREW_TAP_TOKEN`         | repository secret                       | the release workflow's tap job (step 9)    |
+| `VSCE_PAT`                   | exported in your shell                  | step 11, publisher `effectscript`          |
+| `OVSX_PAT`                   | exported in your shell                  | step 11, Open VSX namespace `effectscript` |
+| Cloudflare account and token | your machine                            | step 13                                    |
 
 `HOMEBREW_TAP_TOKEN` is a fine-grained token with "Contents: read and write" on
 `EffectScript-Lang/homebrew-tap` only.
@@ -102,7 +102,43 @@ pnpm check
 pnpm vitest --run --project effectscript --project @effectscript/language --project @effectscript/vscode --project @effectscript/effect-docs --project @effectscript/site --project @effectscript/examples
 ```
 
-## 6. Tag the binaries
+## 6. The tree-sitter grammar
+
+Neovim, Helix and Zed compile the grammar from a git repository that holds the generated parser
+(ADR-0058). Create `EffectScript-Lang/tree-sitter-effectscript` once and clone it next to this
+repository, then for each release:
+
+```bash
+node packages/effectscript/tree-sitter/scripts/export.mjs --out ../tree-sitter-effectscript --git
+```
+
+Push that commit, and tag it `v<version>`:
+
+```bash
+git -C ../tree-sitter-effectscript push origin HEAD
+```
+
+```bash
+git -C ../tree-sitter-effectscript tag v<version> && git -C ../tree-sitter-effectscript push origin v<version>
+```
+
+The export prints the commit's SHA, for step 7. When the grammar didn't change, it prints the
+existing commit, and the tag goes on that.
+
+## 7. Pin the grammar in the Zed extension
+
+Zed fetches the grammar at the commit named in `packages/effectscript/zed/extension.toml`, and the
+Zed extension is published from this repository's tagged commit (step 12). So the pin goes in
+before the tag:
+
+```bash
+node packages/effectscript/core/scripts/release.ts zed --rev <sha>
+```
+
+It takes only a full 40-character SHA: a branch or tag name could move after the release. Commit
+`extension.toml` with the version change.
+
+## 8. Tag the binaries
 
 The tag goes first: if a binary fails to build, nothing is on npm yet, and the version can still
 be fixed and re-tagged. npm never lets a version be published twice.
@@ -121,18 +157,20 @@ The tag starts `.github/workflows/effectscript-release.yml`, which:
 - builds the seven standalone binaries and smoke-tests the native ones;
 - creates the GitHub release with the archives, `SHASUMS256.txt` and `install.sh`.
 
-Wait for the workflow to pass before step 8.
+Wait for the workflow to pass before step 10.
 
-## 7. The Homebrew tap
+## 9. The Homebrew tap
 
-The same workflow's last job writes `Formula/effectscript.rb` to `EffectScript-Lang/homebrew-tap`
-with the new checksums. Check it afterwards:
+For the newest release, the same workflow's last job writes `Formula/effectscript.rb` to `EffectScript-Lang/homebrew-tap`
+with the new checksums; a run for an older tag leaves the formula, and the "latest" release, alone.
+A re-run replaces the release's assets, and commits nothing when the formula is unchanged. Check it
+afterwards:
 
 ```bash
 brew install EffectScript-Lang/tap/effectscript && efx --version
 ```
 
-## 8. Publish to npm
+## 10. Publish to npm
 
 `effectscript` goes first, because `@effectscript/language` depends on its exact version.
 
@@ -151,7 +189,7 @@ npm publish packages/effectscript/dist-pack/effectscript-language-<version>.tgz 
 After the first stable release, a stable version goes to `latest` and an alpha to `--tag alpha`,
 so `latest` stays stable.
 
-## 9. The VS Code extension
+## 11. The VS Code extension
 
 ```bash
 node packages/effectscript/vscode/scripts/package.ts --out packages/effectscript/dist-pack/effectscript-<version>.vsix
@@ -173,29 +211,36 @@ pnpm dlx ovsx@0 publish packages/effectscript/dist-pack/effectscript-<version>.v
 
 For a stable version, drop `--pre-release` from both.
 
-## 10. The tree-sitter grammar
+## 12. The Zed extension
 
-Neovim, Helix and Zed compile the grammar from a git repository that holds the generated parser
-(ADR-0058). Create `EffectScript-Lang/tree-sitter-effectscript` once, then for each release:
+Zed's extensions are published from `zed-industries/extensions`, which holds each extension as a
+git submodule. In a fork of that repository:
 
 ```bash
-node packages/effectscript/tree-sitter/scripts/export.mjs --out ../tree-sitter-effectscript
+git submodule add https://github.com/EffectScript-Lang/effectscript.git extensions/effectscript
 ```
 
-Commit the result in that repository, tag it `v<version>`, and push. Note the commit's SHA for
-step 11.
+```bash
+git -C extensions/effectscript checkout effectscript@<version>
+```
 
-## 11. The Zed extension
+Then add the entry to `extensions.toml`, with `path` because the extension is a subfolder of this
+repository, and `version` equal to the one in `extension.toml`:
 
-Set `rev` under `[grammars.effectscript]` in `packages/effectscript/zed/extension.toml` to the
-grammar's commit from step 10, and commit that. Then open a pull request to
-`zed-industries/extensions` that adds `packages/effectscript/zed` (as a submodule of this
-repository at that commit) under the id `effectscript`, as their README describes.
+```toml
+[effectscript]
+submodule = "extensions/effectscript"
+path = "packages/effectscript/zed"
+version = "<version>"
+```
+
+Run `pnpm sort-extensions`, commit, and open the pull request. Later releases move the submodule
+to the new tag and change `version`.
 
 Before that, `node packages/effectscript/zed/scripts/dev.mjs --out <dir>` builds a dev extension
 with the grammar from a local repository, to try in Zed with "zed: install dev extension".
 
-## 12. The site
+## 13. The site
 
 ```bash
 pnpm --filter @effectscript/site build

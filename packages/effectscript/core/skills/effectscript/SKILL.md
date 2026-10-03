@@ -56,6 +56,21 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
   xs.map(f)` doesn't do what it looks like (EFX8112).
 - **Handle errors with `try`:** `catch (e: NotFound)` catches by tag, and a final untyped `catch`
   catches the rest, defects included.
+- **Branch on a union with `match`:** a `when` clause per case, checked for exhaustiveness. Match
+  a `schema` union's cases by name, or literals with a `default`:
+
+  ```efx
+  schema Shape =
+    | Circle { radius: number }
+    | Square { side: number }
+
+  export const area = (shape: Shape) =>
+    match (shape) {
+      when Circle({ radius }): Math.PI * radius ** 2
+      when Square({ side }): side ** 2
+    }
+  ```
+
 - **Clean up resources with `defer`** (Go-style, in reverse order) and `using x = await acquire`.
 
 ## `async` ↔ `effect`

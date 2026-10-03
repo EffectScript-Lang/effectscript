@@ -33,9 +33,30 @@ const option = (args: ReadonlyArray<string>, name: string): Array<string> =>
   args.flatMap((arg, i) => (arg === name && args[i + 1] !== undefined ? [args[i + 1]!] : []))
 
 const exec = (command: string, args: ReadonlyArray<string>, cwd: string): void => {
-  const result = spawnSync(command, args, { cwd, stdio: ["ignore", "inherit", "inherit"] })
+  // macOS tar would add the files' extended attributes (quarantine, provenance) as `._` entries
+  const result = spawnSync(command, args, {
+    cwd,
+    stdio: ["ignore", "inherit", "inherit"],
+    env: { ...process.env, COPYFILE_DISABLE: "1" }
+  })
   if (result.error !== undefined) throw new Error(`${command}: ${result.error.message}`)
   if (result.status !== 0) throw new Error(`${command} ${args.join(" ")} exited with ${result.status}`)
+}
+
+/** The skill's files, as npm packs them (`skills/**\/*.md`): Markdown only, by path. */
+export const skillFiles = (skillRoot: string): Array<readonly [string, string]> => {
+  const skill: Array<readonly [string, string]> = []
+  const collect = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) collect(full)
+      else if (entry.name.endsWith(".md")) {
+        skill.push([path.relative(skillRoot, full).split(path.sep).join("/"), fs.readFileSync(full, "utf8")])
+      }
+    }
+  }
+  collect(skillRoot)
+  return skill
 }
 
 const build = (args: ReadonlyArray<string>): void => {
@@ -84,16 +105,7 @@ const build = (args: ReadonlyArray<string>): void => {
       path.join(work, "effectscript.vsix")
     ], work)
     // `efx skill` (ADR-0051): the agent skill's files
-    const skillRoot = path.join(root, "skills/effectscript")
-    const skill: Array<readonly [string, string]> = []
-    const collect = (dir: string) => {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
-        const full = path.join(dir, entry.name)
-        if (entry.isDirectory()) collect(full)
-        else skill.push([path.relative(skillRoot, full).split(path.sep).join("/"), fs.readFileSync(full, "utf8")])
-      }
-    }
-    collect(skillRoot)
+    const skill = skillFiles(path.join(root, "skills/effectscript"))
     fs.writeFileSync(
       path.join(work, "entry.ts"),
       tsFiles.map((f, i) => `import ts${i} from ${JSON.stringify(path.join(tsLib, f))} with { type: "file" }\n`).join(
@@ -145,7 +157,8 @@ const pack = (args: ReadonlyArray<string>): void => {
       const archive = `efx-${target}.${windows ? "zip" : "tar.gz"}`
       fs.rmSync(path.join(outdir, archive), { force: true })
       if (windows) exec("zip", ["-q", "-X", path.join(outdir, archive), name], stage)
-      else exec("tar", ["-czf", path.join(outdir, archive), name], stage)
+      // GNU and BSD tar both take --no-xattrs; bsdtar would otherwise keep them as pax headers
+      else exec("tar", ["--no-xattrs", "-czf", path.join(outdir, archive), name], stage)
       sums.push(`${sha256(path.join(outdir, archive))}  ${archive}\n`)
     } finally {
       fs.rmSync(stage, { recursive: true, force: true })
@@ -154,12 +167,14 @@ const pack = (args: ReadonlyArray<string>): void => {
   fs.writeFileSync(path.join(outdir, "SHASUMS256.txt"), sums.join(""))
 }
 
-const [command, ...rest] = process.argv.slice(2)
-try {
-  if (command === "build") build(rest)
-  else if (command === "package") pack(rest)
-  else throw new Error("usage: node scripts/standalone.ts build|package [--target <t>…] [--outdir dir]")
-} catch (error) {
-  process.stderr.write(`${(error as Error).message}\n`)
-  process.exitCode = 1
+if (import.meta.main) {
+  const [command, ...rest] = process.argv.slice(2)
+  try {
+    if (command === "build") build(rest)
+    else if (command === "package") pack(rest)
+    else throw new Error("usage: node scripts/standalone.ts build|package [--target <t>…] [--outdir dir]")
+  } catch (error) {
+    process.stderr.write(`${(error as Error).message}\n`)
+    process.exitCode = 1
+  }
 }

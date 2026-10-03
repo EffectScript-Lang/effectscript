@@ -15,27 +15,27 @@ const root = path.join(import.meta.dirname, "..")
 const fixtures = path.join(root, "test/fixtures")
 const references = path.join(root, "skills/effectscript/references")
 
-/** Spec §4 order, with each construct's title. */
+/** The spec's construct order, with each construct's title (no section numbers: an installed skill has no spec). */
 const constructs: ReadonlyArray<readonly [dir: string, title: string]> = [
-  ["effect", "`effect` functions, blocks, `await` and `throw` (§4.1–4.3)"],
-  ["resources", "Resources: `defer`, `using … await`, `for await` (§4.3)"],
-  ["try", "`try` / `catch` / `finally` inside `effect` (§4.4)"],
-  ["schema", "`schema`: data types that are TypeScript types (§4.6)"],
-  ["error", "`error` (§4.7)"],
-  ["service", "`service` (§4.8)"],
-  ["layer", "Top-level `layer` (§4.8, §4.14)"],
-  ["pipeline", "Pipeline `|>` (§4.9)"],
-  ["main", "`main` (§4.10, §4.16)"],
-  ["match", "`match` (§4.11)"],
-  ["proposals", "Other adopted proposals (§4.12)"],
-  ["prelude", "Prelude: automatic imports and builtins (§4.13)"],
-  ["config", "`config` (§4.14)"],
-  ["test", "`test` / `describe` on `@effect/vitest` (§4.14)"],
-  ["http", "`api` / `group` / `impl`: HttpApi (§4.14)"],
-  ["cli", "`command`: CLIs on `effect/cli` (§4.14)"],
-  ["atom", "`atom`: reactive state (§4.14)"],
-  ["ambient", "Ambient capture: `console`, `Date`, `Math`, `process.env` (§4.15)"],
-  ["hygiene", "Name hygiene: what the compiler generates never clashes with your names (§5)"]
+  ["effect", "`effect` functions, blocks, `await` and `throw`"],
+  ["resources", "Resources: `defer`, `using … await`, `for await`"],
+  ["try", "`try` / `catch` / `finally` inside `effect`"],
+  ["schema", "`schema`: data types that are TypeScript types"],
+  ["error", "`error`"],
+  ["service", "`service`"],
+  ["layer", "Top-level `layer`"],
+  ["pipeline", "Pipeline `|>`"],
+  ["main", "`main`"],
+  ["match", "`match`"],
+  ["proposals", "Other adopted proposals"],
+  ["prelude", "Prelude: automatic imports and builtins"],
+  ["config", "`config`"],
+  ["test", "`test` / `describe` on `@effect/vitest`"],
+  ["http", "`api` / `group` / `impl`: HttpApi"],
+  ["cli", "`command`: CLIs on `effect/cli`"],
+  ["atom", "`atom`: reactive state"],
+  ["ambient", "Ambient capture: `console`, `Date`, `Math`, `process.env`"],
+  ["hygiene", "Name hygiene: what the compiler generates never clashes with your names"]
 ]
 
 const title = (name: string) => {

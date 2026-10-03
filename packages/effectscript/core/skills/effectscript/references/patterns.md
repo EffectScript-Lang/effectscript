@@ -255,6 +255,41 @@ main {
 }
 ```
 
+## SQL
+
+`effect/sql` gives a `SqlClient` service with a `sql` template tag: interpolated values become
+parameters, never text. `SqlSchema` decodes the rows into a `schema`, so a query's result is
+typed. A driver package provides the client: `SqliteClient.layer({ filename })` from
+`@effect/sql-sqlite-node`, or `PgClient.layer(…)` from `@effect/sql-pg`.
+
+```efx
+import { SqlClient, SqlSchema } from "effect/sql"
+
+export schema Todo {
+  id: number
+  title: string
+}
+
+export effect todosTitled(title: string) {
+  const sql = await SqlClient.SqlClient
+  const find = SqlSchema.findAll({
+    Request: Schema.String,
+    Result: Todo,
+    execute: (title) => sql`SELECT id, title FROM todos WHERE title = ${title}`
+  })
+  return await find(title)
+}
+
+// statements in a transaction commit together, or roll back on the first failure
+export effect rename(id: number, title: string) {
+  const sql = await SqlClient.SqlClient
+  await sql.withTransaction(effect {
+    await sql`UPDATE todos SET title = ${title} WHERE id = ${id}`
+    await sql`INSERT INTO audit (event) VALUES (${`renamed ${id}`})`
+  })
+}
+```
+
 ## CLIs
 
 A `command` declares its arguments and flags in the signature. Doc comments become the help text.

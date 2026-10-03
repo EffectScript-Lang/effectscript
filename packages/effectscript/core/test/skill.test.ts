@@ -23,6 +23,10 @@ describe("the generated skill references (Plan 14 Task 1, ADR-0051)", () => {
     expect(result.status).toBe(0)
   }, 120_000)
 
+  it("cite no spec section numbers: an installed skill has no spec to resolve them (Plan 21)", () => {
+    expect(read("references/syntax.md")).not.toContain("§")
+  })
+
   it("give every fixture directory a section in syntax.md", () => {
     const syntax = read("references/syntax.md")
     const dirs = fs.readdirSync(path.join(root, "test/fixtures"), { withFileTypes: true })
@@ -57,6 +61,13 @@ describe("the hand-written skill (Plan 14 Task 2, ADR-0051)", () => {
     expect([...files.keys()].filter((f) => f.startsWith("skill-SKILL-md")).length).toBeGreaterThan(0)
     expect(typecheck(files)).toEqual([])
   }, 180_000)
+
+  it("teaches match in SKILL.md, and SQL in the patterns (Plan 21)", () => {
+    expect(fences(read("SKILL.md")).some((code) => /\bmatch \(/.test(code))).toBe(true)
+    const patterns = read("references/patterns.md")
+    expect(patterns).toMatch(/^## SQL$/m)
+    expect(fences(patterns).some((code) => code.includes("from \"effect/sql\"") && code.includes("sql`"))).toBe(true)
+  })
 
   it("shows each mistake with the diagnostic it names", () => {
     let wrong = 0

@@ -80,4 +80,16 @@ describe.skipIf(!hasRuby)("the release workflow (Plan 10 Task 5, ADR-0038)", () 
     expect(text).toContain("EffectScript-Lang/homebrew-tap")
     expect(text).not.toContain("gunta")
   })
+
+  it("can be re-run, and marks only the newest release latest (Plan 21)", () => {
+    const text = fs.readFileSync(path.join(repo, ".github/workflows/effectscript-release.yml"), "utf8")
+    // a re-run uploads to the release it already made
+    expect(text).toMatch(/gh release view "\$TAG"[\s\S]*gh release upload "\$TAG" --clobber/)
+    // an older tag, run by hand, is neither "latest" nor the tap's formula
+    expect(text).toContain("versionsort.suffix=-")
+    expect(text).toMatch(/--latest="\$LATEST"/)
+    expect(text).toMatch(/if: needs\.release\.outputs\.latest == 'true'/)
+    // an unchanged formula commits nothing, and succeeds
+    expect(text).toMatch(/git diff --cached --quiet && exit 0/)
+  })
 })

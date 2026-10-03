@@ -143,6 +143,47 @@ describe("release.ts version", () => {
     expect(cargo).toContain("zed_extension_api = \"0.7.0\"")
   })
 
+  it("moves the crate's Cargo.lock entry and the grammar's tree-sitter.json, and nothing else (Plan 21)", () => {
+    const root = repo({ changelog: "## 4.0.0-alpha.0\n" })
+    const zed = path.join(root, "packages/effectscript/zed")
+    const grammar = path.join(root, "packages/effectscript/tree-sitter")
+    fs.mkdirSync(zed, { recursive: true })
+    fs.mkdirSync(grammar, { recursive: true })
+    fs.writeFileSync(
+      path.join(zed, "package.json"),
+      JSON.stringify({ name: "@effectscript/zed", version: "4.0.0-alpha.0" })
+    )
+    fs.writeFileSync(
+      path.join(zed, "Cargo.toml"),
+      "[package]\nname = \"zed-effectscript\"\nversion = \"4.0.0-alpha.0\"\n"
+    )
+    const lock = [
+      "[[package]]\nname = \"other\"\nversion = \"4.0.0-alpha.0\"\n",
+      "[[package]]\nname = \"zed-effectscript\"\nversion = \"4.0.0-alpha.0\"\ndependencies = [\n \"other\",\n]\n"
+    ].join("\n")
+    fs.writeFileSync(path.join(zed, "Cargo.lock"), lock)
+    fs.writeFileSync(
+      path.join(grammar, "package.json"),
+      JSON.stringify({ name: "tree-sitter-effectscript", version: "4.0.0-alpha.0" })
+    )
+    const metadata = {
+      grammars: [{ name: "effectscript", version: "4.0.0-alpha.0" }],
+      metadata: { version: "4.0.0-alpha.0", license: "MIT" }
+    }
+    fs.writeFileSync(path.join(grammar, "tree-sitter.json"), `${JSON.stringify(metadata, null, 2)}\n`)
+    const result = release(root, "version")
+    expect(result.status, result.stderr).toBe(0)
+    const locked = fs.readFileSync(path.join(zed, "Cargo.lock"), "utf8")
+    expect(locked).toContain("name = \"zed-effectscript\"\nversion = \"4.0.0-alpha.1\"")
+    expect(locked).toContain("name = \"other\"\nversion = \"4.0.0-alpha.0\"")
+    const json = JSON.parse(fs.readFileSync(path.join(grammar, "tree-sitter.json"), "utf8"))
+    expect(json.metadata.version).toBe("4.0.0-alpha.1")
+    // a grammar entry's own field isn't the package version
+    expect(json.grammars[0].version).toBe("4.0.0-alpha.0")
+    // the core package has no such files, and gets none
+    expect(fs.existsSync(path.join(root, "packages/effectscript/core/Cargo.lock"))).toBe(false)
+  })
+
   it("follows --effect and --prerelease", () => {
     const root = repo({ changelog: "## 4.0.0-alpha.3\n" })
     expect(release(root, "version", "--effect", "4.1", "--prerelease", "none").status).toBe(0)
@@ -236,6 +277,19 @@ describe("release.ts changelog", () => {
     expect(result.stderr).toMatch(/effectscript-b\.md has no summary/)
   })
 
+  it("keeps a list summary followed by a paragraph inside its item (Plan 21)", () => {
+    const root = repo({
+      notes: {
+        "effectscript-a.md": note({ effectscript: "patch" }, "- one\n- two\n\nWhy both."),
+        "effectscript-b.md": note({ effectscript: "patch" }, "Three.")
+      }
+    })
+    expect(release(root, "changelog").status).toBe(0)
+    expect(fs.readFileSync(path.join(root, "packages/effectscript/CHANGELOG.md"), "utf8")).toContain(
+      "- one\n- two\n\n  Why both.\n\n- Three.\n"
+    )
+  })
+
   it("creates the changelog for the first release", () => {
     const root = repo({ notes: { "effectscript-a.md": note({ "effectscript-vscode": "patch" }, "Icons.") } })
     expect(release(root, "changelog").status).toBe(0)
@@ -270,6 +324,42 @@ describe("release.ts changelog", () => {
     })
     expect(release(released, "changelog").stderr).toMatch(/already in the changelog.*release\.ts version/)
     expect(release(repo(), "changelog").stderr).toMatch(/no EffectScript notes/)
+  })
+})
+
+describe("release.ts zed (Plan 21)", () => {
+  const extension = (root: string) => {
+    const zed = path.join(root, "packages/effectscript/zed")
+    fs.mkdirSync(zed, { recursive: true })
+    fs.writeFileSync(
+      path.join(zed, "extension.toml"),
+      "id = \"effectscript\"\nversion = \"4.0.0\"\nrepository = \"https://example.com/x\"\n\n" +
+        "[grammars.effectscript]\nrepository = \"https://example.com/g\"\nrev = \"main\"\n"
+    )
+    return path.join(zed, "extension.toml")
+  }
+
+  it("sets the grammar's commit", () => {
+    const root = repo()
+    const file = extension(root)
+    const sha = "0123456789abcdef0123456789abcdef01234567"
+    const result = release(root, "zed", "--rev", sha)
+    expect(result.status, result.stderr).toBe(0)
+    expect(fs.readFileSync(file, "utf8")).toContain(
+      `[grammars.effectscript]\nrepository = "https://example.com/g"\nrev = "${sha}"\n`
+    )
+  })
+
+  it("refuses a branch, a tag or a short SHA, and changes nothing", () => {
+    const root = repo()
+    const file = extension(root)
+    const before = fs.readFileSync(file, "utf8")
+    for (const rev of ["main", "v4.0.0", "0123456", ""]) {
+      const result = release(root, "zed", "--rev", rev)
+      expect(result.status).toBe(1)
+      expect(result.stderr).toMatch(/full commit SHA/)
+    }
+    expect(fs.readFileSync(file, "utf8")).toBe(before)
   })
 })
 

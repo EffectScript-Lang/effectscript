@@ -157,23 +157,33 @@ const version = (root: string, effectOption: string | undefined, prereleaseOptio
       changed = true
     }
   }
-  // the Zed extension also carries the version in its manifest and its crate (ADR-0058)
+  // the Zed extension carries the version in its manifest, its crate and the crate's lock entry;
+  // the grammar in its tree-sitter.json (ADR-0058). Each pattern matches only the package's own field.
   for (const p of list) {
     const dir = path.dirname(p.file)
-    for (
-      const [file, pattern] of [
-        ["extension.toml", /^version = "[^"]*"$/m],
-        ["Cargo.toml", /(\[package\][^[]*?^version = )"[^"]*"$/m]
-      ] as const
-    ) {
-      const full = path.join(dir, file)
-      if (!fs.existsSync(full)) continue
-      const text = fs.readFileSync(full, "utf8")
-      const updated = file === "Cargo.toml"
-        ? text.replace(pattern, `$1"${next}"`)
-        : text.replace(pattern, `version = "${next}"`)
+    const read = (file: string) =>
+      fs.existsSync(path.join(dir, file)) ? fs.readFileSync(path.join(dir, file), "utf8") : ""
+    const crate = /\[package\][^[]*?^name = "([^"]*)"$/m.exec(read("Cargo.toml"))?.[1]
+    const edits: ReadonlyArray<readonly [string, RegExp]> = [
+      ["extension.toml", /^(version = )"[^"]*"$/m],
+      ["Cargo.toml", /(\[package\][^[]*?^version = )"[^"]*"$/m],
+      ...(crate === undefined ? [] : [
+        [
+          "Cargo.lock",
+          new RegExp(
+            `(^\\[\\[package\\]\\]\\nname = "${crate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"\\nversion = )"[^"]*"$`,
+            "m"
+          )
+        ] as const
+      ]),
+      ["tree-sitter.json", /("metadata":\s*\{[^}]*?"version":\s*)"[^"]*"/]
+    ]
+    for (const [file, pattern] of edits) {
+      const text = read(file)
+      if (text === "") continue
+      const updated = text.replace(pattern, `$1"${next}"`)
       if (updated !== text) {
-        fs.writeFileSync(full, updated)
+        fs.writeFileSync(path.join(dir, file), updated)
         changed = true
       }
     }
@@ -213,9 +223,9 @@ const isEffectScript = (name: string, family: ReadonlySet<string>) =>
   family.has(name) || name === "effectscript" || name === "effectscript-vscode" || name.startsWith("@effectscript/")
 
 const item = (summary: string) =>
-  // a summary that is already a list stays one
+  // a summary that is already a list stays one, and a paragraph after it stays in its last item
   /^[-*] /.test(summary)
-    ? `${summary}\n`
+    ? `${summary.split("\n").map((line) => line === "" || /^([-*] |\s)/.test(line) ? line : `  ${line}`).join("\n")}\n`
     : `- ${summary.split("\n").map((line, i) => i === 0 || line === "" ? line : `  ${line}`).join("\n")}\n`
 
 const changelog = (root: string) => {
@@ -359,6 +369,24 @@ const pack = (root: string, out: string) => {
   }).join("\n")
 }
 
+/**
+ * Pins the Zed extension's grammar to a commit of the published grammar repository. Zed fetches
+ * `rev` as is, so only a full SHA names one fixed commit (RELEASING.md step 7).
+ */
+const zed = (root: string, rev: string | undefined) => {
+  if (rev === undefined || !/^[0-9a-f]{40}$/.test(rev)) {
+    throw new Error(`--rev takes the grammar repository's full commit SHA, 40 hex characters (got ${rev ?? "nothing"})`)
+  }
+  const file = path.join(root, "packages/effectscript/zed/extension.toml")
+  const text = fs.readFileSync(file, "utf8")
+  const pattern = /(\[grammars\.effectscript\][^[]*?^rev = )"[^"]*"$/m
+  if (!pattern.test(text)) throw new Error(`${file} has no [grammars.effectscript] rev`)
+  const updated = text.replace(pattern, `$1"${rev}"`)
+  if (updated === text) return `already ${rev}`
+  fs.writeFileSync(file, updated)
+  return `grammar rev -> ${rev}`
+}
+
 const option = (argv: ReadonlyArray<string>, name: string): string | undefined => {
   const i = argv.indexOf(name)
   return i === -1 ? undefined : argv[i + 1] ?? ""
@@ -372,11 +400,13 @@ if (import.meta.main) {
       ? version(root, option(argv, "--effect"), option(argv, "--prerelease"))
       : argv[0] === "changelog"
       ? changelog(root)
+      : argv[0] === "zed"
+      ? zed(root, option(argv, "--rev"))
       : argv[0] === "pack"
       ? pack(root, path.resolve(option(argv, "--out") ?? path.join(root, "packages/effectscript/dist-pack")))
       : (() => {
         throw new Error(
-          "usage: release.ts version [--effect x.y] [--prerelease alpha|none] | changelog | pack [--out dir]"
+          "usage: release.ts version [--effect x.y] [--prerelease alpha|none] | changelog | zed --rev <sha> | pack [--out dir]"
         )
       })()
     process.stdout.write(`${output}\n`)
