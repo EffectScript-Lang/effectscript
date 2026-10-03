@@ -58,6 +58,7 @@ case "$FAKE_MODE" in
   orphan) node -e "require('child_process').spawn('sleep', ['8'], { detached: true, stdio: ['ignore', 'inherit', 'inherit'] }).unref()"; echo "gave up" >&2; exit 1 ;;
   noisy) node -e "process.stdout.write('x'.repeat(300000))"; printf '\\033[31mreal error\\033[0m\\n' >&2; exit 1 ;;
   chmod) chmod -x run.sh; printf '// improved\\n' >> src/a.efx ;;
+  spinner) printf '\\033[31mfailed\\033(B\\033[m\\n' >&2; printf 'Working...\\rError: out of credits\\r' >&2; exit 1 ;;
   quota) echo "working on src/a.efx"; echo "Error: usage limit reached, try again at 5pm" >&2; exit 1 ;;
 esac
 `,
@@ -111,6 +112,14 @@ describe("efx convert --ai (Plan 15 Task 4, ADR-0052)", () => {
     const text = out.stdout + out.stderr
     expect(text).toContain("real error")
     expect(text).not.toContain("\u001b")
+  })
+
+  it("keeps a line that ends in a carriage return, and drops charset escapes (Plan 21 review)", () => {
+    const text = (({ stdout, stderr }) => stdout + stderr)(convert(setupProject(), "spinner"))
+    expect(text).toContain("Error: out of credits")
+    expect(text).not.toContain("Working...")
+    expect(text).toMatch(/failed\n/)
+    expect(text).not.toContain("(B")
   })
 
   it("restores the mode of a file the agent changed (Plan 21)", () => {

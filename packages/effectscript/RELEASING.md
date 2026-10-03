@@ -66,10 +66,10 @@ This moves the `.changeset` notes that name only EffectScript packages into
 A note that names both families stops the step, so split it first.
 
 Commit the version and the changelog together, and nothing else (another change in the tree stays
-out of the release commit):
+out of the release commit). Step 3 also wrote the Zed extension's and the grammar's version files:
 
 ```bash
-git add packages/effectscript/*/package.json packages/effectscript/CHANGELOG.md .changeset
+git add packages/effectscript/*/package.json packages/effectscript/zed/extension.toml packages/effectscript/zed/Cargo.toml packages/effectscript/zed/Cargo.lock packages/effectscript/tree-sitter/tree-sitter.json packages/effectscript/CHANGELOG.md .changeset
 ```
 
 ```bash
@@ -136,9 +136,20 @@ node packages/effectscript/core/scripts/release.ts zed --rev <sha>
 ```
 
 It takes only a full 40-character SHA: a branch or tag name could move after the release. Commit
-`extension.toml` with the version change.
+the pin on its own:
+
+```bash
+git commit -m "chore(effectscript): pin the grammar for <version>" packages/effectscript/zed/extension.toml
+```
 
 ## 8. Tag the binaries
+
+First check that every release change is committed (the brand folder is another workflow's): this
+prints nothing and exits 0 when the tree is ready.
+
+```bash
+git diff --quiet HEAD -- packages/effectscript ':!packages/effectscript/brand' && git status --short -- packages/effectscript ':!packages/effectscript/brand'
+```
 
 The tag goes first: if a binary fails to build, nothing is on npm yet, and the version can still
 be fixed and re-tagged. npm never lets a version be published twice.
@@ -234,8 +245,15 @@ path = "packages/effectscript/zed"
 version = "<version>"
 ```
 
-Run `pnpm sort-extensions`, commit, and open the pull request. Later releases move the submodule
-to the new tag and change `version`.
+Run `pnpm sort-extensions`, then stage the submodule at the tag (a plain commit would keep the
+commit `git submodule add` checked out) and the entry together:
+
+```bash
+git add extensions/effectscript extensions.toml
+```
+
+Commit, and open the pull request. Later releases check out the new tag in the submodule, change
+`version`, and stage both the same way.
 
 Before that, `node packages/effectscript/zed/scripts/dev.mjs --out <dir>` builds a dev extension
 with the grammar from a local repository, to try in Zed with "zed: install dev extension".

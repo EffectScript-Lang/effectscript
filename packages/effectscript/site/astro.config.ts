@@ -12,6 +12,26 @@ import tsx from "shiki/langs/tsx.mjs"
 const grammar = (file: string) =>
   JSON.parse(fs.readFileSync(new URL(`../vscode/syntaxes/${file}`, import.meta.url), "utf8"))
 
+/**
+ * A generated folder's subfolders as groups with capitalized labels: autogenerate would name them
+ * after the folder (`migration`). Their own subfolders are package and module names, kept as is.
+ * The content script writes the folders before `astro build` reads this (Plan 21 review).
+ */
+const labelledGroups = (directory: string) => {
+  const dir = new URL(`src/content/docs/${directory}/`, import.meta.url)
+  if (!fs.existsSync(dir)) return [{ autogenerate: { directory } }]
+  const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))
+  // a page directly in the folder stays in the sidebar, by its slug
+  const pages = entries.filter((entry) => entry.isFile() && /\.mdx?$/.test(entry.name))
+    .map((entry) => `${directory}/${entry.name.replace(/\.mdx?$/, "").toLowerCase()}`)
+  const groups = entries.filter((entry) => entry.isDirectory()).map(({ name }) => ({
+    label: `${name[0]!.toUpperCase()}${name.slice(1)}`,
+    collapsed: true,
+    items: [{ autogenerate: { directory: `${directory}/${name}` } }]
+  }))
+  return [...pages, ...groups]
+}
+
 /** The EffectScript grammar of the VS Code extension (ADR-0041), for Shiki and Expressive Code. */
 export const efxLanguages = [
   // the efx grammar includes source.tsx, so Shiki needs TSX loaded with it
@@ -54,7 +74,7 @@ export default defineConfig({
           label: "Effect, in EffectScript",
           items: [
             "docs/effect/guide",
-            { label: "Guides", collapsed: true, items: [{ autogenerate: { directory: "docs/effect/guides" } }] },
+            { label: "Guides", collapsed: true, items: labelledGroups("docs/effect/guides") },
             { label: "API examples", collapsed: true, items: [{ autogenerate: { directory: "docs/effect/api" } }] }
           ]
         }

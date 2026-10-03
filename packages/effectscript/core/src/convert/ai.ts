@@ -143,9 +143,12 @@ const printable = (text: string): string =>
   text
     .replace(/\u001b\][^\u0007\u001b]*(\u0007|\u001b\\)/g, "")
     .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, "")
+    // charset selection (`ESC ( B`, which terminals' "reset" emits) has an argument
+    .replace(/\u001b[()*+][0-~]/g, "")
     .replace(/\u001b[@-_]/g, "")
     .split(/\r?\n/)
-    .map((line) => line.slice(line.lastIndexOf("\r") + 1))
+    // a redraw ends a line with `\r` too: the last non-empty state is what was shown
+    .map((line) => line.split("\r").reverse().find((state) => state !== "") ?? "")
     .join("\n")
     .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "")
 /* eslint-enable no-control-regex */

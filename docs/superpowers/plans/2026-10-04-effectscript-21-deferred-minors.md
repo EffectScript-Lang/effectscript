@@ -85,3 +85,38 @@ or an agent could meet them. Each item names the plan that deferred it.
 multi-root workspace imports in conversions (rare; VS Code converts one folder), Gemini and
 opencode flags (their CLIs aren't installed to verify against), the tree-sitter CLI's lock files
 in `~/.cache` (the CLI's own behaviour), and Windows-only items without a Windows host to test on.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Task 1:** `marketplaceVersion` already guarded in `efx setup`; the fix moved core onto
+  `extensionVersionFor`, kept equal to the extension's mapping by the parity test.
+- **Task 2:** the tsserver plugin keeps the compile of a closed or deleted file (tsserver keeps a
+  closed file in the program while it is imported; one entry per file). Decorations are tested
+  through `editorsToDecorate`, since VS Code can't read decorations back.
+- **Task 3:** invalid code and CRLF/BOM inputs already kept their text; the new tests stay as
+  guards.
+- **Task 4:** the `http` sample's routes match the plain version; its 404 needs an `error` status
+  annotation, a language change for the language-features plan. A link to a heading upstream
+  doesn't have becomes plain text. Corpus links go to site pages only for guides the site
+  publishes.
+- **Task 5:** a manual run for an older tag skips the Homebrew job too; the runbook moved the
+  grammar export and pin before the tag (ADR-0062); archives use `tar --no-xattrs` as well as
+  `COPYFILE_DISABLE` (bsdtar kept the quarantine attribute as a pax header); the SQL pattern names
+  driver packages in prose only, since the type check resolves `effect` alone.
+
+**Final review (fresh reviewer, 0 Critical, 1 Important), fixed in one pass with tests that failed
+first:** the runbook's release commit now stages every version file `release.ts version` writes,
+the grammar pin is its own commit, and the tree is checked before the tag. Regraded to Important
+and fixed: an agent's last line ending in `\r` disappeared from the failure report; the Effect
+guides' `migration` and `packages` groups were lowercase; the Zed pull request step didn't stage
+the submodule at the tag. Package and module folders keep their names.
+
+**Deferred minors:** "doesn't parse as TypeScript" judged by EffectScript's parser (`import
+defer`); Ctrl-C at a setup prompt exits 0; the dangling-anchor check's slugger gaps and a throw on
+a stray `%`; `tokenPieces` after a literal U+FFFD; a changelog list summary followed by a fenced
+block; three Markdown fence edge cases in the corpus; `export.mjs` reusing a parser of another
+ABI; two runbook wording gaps.

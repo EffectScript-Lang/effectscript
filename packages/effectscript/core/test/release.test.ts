@@ -327,6 +327,75 @@ describe("release.ts changelog", () => {
   })
 })
 
+describe("RELEASING.md commits what the release steps change (Plan 21 review)", () => {
+  const runbook = fs.readFileSync(path.join(import.meta.dirname, "../../RELEASING.md"), "utf8")
+  const step = (n: number) => runbook.split(/^## /m).find((s) => s.startsWith(`${n}. `))!
+  const commands = (text: string) => [...text.matchAll(/^```bash\n([\s\S]*?)^```$/gm)].map((m) => m[1]!.trim())
+
+  it("stages every file release.ts version writes, in step 4", () => {
+    const root = repo({ changelog: "## 4.0.0-alpha.0\n" })
+    const write = (file: string, content: string) => {
+      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
+      fs.writeFileSync(path.join(root, file), content)
+    }
+    write(
+      "packages/effectscript/zed/package.json",
+      JSON.stringify({ name: "@effectscript/zed", version: "4.0.0-alpha.0" })
+    )
+    write("packages/effectscript/zed/extension.toml", "id = \"effectscript\"\nversion = \"4.0.0-alpha.0\"\n")
+    write(
+      "packages/effectscript/zed/Cargo.toml",
+      "[package]\nname = \"zed-effectscript\"\nversion = \"4.0.0-alpha.0\"\n"
+    )
+    write(
+      "packages/effectscript/zed/Cargo.lock",
+      "[[package]]\nname = \"zed-effectscript\"\nversion = \"4.0.0-alpha.0\"\n"
+    )
+    write(
+      "packages/effectscript/tree-sitter/package.json",
+      JSON.stringify({ name: "tree-sitter-effectscript", version: "4.0.0-alpha.0" })
+    )
+    write(
+      "packages/effectscript/tree-sitter/tree-sitter.json",
+      "{\n  \"metadata\": {\n    \"version\": \"4.0.0-alpha.0\"\n  }\n}\n"
+    )
+    // the brand folder belongs to another workflow: the release commit leaves it alone
+    write("packages/effectscript/brand/film/notes.txt", "draft\n")
+    const git = (...args: ReadonlyArray<string>) =>
+      spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd: root, encoding: "utf8" })
+    git("add", "-A")
+    git("commit", "-qm", "packages")
+    write("packages/effectscript/brand/film/notes.txt", "edited elsewhere\n")
+    expect(release(root, "version").status).toBe(0)
+    const changed = git("diff", "--name-only").stdout.trim().split("\n").filter((f) => !f.includes("/brand/"))
+    expect(changed.length).toBeGreaterThan(5)
+    const add = commands(step(4)).find((c) => c.startsWith("git add "))!
+    const staged = spawnSync("sh", ["-c", add.replace(/^git add /, "git add --dry-run ")], {
+      cwd: root,
+      encoding: "utf8"
+    })
+    expect(staged.stderr).toBe("")
+    const files = staged.stdout.trim().split("\n").map((line) => line.replace(/^add '(.*)'$/, "$1"))
+    for (const file of changed) expect(files, file).toContain(file)
+    expect(files.some((f) => f.includes("/brand/"))).toBe(false)
+  })
+
+  it("commits the grammar pin in step 7, and checks the tree before the tag in step 8", () => {
+    expect(commands(step(7)).some((c) => /^git commit .*packages\/effectscript\/zed\/extension\.toml/.test(c))).toBe(
+      true
+    )
+    expect(commands(step(8)).findIndex((c) => c.startsWith("git diff --quiet"))).toBe(0)
+  })
+
+  it("stages the submodule at the tag in the Zed pull request, step 12", () => {
+    const zed = commands(step(12))
+    const checkout = zed.findIndex((c) => c.includes("checkout effectscript@<version>"))
+    const add = zed.findIndex((c) => c === "git add extensions/effectscript extensions.toml")
+    expect(checkout).toBeGreaterThan(-1)
+    expect(add).toBeGreaterThan(checkout)
+  })
+})
+
 describe("release.ts zed (Plan 21)", () => {
   const extension = (root: string) => {
     const zed = path.join(root, "packages/effectscript/zed")
