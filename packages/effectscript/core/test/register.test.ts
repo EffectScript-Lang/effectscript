@@ -86,4 +86,18 @@ describe("effectscript/register (ADR-0021)", () => {
     expect(result.status).not.toBe(0)
     expect(result.stderr).toMatch(/bad\.efx:2:\d+ - error EFX1001/)
   }, 120_000)
+
+  it("prints no Node warning about stripTypeScriptTypes, and keeps other warnings (Plan 18 Task 1)", () => {
+    const dir = project({
+      "app.efx": "effect main() {\n  return await succeed(42)\n}\nconsole.log(Effect.runSync(main()))\n",
+      "warn.efx": "process.emitWarning(\"mine\", \"DeprecationWarning\")\nconsole.log(\"ok\")\n"
+    })
+    dirs.push(dir)
+    const quiet = run(dir, "app.efx")
+    expect(quiet.stderr).toBe("")
+    expect(quiet.stdout).toBe("42\n")
+    const own = run(dir, "warn.efx")
+    expect(own.stdout).toBe("ok\n")
+    expect(own.stderr).toContain("DeprecationWarning: mine")
+  })
 })

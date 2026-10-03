@@ -17,6 +17,15 @@ import { packageInfo } from "./project.ts"
 // Stack traces from `.efx` code point at `.efx` positions (review I6, ADR-0026).
 process.setSourceMapsEnabled(true)
 
+// Node warns that `stripTypeScriptTypes` is experimental. EffectScript uses it on purpose (ADR-0026),
+// and the warning would open every `efx run`; only that one warning is dropped (ADR-0057).
+const emitWarning = process.emitWarning
+process.emitWarning = function(this: unknown, warning: string | Error, ...rest: Array<unknown>) {
+  const text = typeof warning === "string" ? warning : warning.message
+  if (text.startsWith("stripTypeScriptTypes is an experimental feature")) return
+  return (emitWarning as (...args: Array<unknown>) => void).call(process, warning, ...rest)
+} as typeof process.emitWarning
+
 registerHooks({
   load(url, context, nextLoad) {
     if (!url.startsWith("file:") || !url.endsWith(".efx")) return nextLoad(url, context)
