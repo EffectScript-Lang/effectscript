@@ -39,7 +39,7 @@ describe("efx init (Plan 8 Task 5)", { timeout: 30_000 }, () => {
     const pkg = JSON.parse(read(dir, "package.json"))
     expect(pkg.scripts.check).toBe("tsc")
     expect(pkg.scripts["build:efx"]).toBe("efx build")
-    expect(result.stdout).toContain("npm i -D effectscript @effectscript/language typescript@6")
+    expect(result.stdout).toContain(`npm i -D effectscript@${version} @effectscript/language@${version} typescript@6`)
     expect(result.stdout).toContain("efx convert")
   })
 
@@ -87,5 +87,78 @@ describe("efx init (Plan 8 Task 5)", { timeout: 30_000 }, () => {
     expect(init(dir).status).toBe(0)
     expect(read(dir, "docs/blume.config.ts")).toBe("// mine\n")
     expect(init(dir).stdout).toContain("blume")
+  })
+})
+
+const packages = path.resolve(import.meta.dirname, "../../..")
+const version = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "../package.json"), "utf8")).version
+
+describe("efx init in a new project (Plan 18 Task 2, ADR-0057)", { timeout: 120_000 }, () => {
+  it("writes the strictest tsconfig.json, with the plugin, and efx check uses it", () => {
+    const dir = project({
+      "package.json": "{\n  \"name\": \"app\",\n  \"type\": \"module\"\n}\n",
+      "app.efx": "export effect hello(name: string) {\n  return `hi ${name}`\n}\n\nexport const n: number = \"no\"\n"
+    })
+    const result = init(dir)
+    expect(result.status).toBe(0)
+    expect(result.stdout).toContain("tsconfig.json: wrote")
+    const options = JSON.parse(read(dir, "tsconfig.json")).compilerOptions
+    expect(options).toMatchObject({
+      strict: true,
+      exactOptionalPropertyTypes: true,
+      noUncheckedIndexedAccess: true,
+      noImplicitOverride: true,
+      noPropertyAccessFromIndexSignature: true,
+      verbatimModuleSyntax: true,
+      plugins: [{ name: "@effectscript/language" }]
+    })
+    // the project's own packages, from the workspace
+    fs.mkdirSync(path.join(dir, "node_modules/@effectscript"), { recursive: true })
+    fs.symlinkSync(path.join(packages, "effect"), path.join(dir, "node_modules/effect"))
+    fs.symlinkSync(path.join(packages, "effectscript/language"), path.join(dir, "node_modules/@effectscript/language"))
+    fs.symlinkSync(
+      fs.realpathSync(path.join(packages, "effectscript/language/node_modules/typescript")),
+      path.join(dir, "node_modules/typescript")
+    )
+    const check = spawnSync(process.execPath, [efx, "check"], {
+      cwd: dir,
+      encoding: "utf8",
+      env: { ...process.env, EFFECTSCRIPT_DEV: "1" }
+    })
+    expect(check.stdout + check.stderr).toMatch(
+      /app\.efx[:(]5[:,]\d+\)?:? - error TS2322|app\.efx\(5,\d+\): error TS2322/
+    )
+    expect(check.status).not.toBe(0)
+  })
+
+  it("names the Effect peers and pins EffectScript's packages to this version", () => {
+    const dir = project({ "package.json": "{\n  \"name\": \"app\"\n}\n" })
+    const out = init(dir).stdout
+    expect(out).toContain("npm i effect @effect/platform-node")
+    expect(out).toContain(`effectscript@${version} @effectscript/language@${version} typescript@6`)
+  })
+
+  it("never replaces an existing tsconfig.json", () => {
+    const text = "{ \"compilerOptions\": { \"strict\": false }, \"include\": [\"lib\"] }\n"
+    const dir = project({ "tsconfig.json": text, "package.json": "{\n  \"name\": \"app\"\n}\n" })
+    init(dir)
+    expect(JSON.parse(read(dir, "tsconfig.json"))).toMatchObject({
+      compilerOptions: { strict: false },
+      include: ["lib"]
+    })
+  })
+
+  it("pins @effectscript/language in the install hints (efx lsp, check, doctor)", async () => {
+    const dir = project({ "package.json": "{\n  \"name\": \"app\"\n}\n" })
+    // efx check falls back to efx's own language package, which the workspace always has
+    const lsp = spawnSync(process.execPath, [efx, "lsp"], {
+      cwd: dir,
+      encoding: "utf8",
+      input: "",
+      env: { ...process.env, EFFECTSCRIPT_DEV: "1" }
+    })
+    expect(lsp.stderr).toContain(`npm i -D @effectscript/language@${version} typescript@6`)
+    const { languageInstall } = await import("effectscript/cli/project")
+    expect(languageInstall).toBe(`npm i -D @effectscript/language@${version} typescript@6`)
   })
 })

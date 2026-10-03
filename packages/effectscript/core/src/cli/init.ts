@@ -7,6 +7,7 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { member, parseJsonc } from "./jsonc.ts"
+import { version } from "./project.ts"
 
 const plugin = "@effectscript/language"
 const pluginEntry = `{ "name": "${plugin}" }`
@@ -104,6 +105,44 @@ const setUpDocs = (
 }
 
 /**
+ * A new project's `tsconfig.json`: the strictest settings (spec §4.17) and the plugin.
+ */
+const newTsconfig = `{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "plugins": [{ "name": "${plugin}" }]
+  },
+  "exclude": ["node_modules", "dist", "docs"]
+}
+`
+
+/**
+ * The install command for what is missing: Effect at runtime (EffectScript's packages take it as a
+ * peer, ADR-0055), and the tools as dev dependencies, EffectScript's pinned to this version.
+ */
+const installCommand = (missing: ReadonlyArray<string>): string => {
+  const runtime = missing.filter((name) => name === "effect" || name.startsWith("@effect/"))
+  const dev = missing.filter((name) => !runtime.includes(name)).map((name) =>
+    name === "typescript" ? "typescript@6" : name === "effectscript" || name === plugin ? `${name}@${version}` : name
+  )
+  return [
+    ...(runtime.length > 0 ? [`npm i ${runtime.join(" ")}`] : []),
+    ...(dev.length > 0 ? [`npm i -D ${dev.join(" ")}`] : [])
+  ].join(" && ")
+}
+
+/**
  * Runs `efx init` in `cwd`. Returns the exit code.
  *
  * @since 4.0.0
@@ -126,7 +165,9 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
       changed = true
     }
   } else {
-    out("No tsconfig.json here: create one, then run efx init again")
+    fs.writeFileSync(tsconfigPath, newTsconfig)
+    out("tsconfig.json: wrote the strictest settings, with the EffectScript plugin")
+    changed = true
   }
   const pkgPath = path.join(cwd, "package.json")
   let missing: Array<string> = []
@@ -154,13 +195,12 @@ export const initProject = (cwd: string, out: (line: string) => void): number =>
       changed = true
     }
     const deps: Record<string, unknown> = { ...pkg.dependencies, ...pkg.devDependencies }
-    missing = ["effectscript", plugin, "typescript", "blume"].filter((name) => deps[name] === undefined)
+    missing = ["effect", "@effect/platform-node", "effectscript", plugin, "typescript", "blume"]
+      .filter((name) => deps[name] === undefined)
     if (setUpDocs(cwd, pkg, out)) changed = true
   }
   if (!changed) out("This project is already set up for EffectScript")
-  if (missing.length > 0) {
-    out(`Install: npm i -D ${missing.map((name) => (name === "typescript" ? "typescript@6" : name)).join(" ")}`)
-  }
+  if (missing.length > 0) out(`Install: ${installCommand(missing)}`)
   out("Next: efx setup (your editors and coding agents), then efx convert (preview converting this project)")
   return 0
 }

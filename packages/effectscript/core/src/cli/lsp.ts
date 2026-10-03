@@ -10,6 +10,7 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { languageBin } from "./check.ts"
 import { cacheDir, standalone, unpack, unpackFiles } from "./host.ts"
+import { languageInstall } from "./project.ts"
 
 /**
  * Runs the language server until the editor closes it. Returns its exit code.
@@ -23,7 +24,7 @@ export const lsp = (cwd: string): number => {
     // the project's own server, as its editor plugin would load it
     const bin = languageBin(cwd, false, "efx-language-server.js")
     if (bin === undefined) {
-      process.stderr.write("efx lsp needs @effectscript/language: npm i -D @effectscript/language typescript@6\n")
+      process.stderr.write(`efx lsp needs @effectscript/language: ${languageInstall}\n`)
       return 1
     }
     return spawnSync(process.execPath, [bin, "--stdio"], { stdio: "inherit" }).status ?? 1

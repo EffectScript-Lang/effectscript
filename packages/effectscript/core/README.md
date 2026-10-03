@@ -23,7 +23,7 @@ export const getUser = Effect.fn("getUser")(function*(id: UserId): Effect.fn.Ret
 ## Install
 
 ```bash
-npm i -D effectscript                                # in a project
+npm i -D effectscript                                # in a project (next to effect)
 curl -fsSL https://effectscript.dev/install | sh     # the standalone efx binary
 brew install effectscript-lang/tap/effectscript      # the same binary, with Homebrew
 ```

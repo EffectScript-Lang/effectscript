@@ -23,6 +23,15 @@ export const version: string = standalone()?.version ??
   JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version
 
 /**
+ * How to install the language package that matches this `efx` (ADR-0057): EffectScript's packages
+ * pin each other's exact version (ADR-0055).
+ *
+ * @since 4.0.0
+ * @category cli
+ */
+export const languageInstall: string = `npm i -D @effectscript/language@${version} typescript@6`
+
+/**
  * `efx build`: loads TypeScript 6 lazily (everything else works without it, review I7) and builds
  * the project. Returns the exit code.
  *

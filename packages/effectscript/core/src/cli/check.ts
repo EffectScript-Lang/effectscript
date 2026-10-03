@@ -8,6 +8,7 @@ import * as fs from "node:fs"
 import { createRequire } from "node:module"
 import * as path from "node:path"
 import { standalone } from "./host.ts"
+import { languageInstall } from "./project.ts"
 
 /**
  * @since 4.0.0
@@ -27,7 +28,7 @@ export const runCheck = (
 ): { readonly status: number; readonly output: string } => {
   const bin = languageBin()
   if (bin === undefined) {
-    const message = "efx check needs @effectscript/language: npm i -D @effectscript/language typescript@6\n"
+    const message = `efx check needs @effectscript/language: ${languageInstall}\n`
     if (!quiet) process.stderr.write(message)
     return { status: 1, output: message }
   }

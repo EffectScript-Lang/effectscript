@@ -10,6 +10,7 @@ import { createRequire } from "node:module"
 import * as path from "node:path"
 import { standalone } from "./host.ts"
 import { member, parseJsonc } from "./jsonc.ts"
+import { languageInstall } from "./project.ts"
 import { defaultRuntime } from "./run.ts"
 
 interface Check {
@@ -86,7 +87,7 @@ export const doctor = (cwd: string, out: (line: string) => void): number => {
     checks.push({
       name: "@effectscript/language",
       ok: language !== undefined,
-      detail: "editor support and efx check: npm i -D @effectscript/language"
+      detail: `editor support and efx check: ${languageInstall}`
     })
     const effect = installed(cwd, "effect")
     checks.push({
