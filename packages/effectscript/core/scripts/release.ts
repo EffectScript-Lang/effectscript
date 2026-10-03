@@ -151,6 +151,27 @@ const version = (root: string, effectOption: string | undefined, prereleaseOptio
       changed = true
     }
   }
+  // the Zed extension also carries the version in its manifest and its crate (ADR-0058)
+  for (const p of list) {
+    const dir = path.dirname(p.file)
+    for (
+      const [file, pattern] of [
+        ["extension.toml", /^version = "[^"]*"$/m],
+        ["Cargo.toml", /(\[package\][^[]*?^version = )"[^"]*"$/m]
+      ] as const
+    ) {
+      const full = path.join(dir, file)
+      if (!fs.existsSync(full)) continue
+      const text = fs.readFileSync(full, "utf8")
+      const updated = file === "Cargo.toml"
+        ? text.replace(pattern, `$1"${next}"`)
+        : text.replace(pattern, `version = "${next}"`)
+      if (updated !== text) {
+        fs.writeFileSync(full, updated)
+        changed = true
+      }
+    }
+  }
   if (!changed) return `already ${next}`
   return `${current} -> ${next} (${list.map((p) => p.name).join(", ")})`
 }

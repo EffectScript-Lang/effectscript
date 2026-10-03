@@ -1,0 +1,19 @@
+(effect_declaration "effect" @context name: (_) @name) @item
+(function_declaration "function" @context name: (_) @name) @item
+(class_declaration "class" @context name: (_) @name) @item
+(interface_declaration "interface" @context name: (_) @name) @item
+(type_alias_declaration "type" @context name: (_) @name) @item
+(schema_declaration "schema" @context name: (_) @name) @item
+(error_declaration "error" @context name: (_) @name) @item
+(config_declaration "config" @context name: (_) @name) @item
+(service_declaration "service" @context name: (_) @name) @item
+(layer_declaration "layer" @context name: (_) @name) @item
+(atom_declaration "atom" @context name: (_) @name) @item
+(command_declaration "command" @context name: (_) @name) @item
+(group_declaration "group" @context name: (_) @name) @item
+(api_declaration "api" @context name: (_) @name) @item
+(effect_method "effect" @context name: (_) @name) @item
+(effect_method_signature "effect" @context name: (_) @name) @item
+(method_definition name: (_) @name) @item
+(test_statement "test" @context name: (_) @name) @item
+(describe_statement "describe" @context name: (_) @name) @item

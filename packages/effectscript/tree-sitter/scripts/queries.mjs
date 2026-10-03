@@ -1,7 +1,8 @@
 /**
  * Writes `queries/{highlights,locals,injections}.scm`: JavaScript's queries, then TypeScript's,
  * then EffectScript's (`queries/src`), as one self-contained file each, for editors without
- * TypeScript's queries (ADR-0058). `--check` fails when they are out of date.
+ * TypeScript's queries (ADR-0058), and the Zed extension's copies. `--check` fails when any is
+ * out of date.
  */
 import * as fs from "node:fs"
 import * as path from "node:path"
@@ -23,10 +24,14 @@ let stale = []
 for (const [file, sources] of Object.entries(parts)) {
   const text = header(file) +
     sources.filter((s) => fs.existsSync(s)).map((s) => `\n; --- ${path.relative(root, s).replaceAll(path.sep, "/").replace(/^node_modules\//, "")}\n\n${fs.readFileSync(s, "utf8").trim()}\n`).join("")
-  const target = path.join(root, "queries", file)
-  if (process.argv.includes("--check")) {
-    if (!fs.existsSync(target) || fs.readFileSync(target, "utf8") !== text) stale.push(file)
-  } else fs.writeFileSync(target, text)
+  // the grammar's queries, and the Zed extension's copies of the ones Zed reads
+  const targets = [path.join(root, "queries", file)]
+  if (file !== "locals.scm") targets.push(path.join(root, "../zed/languages/effectscript", file))
+  for (const target of targets) {
+    if (process.argv.includes("--check")) {
+      if (!fs.existsSync(target) || fs.readFileSync(target, "utf8") !== text) stale.push(path.relative(root, target))
+    } else fs.writeFileSync(target, text)
+  }
 }
 if (stale.length > 0) {
   process.stderr.write(`queries out of date: ${stale.join(", ")}; run node scripts/queries.mjs\n`)

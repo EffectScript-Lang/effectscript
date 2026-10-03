@@ -120,6 +120,29 @@ describe("release.ts version", () => {
     expect(version(root)).toBe("4.0.0-alpha.0")
   })
 
+  it("writes the Zed extension's manifest and crate versions too (Plan 19)", () => {
+    const root = repo({ changelog: "## 4.0.0-alpha.0\n" })
+    const zed = path.join(root, "packages/effectscript/zed")
+    fs.mkdirSync(zed, { recursive: true })
+    fs.writeFileSync(
+      path.join(zed, "package.json"),
+      JSON.stringify({ name: "@effectscript/zed", version: "4.0.0-alpha.0" })
+    )
+    fs.writeFileSync(
+      path.join(zed, "extension.toml"),
+      "id = \"effectscript\"\nversion = \"4.0.0-alpha.0\"\nschema_version = 1\n"
+    )
+    fs.writeFileSync(
+      path.join(zed, "Cargo.toml"),
+      "[package]\nname = \"zed-effectscript\"\nversion = \"4.0.0-alpha.0\"\n\n[dependencies]\nzed_extension_api = \"0.7.0\"\n"
+    )
+    expect(release(root, "version").status).toBe(0)
+    expect(fs.readFileSync(path.join(zed, "extension.toml"), "utf8")).toContain("version = \"4.0.0-alpha.1\"")
+    const cargo = fs.readFileSync(path.join(zed, "Cargo.toml"), "utf8")
+    expect(cargo).toContain("version = \"4.0.0-alpha.1\"")
+    expect(cargo).toContain("zed_extension_api = \"0.7.0\"")
+  })
+
   it("follows --effect and --prerelease", () => {
     const root = repo({ changelog: "## 4.0.0-alpha.3\n" })
     expect(release(root, "version", "--effect", "4.1", "--prerelease", "none").status).toBe(0)

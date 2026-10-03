@@ -62,6 +62,9 @@ packages/effectscript/tree-sitter/*.so
 packages/effectscript/tree-sitter/*.dylib
 packages/effectscript/tree-sitter/*.wasm
 
+# EffectScript Zed extension: Cargo's build output
+packages/effectscript/zed/target/
+
 # EffectScript site: generated inputs and output (packages/effectscript/site/scripts/content.ts)
 packages/effectscript/site/public/
 packages/effectscript/site/src/assets/

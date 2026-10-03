@@ -1,0 +1,18 @@
+# The EffectScript extension for Zed (ADR-0058): the tree-sitter grammar for highlighting, outline
+# and indentation, and `efx lsp` for everything else.
+id = "effectscript"
+name = "EffectScript"
+version = "4.0.0-alpha.0"
+schema_version = 1
+authors = ["EffectScript contributors"]
+description = "EffectScript: TypeScript with Effect as syntax"
+repository = "https://github.com/EffectScript-Lang/effect-lang"
+
+[language_servers.efx]
+name = "EffectScript"
+languages = ["EffectScript"]
+
+# The grammar is published with its generated parser (RELEASING.md): `rev` is that commit.
+[grammars.effectscript]
+repository = "https://github.com/EffectScript-Lang/tree-sitter-effectscript"
+rev = "main"
