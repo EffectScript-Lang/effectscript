@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/FiberSet.ts`, in EffectScript 
 **Managing fibers in a set**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make<string, string>()
 
@@ -38,7 +37,6 @@ actual // => 0
 **Checking if a value is a FiberSet**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
 
@@ -54,7 +52,6 @@ actual // => [true, false]
 **Creating a scoped FiberSet**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
 
@@ -77,7 +74,6 @@ actual // => 2
 **Creating a scoped runtime**
 
 ```efx
-
 const program = effect {
   const runFork = await FiberSet.makeRuntime()
 
@@ -97,7 +93,6 @@ actual // => ["hello", "world"]
 **Creating a promise runtime**
 
 ```efx
-
 const program = effect {
   const runPromise = await FiberSet.makeRuntimePromise()
 
@@ -117,7 +112,6 @@ actual // => ["hello", "world"]
 **Adding a fiber unsafely**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
   const fiber = await forkChild(never)
@@ -138,7 +132,6 @@ actual // => 1
 **Adding a fiber**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
   const fiber = await forkChild(never)
@@ -159,7 +152,6 @@ actual // => 1
 **Clearing all fibers**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
 
@@ -184,7 +176,6 @@ actual // => [2, 0]
 **Forking effects into a set**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
 
@@ -205,7 +196,6 @@ actual // => ["hello", "world"]
 **Capturing a runtime**
 
 ```efx
-
 service Users {
   readonly getAll: Effect<Array<unknown>>
 }
@@ -232,7 +222,6 @@ actual // => 0
 **Running effects as promises**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
   const runPromise = await FiberSet.runtimePromise(set)()
@@ -253,7 +242,6 @@ actual // => ["hello", "world"]
 **Checking the set size**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
 
@@ -294,7 +282,6 @@ actual // => Exit.fail("error")
 **Waiting for an empty set**
 
 ```efx
-
 const program = effect {
   const set = await FiberSet.make()
 

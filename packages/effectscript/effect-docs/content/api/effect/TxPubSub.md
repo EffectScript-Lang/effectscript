@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxPubSub.ts`, in EffectScript 
 **Subscribing to a transactional pub/sub**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<string>()
 
@@ -37,7 +36,6 @@ await runPromise(program) // => "hello"
 **Creating a bounded pub/sub**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.bounded<number>(16)
 
@@ -58,7 +56,6 @@ await runPromise(program) // => 42
 **Creating a dropping pub/sub**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.dropping<number>(2)
 
@@ -83,7 +80,6 @@ await runPromise(program) // => [1, 2]
 **Creating a sliding pub/sub**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.sliding<number>(2)
 
@@ -106,7 +102,6 @@ await runPromise(program) // => 2
 **Creating an unbounded pub/sub**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<string>()
 
@@ -127,7 +122,6 @@ await runPromise(program) // => "msg"
 **Reading pub/sub capacity**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.bounded<number>(16)
   return TxPubSub.capacity(hub)
@@ -164,7 +158,6 @@ await runPromise(program) // => 2
 **Checking whether a pub/sub is empty**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<number>()
   return await TxPubSub.isEmpty(hub)
@@ -178,7 +171,6 @@ await runPromise(program) // => true
 **Checking whether a pub/sub is non-empty**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<number>()
   const empty = await TxPubSub.isNonEmpty(hub)
@@ -199,7 +191,6 @@ await runPromise(program) // => [false, true]
 **Checking whether a pub/sub is full**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.bounded<number>(2)
   return await TxPubSub.isFull(hub)
@@ -213,7 +204,6 @@ await runPromise(program) // => false
 **Checking whether a pub/sub is shut down**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<number>()
   const before = await TxPubSub.isShutdown(hub)
@@ -229,7 +219,6 @@ await runPromise(program) // => [false, true]
 **Publishing a message to subscribers**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<string>()
 
@@ -254,7 +243,6 @@ await runPromise(program) // => [true, "hello"]
 **Publishing multiple messages to subscribers**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<number>()
 
@@ -278,7 +266,6 @@ await runPromise(program) // => [1, 2, 3]
 **Subscribing multiple queues**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<string>()
 
@@ -304,7 +291,6 @@ await runPromise(program) // => ["broadcast", "broadcast"]
 **Shutting down a pub/sub**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<number>()
   await TxPubSub.shutdown(hub)
@@ -322,7 +308,6 @@ await runPromise(program) // => [true, false]
 **Waiting for shutdown**
 
 ```efx
-
 const program = effect {
   const hub = await TxPubSub.unbounded<number>()
 

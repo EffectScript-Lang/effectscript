@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Path.ts`, in EffectScript (ADR
 **Using path operations**
 
 ```efx
-
 const program = effect {
   const path = await Path
 
@@ -48,7 +47,6 @@ result.resolved // => "/base/relative/path"
 **Working with parsed paths**
 
 ```efx
-
 // Access types and utilities in the Path namespace
 const program = effect {
   const path = await Path
@@ -71,38 +69,9 @@ const program = effect {
 runSync(provide(program, Path.layer)) // => ["file.txt", "file.txt"]
 ```
 
-## Path.Parsed
-
-**Parsing and formatting paths**
-
-```efx
-
-const program = effect {
-  const path = await Path
-
-  // Parse a path into its components
-  const parsed = path.parse("/home/user/documents/file.txt")
-  // Format a path from its components
-  const formatted = path.format({
-    dir: "/home/user",
-    name: "newfile",
-    ext: ".ts"
-  })
-  return { dir: parsed.dir, base: parsed.base, formatted }
-}
-
-const result = runSync(provide(program, Path.layer))
-result.dir // => "/home/user/documents"
-result.base // => "file.txt"
-result.formatted // => "/home/user/newfile.ts"
-```
-
-## Path
-
 **Providing a custom Path service**
 
 ```efx
-
 // Create a custom path implementation
 const customPath: Path = {
   [Path.TypeId]: Path.TypeId,
@@ -151,4 +120,29 @@ const program = effect {
 
 // Run with custom path implementation
 runSync(provide(program, customPathLayer)) // => "home/user/file.txt"
+```
+
+## Path.Parsed
+
+**Parsing and formatting paths**
+
+```efx
+const program = effect {
+  const path = await Path
+
+  // Parse a path into its components
+  const parsed = path.parse("/home/user/documents/file.txt")
+  // Format a path from its components
+  const formatted = path.format({
+    dir: "/home/user",
+    name: "newfile",
+    ext: ".ts"
+  })
+  return { dir: parsed.dir, base: parsed.base, formatted }
+}
+
+const result = runSync(provide(program, Path.layer))
+result.dir // => "/home/user/documents"
+result.base // => "file.txt"
+result.formatted // => "/home/user/newfile.ts"
 ```

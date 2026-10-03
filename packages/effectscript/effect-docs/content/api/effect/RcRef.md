@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/RcRef.ts`, in EffectScript (AD
 **Sharing a lazily acquired resource**
 
 ```efx
-
 const events: Array<string> = []
 
 // Create an RcRef for a database connection
@@ -58,7 +57,6 @@ type MyVariance = RcRef.RcRef.Variance<string, Error>
 **Creating a reference-counted resource**
 
 ```efx
-
 const events: Array<string> = []
 
 const program = effect {
@@ -86,7 +84,6 @@ events // => ["released foo"]
 **Sharing one acquired value**
 
 ```efx
-
 const events: Array<string> = []
 
 const program = effect {

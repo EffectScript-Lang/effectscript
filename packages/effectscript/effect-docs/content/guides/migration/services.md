@@ -57,7 +57,6 @@ class Database extends Context.Tag("Database")<Database, {
 **v4: `Context.Service` class syntax**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => string
 }
@@ -105,7 +104,6 @@ const program = Notifications.notify("hello")
 **v4 — `use`**
 
 ```efx
-
 service Notifications {
   readonly notify: (message: string) => Effect<void>
 }

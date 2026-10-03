@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ai/Chat.ts`, in EffectScript (
 **Accessing the Chat service**
 
 ```efx
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -49,7 +48,6 @@ await runPromise(
 **Inspecting chat history**
 
 ```efx
-
 const inspectHistory = effect {
   const chat = await Chat.fromPrompt("Hello")
   const currentHistory = await Ref.get(chat.history)
@@ -64,7 +62,6 @@ await runPromise(inspectHistory) // => 1
 **Exporting chat history**
 
 ```efx
-
 const saveChat = effect {
   const chat = await Chat.fromPrompt("Hello!")
   const exportedData = await chat.export
@@ -79,7 +76,6 @@ await runPromise(saveChat) // => "object"
 **Exporting chat history as JSON**
 
 ```efx
-
 const backupChat = effect {
   const chat = await Chat.fromPrompt("Explain photosynthesis")
   const jsonBackup = await chat.exportJson
@@ -94,7 +90,6 @@ await runPromise(backupChat) // => 1
 **Generating chat responses**
 
 ```efx
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -129,7 +124,6 @@ await runPromise(chatWithAI.pipe(provide(FakeLanguageModel))) // => ["The capita
 **Streaming chat responses**
 
 ```efx
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -162,7 +156,6 @@ story // => "A small probe reached orbit. It sent back a picture of Earth."
 **Generating structured objects**
 
 ```efx
-
 const ContactSchema = Schema.Struct({
   name: Schema.String,
   email: Schema.String,
@@ -198,7 +191,6 @@ await runPromise(extractContact.pipe(provide(FakeLanguageModel))) // => ["John D
 **Creating an empty chat**
 
 ```efx
-
 const freshChat = effect {
   const chat = await Chat.empty
   const history = await chat.export
@@ -213,7 +205,6 @@ await runPromise(freshChat) // => 0
 **Creating a chat from a system prompt**
 
 ```efx
-
 const chatWithSystemPrompt = effect {
   const chat = await Chat.fromPrompt([{
     role: "system",
@@ -230,7 +221,6 @@ await runPromise(chatWithSystemPrompt) // => 1
 **Restoring chat history from a prompt**
 
 ```efx
-
 // Initialize with conversation history
 const existingChat = effect {
   const chat = await Chat.fromPrompt([
@@ -260,7 +250,6 @@ await runPromise(existingChat) // => 3
 **Restoring chat data**
 
 ```efx
-
 const restoreChat = effect {
   const originalChat = await Chat.fromPrompt([
     {
@@ -298,7 +287,6 @@ await runPromise(restoreChat) // => { roles: ["user", "assistant"], text: "The p
 **Restoring chat history from JSON**
 
 ```efx
-
 const restoreFromJson = effect {
   const original = await Chat.fromPrompt("Hello")
   const jsonData = await original.exportJson

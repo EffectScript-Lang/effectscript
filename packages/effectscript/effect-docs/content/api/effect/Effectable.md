@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Effectable.ts`, in EffectScrip
 **Evaluating a mixed-in class**
 
 ```efx
-
 class Box {
   constructor(readonly value: number) {}
 }

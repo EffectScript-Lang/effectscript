@@ -30,7 +30,6 @@ positiveFilter(-3) // => Result.fail(-3)
 **Defining an effectful user filter**
 
 ```efx
-
 // An effectful filter that validates user data
 type User = { id: string; isActive: boolean }
 type ValidationError = { message: string }
@@ -74,7 +73,6 @@ uppercaseFilter("ok") // => Result.succeed("OK")
 **Creating effectful filters**
 
 ```efx
-
 // Create an effectful filter that validates async
 const asyncValidate = Filter.makeEffect((id: string) =>
   effect {

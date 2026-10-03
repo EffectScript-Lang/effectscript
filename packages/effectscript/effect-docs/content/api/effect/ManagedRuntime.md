@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ManagedRuntime.ts`, in EffectS
 **Creating a managed runtime**
 
 ```efx
-
 const notifications: Array<string> = []
 
 service Notifications {

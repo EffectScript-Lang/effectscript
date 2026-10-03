@@ -37,6 +37,23 @@ const program = effect {
 await runPromise(program) // => "myapp (1.0.0)"
 ```
 
+**Accessing the output formatter**
+
+```efx
+// Access the formatter service
+const program = effect {
+  const formatter = await CliOutput.Formatter
+
+  // Format version information
+  return formatter.formatVersion("my-cli", "2.1.0")
+}
+
+// Run with default formatter
+await runPromise(program.pipe(
+  provide(CliOutput.layer(CliOutput.defaultFormatter({ colors: false })))
+)) // => "my-cli v2.1.0"
+```
+
 ## Formatter.formatHelpDoc
 
 **Formatting help documents**
@@ -156,26 +173,6 @@ const errors = [
 
 const output = formatter.formatErrors(errors)
 const optionsPresent = [output.includes("--foo"), output.includes("--required")] // => [true, true]
-```
-
-## Formatter
-
-**Accessing the output formatter**
-
-```efx
-
-// Access the formatter service
-const program = effect {
-  const formatter = await CliOutput.Formatter
-
-  // Format version information
-  return formatter.formatVersion("my-cli", "2.1.0")
-}
-
-// Run with default formatter
-await runPromise(program.pipe(
-  provide(CliOutput.layer(CliOutput.defaultFormatter({ colors: false })))
-)) // => "my-cli v2.1.0"
 ```
 
 ## layer

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/LayerMap.ts`, in EffectScript 
 **Managing keyed layers**
 
 ```efx
-
 // Define a service key
 const DatabaseService = Context.Service<{
   readonly query: (sql: string) => Effect<string>
@@ -57,7 +56,6 @@ await runPromise(scoped(program)) // => { development: "development: SELECT 1", 
 **Creating a layer map**
 
 ```efx
-
 // Define a service key
 const DatabaseService = Context.Service<{
   readonly query: (sql: string) => Effect<string>
@@ -94,7 +92,6 @@ await runPromise(scoped(program)) // => "development: SELECT * FROM users"
 **Creating a layer map from a record**
 
 ```efx
-
 // Define a service key
 const Database = Context.Service<{
   readonly query: (sql: string) => Effect<string>
@@ -136,7 +133,6 @@ await runPromise(scoped(program)) // => { development: "DEV: SELECT 1", producti
 **Defining a layer map service**
 
 ```efx
-
 // Define a service key
 const Greeter = Context.Service<{
   readonly greet: Effect<string>

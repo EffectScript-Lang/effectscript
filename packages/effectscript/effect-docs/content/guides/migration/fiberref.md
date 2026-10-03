@@ -76,7 +76,6 @@ const program = Effect.locally(
 **v4**
 
 ```efx
-
 const program = provideService(
   myEffect,
   References.CurrentLogLevel,
@@ -103,7 +102,6 @@ const program = Effect.gen(function*() {
 **v4**
 
 ```efx
-
 const program = provideService(
   Effect.gen(function*() {
     const maxOps = yield* References.MaxOpsBeforeYield

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/workflow/DurableQueue.ts`, in 
 **Defining a durable queue with workers**
 
 ```efx
-
 // Define a DurableQueue that can be used to derive workers and offer items for
 // processing.
 const ApiQueue = DurableQueue.make({

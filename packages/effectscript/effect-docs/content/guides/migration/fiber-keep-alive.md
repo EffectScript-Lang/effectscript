@@ -26,7 +26,6 @@ In v4, **the keep-alive mechanism is built into the core runtime**.
 Consider the following program:
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<string>()
 

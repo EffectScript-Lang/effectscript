@@ -573,7 +573,6 @@ const schema = Schema.Struct({
 v4
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.String.pipe(Schema.withDecodingDefaultType(succeed("")))
 })
@@ -594,7 +593,6 @@ const schema = Schema.Struct({
 v4
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.String.pipe(Schema.withDecodingDefaultTypeKey(succeed("")))
 })
@@ -991,7 +989,6 @@ const schema = Schema.String.annotations({
 v4
 
 ```efx
-
 const schema = Schema.String.pipe(Schema.catchDecoding(() => succeedSome("a")))
 ```
 

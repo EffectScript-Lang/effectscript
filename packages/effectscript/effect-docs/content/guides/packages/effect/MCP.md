@@ -107,7 +107,6 @@ resource is defined as a template that specifies its location, behavior, and met
 parameters, completions, and content generation.
 
 ```efx
-
 const SimpleResource = McpServer.resource({
   uri: "file:///demo.txt",
   name: "Demo Resource",
@@ -146,7 +145,6 @@ structured, parameterized instructions or messages that the client can send to t
 generation logic in a declarative way.
 
 ```efx
-
 const DemoPrompt = McpServer.prompt({
   name: "Demo Prompt",
   description: "A demo prompt to demonstrate MCP server capabilities",
@@ -171,7 +169,6 @@ contract while the actual logic is provided separately through an implementation
 grouped into toolkits, which can be combined and converted into layers.
 
 ```efx
-
 const DemoTool = Tool.make("DemoTool", {
   description: "This is a demo tool for the documentation",
   parameters: Schema.Struct({
@@ -216,7 +213,6 @@ defines both the message shown to the user and the expected response schema, ens
 validated user input.
 
 ```efx
-
 const DemoElicitation = McpServer.elicit({
   message: `Please answer the question ("yes" | "no") (default "no"):`,
   schema: Schema.Struct({

@@ -63,7 +63,6 @@ In v4, use the same pattern with `Effect.context<R>()`, then run with
 **v4**
 
 ```efx
-
 service Logger {
   readonly log: (message: string) => void
 }

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Schedule.ts`, in EffectScript 
 **Defining retry and repeat schedules**
 
 ```efx
-
 const executions: Array<number> = []
 const program = sync(() => executions.push(executions.length + 1)).pipe(
   repeat(Schedule.recurs(2)),
@@ -58,7 +57,6 @@ Schedule.isSchedule(undefined) // => false
 **Creating a custom schedule from a step function**
 
 ```efx
-
 const schedule = Schedule.fromStep(sync(() => {
   let count = 0
 
@@ -84,7 +82,6 @@ await runPromise(program) // => 0
 **Creating a metadata-aware schedule**
 
 ```efx
-
 const firstThreeInputs = Schedule.fromStepWithMetadata(succeed((metadata: Schedule.InputMetadata<string>) => {
   if (metadata.attempt > 3) {
     return Cause.done("finished")
@@ -132,7 +129,6 @@ await runPromise(program) // => [Duration.millis(100), Duration.millis(100)]
 **Extracting a sleeping step function**
 
 ```efx
-
 const schedule = Schedule.recurs(3)
 
 const program = effect {
@@ -288,7 +284,6 @@ await runPromise(program) // => [0, Duration.seconds(1)]
 **Mapping schedule outputs**
 
 ```efx
-
 const countSchedule = Schedule.recurs(5).pipe(
   Schedule.map(({ output: count }) => succeed(`Execution #${count + 1}`))
 )
@@ -306,7 +301,6 @@ await runPromise(program) // => "Execution #1"
 **Modifying delays from schedule metadata**
 
 ```efx
-
 const schedule = Schedule.spaced("10 millis").pipe(
   Schedule.modifyDelay(({ duration }) => succeed(Duration.times(duration, 2)))
 )
@@ -324,7 +318,6 @@ await runPromise(program) // => Duration.millis(20)
 **Passing inputs through as outputs**
 
 ```efx
-
 const inputSchedule = Schedule.passthrough(
   Schedule.exponential("100 millis").pipe(Schedule.upTo({ times: 3 }))
 )
@@ -342,7 +335,6 @@ await runPromise(program) // => "input"
 **Limiting recurrences**
 
 ```efx
-
 const executions: Array<number> = []
 const program = sync(() => executions.push(executions.length + 1)).pipe(
   repeat(Schedule.recurs(3)),
@@ -372,7 +364,6 @@ await runPromise(program) // => [0, Duration.seconds(2)]
 **Tapping schedule metadata**
 
 ```efx
-
 const attempts: Array<number> = []
 const monitoredSchedule = Schedule.recurs(2).pipe(
   Schedule.tap((metadata) => sync(() => attempts.push(metadata.attempt)))
@@ -391,7 +382,6 @@ await runPromise(program) // => { attempts: [1], output: 0 }
 **Limiting by duration and recurrence count**
 
 ```efx
-
 const executions: Array<number> = []
 const schedule = Schedule.forever.pipe(Schedule.upTo({ times: 2 }))
 const program = sync(() => executions.push(executions.length + 1)).pipe(
@@ -422,7 +412,6 @@ await runPromise(program) // => [0, Duration.seconds(5)]
 **Repeating forever**
 
 ```efx
-
 const executions: Array<number> = []
 const schedule = Schedule.forever.pipe(Schedule.upTo({ times: 2 }))
 const program = sync(() => executions.push(executions.length + 1)).pipe(

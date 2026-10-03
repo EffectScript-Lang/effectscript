@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxSemaphore.ts`, in EffectScri
 **Managing permits transactionally**
 
 ```efx
-
 // Create a semaphore with 3 permits for managing concurrent database connections
 const program = effect {
   const dbSemaphore = await TxSemaphore.make(3)
@@ -41,7 +40,6 @@ await runPromise(program) // => [2, 3]
 **Creating a semaphore**
 
 ```efx
-
 // Create a semaphore for managing concurrent access to a resource pool
 const program = effect {
   // Create a semaphore with 3 permits for a connection pool
@@ -61,7 +59,6 @@ await runPromise(program) // => [3, 3]
 **Checking available permits**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(5)
 
@@ -85,7 +82,6 @@ await runPromise(program) // => [5, 3]
 **Checking semaphore capacity**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(10)
 
@@ -105,7 +101,6 @@ await runPromise(program) // => [10, 10]
 **Acquiring a permit**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(2)
 
@@ -124,7 +119,6 @@ await runPromise(program) // => 0
 **Acquiring multiple permits**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(5)
 
@@ -141,7 +135,6 @@ await runPromise(program) // => 2
 **Trying to acquire a permit**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(1)
 
@@ -161,7 +154,6 @@ await runPromise(program) // => [true, false]
 **Trying to acquire multiple permits**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(3)
 
@@ -181,7 +173,6 @@ await runPromise(program) // => [true, false]
 **Releasing a permit**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(2)
 
@@ -203,7 +194,6 @@ await runPromise(program) // => [1, 2]
 **Releasing multiple permits**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(5)
 
@@ -225,7 +215,6 @@ await runPromise(program) // => [2, 4]
 **Running an effect with a permit**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(2)
   const events: Array<string> = []
@@ -254,7 +243,6 @@ await runPromise(program) // => [["permit acquired", "operation complete"], "que
 **Running an effect with multiple permits**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(5)
   const events: Array<string> = []
@@ -283,7 +271,6 @@ await runPromise(program) // => [["3 permits acquired"], ["result1", "result2", 
 **Acquiring a scoped permit**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(3)
   const events: Array<string> = []
@@ -314,7 +301,6 @@ await runPromise(program) // => [["permit acquired for scope", "work completed"]
 **Checking semaphore values**
 
 ```efx
-
 const program = effect {
   const semaphore = await TxSemaphore.make(5)
   const notSemaphore = { some: "object" }

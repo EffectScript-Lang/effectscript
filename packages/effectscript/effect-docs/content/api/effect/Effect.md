@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Effect.ts`, in EffectScript (A
 **Checking whether a value is an Effect**
 
 ```efx
-
 isEffect(succeed(1)) // => true
 isEffect("hello") // => false
 ```
@@ -26,7 +25,6 @@ isEffect("hello") // => false
 **Collecting tuple results in order**
 
 ```efx
-
 const tupleOfEffects = [
   succeed(42),
   succeed("Hello")
@@ -42,7 +40,6 @@ await runPromise(resultsAsTuple) // => [42, "Hello"]
 **Collecting iterable results in order**
 
 ```efx
-
 const iterableOfEffects: Iterable<Effect<number>> = [1, 2, 3].map(
   succeed
 )
@@ -57,7 +54,6 @@ await runPromise(resultsAsArray) // => [1, 2, 3]
 **Collecting struct results by key**
 
 ```efx
-
 const structOfEffects = {
   a: succeed(42),
   b: succeed("Hello")
@@ -73,7 +69,6 @@ await runPromise(resultsAsStruct) // => { a: 42, b: "Hello" }
 **Collecting record results by key**
 
 ```efx
-
 const recordOfEffects: Record<string, Effect<number>> = {
   key1: succeed(1),
   key2: succeed(2)
@@ -109,7 +104,6 @@ const observation = [output, outcome] // => [["Task1"], Exit.fail("Task2: Oh no!
 **Separating successes and failures**
 
 ```efx
-
 const program = partition([0, 1, 2, 3], (n) =>
   n % 2 === 0 ? fail(`${n} is even`) : succeed(n)
 )
@@ -235,7 +229,6 @@ output // => ["Current count: 1", "Current count: 2", "Current count: 3", "Curre
 **Wrapping a non-rejecting Promise**
 
 ```efx
-
 const succeedAsync = (message: string) =>
   promise<string>(() => Promise.resolve(message))
 
@@ -250,7 +243,6 @@ await runPromise(program) // => "Async operation completed successfully!"
 **Wrapping a fetch request that may fail**
 
 ```efx
-
 const getTodo = (id: number) =>
   tryPromise(() => Promise.resolve({ id, completed: false }))
 
@@ -263,7 +255,6 @@ await runPromise(program) // => { id: 1, completed: false }
 **Mapping Promise rejections to a tagged error**
 
 ```efx
-
 class TodoFetchError extends Data.TaggedError("TodoFetchError")<{ readonly cause: unknown }> {}
 
 const getTodo = (id: number) =>
@@ -285,7 +276,6 @@ error._tag // => "TodoFetchError"
 **Creating a successful effect**
 
 ```efx
-
 // Creating an effect that represents a successful scenario
 //
 //      ┌─── Effect<number, never, never>
@@ -323,7 +313,6 @@ runSync(program) // => Option.some(42)
 **Lazily evaluating side effects**
 
 ```efx
-
 let i = 0
 
 const bad = succeed(i++)
@@ -340,7 +329,6 @@ runSync(good) // => 2
 **Suspending recursive Fibonacci evaluation**
 
 ```efx
-
 const blowsUp = (n: number): Effect<number> =>
   n < 2
     ? succeed(1)
@@ -364,7 +352,6 @@ runSync(allGood(16)) // => 1597
 **Helping TypeScript infer recursive effect types**
 
 ```efx
-
 //   Without suspend, TypeScript may struggle with type inference.
 //   Inferred type:
 //     (a: number, b: number) =>
@@ -441,7 +428,6 @@ await runPromise(program) // => Option.none()
 **Starting do notation**
 
 ```efx
-
 const program = Do
   |> bind("x", () => succeed(2))
   |> bind("y", ({ x }) => succeed(x + 1))
@@ -455,7 +441,6 @@ runSync(program) // => { x: 2, y: 3, sum: 5 }
 **Sequencing effects with generators**
 
 ```efx
-
 class DiscountRateError extends Data.TaggedError("DiscountRateError")<{}> {}
 
 const addServiceCharge = (amount: number) => amount + 1
@@ -491,7 +476,6 @@ await runPromise(program) // => "Final amount to charge: 96"
 **Creating a failed effect**
 
 ```efx
-
 class OperationFailedError extends Data.TaggedError("OperationFailedError")<{}> {}
 
 //      ┌─── Effect<never, OperationFailedError, never>
@@ -507,7 +491,6 @@ runSync(flip(failure))._tag // => "OperationFailedError"
 **Lazily creating failures**
 
 ```efx
-
 class ProgramError extends Data.TaggedError("ProgramError")<{ readonly operation: string }> {}
 
 const program = failSync(() => new ProgramError({ operation: "sync" }))
@@ -520,7 +503,6 @@ runSync(flip(program)).operation // => "sync"
 **Failing with a full Cause**
 
 ```efx
-
 const program = failCause(
   Cause.fail("Network error")
 )
@@ -533,7 +515,6 @@ runSync(flip(program)) // => "Network error"
 **Lazily creating a Cause**
 
 ```efx
-
 const program = failCauseSync(() =>
   Cause.fail("Error computed at runtime")
 )
@@ -566,7 +547,6 @@ runSyncExit(program) // => Exit.die(defect)
 **Parsing JSON**
 
 ```efx
-
 const parseJSON = (input: string) =>
   Effect.try(() => JSON.parse(input))
 
@@ -581,7 +561,6 @@ exit._tag // => "Failure"
 **Mapping exceptions to a tagged error**
 
 ```efx
-
 class JsonParsingError extends Data.TaggedError("JsonParsingError")<{ readonly cause: unknown }> {}
 
 const parseJSON = (input: string) =>
@@ -633,7 +612,6 @@ output // => ["High priority task", "Continued after yield"]
 **Reading the current fiber**
 
 ```efx
-
 const program = withFiber((fiber) => succeed(typeof fiber.id))
 
 runSync(program) // => "number"
@@ -644,7 +622,6 @@ runSync(program) // => "number"
 **Computing a value from the current fiber**
 
 ```efx
-
 const program = withFiberSucceed((fiber) => typeof fiber.id)
 
 runSync(program) // => "number"
@@ -693,7 +670,6 @@ output // => [42, "NoSuchElementError", "missing"]
 **Transposing an Option of an Effect**
 
 ```efx
-
 const some = Option.some(succeed(42))
 
 //      ┌─── Effect<Option<number>, never, never>
@@ -747,7 +723,6 @@ output // => [[2, 2, 2]]
 **Sequencing dependent effects**
 
 ```efx
-
 class DiscountRateError extends Data.TaggedError("DiscountRateError")<{}> {}
 
 // Function to apply a discount safely to a transaction amount
@@ -812,7 +787,6 @@ output // => [['done', 'done', 'done']]
 **Sequencing a discount calculation after fetching a total**
 
 ```efx
-
 class DiscountRateError extends Data.TaggedError("DiscountRateError")<{}> {}
 
 // Function to apply a discount safely to a transaction amount
@@ -949,7 +923,6 @@ output // => [[2, 2, 2]]
 **Adding a service charge**
 
 ```efx
-
 const addServiceCharge = (amount: number) => amount + 1
 
 const fetchTransactionAmount = promise(() => Promise.resolve(100))
@@ -965,7 +938,6 @@ await runPromise(finalAmount) // => 101
 **Replacing a success value**
 
 ```efx
-
 // Replaces the value 5 with the constant "new value"
 const program = succeed(5) |> as("new value")
 
@@ -989,7 +961,6 @@ runSync(program) // => Option.some(42)
 **Discarding success values**
 
 ```efx
-
 const program = asVoid(succeed(42))
 
 runSync(program) // => undefined
@@ -1000,7 +971,6 @@ runSync(program) // => undefined
 **Swapping success and failure channels**
 
 ```efx
-
 //      ┌─── Effect<number, string, never>
 //      ▼
 const program = fail("Oh uh!").pipe(as(2))
@@ -1016,7 +986,6 @@ runSync(flipped) // => "Oh uh!"
 **Combining two effects sequentially**
 
 ```efx
-
 const task1 = succeed(1)
 const task2 = succeed("hello")
 
@@ -1032,7 +1001,6 @@ runSync(program) // => [1, 'hello']
 **Combining two effects concurrently**
 
 ```efx
-
 const task1 = succeed(1)
 const task2 = succeed("hello")
 
@@ -1047,7 +1015,6 @@ await runPromise(program) // => [1, 'hello']
 **Combining two success values with a function**
 
 ```efx
-
 const task1 = succeed(1)
 const task2 = succeed("hello")
 
@@ -1066,7 +1033,6 @@ runSync(task3) // => 6
 **Handling a tagged error**
 
 ```efx
-
 class NetworkError {
   readonly _tag = "NetworkError"
   constructor(readonly message: string) {}
@@ -1094,7 +1060,6 @@ runSync(program) // => "Recovered from network error: offline"
 **Handling multiple tagged errors**
 
 ```efx
-
 // Define tagged error types
 class ValidationError extends Data.TaggedError("ValidationError")<{
   message: string
@@ -1123,7 +1088,6 @@ runSync(handled) // => "Network error: 503"
 **Handling an error reason**
 
 ```efx
-
 class RateLimitError extends Data.TaggedError("RateLimitError")<{
   retryAfter: number
 }> {}
@@ -1155,7 +1119,6 @@ runSync(handled) // => "Retry after 30s"
 **Handling multiple error reasons**
 
 ```efx
-
 class RateLimitError extends Data.TaggedError("RateLimitError")<{
   retryAfter: number
 }> {}
@@ -1189,7 +1152,6 @@ runSync(handled) // => "Quota exceeded: 100"
 **Extracting the reason from a tagged error**
 
 ```efx
-
 class RateLimitError extends Data.TaggedError("RateLimitError")<{
   retryAfter: number
 }> {}
@@ -1264,7 +1226,6 @@ output // => ["Caught defect: Unexpected error", "Recovered from defect"]
 **Recovering when a predicate matches**
 
 ```efx
-
 class NotFound extends Data.TaggedError("NotFound")<{ id: string }> {}
 
 const program = fail(new NotFound({ id: "user-1" }))
@@ -1333,7 +1294,6 @@ output // => ["Caught network error: Network Error", "Fallback response"]
 **Transforming the error channel**
 
 ```efx
-
 class TaskError extends Data.TaggedError("TaskError")<{ readonly message: string }> {}
 
 //      ┌─── Effect<number, string, never>
@@ -1354,7 +1314,6 @@ runSync(flip(mapped)).message // => "Oh no!"
 **Transforming success and failure channels**
 
 ```efx
-
 class TaskError extends Data.TaggedError("TaskError")<{ readonly message: string }> {}
 
 //      ┌─── Effect<number, string, never>
@@ -1531,7 +1490,6 @@ output // => ["Attempt 1", "Attempt 2", "Attempt 3", "Ready"]
 **Retrying with a schedule**
 
 ```efx
-
 class AttemptError extends Data.TaggedError("AttemptError")<{ readonly attempt: number }> {}
 
 let attempt = 0
@@ -1589,7 +1547,6 @@ output // => ["Network attempt 1", "Network attempt 2", "Network attempt 3", "Ne
 **Exposing failures as causes**
 
 ```efx
-
 const task = fail("Something went wrong")
 
 // Sandbox exposes the full cause as the error type
@@ -1606,7 +1563,6 @@ runSync(program) // => "Caught cause: Something went wrong"
 **Discarding success and failure values**
 
 ```efx
-
 //      ┌─── Effect<number, string, never>
 //      ▼
 const task = fail("Uh oh!").pipe(as(5))
@@ -1620,7 +1576,6 @@ runSync(program) // => undefined
 **Logging failures while ignoring results**
 
 ```efx
-
 const task = fail("Uh oh!")
 
 const program = task.pipe(ignore)
@@ -1632,7 +1587,6 @@ runSync(program) // => undefined
 **Ignoring failures and logging causes**
 
 ```efx
-
 const task = fail("boom")
 
 const program = task.pipe(ignoreCause)
@@ -1644,7 +1598,6 @@ runSync(program) // => undefined
 **Retrying with an execution plan**
 
 ```efx
-
 const Endpoint = Context.Service<{ url: string }>("Endpoint")
 
 const fetchUrl = effect {
@@ -1667,7 +1620,6 @@ runSync(program) // => "good"
 **Observing execution-plan attempts**
 
 ```efx
-
 const Endpoint = Context.Service<{ url: string }>("Endpoint")
 
 const fetchUrl = effect {
@@ -1720,7 +1672,6 @@ runSyncExit(program) // => Exit.succeed(0)
 **Trying alternatives until one succeeds**
 
 ```efx
-
 const primary = fail("primary unavailable")
 const secondary = succeed("secondary result")
 const tertiary = sync(() => {
@@ -1741,7 +1692,6 @@ runSync(program) // => "secondary result"
 **Failing when work takes too long**
 
 ```efx
-
 const timedEffect = never.pipe(timeout(0))
 const error = await runPromise(flip(timedEffect))
 error._tag // => "TimeoutError"
@@ -1811,7 +1761,6 @@ output // => ["Start", "End"]
 **Measuring execution time**
 
 ```efx
-
 const program = effect {
   const [, value] = await timed(succeed("ok"))
   return value
@@ -1825,7 +1774,6 @@ runSync(program) // => "ok"
 **Racing many effects**
 
 ```efx
-
 const raced = raceAll([
   succeed("Fast"),
   never
@@ -1838,7 +1786,6 @@ await runPromise(raced) // => "Fast"
 **Taking the first settled result**
 
 ```efx
-
 const raced = raceAllFirst([
   fail("First failed"),
   never
@@ -1910,7 +1857,6 @@ output // => [[2, 4], [2, 3]]
 **Filtering with a fallback effect**
 
 ```efx
-
 // An effect that produces a number
 const program = succeed(5)
 
@@ -1929,7 +1875,6 @@ runSync(filtered) // => "Number 5 is odd"
 **Filtering with a custom failure**
 
 ```efx
-
 // An effect that produces a number
 const program = succeed(5)
 
@@ -1967,7 +1912,6 @@ output // => ["Condition is true!", Option.some(undefined)]
 **Matching success and failure values**
 
 ```efx
-
 class ExampleError extends Data.TaggedError("ExampleError")<{ readonly message: string }> {}
 
 const success: Effect<number, ExampleError> = succeed(42)
@@ -2017,7 +1961,6 @@ output // => ["Success: 42"]
 **Matching on success or failure causes**
 
 ```efx
-
 const task = fail("Something went wrong")
 
 const program = matchCause(task, {
@@ -2033,7 +1976,6 @@ runSync(program) // => "Failed: Something went wrong"
 **Eagerly matching already completed effects**
 
 ```efx
-
 const handleResult = matchCauseEager(succeed(42), {
   onSuccess: (value) => `Success: ${value}`,
   onFailure: (cause) => `Failed: ${cause}`
@@ -2082,7 +2024,6 @@ output // => ["Handling error: Task failed", "recovered from error"]
 **Matching success and failure with effectful handlers**
 
 ```efx
-
 class ExampleError extends Data.TaggedError("ExampleError")<{ readonly message: string }> {}
 
 const success: Effect<number, ExampleError> = succeed(42)
@@ -2220,7 +2161,6 @@ output // => ["Using cached data", "cached_value"]
 **Providing dependencies with a layer**
 
 ```efx
-
 interface Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -2278,7 +2218,6 @@ output // => ["Querying database", "result"]
 **Running with a complete context**
 
 ```efx
-
 service Config {
   readonly greeting: string
 }
@@ -2300,7 +2239,6 @@ runSync(runnable) // => "Hello, World!"
 **Accessing a required service**
 
 ```efx
-
 interface Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -2350,7 +2288,6 @@ output // => ["Service not available"]
 **Updating the context before running**
 
 ```efx
-
 // Define services
 const Logger = Context.Service<{
   log: (msg: string) => void
@@ -2886,7 +2823,6 @@ output // => ["expensive task...", "result 1", "result 1", "result 1"]
 **Caching successes while retrying failures**
 
 ```efx
-
 let attempts = 0
 const task = suspend(() =>
   ++attempts === 1 ? fail("temporary failure") : succeed(42)
@@ -2936,7 +2872,6 @@ output // => ["expensive task...", "result 1", "result 1", "expensive task...", 
 **Creating an interrupted effect**
 
 ```efx
-
 const program = effect {
   return await interrupt
   await succeed("This won't execute and is unreachable")
@@ -3197,7 +3132,6 @@ output // => ["Processing: 0", "Processing: 0", 2]
 **Accessing the current tracer**
 
 ```efx
-
 const program = effect {
   const currentTracer = await tracer
   return typeof currentTracer.span
@@ -3211,7 +3145,6 @@ runSync(program) // => "function"
 **Providing a tracer**
 
 ```efx
-
 const program = effect {
   const tracer = await Effect.tracer
   return await withTracer(succeed("completed"), tracer)
@@ -3225,7 +3158,6 @@ runSync(program) // => "completed"
 **Enabling or disabling tracing**
 
 ```efx
-
 const program = succeed(42).pipe(
   withSpan("my-span"),
   // the span will not be registered with the tracer
@@ -3239,7 +3171,6 @@ runSync(program) // => 42
 **Enabling or disabling tracing timing**
 
 ```efx
-
 const program = succeed(42).pipe(
   withSpan("my-span"),
   // the span will not have timing information
@@ -3253,7 +3184,6 @@ runSync(program) // => 42
 **Annotating all spans**
 
 ```efx
-
 const program = succeed("result")
 
 // Add single annotation
@@ -3274,7 +3204,6 @@ runSync(all([annotated1, annotated2])) // => ['result', 'result']
 **Annotating the current span**
 
 ```efx
-
 const program = effect {
   await annotateCurrentSpan("userId", "123")
   await annotateCurrentSpan({
@@ -3292,7 +3221,6 @@ runSync(traced) // => "success"
 **Reading the current span**
 
 ```efx
-
 const program = effect {
   const span = await currentSpan
   return span.name
@@ -3307,7 +3235,6 @@ runSync(traced) // => "my-span"
 **Reading the parent span**
 
 ```efx
-
 const childOperation = effect {
   const parentSpan = await currentParentSpan
   return parentSpan._tag
@@ -3324,7 +3251,6 @@ runSync(traced) // => "Span"
 **Providing span annotations**
 
 ```efx
-
 const program = effect {
   const annotations = await spanAnnotations
   return annotations
@@ -3338,7 +3264,6 @@ runSync(program) // => { userId: '123', operation: 'data-processing' }
 **Providing span links**
 
 ```efx
-
 const program = effect {
   // Get the current span links
   const links = await spanLinks
@@ -3353,7 +3278,6 @@ runSync(program).length // => 0
 **Linking one span to another span**
 
 ```efx
-
 const program = withSpan(effect {
   const parentSpan = await currentSpan
   return await spanLinks.pipe(
@@ -3367,7 +3291,6 @@ runSync(program).length // => 1
 **Linking multiple spans at once**
 
 ```efx
-
 const program = effect {
   const span1 = await makeSpan("span-1")
   const span2 = await makeSpan("span-2")
@@ -3388,7 +3311,6 @@ runSync(program).length // => 2
 **Creating a span manually**
 
 ```efx
-
 const program = effect {
   const span = await makeSpan("my-operation")
   return span.name
@@ -3402,7 +3324,6 @@ runSync(program) // => "my-operation"
 **Creating a scoped standalone span**
 
 ```efx
-
 const program = scoped(
   effect {
     const span = await makeSpanScoped("scoped-operation")
@@ -3419,7 +3340,6 @@ runSync(program) // => "scoped-operation"
 **Running an effect with a standalone span**
 
 ```efx
-
 const program = useSpan(
   "user-operation",
   (span) => succeed(`${span.name}: success`)
@@ -3432,7 +3352,6 @@ runSync(program) // => "user-operation: success"
 **Wrapping an effect in a child span**
 
 ```efx
-
 const task = succeed("result")
 
 const traced = withSpan(task, "my-task", {
@@ -3446,7 +3365,6 @@ runSync(traced) // => "result"
 **Creating a scoped child span**
 
 ```efx
-
 const program = scoped(
   effect {
     const task = succeed("working")
@@ -3462,7 +3380,6 @@ runSync(program) // => "completed"
 **Setting a parent span**
 
 ```efx
-
 const program = effect {
   const span = await makeSpan("parent-span")
   const childTask = succeed("child operation")
@@ -3508,7 +3425,6 @@ output // => ["user-1"]
 **Forking a child fiber**
 
 ```efx
-
 const task = succeed("result")
 
 const program = effect {
@@ -3525,7 +3441,6 @@ await runPromise(program) // => "result"
 **Forking into a supplied scope**
 
 ```efx
-
 const task = never
 
 const program = scoped(
@@ -3545,7 +3460,6 @@ await runPromise(program) // => "done"
 **Forking into the current scope**
 
 ```efx
-
 const backgroundTask = never
 
 const program = scoped(
@@ -3565,7 +3479,6 @@ await runPromise(program) // => "scope completed"
 **Forking a detached fiber**
 
 ```efx
-
 const daemonTask = succeed("daemon result")
 
 const program = effect {
@@ -3597,7 +3510,6 @@ output // => ["number"]
 **Accessing the current fiber id**
 
 ```efx
-
 const program = fiberId.pipe(map((id) => typeof id))
 runSync(program) // => "number"
 ```
@@ -3717,7 +3629,6 @@ output // => ["working", "success: done"]
 **Running a successful effect as a Promise**
 
 ```efx
-
 await runPromise(succeed(1)) // => 1
 ```
 
@@ -3739,7 +3650,6 @@ output // => ["rejected"]
 **Running with services as a promise**
 
 ```efx
-
 interface Config {
   apiUrl: string
 }
@@ -3843,7 +3753,6 @@ output // => ["failed effect", "async effect"]
 **Running synchronously with services**
 
 ```efx
-
 interface MathService {
   add: (a: number, b: number) => number
 }
@@ -3878,7 +3787,6 @@ runSyncExit(fail("my error")) // => Exit.fail("my error")
 **Capturing async work as a Die cause**
 
 ```efx
-
 const exit = runSyncExit(promise(() => Promise.resolve(1)))
 const isAsyncDie = Exit.hasDies(exit) && exit.cause.reasons.some(
   (reason) => Cause.isDieReason(reason) && Cause.isAsyncFiberError(reason.defect)
@@ -3925,7 +3833,6 @@ output // => ["[LOG] Computing result...", "Success: 42"]
 **Annotating an Effect function**
 
 ```efx
-
 const f = effect (
   value: string
 ): number => {
@@ -3941,7 +3848,6 @@ runSync(program) // => 5
 **Annotating a parametric Effect function**
 
 ```efx
-
 const f = Effect.fnUntraced(function*<A>(
   value: A
 ): Effect.fn.Return<A> {
@@ -3959,7 +3865,6 @@ runSync(program) // => "hello"
 **Defining untraced effect functions**
 
 ```efx
-
 const f = effect (
   value: string
 ) => {
@@ -3975,7 +3880,6 @@ runSync(program) // => 5
 **Transforming the returned Effect**
 
 ```efx
-
 const f = Effect.fnUntraced(
   function*(value: string) {
     return yield* succeed(value.length)
@@ -3993,7 +3897,6 @@ runSync(program) // => "hello: 5"
 **Annotating an untraced non-parametric function**
 
 ```efx
-
 const f = effect (
   value: string
 ): number => {
@@ -4009,7 +3912,6 @@ runSync(program) // => 5
 **Annotating an untraced parametric function**
 
 ```efx
-
 const f = Effect.fnUntraced(function*<A>(
   value: A
 ): Effect.fn.Return<A> {
@@ -4027,7 +3929,6 @@ runSync(program) // => "hello"
 **Defining traced effect functions**
 
 ```efx
-
 const f = Effect.fn("calculateLength")(function*(value: string) {
   return yield* succeed(value.length)
 })
@@ -4041,7 +3942,6 @@ runSync(program) // => 5
 **Transforming the returned Effect**
 
 ```efx
-
 const f = Effect.fn("formatLength")(
   function*(value: string) {
     return yield* succeed(value.length)
@@ -4059,7 +3959,6 @@ runSync(program) // => "hello: 5"
 **Binding this**
 
 ```efx
-
 class Counter {
   count = 0
 
@@ -4083,7 +3982,6 @@ runSync(program) // => 1
 **Annotating a traced non-parametric function**
 
 ```efx
-
 const f = Effect.fn("calculateLength")(function*(
   value: string
 ): Effect.fn.Return<number> {
@@ -4099,7 +3997,6 @@ runSync(program) // => 5
 **Annotating a traced parametric function**
 
 ```efx
-
 const f = Effect.fn("succeed")(function*<A>(
   value: A
 ): Effect.fn.Return<A> {
@@ -4117,7 +4014,6 @@ runSync(program) // => "hello"
 **Accessing the Clock service**
 
 ```efx
-
 const program = clockWith((clock) =>
   clock.currentTimeMillis.pipe(
     map(() => "Clock is available")
@@ -4396,7 +4292,6 @@ output // => ["Making HTTP request", "Connecting to database", "Executing query"
 **Counting executions**
 
 ```efx
-
 const counter = Metric.counter("effect_executions", {
   description: "Counts effect executions"
 }).pipe(Metric.withConstantInput(1))
@@ -4412,7 +4307,6 @@ runSync(Metric.value(counter)).count // => 1
 **Mapping exits**
 
 ```efx
-
 const exitTracker = Metric.frequency("exit_types", {
   description: "Tracks success/failure/defect counts"
 })
@@ -4435,7 +4329,6 @@ runSync(Metric.value(exitTracker)).occurrences.get("success") // => 1
 **Counting successful results**
 
 ```efx
-
 const successCounter = Metric.counter("successes").pipe(
   Metric.withConstantInput(1)
 )
@@ -4451,7 +4344,6 @@ runSync(Metric.value(successCounter)).count // => 1
 **Mapping successes before tracking**
 
 ```efx
-
 // Track successful request sizes
 const requestSizeGauge = Metric.gauge("request_size_bytes")
 
@@ -4468,7 +4360,6 @@ runSync(Metric.value(requestSizeGauge)).value // => 12
 **Counting expected failures**
 
 ```efx
-
 const errorCounter = Metric.counter("errors").pipe(
   Metric.withConstantInput(1)
 )
@@ -4484,7 +4375,6 @@ runSync(Metric.value(errorCounter)).count // => 1
 **Mapping errors before tracking**
 
 ```efx
-
 class ConnectionFailedError extends Data.TaggedError("ConnectionFailedError")<{}> {}
 
 // Track error types using frequency metric
@@ -4503,7 +4393,6 @@ runSync(Metric.value(errorTypeFrequency)).occurrences.get("ConnectionFailedError
 **Counting defects**
 
 ```efx
-
 const defectCounter = Metric.counter("defects").pipe(
   Metric.withConstantInput(1)
 )
@@ -4519,7 +4408,6 @@ runSync(Metric.value(defectCounter)).count // => 1
 **Mapping defects before tracking**
 
 ```efx
-
 // Track defect types using frequency metric
 const defectTypeFrequency = Metric.frequency("defect_types")
 
@@ -4539,7 +4427,6 @@ runSync(Metric.value(defectTypeFrequency)).occurrences.get("Error") // => 1
 **Recording execution duration**
 
 ```efx
-
 const executionTimer = Metric.timer("execution_time")
 
 const program = succeed("done").pipe(
@@ -4553,7 +4440,6 @@ runSync(Metric.value(executionTimer)).count // => 1
 **Mapping duration before tracking**
 
 ```efx
-
 // Track execution time in milliseconds using custom mapping
 const durationGauge = Metric.gauge("execution_millis")
 
@@ -4570,7 +4456,6 @@ runSync(Metric.value(durationGauge)).value // => 1
 **Building transactions**
 
 ```efx
-
 // Transaction class for software transactional memory operations
 const txEffect = effect {
   const tx = await Transaction
@@ -4617,7 +4502,6 @@ output // => ["Transaction sum: 30", "Final ref1: 10", "Final ref2: 20"]
 **Retrying transactions**
 
 ```efx
-
 const program = effect {
   const ref = await TxRef.make(0)
   const update = await Deferred.make<void>()
@@ -4644,7 +4528,6 @@ await runPromise(program) // => 1
 **Converting callbacks to effects**
 
 ```efx
-
 const uppercase = (
   input: string,
   callback: (error: Error | null, value?: string) => void
@@ -4659,7 +4542,6 @@ await runPromise(program) // => "HELLO"
 **Mapping callback errors to typed failures**
 
 ```efx
-
 const fail = (
   input: string,
   callback: (error: Error | null, value?: string) => void
@@ -4681,7 +4563,6 @@ error.message // => "Failed to process hello: unavailable"
 **Constraining the success type**
 
 ```efx
-
 // Define a constraint that the success type must be a number
 const satisfiesNumber = satisfiesSuccessType<number>()
 
@@ -4700,7 +4581,6 @@ runSync(validEffect) // => 42
 **Constraining the error type**
 
 ```efx
-
 class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 // Define a constraint that the error type must be a ValidationError
@@ -4721,7 +4601,6 @@ runSync(flip(validEffect))._tag // => "ValidationError"
 **Constraining the services type**
 
 ```efx
-
 // Define a constraint that requires a string as the requirements type
 const satisfiesStringServices = satisfiesServicesType<string>()
 
@@ -4739,7 +4618,6 @@ const constrainedEffect = satisfiesStringServices(validEffect)
 **Mapping already completed effects**
 
 ```efx
-
 // For resolved effects, the mapping is applied immediately
 const resolved = succeed(5)
 const mapped = mapEager(resolved, (n) => n * 2) // Applied eagerly
@@ -4806,7 +4684,6 @@ output // => [10, "Failed: error"]
 **Flat mapping eagerly when possible**
 
 ```efx
-
 // For resolved effects, the flatMap is applied immediately
 const resolved = succeed(5)
 const flatMapped = flatMapEager(resolved, (n) => succeed(n * 2)) // Applied eagerly
@@ -4862,7 +4739,6 @@ output // => [['recovered from: original error', 42, 'recovered from: error']]
 **Defining eager untraced effect functions**
 
 ```efx
-
 const computation = fnUntracedEager(function*() {
   yield* succeed(1)
   yield* succeed(2)

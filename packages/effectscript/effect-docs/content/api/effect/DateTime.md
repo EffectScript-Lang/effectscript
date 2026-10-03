@@ -321,7 +321,6 @@ DateTime.zoneMakeNamed("Invalid/Zone") // => Option.none()
 **Creating named time zones effectfully**
 
 ```efx
-
 const program = effect {
   const zone = await DateTime.zoneMakeNamedEffect("Europe/London")
   const now = await DateTime.now
@@ -508,7 +507,6 @@ DateTime.between(date, { minimum: min, maximum: max }) // => true
 **Checking future DateTime values effectfully**
 
 ```efx
-
 const futureDate = DateTime.makeUnsafe(1)
 await runPromise(provide(DateTime.isFuture(futureDate), TestClock.layer())) // => true
 ```
@@ -529,7 +527,6 @@ DateTime.isFutureUnsafe(oneHourFromNow)
 **Checking past DateTime values effectfully**
 
 ```efx
-
 const pastDate = DateTime.makeUnsafe(-1)
 await runPromise(provide(DateTime.isPast(pastDate), TestClock.layer())) // => true
 ```
@@ -732,7 +729,6 @@ updated // => DateTime.makeUnsafe("2025-01-01T18:00:00Z")
 **Accessing the current time zone service**
 
 ```efx
-
 const program = effect {
   return DateTime.zoneToString(await DateTime.CurrentTimeZone)
 }
@@ -747,7 +743,6 @@ await runPromise(provide(program, layer)) // => "Europe/London"
 **Setting the current time zone**
 
 ```efx
-
 await runPromise(effect {
   const zoned = await DateTime.setZoneCurrent(DateTime.makeUnsafe("2024-01-01"))
   return DateTime.zoneToString(zoned.zone)
@@ -759,7 +754,6 @@ await runPromise(effect {
 **Providing the current time zone**
 
 ```efx
-
 const zone = DateTime.zoneMakeNamedUnsafe("Europe/London")
 
 await runPromise(effect {
@@ -773,7 +767,6 @@ await runPromise(effect {
 **Providing the local time zone**
 
 ```efx
-
 await runPromise(effect {
   return DateTime.isZoned(await DateTime.nowInCurrentZone)
 }.pipe(DateTime.withCurrentZoneLocal)) // => true
@@ -784,7 +777,6 @@ await runPromise(effect {
 **Providing a fixed-offset time zone**
 
 ```efx
-
 const program = effect {
   return DateTime.zoneToString(await DateTime.CurrentTimeZone)
 } |> DateTime.withCurrentZoneOffset(3 * 60 * 60 * 1000)
@@ -797,7 +789,6 @@ await runPromise(program) // => "+03:00"
 **Providing a named time zone**
 
 ```efx
-
 await runPromise(effect {
   const zoned = await DateTime.setZoneCurrent(DateTime.makeUnsafe("2024-01-01"))
   return DateTime.zoneToString(zoned.zone)
@@ -809,7 +800,6 @@ await runPromise(effect {
 **Getting the current time in the current zone**
 
 ```efx
-
 await runPromise(effect {
   return DateTime.zoneToString((await DateTime.nowInCurrentZone).zone)
 }.pipe(DateTime.withCurrentZoneNamed("Europe/London"))) // => "Europe/London"
@@ -1174,7 +1164,6 @@ DateTime.formatIsoZoned(offsetZone) // => "2024-06-15T17:30:45.123+03:00"
 **Providing current time zone layers**
 
 ```efx
-
 const zone = DateTime.zoneMakeNamedUnsafe("Europe/London")
 const layer = DateTime.layerCurrentZone(zone)
 
@@ -1192,7 +1181,6 @@ await runPromise(provide(program, layer)) // => "Europe/London"
 **Providing fixed-offset time zone layers**
 
 ```efx
-
 // Create a layer for UTC+3
 const layer = DateTime.layerCurrentZoneOffset(3 * 60 * 60 * 1000)
 
@@ -1209,7 +1197,6 @@ await runPromise(provide(program, layer)) // => "+03:00"
 **Providing named time zone layers**
 
 ```efx
-
 const layer = DateTime.layerCurrentZoneNamed("Europe/London")
 
 const program = effect {
@@ -1225,7 +1212,6 @@ await runPromise(provide(program, layer)) // => "Europe/London"
 **Providing local time zone layers**
 
 ```efx
-
 const program = effect {
   const now = await DateTime.nowInCurrentZone
   return DateTime.isZoned(now)

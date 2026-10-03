@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Semaphore.ts`, in EffectScript
 **Controlling concurrent access**
 
 ```efx
-
 // Create and use a semaphore for controlling concurrent access
 const program = effect {
   const semaphore = await Semaphore.make(2)
@@ -34,7 +33,6 @@ await runPromise(program) // => "Resource accessed"
 **Creating an unsafe semaphore**
 
 ```efx
-
 const semaphore = Semaphore.makeUnsafe(3)
 
 const task = (id: number) =>
@@ -62,7 +60,6 @@ await runPromise(program) // => [1, 2, 3, 4, 5]
 **Creating a semaphore**
 
 ```efx
-
 const program = effect {
   const semaphore = await Semaphore.make(2)
 

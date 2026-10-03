@@ -26,7 +26,6 @@ const algorithm: Crypto.DigestAlgorithm = "SHA-256"
 **Using cryptographic operations**
 
 ```efx
-
 const TestCrypto = Layer.succeed(
   Crypto.Crypto,
   Crypto.make({
@@ -51,7 +50,6 @@ await runPromise(provide(program, TestCrypto)) // => [16, 36, 16]
 **Creating a Crypto service**
 
 ```efx
-
 const testCrypto = Crypto.make({
   randomBytes: (size) => new Uint8Array(size),
   digest: (_algorithm, data) => succeed(data)

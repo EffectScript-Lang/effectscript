@@ -54,7 +54,6 @@ implement `Yieldable`:
 `.asEffect()` internally when yielding.
 
 ```efx
-
 // The type of program is `Effect<number, NoSuchElementError>`
 const program = effect {
   // yield* works with Yieldable types — same as v3
@@ -81,7 +80,6 @@ const program = Effect.map(Option.some(42), (n) => n + 1)
 **v4** — Option is not an Effect, so you must convert explicitly:
 
 ```efx
-
 // Option is Yieldable but not Effect — use .asEffect()
 const program = map(Option.some(42).asEffect(), (n) => n + 1)
 
@@ -111,7 +109,6 @@ const program = Effect.gen(function*() {
 **v4** — `Ref` is a plain value, use `Ref.get`:
 
 ```efx
-
 const program = effect {
   const ref = await Ref.make(0)
   const value = await Ref.get(ref)
@@ -132,7 +129,6 @@ const program = Effect.gen(function*() {
 **v4** — `Deferred` is a plain value, use `Deferred.await`:
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<string, never>()
   const value = await Deferred.await(deferred)
@@ -153,7 +149,6 @@ const program = Effect.gen(function*() {
 **v4** — `Fiber` is a plain value, use `Fiber.join`:
 
 ```efx
-
 const program = effect {
   const fiber = await forkChild(task)
   const result = await Fiber.join(fiber)

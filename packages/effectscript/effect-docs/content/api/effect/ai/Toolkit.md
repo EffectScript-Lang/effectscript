@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ai/Toolkit.ts`, in EffectScrip
 **Defining AI toolkits**
 
 ```efx
-
 const SearchDocs = Tool.make("SearchDocs", {
   description: "Search project documentation",
   parameters: Schema.Struct({ query: Schema.String }),
@@ -68,7 +67,6 @@ await runPromise(program) // => "handler"
 **Creating a toolkit**
 
 ```efx
-
 const GetCurrentTime = Tool.make("GetCurrentTime", {
   description: "Get the current timestamp",
   success: Schema.Number
@@ -97,7 +95,6 @@ Object.keys((await runPromise(ready)).tools) // => ["GetCurrentTime", "get_weath
 **Merging toolkits**
 
 ```efx
-
 const mathToolkit = Toolkit.make(
   Tool.make("add", { success: Schema.Number }),
   Tool.make("subtract", { success: Schema.Number })

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/LayerRef.ts`, in EffectScript 
 **Sharing one layer-built service**
 
 ```efx
-
 service Database {
   readonly query: Effect<string>
 }
@@ -52,7 +51,6 @@ await runPromise(program) // => "result"
 **Defining a refreshable service**
 
 ```efx
-
 service Database {
   readonly query: Effect<string>
 }

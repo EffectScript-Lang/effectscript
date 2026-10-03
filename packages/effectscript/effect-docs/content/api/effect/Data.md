@@ -226,7 +226,6 @@ runSync(exit(program)) // => Exit.fail(new NetworkError({ code: 500, message: "t
 **Recovering by tag**
 
 ```efx
-
 class NotFound extends Data.TaggedError("NotFound")<{
   readonly resource: string
 }> {}

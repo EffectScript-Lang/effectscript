@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/reactivity/Atom.ts`, in Effect
 **Comparing values structurally**
 
 ```efx
-
 atom point = { x: 0, y: 0 }
   |> withEquality<{ x: number; y: number }>((a, b) => a.x === b.x && a.y === b.y)
 point.equals({ x: 1, y: 2 }, { x: 1, y: 2 }) // => true

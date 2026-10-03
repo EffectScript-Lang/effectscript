@@ -264,7 +264,6 @@ port.kind // => "argument"
 **Validating values effectfully**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -306,7 +305,6 @@ value // => "notes.txt"
 **Mapping values that may throw**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,

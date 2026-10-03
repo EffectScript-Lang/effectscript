@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxSubscriptionRef.ts`, in Effe
 **Subscribing to transactional changes**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(0)
 
@@ -40,7 +39,6 @@ await runPromise(program) // => [0, 1]
 **Creating a transactional subscription reference**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(42)
   return await TxSubscriptionRef.get(ref)
@@ -54,7 +52,6 @@ await runPromise(program) // => 42
 **Reading the current value**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make("hello")
   return await TxSubscriptionRef.get(ref)
@@ -68,7 +65,6 @@ await runPromise(program) // => "hello"
 **Modifying and returning a value**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(10)
   const result = await TxSubscriptionRef.modify(ref, (n) => [`was ${n}`, n + 1])
@@ -83,7 +79,6 @@ await runPromise(program) // => ["was 10", 11]
 **Setting a new value**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(0)
   await TxSubscriptionRef.set(ref, 42)
@@ -98,7 +93,6 @@ await runPromise(program) // => 42
 **Updating a value**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(5)
   await TxSubscriptionRef.update(ref, (n) => n * 2)
@@ -113,7 +107,6 @@ await runPromise(program) // => 10
 **Getting and setting atomically**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make("a")
   const old = await TxSubscriptionRef.getAndSet(ref, "b")
@@ -128,7 +121,6 @@ await runPromise(program) // => ["a", "b"]
 **Getting and updating atomically**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(1)
   const old = await TxSubscriptionRef.getAndUpdate(ref, (n) => n + 10)
@@ -143,7 +135,6 @@ await runPromise(program) // => [1, 11]
 **Updating and reading atomically**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(3)
   return await TxSubscriptionRef.updateAndGet(ref, (n) => n * 3)
@@ -157,7 +148,6 @@ await runPromise(program) // => 9
 **Subscribing to changes**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(0)
 
@@ -181,7 +171,6 @@ await runPromise(program) // => [0, 1]
 **Streaming changes**
 
 ```efx
-
 const program = effect {
   const ref = await TxSubscriptionRef.make(0)
   await TxSubscriptionRef.set(ref, 1)

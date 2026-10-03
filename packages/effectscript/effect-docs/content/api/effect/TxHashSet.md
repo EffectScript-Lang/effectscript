@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxHashSet.ts`, in EffectScript
 **Using transactional hash sets**
 
 ```efx
-
 const program = effect {
   // Create a transactional hash set
   const txSet = await TxHashSet.make("apple", "banana", "cherry")
@@ -45,7 +44,6 @@ await runPromise(program)
 **Extracting value types inside transactions**
 
 ```efx
-
 const program = effect {
   // Create a transactional color set
   const colors = await TxHashSet.make("red", "green", "blue")
@@ -87,7 +85,6 @@ processFruit("apple") // => "Processing apple"
 **Creating an empty transactional hash set**
 
 ```efx
-
 const program = effect {
   const txSet = await TxHashSet.empty<string>()
 
@@ -108,7 +105,6 @@ await runPromise(program)
 **Creating transactional hash sets from values**
 
 ```efx
-
 const program = effect {
   const fruits = await TxHashSet.make("apple", "banana", "cherry")
   await TxHashSet.size(fruits) // => 3
@@ -128,7 +124,6 @@ await runPromise(program)
 **Creating a transactional hash set from an iterable**
 
 ```efx
-
 const program = effect {
   const fromArray = await TxHashSet.fromIterable(["a", "b", "c", "b", "a"])
   await TxHashSet.size(fromArray) // => 3
@@ -148,7 +143,6 @@ await runPromise(program)
 **Creating a transactional hash set from a HashSet**
 
 ```efx
-
 const program = effect {
   const hashSet = HashSet.make("x", "y", "z")
   const txSet = await TxHashSet.fromHashSet(hashSet)
@@ -170,7 +164,6 @@ await runPromise(program)
 **Checking for a TxHashSet**
 
 ```efx
-
 const program = effect {
   const txSet = await TxHashSet.make(1, 2, 3)
   const hashSet = HashSet.make(1, 2, 3)
@@ -190,7 +183,6 @@ await runPromise(program)
 **Adding values**
 
 ```efx
-
 const program = effect {
   const txSet = await TxHashSet.make("a", "b")
 
@@ -211,7 +203,6 @@ await runPromise(program)
 **Removing values**
 
 ```efx
-
 const program = effect {
   const txSet = await TxHashSet.make("a", "b", "c")
 
@@ -231,7 +222,6 @@ await runPromise(program)
 **Checking membership**
 
 ```efx
-
 const program = effect {
   const txSet = await TxHashSet.make("apple", "banana", "cherry")
 
@@ -263,7 +253,6 @@ await runPromise(program)
 **Getting the set size**
 
 ```efx
-
 const program = effect {
   const empty = await TxHashSet.empty<string>()
   await TxHashSet.size(empty) // => 0
@@ -283,7 +272,6 @@ await runPromise(program)
 **Checking whether a set is empty**
 
 ```efx
-
 const program = effect {
   const empty = await TxHashSet.empty<string>()
   await TxHashSet.isEmpty(empty) // => true
@@ -300,7 +288,6 @@ await runPromise(program)
 **Checking whether a set is non-empty**
 
 ```efx
-
 const program = effect {
   const empty = await TxHashSet.empty<string>()
   const emptyResult = await TxHashSet.isNonEmpty(empty)
@@ -318,7 +305,6 @@ await runPromise(program) // => [false, true]
 **Clearing all values**
 
 ```efx
-
 const program = effect {
   const txSet = await TxHashSet.make("a", "b", "c")
   await TxHashSet.size(txSet) // => 3
@@ -336,7 +322,6 @@ await runPromise(program)
 **Combining sets with union**
 
 ```efx
-
 const program = effect {
   const set1 = await TxHashSet.make("a", "b")
   const set2 = await TxHashSet.make("b", "c")
@@ -354,7 +339,6 @@ await runPromise(program)
 **Finding common values**
 
 ```efx
-
 const program = effect {
   const set1 = await TxHashSet.make("a", "b", "c")
   const set2 = await TxHashSet.make("b", "c", "d")
@@ -372,7 +356,6 @@ await runPromise(program)
 **Finding values absent from another set**
 
 ```efx
-
 const program = effect {
   const set1 = await TxHashSet.make("a", "b", "c")
   const set2 = await TxHashSet.make("b", "d")
@@ -390,7 +373,6 @@ await runPromise(program)
 **Checking subset relationships**
 
 ```efx
-
 const program = effect {
   const small = await TxHashSet.make("a", "b")
   const large = await TxHashSet.make("a", "b", "c", "d")
@@ -410,7 +392,6 @@ await runPromise(program)
 **Testing whether some values match**
 
 ```efx
-
 const program = effect {
   const numbers = await TxHashSet.make(1, 2, 3, 4, 5)
 
@@ -429,7 +410,6 @@ await runPromise(program)
 **Testing whether every value matches**
 
 ```efx
-
 const program = effect {
   const numbers = await TxHashSet.make(2, 4, 6, 8)
 
@@ -448,7 +428,6 @@ await runPromise(program)
 **Mapping values**
 
 ```efx
-
 const program = effect {
   const numbers = await TxHashSet.make(1, 2, 3)
   const doubled = await TxHashSet.map(numbers, (n) => n * 2)
@@ -470,7 +449,6 @@ await runPromise(program)
 **Filtering values**
 
 ```efx
-
 const program = effect {
   const numbers = await TxHashSet.make(1, 2, 3, 4, 5, 6)
   const evens = await TxHashSet.filter(numbers, (n) => n % 2 === 0)
@@ -487,7 +465,6 @@ await runPromise(program)
 **Reducing values**
 
 ```efx
-
 const program = effect {
   const numbers = await TxHashSet.make(1, 2, 3, 4, 5)
   await TxHashSet.reduce(numbers, 0, (acc, n) => acc + n) // => 15
@@ -504,7 +481,6 @@ await runPromise(program)
 **Taking a HashSet snapshot**
 
 ```efx
-
 const program = effect {
   const txSet = await TxHashSet.make("x", "y", "z")
   const hashSet = await TxHashSet.toHashSet(txSet)

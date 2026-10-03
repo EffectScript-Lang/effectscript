@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Metric.ts`, in EffectScript (A
 **Using multiple metric types**
 
 ```efx
-
 const program = effect {
   // Create different types of metrics
   const requestCounter: Metric.Counter<number> = Metric.counter("requests", {
@@ -70,12 +69,47 @@ const values = [
 ] // => [1, 128, 1]
 ```
 
+**Collecting application metrics**
+
+```efx
+const program = effect {
+  // Create different types of metrics
+  const requestCounter = Metric.counter("http_requests_total")
+  const responseTimeHistogram = Metric.histogram("http_response_time", {
+    boundaries: Metric.linearBoundaries({ start: 0, width: 10, count: 10 })
+  })
+  const activeConnectionsGauge = Metric.gauge("active_connections")
+  const statusFrequency = Metric.frequency("http_status_codes")
+
+  // Update metrics
+  await Metric.update(requestCounter, 1)
+  await Metric.update(responseTimeHistogram, 45.2)
+  await Metric.update(activeConnectionsGauge, 12)
+  await Metric.update(statusFrequency, "200")
+
+  // Get metric values
+  const counterValue = await Metric.value(requestCounter)
+  const histogramValue = await Metric.value(responseTimeHistogram)
+  const gaugeValue = await Metric.value(activeConnectionsGauge)
+  const frequencyValue = await Metric.value(statusFrequency)
+
+  return {
+    counter: counterValue,
+    histogram: histogramValue,
+    gauge: gaugeValue,
+    frequency: frequencyValue
+  }
+}
+
+const result = await runPromise(provideService(program, Metric.MetricRegistry, new Map()))
+const values = [result.counter.count, result.gauge.value] // => [1, 12]
+```
+
 ## Counter
 
 **Using counter metrics**
 
 ```efx
-
 const program = effect {
   // Create different types of counters
   const requestCounter: Metric.Counter<number> = Metric.counter(
@@ -130,7 +164,6 @@ const counts = [result.requests.count, result.bytes.count] // => [6, 1024n]
 **Reading counter state**
 
 ```efx
-
 const program = effect {
   // Create different types of counters
   const requestCounter = Metric.counter("http_requests_total")
@@ -183,7 +216,6 @@ const counts = [result.requests.total, result.errors.total, result.bytes.total] 
 **Using frequency metrics**
 
 ```efx
-
 // Function that accepts any Frequency metric
 const analyzeFrequencyMetric = (freq: Metric.Frequency) =>
   effect {
@@ -241,7 +273,6 @@ const values = [result.statusAnalysis.mostFrequent, result.actionAnalysis.mostFr
 **Reading frequency state**
 
 ```efx
-
 const program = effect {
   // Create frequency metrics for different categories
   const statusCodeFreq = Metric.frequency("http_status_codes", {
@@ -318,7 +349,6 @@ mostCommon.map(({ key, count }) => [key, count]) // => [["200", 3], ["click", 3]
 **Using gauge metrics**
 
 ```efx
-
 const program = effect {
   // Create different types of gauges
   const memoryGauge: Metric.Gauge<number> = Metric.gauge("memory_usage_mb", {
@@ -365,7 +395,6 @@ const values = [result.memory.currentValue, result.disk.currentValue] // => [704
 **Reading gauge state**
 
 ```efx
-
 const program = effect {
   // Create different types of gauges
   const temperatureGauge = Metric.gauge("room_temperature_celsius", {
@@ -426,7 +455,6 @@ values // => [23.1, 5000000000n, 15]
 **Using histogram metrics**
 
 ```efx
-
 const program = effect {
   // Create histograms with different boundary strategies
   const responseTimeHistogram: Metric.Histogram<number> = Metric.histogram(
@@ -500,7 +528,6 @@ values // => [4, 445, 118]
 **Reading histogram state**
 
 ```efx
-
 const program = effect {
   // Create histogram with linear boundaries
   const responseTimeHistogram = Metric.histogram("api_response_time_ms", {
@@ -580,7 +607,6 @@ values // => [5, 50, 750, 1295]
 **Using summary metrics**
 
 ```efx
-
 const program = effect {
   // Create summaries with different quantile configurations
   const responseTimeSummary: Metric.Summary<number> = Metric.summary(
@@ -666,7 +692,6 @@ counts // => [5, 1461, 3]
 **Reading summary state**
 
 ```efx
-
 const program = effect {
   // Create summary with specific quantiles
   const responseTimeSummary = Metric.summary("api_response_latency", {
@@ -736,45 +761,6 @@ const values = [analysis.totalRequests, analysis.fastestResponse, analysis.slowe
 values // => [7, 45, 890, 1879]
 ```
 
-## Metric
-
-**Collecting application metrics**
-
-```efx
-
-const program = effect {
-  // Create different types of metrics
-  const requestCounter = Metric.counter("http_requests_total")
-  const responseTimeHistogram = Metric.histogram("http_response_time", {
-    boundaries: Metric.linearBoundaries({ start: 0, width: 10, count: 10 })
-  })
-  const activeConnectionsGauge = Metric.gauge("active_connections")
-  const statusFrequency = Metric.frequency("http_status_codes")
-
-  // Update metrics
-  await Metric.update(requestCounter, 1)
-  await Metric.update(responseTimeHistogram, 45.2)
-  await Metric.update(activeConnectionsGauge, 12)
-  await Metric.update(statusFrequency, "200")
-
-  // Get metric values
-  const counterValue = await Metric.value(requestCounter)
-  const histogramValue = await Metric.value(responseTimeHistogram)
-  const gaugeValue = await Metric.value(activeConnectionsGauge)
-  const frequencyValue = await Metric.value(statusFrequency)
-
-  return {
-    counter: counterValue,
-    histogram: histogramValue,
-    gauge: gaugeValue,
-    frequency: frequencyValue
-  }
-}
-
-const result = await runPromise(provideService(program, Metric.MetricRegistry, new Map()))
-const values = [result.counter.count, result.gauge.value] // => [1, 12]
-```
-
 ## Metric.Type
 
 **Inspecting metric types**
@@ -805,7 +791,6 @@ const actual = types // => ["Counter", "Gauge", "Frequency", "Histogram", "Summa
 **Providing attributes in different formats**
 
 ```efx
-
 const program = effect {
   // Different ways to specify attributes
   const attributesAsObject = {
@@ -873,7 +858,6 @@ sameAttributes // => [{ service: "api", environment: "production", version: "1.2
 **Combining metric attribute sets**
 
 ```efx
-
 const program = effect {
   // Define attribute sets for different contexts
   const serviceAttributes = {
@@ -989,7 +973,6 @@ metricIds // => ["requests:Counter", "bytes:Counter", "status_codes:Frequency", 
 **Extracting metric state types**
 
 ```efx
-
 // Create various metric types
 const requestCounter = Metric.counter("requests")
 const cpuGauge = Metric.gauge("cpu_usage")
@@ -1044,7 +1027,6 @@ values // => [10, 85.5, 1]
 **Using metric hooks**
 
 ```efx
-
 const program = effect {
   // Create a counter metric
   const requestCounter = Metric.counter("requests_total", {
@@ -1081,7 +1063,6 @@ const state = result // => { currentCount: 6, isIncremental: false }
 **Inspecting metric metadata**
 
 ```efx
-
 const program = effect {
   // Create metrics with different configurations
   const requestCounter = Metric.counter("http_requests_total", {
@@ -1135,7 +1116,6 @@ const types = [result.counter.type, result.gauge.type, result.frequency.type] //
 **Inspecting metric snapshot protocols**
 
 ```efx
-
 const program = effect {
   // Create and update metrics
   const requestCounter = Metric.counter("requests", {
@@ -1194,7 +1174,6 @@ const counts = [result.counter?.count, result.histogram?.observations] // => [25
 **Analyzing metric snapshots**
 
 ```efx
-
 const program = effect {
   // Create different types of metrics
   const requestCounter = Metric.counter("requests_total")
@@ -1257,7 +1236,6 @@ const types = result.metricTypes // => ["Counter", "Gauge", "Frequency", "Histog
 **Accessing the current metric attributes key**
 
 ```efx
-
 const program = effect {
   // The key is used internally by the Effect runtime to manage metric attributes
   const key = Metric.CurrentMetricAttributesKey
@@ -1300,7 +1278,6 @@ const key = result // => { keyValue: "effect/Metric/CurrentMetricAttributes", ke
 **Providing current metric attributes**
 
 ```efx
-
 const program = effect {
   // Access current metric attributes
   await Metric.CurrentMetricAttributes
@@ -1339,7 +1316,6 @@ Metric.isMetric({ name: "requests" }) // => false
 **Creating counter metrics**
 
 ```efx
-
 const program = effect {
   // Create a basic counter for tracking requests
   const requestCounter = Metric.counter("http_requests_total", {
@@ -1382,7 +1358,6 @@ const counts = [result.requestValue.count, result.eventValue.count, result.bytes
 **Creating gauge metrics**
 
 ```efx
-
 const program = effect {
   // Create a gauge for tracking memory usage
   const memoryGauge = Metric.gauge("memory_usage_mb", {
@@ -1430,7 +1405,6 @@ const values = [result.memoryValue.value, result.cpuValue.value, result.diskValu
 **Creating frequency metrics**
 
 ```efx
-
 const program = effect {
   // Create a frequency metric for HTTP status codes
   const statusFrequency = Metric.frequency("http_status_codes", {
@@ -1494,7 +1468,6 @@ counts // => [3, 2, 2]
 **Creating histogram metrics**
 
 ```efx
-
 const program = effect {
   // Create a histogram for API response times
   const responseTimeHistogram = Metric.histogram("api_response_time", {
@@ -1551,7 +1524,6 @@ values // => [5, 500, 3]
 **Creating summary metrics**
 
 ```efx
-
 const program = effect {
   // Create a summary for API response times
   const responseTimeSummary = Metric.summary("api_response_time", {
@@ -1622,7 +1594,6 @@ const metadata = [responseTimesSummary.id, responseTimesSummary.type] // => ["re
 **Recording durations with a timer**
 
 ```efx
-
 // Create a timer metric to track API request durations
 const apiRequestTimer = Metric.timer("api_request_duration", {
   description: "Duration of API requests",
@@ -1653,7 +1624,6 @@ await runPromise(
 **Reading metric state**
 
 ```efx
-
 const requestCounter = Metric.counter("modify_requests")
 const responseTime = Metric.histogram("response_time", {
   boundaries: [100, 500, 1000, 2000]
@@ -1686,7 +1656,6 @@ await runPromise(
 **Modifying metric values**
 
 ```efx
-
 const temperatureGauge = Metric.gauge("temperature")
 const requestCounter = Metric.counter("requests")
 
@@ -1715,7 +1684,6 @@ await runPromise(provideService(program, Metric.MetricRegistry, new Map())) // =
 **Updating metric values**
 
 ```efx
-
 const cpuUsage = Metric.gauge("cpu_usage_percent")
 const httpStatus = Metric.frequency("http_status_codes")
 const responseTime = Metric.histogram("response_time_ms", {
@@ -1752,7 +1720,6 @@ await runPromise(provideService(program, Metric.MetricRegistry, new Map())) // =
 **Mapping metric inputs**
 
 ```efx
-
 const durationHistogram = Metric.histogram("request_duration_ms", {
   description: "Request duration in milliseconds",
   boundaries: Metric.linearBoundaries({ start: 0, width: 100, count: 10 })
@@ -1778,7 +1745,6 @@ const values = [value.count, value.sum] // => [1, 250]
 **Ignoring inputs with a constant value**
 
 ```efx
-
 // Create a counter that normally expects a number increment
 const requestCounter = Metric.counter("total_requests", {
   description: "Total number of requests processed"
@@ -1806,7 +1772,6 @@ const count = value.count // => 3
 **Applying metric attributes**
 
 ```efx
-
 const requestCounter = Metric.counter("http_requests_total", {
   description: "Total HTTP requests"
 })
@@ -1852,7 +1817,6 @@ await runPromise(provideService(result, Metric.MetricRegistry, new Map())) // =>
 **Capturing metric snapshots**
 
 ```efx
-
 const program = effect {
   // Create and update some metrics
   const requestCounter = Metric.counter("http_requests", {
@@ -1886,7 +1850,6 @@ const ids = snapshots.map((snapshot) => snapshot.id).sort() // => ["http_request
 **Dumping metrics as text**
 
 ```efx
-
 const program = effect {
   // Create and update some metrics for demonstration
   const requestCounter = Metric.counter("http_requests_total", {
@@ -1928,7 +1891,6 @@ included // => [true, true, true]
 **Capturing snapshots from a context**
 
 ```efx
-
 const requestCounter = Metric.counter("http_requests")
 const program = effect {
   await Metric.update(requestCounter, 1)
@@ -2006,7 +1968,6 @@ events // => ["start", "success"]
 **Accessing the fiber runtime metrics service**
 
 ```efx
-
 const program = effect {
   const metricsService = await Metric.FiberRuntimeMetrics
   return metricsService === Metric.FiberRuntimeMetricsImpl
@@ -2036,7 +1997,6 @@ import { Metric } from "effect"
 **Enabling runtime metrics with a layer**
 
 ```efx
-
 const program = effect {
   const service = await Metric.FiberRuntimeMetrics
   return service === Metric.FiberRuntimeMetricsImpl
@@ -2050,7 +2010,6 @@ await runPromise(provide(program, Metric.enableRuntimeMetricsLayer)) // => true
 **Disabling runtime metrics with a layer**
 
 ```efx
-
 const program = effect {
   // Disable runtime metrics collection
   const disabledLayer = Metric.disableRuntimeMetricsLayer
@@ -2082,7 +2041,6 @@ const values = [result.counterValue.count, result.metricsEnabled] // => [1, fals
 **Enabling runtime metrics for an effect**
 
 ```efx
-
 const program = effect {
   const service = await Metric.FiberRuntimeMetrics
   return service === Metric.FiberRuntimeMetricsImpl
@@ -2096,7 +2054,6 @@ await runPromise(Metric.enableRuntimeMetrics(program)) // => true
 **Disabling runtime metrics for an effect**
 
 ```efx
-
 const program = effect {
   const service = await Metric.FiberRuntimeMetrics
   return service === undefined

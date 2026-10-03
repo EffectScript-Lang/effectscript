@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Sink.ts`, in EffectScript (ADR
 **Running a sink with a stream**
 
 ```efx
-
 // Create a simple sink that always succeeds with a value
 const sink: Sink<number> = Sink.succeed(42)
 
@@ -44,7 +43,6 @@ Sink.isSink(notStream) // => false
 **Using channel completion as the sink result**
 
 ```efx
-
 const channel = Channel.identity<readonly [number, ...Array<number>], never, void>().pipe(
   Channel.drain,
   Channel.mapDone(() => ["consumed"] as const)
@@ -59,7 +57,6 @@ await runPromise(Stream.run(Stream.make(1, 2, 3), sink)) // => "consumed"
 **Collecting values in a Web stream**
 
 ```efx
-
 const written: Array<number> = []
 const sink = Sink.fromWritableStream({
   evaluate: () => new WritableStream<number>({
@@ -79,7 +76,6 @@ written // => [1, 2, 3]
 **Running a sink as a channel**
 
 ```efx
-
 const channel = Stream.toChannel(Stream.make(1, 2, 3)).pipe(
   Channel.pipeTo(Sink.toChannel(Sink.sum))
 )
@@ -92,7 +88,6 @@ await runPromise(Channel.runDrain(channel)) // => [6]
 **Succeeding with a value**
 
 ```efx
-
 // Create a sink that always yields the same value
 const sink = Sink.succeed(42)
 
@@ -181,7 +176,6 @@ await runPromiseExit(Stream.run(stream, sink)) // => Exit.die("Defect error")
 **Running effects for each item**
 
 ```efx
-
 const processed: Array<number> = []
 const sink = Sink.forEach((item: number) => sync(() => processed.push(item)))
 
@@ -196,7 +190,6 @@ processed // => [1, 2, 3]
 **Running effects for each chunk**
 
 ```efx
-
 const processed: Array<Array<number>> = []
 const sink = Sink.forEachArray((chunk: ReadonlyArray<number>) => sync(() => processed.push([...chunk])))
 
@@ -211,7 +204,6 @@ processed // => [[1, 2, 3, 4, 5]]
 **Unwrapping a sink effect**
 
 ```efx
-
 // Create a sink from an effect that produces a sink
 const processed: Array<number> = []
 const sinkEffect = succeed(

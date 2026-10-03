@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/cli/CliError.ts`, in EffectScr
 **Checking CLI errors**
 
 ```efx
-
 const error = new CliError.MissingOption({ option: "api-key" })
 const program = CliError.isCliError(error)
   ? succeed(error.message)
@@ -55,7 +54,6 @@ describe(new CliError.MissingOption({ option: "token" })) // => "Required flag m
 **Creating unrecognized option errors**
 
 ```efx
-
 // Creating an unrecognized option error
 const unrecognizedError = new CliError.UnrecognizedOption({
   option: "--unknown-flag",
@@ -101,7 +99,6 @@ duplicateError.childCommand // => "deploy"
 **Creating missing option errors**
 
 ```efx
-
 const missingOptionError = new CliError.MissingOption({
   option: "api-key"
 })
@@ -127,7 +124,6 @@ validationError._tag // => "MissingOption"
 **Creating missing argument errors**
 
 ```efx
-
 const missingArgError = new CliError.MissingArgument({
   argument: "target"
 })
@@ -196,7 +192,6 @@ const details = [invalidArgError.kind, invalidArgError.option, invalidArgError.v
 **Creating unknown subcommand errors**
 
 ```efx
-
 const unknownSubcommandError = new CliError.UnknownSubcommand({
   subcommand: "deplyo", // typo
   parent: ["myapp"],
@@ -226,7 +221,6 @@ parseError._tag // => "UnknownSubcommand"
 **Wrapping user errors**
 
 ```efx
-
 // Wrapping user errors
 const userError = new CliError.UserError({
   cause: new Error("Database connection failed for postgres://localhost"),

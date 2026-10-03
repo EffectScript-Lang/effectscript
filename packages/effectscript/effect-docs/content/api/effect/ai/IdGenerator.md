@@ -96,7 +96,6 @@ const result = [id.startsWith("id_"), id.length] // => [true, 19]
 **Creating a custom generator**
 
 ```efx
-
 const program = effect {
   // Create a generator for AI assistant message IDs
   const messageIdGen = await IdGenerator.make({
@@ -116,7 +115,6 @@ const result = [messageId.startsWith("msg-"), messageId.length] // => [true, 14]
 **Handling invalid generator options**
 
 ```efx
-
 // This will fail with IllegalArgumentError
 const invalidConfig = IdGenerator.make({
   alphabet: "ABC123",
@@ -134,7 +132,6 @@ error.message // => 'The separator "A" must not be part of the alphabet "ABC123"
 **Providing an ID generator layer**
 
 ```efx
-
 // Create a layer for generating AI tool call IDs
 const toolCallIdLayer = IdGenerator.layer({
   alphabet: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",

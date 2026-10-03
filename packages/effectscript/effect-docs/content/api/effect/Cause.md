@@ -482,7 +482,6 @@ Cause.isDone("not done") // => false
 **Signaling queue completion**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(10)
   await Queue.offer(queue, 1)
@@ -576,7 +575,6 @@ new Cause.ExceededCapacityError("Queue full").message // => "Queue full"
 **Checking the runtime type**
 
 ```efx
-
 const fiber = runFork(Effect.void)
 
 const error = new Cause.AsyncFiberError(fiber)
@@ -589,7 +587,6 @@ Cause.isAsyncFiberError("nope") // => false
 **Accessing the fiber**
 
 ```efx
-
 const fiber = runFork(Effect.void)
 
 const value = new Cause.AsyncFiberError(fiber)
@@ -600,7 +597,6 @@ isSameFiber // => true
 **Creating an AsyncFiberError**
 
 ```efx
-
 const fiber = runFork(Effect.void)
 
 new Cause.AsyncFiberError(fiber).message // => "An asynchronous Effect was executed with Effect.runSync"

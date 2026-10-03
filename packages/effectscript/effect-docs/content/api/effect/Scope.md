@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Scope.ts`, in EffectScript (AD
 **Managing scoped resources**
 
 ```efx
-
 const program = effect {
   const scope = await Scope.make("sequential")
 
@@ -28,12 +27,24 @@ const program = effect {
 runSync(program) // => [["sequential", "Empty"], "Closed"]
 ```
 
+**Accessing the scope service**
+
+```efx
+const cleanups: Array<string> = []
+const program = effect {
+  const scope = await Scope
+  await Scope.addFinalizer(scope, sync(() => cleanups.push("Cleanup")))
+}
+
+runSync(scoped(program))
+cleanups // => ["Cleanup"]
+```
+
 ## Closeable
 
 **Closing a scope**
 
 ```efx
-
 const cleanups: Array<string> = []
 const program = effect {
   const scope = await Scope.make()
@@ -50,7 +61,6 @@ cleanups // => ["Cleanup!"]
 **Checking scope states**
 
 ```efx
-
 const program = effect {
   const scope = await Scope.make()
   const before = scope.state._tag
@@ -78,7 +88,6 @@ scope.state._tag // => "Empty"
 **Inspecting an open scope state**
 
 ```efx
-
 const scope = Scope.makeUnsafe()
 
 runSync(Scope.addFinalizer(scope, Effect.void))
@@ -94,7 +103,6 @@ state.finalizer !== undefined // => true
 **Inspecting a closed scope state**
 
 ```efx
-
 const program = effect {
   const scope = await Scope.make()
 
@@ -108,28 +116,11 @@ const program = effect {
 runSync(program) // => Exit.succeed("Done")
 ```
 
-## Scope
-
-**Accessing the scope service**
-
-```efx
-
-const cleanups: Array<string> = []
-const program = effect {
-  const scope = await Scope
-  await Scope.addFinalizer(scope, sync(() => cleanups.push("Cleanup")))
-}
-
-runSync(scoped(program))
-cleanups // => ["Cleanup"]
-```
-
 ## make
 
 **Creating a scope**
 
 ```efx
-
 const cleanups: Array<string> = []
 const program = effect {
   const scope = await Scope.make("sequential")
@@ -147,7 +138,6 @@ cleanups // => ["Cleanup 2", "Cleanup 1"]
 **Creating a scope synchronously**
 
 ```efx
-
 const scope = Scope.makeUnsafe("sequential")
 const cleanups: Array<string> = []
 const program = effect {
@@ -164,7 +154,6 @@ cleanups // => ["Cleanup"]
 **Providing a scope**
 
 ```efx
-
 const events: Array<string> = []
 const program = effect {
   const scope = await Scope
@@ -187,7 +176,6 @@ events // => ["working", "cleanup"]
 **Adding an exit-aware finalizer**
 
 ```efx
-
 const exits: Array<Exit<unknown, unknown>> = []
 const withResource = effect {
   const scope = await Scope.make()
@@ -204,7 +192,6 @@ exits // => [Exit.void]
 **Adding finalizers**
 
 ```efx
-
 const events: Array<string> = []
 const program = effect {
   const scope = await Scope.make()
@@ -224,7 +211,6 @@ events // => ["work", "cleanup 3", "cleanup 2", "cleanup 1"]
 **Creating a child scope**
 
 ```efx
-
 const cleanups: Array<string> = []
 const nestedScopes = effect {
   const parentScope = await Scope.make("sequential")
@@ -244,7 +230,6 @@ cleanups // => ["child", "parent"]
 **Creating a child scope synchronously**
 
 ```efx
-
 const cleanups: Array<string> = []
 const program = effect {
   const parentScope = Scope.makeUnsafe("sequential")
@@ -264,7 +249,6 @@ cleanups // => ["child", "parent"]
 **Running scope finalizers**
 
 ```efx
-
 const events: Array<string> = []
 const resourceManagement = effect {
   const scope = await Scope.make("sequential")

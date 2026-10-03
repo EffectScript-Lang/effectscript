@@ -23,6 +23,20 @@ chunk.length // => 3
 Chunk.toArray(chunk) // => [1, 2, 3]
 ```
 
+**Working with Chunk utility types**
+
+```efx
+import type { Chunk } from "effect"
+
+// Extract the element type from a Chunk
+declare const chunk: Chunk.Chunk<string>
+type ElementType = Chunk.Chunk.Infer<typeof chunk> // string
+
+// Create a preserving non-emptiness
+declare const nonEmptyChunk: Chunk.NonEmptyChunk<number>
+type WithString = Chunk.Chunk.With<typeof nonEmptyChunk, string> // Chunk.NonEmptyChunk<string>
+```
+
 ## NonEmptyChunk
 
 **Working with non-empty chunks**
@@ -612,22 +626,6 @@ Chunk.lastNonEmpty(singleElement) // => "hello"
 
 // Type safety: this function only accepts NonEmptyChunk
 // Chunk.lastNonEmpty(Chunk.empty()) // TypeScript error
-```
-
-## Chunk
-
-**Working with Chunk utility types**
-
-```efx
-import type { Chunk } from "effect"
-
-// Extract the element type from a Chunk
-declare const chunk: Chunk.Chunk<string>
-type ElementType = Chunk.Chunk.Infer<typeof chunk> // string
-
-// Create a preserving non-emptiness
-declare const nonEmptyChunk: Chunk.NonEmptyChunk<number>
-type WithString = Chunk.Chunk.With<typeof nonEmptyChunk, string> // Chunk.NonEmptyChunk<string>
 ```
 
 ## Chunk.Infer

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Cache.ts`, in EffectScript (AD
 **Creating a basic cache**
 
 ```efx
-
 // Basic cache with string keys and number values
 const program = effect {
   const cache = await Cache.make<string, number>({
@@ -65,7 +64,6 @@ actual // => [4, Exit.fail("Lookup failed")]
 **Using complex keys with TTL**
 
 ```efx
-
 // Cache with complex key types and TTL
 class UserId extends Data.Class<{ id: number }> {}
 
@@ -91,7 +89,6 @@ actual // => "User-123"
 **Configuring dynamic time to live**
 
 ```efx
-
 // Cache with TTL based on computed value
 const program = effect {
   const cache = await Cache.makeWith(
@@ -120,7 +117,6 @@ actual // => 1000
 **Creating a basic cache**
 
 ```efx
-
 // Basic cache with string keys
 const program = effect {
   const cache = await Cache.make<string, number>({
@@ -140,7 +136,6 @@ actual // => { result1: 5, result2: 5 }
 **Creating a cache with TTL**
 
 ```efx
-
 const program = effect {
   const users = new Map([
     [123, { name: "Ada", email: "ada@example.com" }],
@@ -177,7 +172,6 @@ actual // => [{ name: "Ada", email: "ada@example.com" }, { name: "Ada", email: "
 **Getting cached values**
 
 ```efx
-
 const program = effect {
   const cache = await Cache.make({
     capacity: 10,
@@ -227,7 +221,6 @@ actual // => [5, Exit.fail("Lookup failed")]
 **Sharing concurrent lookups**
 
 ```efx
-
 // Concurrent access - multiple gets of same key only invoke lookup once
 const program = effect {
   let lookupCount = 0
@@ -350,7 +343,6 @@ actual // => [Option.some(42), 42]
 **Setting values directly**
 
 ```efx
-
 const program = effect {
   const cache = await Cache.make({
     capacity: 100,
@@ -369,7 +361,6 @@ actual // => 42
 **Overwriting cached values**
 
 ```efx
-
 // Overwriting existing cached values
 const program = effect {
   const cache = await Cache.make({
@@ -394,7 +385,6 @@ actual // => { original: 4, updated: 999 }
 **Applying TTL to set values**
 
 ```efx
-
 // TTL behavior with set operations
 const program = effect {
   const cache = await Cache.make({
@@ -420,7 +410,6 @@ actual // => [true, false]
 **Enforcing capacity when setting values**
 
 ```efx
-
 // Capacity enforcement with set operations
 const program = effect {
   const cache = await Cache.make({
@@ -450,7 +439,6 @@ actual // => [2, 2, false, true]
 **Checking for cached keys**
 
 ```efx
-
 const program = effect {
   const cache = await Cache.make({
     capacity: 100,
@@ -473,7 +461,6 @@ actual // => [false, true]
 **Checking TTL expiration**
 
 ```efx
-
 // TTL expiration behavior
 const program = effect {
   const cache = await Cache.make({
@@ -503,7 +490,6 @@ actual // => [true, true, false]
 **Checking multiple keys**
 
 ```efx
-
 // Checking multiple keys efficiently
 const program = effect {
   const cache = await Cache.make({
@@ -534,7 +520,6 @@ actual // => ["apple: true", "banana: true", "cherry: false", "date: false"]
 **Invalidating cached entries**
 
 ```efx
-
 const program = effect {
   const cache = await Cache.make({
     capacity: 10,
@@ -578,7 +563,6 @@ actual // => { beforeInvalidation: true, afterInvalidation: false, lookupCount: 
 **Invalidating entries conditionally**
 
 ```efx
-
 const program = effect {
   const cache = await Cache.make({
     capacity: 10,
@@ -637,7 +621,6 @@ actual // => [true, false, false, true, false, false]
 **Refreshing cached values**
 
 ```efx
-
 // Force refresh of existing cached values
 const program = effect {
   let counter = 0
@@ -667,7 +650,6 @@ actual // => ["user-1", "user-1", "user-2", "user-2", 2]
 **Resetting TTL on refresh**
 
 ```efx
-
 // Refresh resets TTL (Time To Live)
 const program = effect {
   const cache = await Cache.make({
@@ -698,7 +680,6 @@ actual // => [true, true]
 **Refreshing missing keys**
 
 ```efx
-
 // Refresh non-existent keys
 const program = effect {
   const cache = await Cache.make({
@@ -723,7 +704,6 @@ actual // => ["value-for-newKey", true]
 **Invalidating all entries**
 
 ```efx
-
 // Clear all cached entries at once
 const program = effect {
   const cache = await Cache.make({
@@ -766,7 +746,6 @@ actual // => [3, true, 0, false, false, false]
 **Reading cache size**
 
 ```efx
-
 const program = effect {
   const cache = await Cache.make({
     capacity: 10,
@@ -796,7 +775,6 @@ actual // => [0, 2, 1]
 **Reading active keys**
 
 ```efx
-
 // Basic key enumeration
 const program = effect {
   const cache = await Cache.make({
@@ -823,7 +801,6 @@ actual // => ["cache", "hello", "world"]
 **Reading all cached values**
 
 ```efx
-
 const program = effect {
   const cache = await Cache.make({
     capacity: 10,

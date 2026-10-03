@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/FiberMap.ts`, in EffectScript 
 **Managing fibers in a map**
 
 ```efx
-
 // Create a FiberMap with string keys
 const program = effect {
   const map = await FiberMap.make<string>()
@@ -38,7 +37,6 @@ actual // => 2
 **Checking if a value is a FiberMap**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 
@@ -54,7 +52,6 @@ actual // => [true, false, false]
 **Creating a scoped FiberMap**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 
@@ -77,7 +74,6 @@ actual // => 2
 **Creating a scoped runtime**
 
 ```efx
-
 const program = effect {
   const run = await FiberMap.makeRuntime<never, string>()
 
@@ -98,7 +94,6 @@ actual // => ["Hello", "World"]
 **Creating a promise runtime**
 
 ```efx
-
 const program = effect {
   const run = await FiberMap.makeRuntimePromise<never, string>()
 
@@ -119,7 +114,6 @@ actual // => ["Hello", "World"]
 **Adding a fiber unsafely**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
   const deferred = await Deferred.make<string>()
@@ -143,7 +137,6 @@ actual // => "Hello"
 **Adding a fiber**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
   const deferred = await Deferred.make<string>()
@@ -167,7 +160,6 @@ actual // => "Hello"
 **Retrieving a fiber unsafely**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
   const deferred = await Deferred.make<string>()
@@ -192,7 +184,6 @@ actual // => Option.some("Hello")
 **Retrieving a fiber**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
   const deferred = await Deferred.make<string>()
@@ -217,7 +208,6 @@ actual // => Option.some("Hello")
 **Checking if a key exists unsafely**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 
@@ -237,7 +227,6 @@ actual // => [true, false]
 **Checking if a key exists**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 
@@ -257,7 +246,6 @@ actual // => [true, false]
 **Removing a fiber**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 
@@ -282,7 +270,6 @@ actual // => [2, 1]
 **Clearing all fibers**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 
@@ -308,7 +295,6 @@ actual // => [3, 0]
 **Forking effects into a map**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 
@@ -331,7 +317,6 @@ actual // => ["Hello", "World", 0]
 **Capturing a runtime**
 
 ```efx
-
 service Users {
   readonly getAll: Effect<Array<unknown>>
 }
@@ -359,7 +344,6 @@ actual // => [0, 0]
 **Running effects as promises**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
   const runPromise = await FiberMap.runtimePromise(map)<never>()
@@ -381,7 +365,6 @@ actual // => ["Hello", "World"]
 **Checking the map size**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 
@@ -422,7 +405,6 @@ actual // => Exit.fail("error")
 **Waiting for an empty map**
 
 ```efx
-
 const program = effect {
   const map = await FiberMap.make<string>()
 

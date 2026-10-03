@@ -43,7 +43,6 @@ endedStatus.endTime - endedStatus.startTime // => 500_000_000n
 **Accepting any span**
 
 ```efx
-
 // Function that accepts any span type
 const getSpanIds = (span: Tracer.AnySpan) => succeed([span.spanId, span.traceId])
 
@@ -72,7 +71,6 @@ Tracer.ParentSpanKey // => "effect/Tracer/ParentSpan"
 **Accessing the parent span**
 
 ```efx
-
 // Access the parent span from the context
 const program = effect {
   const parentSpan = await service(Tracer.ParentSpan)
@@ -108,7 +106,6 @@ externalSpan.spanId // => "span-abc-123"
 **Configuring span options**
 
 ```efx
-
 // Create an effect with span options
 const options: Tracer.SpanOptions = {
   attributes: { "user.id": "123", "operation": "data-processing" },
@@ -140,7 +137,6 @@ spans[0]?.status._tag // => "Ended"
 **Configuring span kinds**
 
 ```efx
-
 // Different span kinds for different operations
 const program = succeed("handled").pipe(
   withSpan("handle-request", {
@@ -220,7 +216,6 @@ events // => [["loaded", 1_250_000_000n, { "cache.hit": true }]]
 **Linking spans**
 
 ```efx
-
 // Create a span link to connect spans
 const externalSpan = Tracer.externalSpan({
   spanId: "external-span-123",
@@ -255,7 +250,6 @@ spans[0]?.links[0]?.attributes["link.type"] // => "follows-from"
 **Creating an external span**
 
 ```efx
-
 // Create an external span from another tracing system
 const span = Tracer.externalSpan({
   spanId: "span-abc-123",
@@ -287,7 +281,6 @@ spans.map((span) => Option.getOrUndefined(span.parent)?.spanId) // => ["span-abc
 **Disabling span propagation**
 
 ```efx
-
 // Disable span propagation for a specific effect
 const program = Tracer.DisablePropagation.pipe(
   provideService(Tracer.DisablePropagation, true)
@@ -301,7 +294,6 @@ await runPromise(program) // => true
 **Accessing the current tracer**
 
 ```efx
-
 // Access the current tracer from the context
 const program = effect {
   const tracer = await service(Tracer.Tracer)

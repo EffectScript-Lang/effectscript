@@ -51,7 +51,6 @@ ConfigProvider.makeArray(3) // => { _tag: "Array", length: 3, value: undefined }
 **Failing with a SourceError**
 
 ```efx
-
 const provider = ConfigProvider.make((_path) =>
   fail(
     new ConfigProvider.SourceError({ message: "connection refused" })
@@ -77,7 +76,6 @@ path.join(".") // => "database.replicas.0.host"
 **Providing a custom provider**
 
 ```efx
-
 const provider = ConfigProvider.fromUnknown({ port: 8080 })
 
 const program = effect {
@@ -94,7 +92,6 @@ runSync(program) === provider // => true
 **Creating a simple in-memory provider**
 
 ```efx
-
 const data: Record<string, string> = {
   host: "localhost",
   port: "5432"
@@ -116,7 +113,6 @@ runSync(provider.load(["host"])) // => ConfigProvider.makeValue("localhost")
 **Falling back to a default provider**
 
 ```efx
-
 const envProvider = ConfigProvider.fromEnv({
   env: { HOST: "prod.example.com" }
 })
@@ -134,7 +130,6 @@ const values = [host?.value, port?.value] // => ["prod.example.com", "3000"]
 **Uppercasing path segments**
 
 ```efx
-
 const provider = ConfigProvider.fromEnv({
   env: { APP_HOST: "localhost" }
 })
@@ -154,7 +149,6 @@ node?.value // => "localhost"
 **Resolving camelCase keys to env vars**
 
 ```efx
-
 const provider = ConfigProvider.fromEnv({
   env: { DATABASE_HOST: "localhost" }
 }).pipe(ConfigProvider.constantCase)
@@ -169,7 +163,6 @@ node?.value // => "localhost"
 **Nesting under a prefix**
 
 ```efx
-
 const provider = ConfigProvider.fromEnv({
   env: { APP_HOST: "localhost", APP_PORT: "3000" }
 })
@@ -204,7 +197,6 @@ runSync(provide(program, TestLayer)) // => 8080
 **Adding default values**
 
 ```efx
-
 const defaults = ConfigProvider.fromUnknown({
   HOST: "localhost",
   PORT: "3000"
@@ -224,7 +216,6 @@ runSync(provide(program, layer)) // => "localhost"
 **Providing config from a plain object**
 
 ```efx
-
 const provider = ConfigProvider.fromUnknown({
   database: {
     host: "localhost",
@@ -244,7 +235,6 @@ runSync(host) // => "localhost"
 **Reading from a custom env record**
 
 ```efx
-
 const provider = ConfigProvider.fromEnv({
   env: {
     DATABASE_HOST: "localhost",
@@ -264,7 +254,6 @@ runSync(host) // => "localhost"
 **Parsing .env contents**
 
 ```efx
-
 const contents = `
 HOST=localhost
 PORT=3000
@@ -281,7 +270,6 @@ port?.value // => "3000"
 **Loading a .env file**
 
 ```efx
-
 const fileSystem = FileSystem.makeNoop({
   readFileString: () => succeed("HOST=localhost")
 })
@@ -302,7 +290,6 @@ node?.value // => "localhost"
 **Reading config from a directory**
 
 ```efx
-
 const fileSystem = FileSystem.makeNoop({
   readFileString: (path) =>
     path === "/etc/myapp/host"

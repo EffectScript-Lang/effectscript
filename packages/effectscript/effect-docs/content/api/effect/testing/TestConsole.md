@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/testing/TestConsole.ts`, in Ef
 **Capturing console output in tests**
 
 ```efx
-
 const program = effect {
   await Console.log("Hello, World!")
   await Console.error("An error occurred")
@@ -61,7 +60,6 @@ entry // => { method: "error", parameters: ["not found"] }
 **Creating a test console**
 
 ```efx
-
 const program = effect {
   await Console.log("Debug message")
   await Console.error("Error occurred")
@@ -81,7 +79,6 @@ await runPromise(program)
 **Accessing the test console service**
 
 ```efx
-
 const program = TestConsole.testConsoleWith((testConsole) =>
   effect {
     testConsole.log("Test message")
@@ -103,7 +100,6 @@ await runPromise(program)
 **Providing a test console layer**
 
 ```efx
-
 const program = effect {
   await Console.log("This will be captured")
   await Console.error("This error will be captured")
@@ -123,7 +119,6 @@ await runPromise(program)
 **Reading captured log lines**
 
 ```efx
-
 const program = effect {
   await Console.log("First message")
   await Console.log("Second message", { key: "value" })
@@ -142,7 +137,6 @@ await runPromise(program)
 **Reading captured error lines**
 
 ```efx
-
 const program = effect {
   await Console.error("Error message")
   await Console.error("Another error", new Error("Something went wrong"))

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxPriorityQueue.ts`, in Effect
 **Dequeuing values by priority**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.empty<number>(Order.Number)
   await TxPriorityQueue.offer(pq, 3)
@@ -33,7 +32,6 @@ await runPromise(program) // => 1
 **Creating an empty priority queue**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.empty<number>(Order.Number)
   return await TxPriorityQueue.isEmpty(pq)
@@ -47,7 +45,6 @@ await runPromise(program) // => true
 **Creating a priority queue from an iterable**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [3, 1, 2])
   return await TxPriorityQueue.take(pq)
@@ -61,7 +58,6 @@ await runPromise(program) // => 1
 **Creating a priority queue from variadic values**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.make(Order.Number)(3, 1, 2)
   return await TxPriorityQueue.take(pq)
@@ -75,7 +71,6 @@ await runPromise(program) // => 1
 **Getting the queue size**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [1, 2, 3])
   return await TxPriorityQueue.size(pq)
@@ -89,7 +84,6 @@ await runPromise(program) // => 3
 **Checking whether a queue is empty**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.empty<number>(Order.Number)
   return await TxPriorityQueue.isEmpty(pq)
@@ -103,7 +97,6 @@ await runPromise(program) // => true
 **Checking whether a queue has elements**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [1])
   return await TxPriorityQueue.isNonEmpty(pq)
@@ -117,7 +110,6 @@ await runPromise(program) // => true
 **Peeking at the next value**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [3, 1, 2])
   return await TxPriorityQueue.peek(pq)
@@ -146,7 +138,6 @@ await runPromise(program) // => Option.none()
 **Offering a value**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.empty<number>(Order.Number)
   await TxPriorityQueue.offer(pq, 2)
@@ -162,7 +153,6 @@ await runPromise(program) // => 1
 **Offering multiple values**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.empty<number>(Order.Number)
   await TxPriorityQueue.offerAll(pq, [3, 1, 2])
@@ -177,7 +167,6 @@ await runPromise(program) // => 1
 **Taking the next value**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [3, 1, 2])
   return await TxPriorityQueue.take(pq)
@@ -191,7 +180,6 @@ await runPromise(program) // => 1
 **Taking all values in priority order**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [3, 1, 2])
   return await TxPriorityQueue.takeAll(pq)
@@ -220,7 +208,6 @@ await runPromise(program) // => Option.none()
 **Taking up to a limit**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [5, 3, 1, 4, 2])
   return await TxPriorityQueue.takeUpTo(pq, 2)
@@ -234,7 +221,6 @@ await runPromise(program) // => [1, 2]
 **Removing matching values**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [1, 2, 3, 4, 5])
   await TxPriorityQueue.removeIf(pq, (n) => n % 2 === 0)
@@ -249,7 +235,6 @@ await runPromise(program) // => [1, 3, 5]
 **Retaining matching values**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [1, 2, 3, 4, 5])
   await TxPriorityQueue.retainIf(pq, (n) => n % 2 === 0)
@@ -264,7 +249,6 @@ await runPromise(program) // => [2, 4]
 **Reading values in priority order**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.fromIterable(Order.Number, [3, 1, 2])
   return await TxPriorityQueue.toArray(pq)
@@ -278,7 +262,6 @@ await runPromise(program) // => [1, 2, 3]
 **Checking for a TxPriorityQueue**
 
 ```efx
-
 const program = effect {
   const pq = await TxPriorityQueue.empty<number>(Order.Number)
   return [TxPriorityQueue.isTxPriorityQueue(pq), TxPriorityQueue.isTxPriorityQueue("nope")]

@@ -31,7 +31,6 @@ Context.get(context, Database).query("SELECT 1") // => "Result: SELECT 1"
 **Creating service keys**
 
 ```efx
-
 // Create a simple service
 const Database = Context.Service<{
   query: (sql: string) => string
@@ -49,6 +48,24 @@ const db = Context.make(Database, {
 const config = Context.make(Config, { port: 8080 })
 Context.get(db, Database).query("SELECT 1") // => "Result: SELECT 1"
 Context.get(config, Config).port // => 8080
+```
+
+**Extracting service types**
+
+```efx
+import { Context } from "effect"
+
+const Database = Context.Service<{
+  query: (sql: string) => string
+}>("Database")
+
+// Extract service type from a key
+type DatabaseService = Context.Service.Shape<typeof Database>
+
+// Extract identifier type from a key
+type DatabaseId = Context.Service.Identifier<typeof Database>
+
+Database.key // => "Database"
 ```
 
 ## Reference
@@ -72,24 +89,29 @@ logger.log("default logger")
 messages // => ["default logger"]
 ```
 
-## Service
-
-**Extracting service types**
+**Creating references with default values**
 
 ```efx
 import { Context } from "effect"
 
-const Database = Context.Service<{
-  query: (sql: string) => string
-}>("Database")
+// Create a reference with a default value
+const messages: Array<string> = []
+const LoggerRef = Context.Reference("Logger", {
+  defaultValue: () => ({ log: (msg: string) => messages.push(`Default: ${msg}`) })
+})
 
-// Extract service type from a key
-type DatabaseService = Context.Service.Shape<typeof Database>
+// The reference provides the default value when accessed from an empty context
+const context = Context.empty()
+const logger = Context.get(context, LoggerRef)
 
-// Extract identifier type from a key
-type DatabaseId = Context.Service.Identifier<typeof Database>
-
-Database.key // => "Database"
+// You can also override the default value
+const customContext = Context.make(LoggerRef, {
+  log: (msg: string) => messages.push(`Custom: ${msg}`)
+})
+const customLogger = Context.get(customContext, LoggerRef)
+logger.log("default")
+customLogger.log("message")
+messages // => ["Default: default", "Custom: message"]
 ```
 
 ## Service.Any
@@ -236,7 +258,6 @@ Context.get(context, Port).PORT // => 8080
 **Adding a service to a context**
 
 ```efx
-
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
 
@@ -315,7 +336,6 @@ Context.getOption(context, Timeout) // => Option.none()
 **Getting a service from a context**
 
 ```efx
-
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
 
@@ -420,31 +440,4 @@ const context = someContext |> Context.omit(Timeout)
 
 Context.getOption(context, Port) // => Option.some({ PORT: 8080 })
 Context.getOption(context, Timeout) // => Option.none()
-```
-
-## Reference
-
-**Creating references with default values**
-
-```efx
-import { Context } from "effect"
-
-// Create a reference with a default value
-const messages: Array<string> = []
-const LoggerRef = Context.Reference("Logger", {
-  defaultValue: () => ({ log: (msg: string) => messages.push(`Default: ${msg}`) })
-})
-
-// The reference provides the default value when accessed from an empty context
-const context = Context.empty()
-const logger = Context.get(context, LoggerRef)
-
-// You can also override the default value
-const customContext = Context.make(LoggerRef, {
-  log: (msg: string) => messages.push(`Custom: ${msg}`)
-})
-const customLogger = Context.get(customContext, LoggerRef)
-logger.log("default")
-customLogger.log("message")
-messages // => ["Default: default", "Custom: message"]
 ```

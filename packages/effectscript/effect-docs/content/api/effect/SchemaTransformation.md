@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/SchemaTransformation.ts`, in E
 **Creating a middleware that falls back on decode failure**
 
 ```efx
-
 const fallback = new SchemaTransformation.Middleware<string, string, never, never, never, never>(
   (effect) => Effect.catch(effect, () => succeed(Option.some("fallback"))),
   (effect) => effect

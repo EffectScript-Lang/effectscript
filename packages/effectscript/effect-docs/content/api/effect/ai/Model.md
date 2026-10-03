@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ai/Model.ts`, in EffectScript 
 **Providing model metadata**
 
 ```efx
-
 const model = Model.make("amazon-bedrock", "claude-3-5-haiku", Layer.empty)
 const program = effect {
   const provider = await Model.ProviderName

@@ -71,3 +71,56 @@ describe("the generated docs (Plan 13 Task 2, ADR-0050)", () => {
     for (const e of valid) expect(verdict(e.ts, e.efx, { filename: "example.ts" }), e.source).toBeGreaterThan(0)
   }, 120_000)
 })
+
+describe("Plan 21: the generator's inputs and pages", () => {
+  const fixture = () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "efx-docs-gen-"))
+    const write = (file: string, text: string) => {
+      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
+      fs.writeFileSync(path.join(root, file), text)
+    }
+    const example = (code: string) => `/**\n * **Example**\n *\n * \`\`\`ts\n * ${code}\n * \`\`\`\n */\n`
+    write("ai-docs/src/index.md", "# Docs\n")
+    write("migration/README.md", "# Migration\n")
+    write("packages/effect/README.md", "# effect\n")
+    write("packages/x/package.json", "{ \"name\": \"@scope/x\" }\n")
+    write(
+      "packages/x/src/a.ts",
+      `${example("const a = 1")}export interface Foo {}\n${example("const b = 2")}export const bar = 1\n${
+        example("const c = 3")
+      }export const Foo = 1\n`
+    )
+    write("packages/x/README.md", "# x\n\n```ts\nconst x = 1\n```\n")
+    write("packages/x/test/fixtures/README.md", "# fixture\n\n```ts\nconst y = 1\n```\n")
+    const git = (...args: Array<string>) =>
+      spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd: root, encoding: "utf8" })
+    git("init", "-q")
+    git("add", "-A")
+    git("commit", "-qm", "init")
+    // not tracked: never an input
+    write("packages/x/scratch/README.md", "# scratch\n\n```ts\nconst z = 1\n```\n")
+    return root
+  }
+
+  it("reads tracked files only, and skips test and fixture folders", () => {
+    const out = generate(fixture())
+    expect([...out.keys()].filter((f) => f.startsWith("guides/"))).toEqual(["guides/packages/x/README.md"])
+  })
+
+  it("puts each symbol's examples under one heading", () => {
+    const page = generate(fixture()).get("api/@scope/x/a.md")!
+    expect(page.match(/^## Foo$/gm)).toHaveLength(1)
+  })
+
+  it("ignores dotfiles when checking for drift", () => {
+    const root = fixture()
+    const files = generate(root)
+    const dir = path.join(root, "content")
+    for (const [file, text] of files) {
+      fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true })
+      fs.writeFileSync(path.join(dir, file), text)
+    }
+    fs.writeFileSync(path.join(dir, ".DS_Store"), "")
+    expect(drift(files, dir)).toEqual([])
+  })
+})

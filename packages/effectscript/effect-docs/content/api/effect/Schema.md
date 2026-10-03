@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Schema.ts`, in EffectScript (A
 **Schema for a parametric `Box<A>` type**
 
 ```efx
-
 interface Box<A> {
   readonly value: A
 }
@@ -359,7 +358,6 @@ Schema.decodeUnknownSync(NumberFromString)("42") // => 42
 **Encoding a value to a string**
 
 ```efx
-
 const NumberFromString = Schema.NumberFromString
 
 await runPromise(Schema.encodeUnknownEffect(NumberFromString)(42)) // => "42"
@@ -760,7 +758,6 @@ Schema.is(AgeSchema)(121) // => false
 **Logging decode failures**
 
 ```efx
-
 const events: Array<string> = []
 const Logged = Schema.String.pipe(
   Schema.middlewareDecoding((effect) =>
@@ -776,7 +773,6 @@ events // => ["decode failed"]
 **Logging encode failures**
 
 ```efx
-
 const events: Array<string> = []
 const Logged = Schema.String.pipe(
   Schema.middlewareEncoding((effect) =>
@@ -792,7 +788,6 @@ events // => ["encode failed"]
 **Returning a default on decode failure**
 
 ```efx
-
 const schema = Schema.Number.pipe(
   Schema.catchDecoding((_issue) => succeed(Option.some(0)))
 )
@@ -873,7 +868,6 @@ Schema.encodeSync(UpperFromLower)("hello") // => "HELLO"
 **Defining an optional field with a static default**
 
 ```efx
-
 const MySchema = Schema.Struct({
   name: Schema.String.pipe(
     Schema.optionalKey,
@@ -889,7 +883,6 @@ MySchema.make({}).name // => "anonymous"
 **Providing a default for a missing struct key**
 
 ```efx
-
 const MySchema = Schema.Struct({
   name: Schema.String.pipe(Schema.withDecodingDefaultKey(succeed("anonymous")))
 })
@@ -902,7 +895,6 @@ Schema.decodeUnknownSync(MySchema)({}).name // => "anonymous"
 **Providing a default for an optional field value**
 
 ```efx
-
 const MySchema = Schema.Struct({
   name: Schema.String.pipe(Schema.optional, Schema.withDecodingDefault(succeed("anonymous")))
 })
@@ -1354,7 +1346,6 @@ const result = [decoded.some, decoded.number] // => ["value", 42]
 **Defining a basic class**
 
 ```efx
-
 schema Person {
   name: string
   age: number
@@ -1368,7 +1359,6 @@ String(alice) // => "Person({\"name\":\"Alice\",\"age\":30})"
 **Extending a class**
 
 ```efx
-
 schema Animal {
   name: string
 }
@@ -1387,7 +1377,6 @@ dog.breed // => "Labrador"
 **Defining a tagged class**
 
 ```efx
-
 schema Circle {
   _tag: "Circle"
   radius: number
@@ -1403,7 +1392,6 @@ c.radius // => 5
 **Schema-backed error**
 
 ```efx
-
 class NotFound extends Schema.Error<NotFound>("NotFound")({
   id: Schema.Number
 }) {}
@@ -1420,7 +1408,6 @@ error.id // => 1
 **Defining a tagged error class**
 
 ```efx
-
 error NotFound {
   id: number
 }

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Logger.ts`, in EffectScript (A
 **Creating custom loggers**
 
 ```efx
-
 const messages: Array<string> = []
 const stringLogger = Logger.make<unknown, void>((options) => {
   messages.push(`[${options.logLevel}] ${options.message}`)
@@ -35,7 +34,6 @@ messages // => ["[Info] Hello World"]
 **Accessing logger options**
 
 ```efx
-
 const outputs: Array<unknown> = []
 const detailedLogger = Logger.make((options) => {
   outputs.push({
@@ -72,7 +70,6 @@ Logger.isLogger({ log: () => {} }) // => false
 **Accessing current loggers**
 
 ```efx
-
 const messages: Array<unknown> = []
 const customLogger = Logger.make((options) => {
   messages.push(options.message)
@@ -94,7 +91,6 @@ messages // => [["Hello from custom logger"]]
 **Transforming logger output**
 
 ```efx
-
 const outputs: Array<unknown> = []
 const structuredLogger = Logger.make((options) => ({
   message: options.message
@@ -117,7 +113,6 @@ outputs // => [{ message: "HELLO" }]
 **Writing logger output with console.log**
 
 ```efx
-
 // Create a custom formatter
 const customFormatter = Logger.make((options) =>
   `${options.logLevel}: ${options.message}`
@@ -138,7 +133,6 @@ await runPromise(program) // => ["Info: Hello World"]
 **Writing logger output with console.error**
 
 ```efx
-
 // Create an error-specific formatter
 const errorFormatter = Logger.make((options) =>
   `ERROR: ${options.message}`
@@ -159,7 +153,6 @@ await runPromise(program) // => ["ERROR: Database connection failed"]
 **Writing logs with level-based console methods**
 
 ```efx
-
 const messages: Array<ReadonlyArray<unknown>> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   info: (message: unknown) => messages.push(["info", message]),
@@ -191,7 +184,6 @@ messages // => expected
 **Creating loggers from functions**
 
 ```efx
-
 const outputs: Array<string> = []
 const textLogger = Logger.make((options) =>
   `${options.logLevel}: ${options.message}`
@@ -220,7 +212,6 @@ Logger.isLogger(Logger.defaultLogger) // => true
 **Formatting logs as simple strings**
 
 ```efx
-
 // Use the simple format logger
 const stableSimple = Logger.map(Logger.formatSimple, (output) =>
   output
@@ -242,7 +233,6 @@ await runPromise(program) // => ["level=INFO message=\"Application started\""]
 **Formatting logs as logfmt**
 
 ```efx
-
 const stableLogFmt = Logger.map(Logger.formatLogFmt, (output) =>
   output
     .replace(/timestamp=\S+ /, "")
@@ -263,7 +253,6 @@ await runPromise(program) // => ["level=INFO message=\"User login\""]
 **Formatting logs as structured objects**
 
 ```efx
-
 const stableStructured = Logger.map(Logger.formatStructured, (output) => ({
   message: output.message,
   level: output.level
@@ -283,7 +272,6 @@ await runPromise(program) // => [{ message: "User action", level: "INFO" }]
 **Formatting logs as JSON**
 
 ```efx
-
 const stableJson = Logger.map(Logger.formatJson, (json) => {
   const output = JSON.parse(json)
   return Formatter.formatJson({ message: output.message, level: output.level })
@@ -303,7 +291,6 @@ await runPromise(program) // => ["{\"message\":\"Server started\",\"level\":\"IN
 **Batching logger output**
 
 ```efx
-
 const flushed: Array<ReadonlyArray<string>> = []
 const messageLogger = Logger.make((options) => String(options.message))
 const batchedLogger = Logger.batched(messageLogger, {
@@ -328,7 +315,6 @@ flushed // => [["Event 1", "Event 2"]]
 **Logging with pretty console output**
 
 ```efx
-
 const prettyLogger = Logger.layer([Logger.consolePretty()])
 
 log("hello").pipe(
@@ -342,7 +328,6 @@ log("hello").pipe(
 **Logging with console.error, when the environment has TTY**
 
 ```efx
-
 const prettyLoggerLayer = Layer.merge(
   Logger.layer([Logger.consolePretty()]),
   Layer.succeed(Logger.LogToStderr, true)
@@ -359,7 +344,6 @@ log('hello').pipe(
 **Logging with pretty console output**
 
 ```efx
-
 const prettyLogger = Logger.layer([Logger.consolePrettyBrowser()])
 
 log("hello").pipe(
@@ -375,7 +359,6 @@ log("hello").pipe(
 **Logging with pretty console output**
 
 ```efx
-
 const prettyLogger = Logger.layer([Logger.consolePrettyTty()])
 
 log("hello").pipe(
@@ -389,7 +372,6 @@ log("hello").pipe(
 **Logging with console.error**
 
 ```efx
-
 const prettyLoggerLayer = Layer.merge(
   Logger.layer([Logger.consolePrettyTty()]),
   Layer.succeed(Logger.LogToStderr, true)
@@ -436,7 +418,6 @@ Logger.isLogger(Logger.consoleJson) // => true
 **Recording logs as trace span events**
 
 ```efx
-
 const program = log("span event").pipe(
   withSpan("operation"),
   provide(Logger.layer([Logger.tracerLogger]))
@@ -449,7 +430,6 @@ runSync(program)
 **Providing logger layers**
 
 ```efx
-
 const messages: Array<unknown> = []
 const customLogger = Logger.make((options) => {
   messages.push(options.message)
@@ -468,7 +448,6 @@ messages // => [["Application started"]]
 **Writing JSON logs to a file**
 
 ```efx
-
 const writes: Array<string> = []
 const file = {
   writeAll: (buffer: Uint8Array) => sync(() => {
@@ -492,7 +471,6 @@ writes // => ["a\nb\nc"]
 **Writing logs to files**
 
 ```efx
-
 const writes: Array<string> = []
 const file = {
   writeAll: (buffer: Uint8Array) => sync(() => {

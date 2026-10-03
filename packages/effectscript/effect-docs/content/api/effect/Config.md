@@ -27,7 +27,6 @@ Config.isConfig("not a config") // => false
 **Uppercasing a string config**
 
 ```efx
-
 const upper = Config.String("name").pipe(
   Config.map((s) => s.toUpperCase())
 )
@@ -88,7 +87,6 @@ const hostConfig = ENV.pipe(
 **Wrapping a value in an effectful transformation**
 
 ```efx
-
 const trimmed = Config.String("name").pipe(
   Config.mapEffect((s) => succeed(s.trim()))
 )
@@ -101,7 +99,6 @@ runSync(trimmed.parse(provider)) // => "Alice"
 **Trying another port before using a default**
 
 ```efx
-
 const port = Config.Int("PORT").pipe(
   Config.orElse(() => Config.Int("BACKUP_PORT")),
   Config.withDefault(3000)
@@ -118,7 +115,6 @@ await runPromise(port.parse(missingBackup)) // => 3000
 **Defaulting an incomplete config group**
 
 ```efx
-
 const dbConfig = Config.all({
   host: Config.String("host"),
   port: Config.Number("port")
@@ -136,7 +132,6 @@ await runPromise(dbConfig.parse(missingPort)) // => { host: "localhost", port: 5
 **Defaulting a missing port**
 
 ```efx
-
 const port = Config.Number("port").pipe(Config.withDefault(3000))
 
 const provider = ConfigProvider.fromUnknown({})
@@ -161,7 +156,6 @@ runSync(maybePort.parse(provider)) // => Option.none()
 **Unwrapping a record of configs**
 
 ```efx
-
 interface Options {
   key: string
 }
@@ -179,7 +173,6 @@ runSync(config.parse(provider)) // => { key: "value" }
 **Reading a structured config**
 
 ```efx
-
 const DbConfig = Config.schema(
   Schema.Struct({
     host: Schema.String,
@@ -200,7 +193,6 @@ runSync(DbConfig.parse(provider)) // => { host: "localhost", port: 5432 }
 **Returning a constant fallback**
 
 ```efx
-
 const host = Config.String("HOST").pipe(
   Config.orElse(() => Config.succeed("localhost"))
 )
@@ -213,7 +205,6 @@ runSync(host.parse(provider)) // => "localhost"
 **Reading a string config**
 
 ```efx
-
 const host = Config.String("HOST")
 
 const provider = ConfigProvider.fromUnknown({ HOST: "localhost" })
@@ -225,7 +216,6 @@ runSync(host.parse(provider)) // => "localhost"
 **Restricting to a literal**
 
 ```efx
-
 const env = Config.Literal("production", "ENV")
 const provider = ConfigProvider.fromUnknown({ ENV: "production" })
 runSync(env.parse(provider)) // => "production"
@@ -236,7 +226,6 @@ runSync(env.parse(provider)) // => "production"
 **Restricting to a set of literals**
 
 ```efx
-
 const env = Config.Literals(["development", "production"], "ENV")
 const provider = ConfigProvider.fromUnknown({ ENV: "development" })
 runSync(env.parse(provider)) // => "development"
@@ -247,7 +236,6 @@ runSync(env.parse(provider)) // => "development"
 **Reading a comma-separated array**
 
 ```efx
-
 const config = Config.Array(Schema.String, "EXPORTERS")
 const provider = ConfigProvider.fromEnv({ env: { EXPORTERS: "otlp,console" } })
 
@@ -259,7 +247,6 @@ runSync(config.parse(provider)) // => ["otlp", "console"]
 **Reading a comma-separated record**
 
 ```efx
-
 const config = Config.Record(Schema.String, Schema.String, "OTEL_RESOURCE_ATTRIBUTES")
 const provider = ConfigProvider.fromEnv({
   env: {
@@ -279,7 +266,6 @@ result["custom.attribute"] // => "value"
 **Reading a boolean flag**
 
 ```efx
-
 const program = Config.Boolean("FEATURE_FLAG")
 
 const provider = ConfigProvider.fromEnv({
@@ -298,7 +284,6 @@ runSync(
 **Reading a duration**
 
 ```efx
-
 const program = Config.Duration("DURATION").pipe(map(Duration.toMillis))
 
 const provider = ConfigProvider.fromEnv({
@@ -317,7 +302,6 @@ runSync(
 **Reading a port**
 
 ```efx
-
 const program = Config.Port("PORT")
 
 const provider = ConfigProvider.fromEnv({
@@ -336,7 +320,6 @@ runSync(
 **Reading a log level**
 
 ```efx
-
 const program = Config.LogLevel("LOG_LEVEL")
 
 const provider = ConfigProvider.fromEnv({
@@ -355,7 +338,6 @@ runSync(
 **Reading a secret**
 
 ```efx
-
 const program = Config.Redacted("API_KEY").pipe(map(String))
 
 const provider = ConfigProvider.fromEnv({
@@ -374,7 +356,6 @@ runSync(
 **Reading a URL**
 
 ```efx
-
 const program = Config.URL("URL").pipe(map((url) => url.href))
 
 const provider = ConfigProvider.fromEnv({
@@ -393,7 +374,6 @@ runSync(
 **Reading a date**
 
 ```efx
-
 const createdAt = Config.Date("CREATED_AT")
 
 const provider = ConfigProvider.fromUnknown({ CREATED_AT: "2024-01-15" })
@@ -405,7 +385,6 @@ runSync(createdAt.parse(provider)).toISOString() // => "2024-01-15T00:00:00.000Z
 **Nesting a struct config under `"database"`**
 
 ```efx
-
 const dbConfig = Config.all({
   host: Config.String("host"),
   port: Config.Number("port")
@@ -420,7 +399,6 @@ runSync(dbConfig.parse(provider)) // => { host: "localhost", port: 5432 }
 **Reading env vars with a nested prefix**
 
 ```efx
-
 const host = Config.String("host").pipe(Config.nested("database"))
 
 const provider = ConfigProvider.fromEnv({

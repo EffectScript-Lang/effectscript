@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Latch.ts`, in EffectScript (AD
 **Coordinating fibers with a latch**
 
 ```efx
-
 // Create and use a latch for coordination between fibers
 const program = effect {
   const latch = await Latch.make()
@@ -33,7 +32,6 @@ await runPromise(program) // => "opened"
 **Creating a latch unsafely**
 
 ```efx
-
 const latch = Latch.makeUnsafe(false)
 const waiter = latch.await.pipe(as("opened"))
 
@@ -51,7 +49,6 @@ await runPromise(program) // => "opened"
 **Creating a latch**
 
 ```efx
-
 const program = effect {
   const latch = await Latch.make(false)
   const waiter = latch.await.pipe(as("opened"))

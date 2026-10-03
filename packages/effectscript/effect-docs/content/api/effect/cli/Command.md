@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/cli/Command.ts`, in EffectScri
 **Defining CLI commands**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -135,7 +134,6 @@ inferred // => { name: "Alice", server: { host: "localhost", port: 8080 } }
 **Accessing parent command context**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -192,7 +190,6 @@ output // => ["Verbose: true", "Config: prod.json", "Target: staging"]
 **Creating commands**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -266,7 +263,6 @@ output // => ["Starting deployment to staging", "Deployment completed successful
 **Adding command handlers**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -310,7 +306,6 @@ output // => ["Hello, Alice!"]
 **Adding subcommands**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -366,7 +361,6 @@ output // => ["Verbose mode enabled", "Cloning github.com/foo/bar"]
 **Setting descriptions**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -442,7 +436,6 @@ login.examples.map((example) => example.command) // => ["myapp login", "myapp lo
 **Providing command services**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -495,7 +488,6 @@ output // => ["Using file system for local"]
 **Constructing command arguments**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -531,7 +523,6 @@ await runPromise(program) // => ["app"]
 **Running commands with standard input**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -573,7 +564,6 @@ output // => ["Hello, Alice!"]
 **Running commands with explicit arguments**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,

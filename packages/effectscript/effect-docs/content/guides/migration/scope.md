@@ -34,7 +34,6 @@ const program = Effect.gen(function*() {
 **v4**
 
 ```efx
-
 const program = effect {
   const scope = await Scope.make()
   await Scope.provide(scope)(myEffect)

@@ -2426,7 +2426,6 @@ When you attach interdependent middleware to an endpoint, group, or API, the mid
 **Example** (Middleware that consumes another middleware's output)
 
 ```efx
-
 service AuthInfo {
   readonly userId: string
 }
@@ -2489,7 +2488,6 @@ Attach a security scheme to an endpoint, group, or the entire API via `HttpApiMi
 **Example** (Defining Security Middleware)
 
 ```efx
-
 // Define a schema for the "User"
 schema User { id: Finite }
 
@@ -2548,7 +2546,6 @@ To enforce a security scheme, implement its middleware as a `Layer`. The layer r
 **Example** (Implementing Bearer Token Authentication Middleware)
 
 ```efx
-
 schema User { id: Finite }
 
 class Unauthorized extends Schema.TaggedError<Unauthorized>()(
@@ -2602,7 +2599,6 @@ Use `HttpApiSecurity.annotate` to attach metadata — like a description — to 
 **Example** (Adding a Description to a Bearer Token Security Definition)
 
 ```efx
-
 schema User { id: Finite }
 
 class Unauthorized extends Schema.TaggedError<Unauthorized>()(

@@ -30,7 +30,6 @@ mapper("httpRequests") // => "http_requests"
 **Formatting metrics**
 
 ```efx
-
 const program = effect {
   const counter = Metric.counter("api_requests_total", {
     description: "Total API requests"

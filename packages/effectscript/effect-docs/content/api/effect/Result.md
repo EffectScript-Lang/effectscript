@@ -24,6 +24,23 @@ Result.match(Result.succeed(42), {
 }) // => "Success: 42"
 ```
 
+**Extracting inner types**
+
+```efx
+import { Result } from "effect"
+
+type R = Result.Result<number, string>
+
+// number
+type A = Result.Result.Success<R>
+
+// string
+type E = Result.Result.Failure<R>
+
+const success: A = 42
+const failure: E = "error"
+```
+
 ## Failure
 
 **Accessing the failure value**
@@ -50,25 +67,6 @@ const success = Result.succeed(42)
 if (Result.isSuccess(success)) {
   success.success // => 42
 }
-```
-
-## Result
-
-**Extracting inner types**
-
-```efx
-import { Result } from "effect"
-
-type R = Result.Result<number, string>
-
-// number
-type A = Result.Result.Success<R>
-
-// string
-type E = Result.Result.Failure<R>
-
-const success: A = 42
-const failure: E = "error"
 ```
 
 ## succeed

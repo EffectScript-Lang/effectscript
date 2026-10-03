@@ -560,7 +560,6 @@ Option.zipWith(
 **Summing present values**
 
 ```efx
-
 const items = [Option.some(1), Option.none(), Option.some(2), Option.none()]
 
 items |> Option.reduceCompact(0, (b, a) => b + a) // => 3
@@ -721,7 +720,6 @@ Option.none().pipe(Option.exists(isEven)) // => false
 **Starting do notation**
 
 ```efx
-
 Option.some(2)
   |> Option.bindTo("x")
   |> Option.bind("y", () => Option.some(3))
@@ -733,7 +731,6 @@ Option.some(2)
 **Adding a computed value**
 
 ```efx
-
 Option.Do
   |> Option.bind("x", () => Option.some(2))
   |> Option.bind("y", () => Option.some(3))
@@ -745,7 +742,6 @@ Option.Do
 **Binding Option values**
 
 ```efx
-
 Option.Do
   |> Option.bind("x", () => Option.some(2))
   |> Option.bind("y", () => Option.some(3))
@@ -758,7 +754,6 @@ Option.Do
 **Building Option pipelines with do notation**
 
 ```efx
-
 Option.Do
   |> Option.bind("x", () => Option.some(2))
   |> Option.bind("y", () => Option.some(3))

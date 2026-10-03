@@ -392,7 +392,6 @@ port.kind // => "flag"
 **Mapping parsed values effectfully**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -439,7 +438,6 @@ value // => "alice@example.com"
 **Mapping thrown errors**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,

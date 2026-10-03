@@ -154,7 +154,6 @@ const kinds = [outputFlag.kind, sourceFlag.kind] // => ["flag", "flag"]
 **Creating redacted flags**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -436,7 +435,6 @@ const kinds = [nameFlag.kind, urlFlag.kind] // => ["flag", "flag"]
 **Mapping parsed values effectfully**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -472,7 +470,6 @@ value // => "ALICE"
 **Mapping thrown errors**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,

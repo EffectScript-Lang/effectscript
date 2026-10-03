@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxDeferred.ts`, in EffectScrip
 **Completing a transactional deferred**
 
 ```efx
-
 const program = effect {
   const deferred = await TxDeferred.make<number>()
 
@@ -54,7 +53,6 @@ await runPromise(program) // => Option.none()
 **Awaiting a deferred value**
 
 ```efx
-
 const program = effect {
   const deferred = await TxDeferred.make<number>()
   await TxDeferred.succeed(deferred, 42)
@@ -88,7 +86,6 @@ await runPromise(program) // => [Option.none(), Option.some(Result.succeed(42))]
 **Completing with a result**
 
 ```efx
-
 const program = effect {
   const deferred = await TxDeferred.make<number, string>()
   const first = await TxDeferred.done(deferred, Result.succeed(42))
@@ -104,7 +101,6 @@ await runPromise(program) // => [true, false]
 **Completing with a success value**
 
 ```efx
-
 const program = effect {
   const deferred = await TxDeferred.make<number>()
   const first = await TxDeferred.succeed(deferred, 42)
@@ -138,7 +134,6 @@ await runPromise(program) // => [true, false, Exit.fail("boom"), Option.some(Cau
 **Checking transactional deferreds**
 
 ```efx
-
 const program = effect {
   const deferred = await TxDeferred.make<number>()
   return [TxDeferred.isTxDeferred(deferred), TxDeferred.isTxDeferred("not a deferred")]

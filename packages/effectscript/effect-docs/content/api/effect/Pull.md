@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Pull.ts`, in EffectScript (ADR
 **Matching Pull outcomes**
 
 ```efx
-
 const pull = Cause.done("stream ended")
 
 const result = Pull.matchEffect(pull, {

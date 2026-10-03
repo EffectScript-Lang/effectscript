@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Clock.ts`, in EffectScript (AD
 **Reading current time**
 
 ```efx
-
 const testClock: Clock = {
   currentTimeMillisUnsafe: () => 1_000,
   currentTimeMillis: succeed(1_000),
@@ -39,7 +38,6 @@ await runPromise(provideService(clockOperations, Clock.Clock, testClock)) // => 
 **Accessing the Clock service**
 
 ```efx
-
 const testClock: Clock = {
   currentTimeMillisUnsafe: () => 1_000,
   currentTimeMillis: succeed(1_000),
@@ -63,7 +61,6 @@ await runPromise(provideService(program, Clock.Clock, testClock)) // => 1_000
 **Accessing the current Clock service**
 
 ```efx
-
 const testClock: Clock = {
   currentTimeMillisUnsafe: () => 1_000,
   currentTimeMillis: succeed(1_000),
@@ -84,7 +81,6 @@ await runPromise(provideService(program, Clock.Clock, testClock)) // => 1_000
 **Reading milliseconds**
 
 ```efx
-
 const testClock: Clock = {
   currentTimeMillisUnsafe: () => 1_000,
   currentTimeMillis: succeed(1_000),
@@ -103,7 +99,6 @@ await runPromise(provideService(Clock.currentTimeMillis, Clock.Clock, testClock)
 **Reading nanoseconds**
 
 ```efx
-
 const testClock: Clock = {
   currentTimeMillisUnsafe: () => 1_000,
   currentTimeMillis: succeed(1_000),

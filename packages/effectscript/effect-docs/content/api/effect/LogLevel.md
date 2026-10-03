@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/LogLevel.ts`, in EffectScript 
 **Using log levels**
 
 ```efx
-
 // Using log levels with Effect logging
 const program = effect {
   await logFatal("System failure")
@@ -145,7 +144,6 @@ isInfoOrBelow("Debug") // => true
 **Checking current fiber log level**
 
 ```efx
-
 const program = effect {
   const debugEnabled = await LogLevel.isEnabled("Debug")
   const errorEnabled = await LogLevel.isEnabled("Error")

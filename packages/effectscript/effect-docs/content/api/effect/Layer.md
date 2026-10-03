@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Layer.ts`, in EffectScript (AD
 **Sharing layer construction with a memo map**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -43,7 +42,6 @@ runSync(database.query("SELECT 1")) // => "result"
 **Checking whether a value is a layer**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -62,7 +60,6 @@ Layer.isLayer(notALayer) // => false
 **Constructing a layer from a build function**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -84,7 +81,6 @@ runSync(provide(program, databaseLayer)) // => "result"
 **Memoizing layer construction**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -106,7 +102,6 @@ runSync(provide(program, databaseLayer)) // => "result"
 **Creating a memo map unsafely**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -133,7 +128,6 @@ runSync(database.query("SELECT 1")) // => "result"
 **Creating a memo map in an effect**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -160,7 +154,6 @@ runSync(database.query("SELECT 1")) // => "result"
 **Building layers with an explicit memo map**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -208,7 +201,6 @@ logs // => ["ready"]
 **Building a layer into a context**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -236,7 +228,6 @@ runSync(scoped(program)) // => "result"
 **Building a layer with an explicit scope**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -273,7 +264,6 @@ logs // => ["Initializing database...", "Database closed"]
 **Creating a layer from a service implementation**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -290,7 +280,6 @@ runSync(provide(program, DatabaseLayer)) // => "Query result: SELECT 1"
 **Providing multiple services from a context**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -331,7 +320,6 @@ Context.getOption(context, Service) // => Option.none()
 **Lazily providing a service**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -348,7 +336,6 @@ runSync(provide(program, layer)) // => "Query: SELECT 1"
 **Lazily providing a context**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -367,7 +354,6 @@ runSync(provide(program, layer)) // => "Query: SELECT 1"
 **Creating a layer from an effect**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -386,7 +372,6 @@ runSync(provide(program, layer)) // => "Query: SELECT 1"
 **Creating a layer from an effectful context**
 
 ```efx
-
 class Database extends Context.Service<
   Database,
   { readonly query: (sql: string) => Effect<string> }
@@ -406,7 +391,6 @@ runSync(provide(program, layer)) // => "Query: SELECT 1"
 **Running an effect during layer construction**
 
 ```efx
-
 const logs: Array<string> = []
 const initLayer = Layer.effectDiscard(
   sync(() => {
@@ -422,7 +406,6 @@ logs // => ["Initializing application..."]
 **Choosing a layer lazily**
 
 ```efx
-
 class Config extends Context.Service<Config, string>()("Config") {}
 
 const useProd = true
@@ -440,7 +423,6 @@ runSync(provide(Config, layer)) // => "https://api.example.com"
 **Unwrapping an effectful layer**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -459,7 +441,6 @@ runSync(provide(program, unwrappedLayer)) // => "result"
 **Merging independent layers**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -487,7 +468,6 @@ logs // => ["ready"]
 **Merging two layers**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -513,7 +493,6 @@ runSync(provide(program, mergedLayer)) // => "result"
 **Providing layer dependencies**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -575,7 +554,6 @@ logs // => ["[LOG] Looking up user 123"]
 **Providing dependencies while retaining services**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -643,7 +621,6 @@ logs // => ["[LOG] Looking up user 123", "[LOG] Found user: DB: SELECT * FROM us
 **Creating services from layer output**
 
 ```efx
-
 service Config {
   readonly dbUrl: string
   readonly logLevel: string
@@ -747,7 +724,6 @@ runSync(exit(program)) // => Exit.die(error)
 **Recovering from tagged layer errors**
 
 ```efx
-
 class ConfigError extends Data.TaggedError("ConfigError") {}
 
 service Config {
@@ -770,7 +746,6 @@ runSync(provide(program, recovered)) // => "http://localhost"
 **Recovering from layer failures by cause**
 
 ```efx
-
 class DatabaseError extends Data.TaggedError("DatabaseError")<{
   message: string
 }> {}
@@ -805,7 +780,6 @@ await runPromise(program) // => "Memory: SELECT * FROM users"
 **Creating non-shared layer instances**
 
 ```efx
-
 service Counter {
   readonly id: number
 }
@@ -868,7 +842,6 @@ await runPromise(program) // => { shared: true, fresh: false }
 **Launching an application layer**
 
 ```efx
-
 service HttpServer {
   readonly port: number
 }
@@ -897,7 +870,6 @@ await runPromise(program) // => ["Starting HTTP server..."]
 **Mocking services for tests**
 
 ```efx
-
 service UserService {
   readonly config: { apiUrl: string }
   readonly getUser: (
@@ -955,7 +927,6 @@ const validLayer = satisfiesNumber(numberLayer)
 **Constraining layer error types**
 
 ```efx
-
 const typeErrorLayer = Layer.effectDiscard(fail(new TypeError("boom")))
 
 // Define a constraint that the error type must be an Error
@@ -970,7 +941,6 @@ const validLayer = satisfiesError(typeErrorLayer)
 **Constraining layer service requirements**
 
 ```efx
-
 const NumberService = Context.Service<number>("Number")
 const numberLayer = Layer.effectDiscard(asVoid(NumberService))
 
@@ -1022,7 +992,6 @@ logs // => ["Connecting to database", "Database connected", "database-init", "Sp
 **Referencing an existing parent span**
 
 ```efx
-
 service Database {
   readonly spanId: string
   readonly query: (sql: string) => Effect<string>
@@ -1053,7 +1022,6 @@ runSync(provide(program, databaseLayer)) // => { spanId: "42", result: "Result: 
 **Wrapping a layer with a span**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }
@@ -1100,7 +1068,6 @@ logs // => ["Application ready", "Application initialization completed: Success"
 **Attaching layers to an existing parent span**
 
 ```efx
-
 service Database {
   readonly query: (sql: string) => Effect<string>
 }

@@ -30,7 +30,6 @@ class MyService {
 **v4**
 
 ```efx
-
 class MyService {
   readonly local = 1
   compute = effect {

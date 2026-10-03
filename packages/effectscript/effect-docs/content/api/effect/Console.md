@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Console.ts`, in EffectScript (
 **Accessing the current console**
 
 ```efx
-
 const messages: Array<unknown> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   log: (...args: ReadonlyArray<unknown>) => messages.push(...args)
@@ -36,7 +35,6 @@ messages // => ["Hello from current console!"]
 **Accessing the current console service**
 
 ```efx
-
 const messages: Array<unknown> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   log: (...args: ReadonlyArray<unknown>) => messages.push(...args),
@@ -58,7 +56,6 @@ messages // => ["Hello, world!", "This is an error message"]
 **Logging failed assertions**
 
 ```efx
-
 const errors: Array<unknown> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   assert: (condition: boolean, ...args: ReadonlyArray<unknown>) => {
@@ -79,7 +76,6 @@ errors // => ["This will be logged as an error"]
 **Clearing console output**
 
 ```efx
-
 const operations: Array<string> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   log: (message: string) => operations.push(`log:${message}`),
@@ -100,7 +96,6 @@ operations // => ["log:This will be cleared", "clear", "log:This appears after c
 **Counting repeated calls**
 
 ```efx
-
 const counters = new Map<string, number>()
 const messages: Array<string> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
@@ -125,7 +120,6 @@ messages // => ["my-counter: 1", "my-counter: 2", "default: 1"]
 **Resetting a counter**
 
 ```efx
-
 const counters = new Map<string, number>()
 const messages: Array<string> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
@@ -152,7 +146,6 @@ messages // => ["my-counter: 1", "my-counter: 2", "my-counter: 1"]
 **Writing debug messages**
 
 ```efx
-
 const messages: Array<ReadonlyArray<unknown>> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   debug: (...args: ReadonlyArray<unknown>) => messages.push(args)
@@ -171,7 +164,6 @@ messages // => [["Debug info:", { userId: 123, action: "login" }], ["Processing 
 **Inspecting an object**
 
 ```efx
-
 const inspected: Array<unknown> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   dir: (item: unknown, options?: unknown) => inspected.push([item, options])
@@ -195,7 +187,6 @@ inspected // => expected
 **Inspecting XML-like data**
 
 ```efx
-
 const messages: Array<unknown> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   dirxml: (...args: ReadonlyArray<unknown>) => messages.push(...args)
@@ -213,7 +204,6 @@ messages // => ["<user id=\"1\">Ada</user>"]
 **Writing error messages**
 
 ```efx
-
 const messages: Array<ReadonlyArray<unknown>> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   error: (...args: ReadonlyArray<unknown>) => messages.push(args)
@@ -239,7 +229,6 @@ messages // => expected
 **Grouping scoped output**
 
 ```efx
-
 const operations: Array<string> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   group: (label?: string) => operations.push(`group:${label}`),
@@ -273,7 +262,6 @@ operations // => expected
 **Writing informational messages**
 
 ```efx
-
 const messages: Array<ReadonlyArray<unknown>> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   info: (...args: ReadonlyArray<unknown>) => messages.push(args)
@@ -299,7 +287,6 @@ messages // => expected
 **Writing log messages**
 
 ```efx
-
 const messages: Array<ReadonlyArray<unknown>> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   log: (...args: ReadonlyArray<unknown>) => messages.push(args)
@@ -324,7 +311,6 @@ messages // => expected
 **Displaying tabular data**
 
 ```efx
-
 const calls: Array<unknown> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   table: (data: ReadonlyArray<unknown>, properties?: ReadonlyArray<string>) => {
@@ -351,7 +337,6 @@ calls // => [{ rows: 3, properties: undefined }, { rows: 3, properties: ["name",
 **Timing scoped work**
 
 ```efx
-
 const operations: Array<string> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   time: (label?: string) => operations.push(`start:${label}`),
@@ -378,7 +363,6 @@ operations // => ["start:operation-timer", "log:Operation completed", "end:opera
 **Logging timer progress**
 
 ```efx
-
 const operations: Array<unknown> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   time: (label?: string) => operations.push(["start", label]),
@@ -405,7 +389,6 @@ operations // => [["start", "long-operation"], ["log", "long-operation", "Halfwa
 **Writing stack traces**
 
 ```efx
-
 const traces: Array<ReadonlyArray<unknown>> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   trace: (...args: ReadonlyArray<unknown>) => traces.push(args)
@@ -425,7 +408,6 @@ traces // => [["Debug trace point"], ["Function call:", { functionName: "process
 **Writing warning messages**
 
 ```efx
-
 const messages: Array<ReadonlyArray<unknown>> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   warn: (...args: ReadonlyArray<unknown>) => messages.push(args)
@@ -450,7 +432,6 @@ messages // => expected
 **Wrapping an effect in a group**
 
 ```efx
-
 const operations: Array<string> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   group: (label?: string) => operations.push(`group:${label}`),
@@ -484,7 +465,6 @@ operations // => expected
 **Timing an effect**
 
 ```efx
-
 const operations: Array<string> = []
 const testConsole: Console.Console = Object.assign(Object.create(console), {
   time: (label?: string) => operations.push(`start:${label}`),

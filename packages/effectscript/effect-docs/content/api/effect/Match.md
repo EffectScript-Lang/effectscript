@@ -177,7 +177,6 @@ result // => "John is 30 years old"
 **Matching value tags**
 
 ```efx
-
 type Status = { readonly _tag: "Success"; readonly data: string }
 
 const success: Status = { _tag: "Success", data: "Hello" }
@@ -324,7 +323,6 @@ checkUser({ age: 20, role: "user" }) // => "Access denied"
 **Matching on a discriminator field**
 
 ```efx
-
 const match = Match.type<
     { type: "A"; a: string } | { type: "B"; b: number } | {
       type: "C"
@@ -343,7 +341,6 @@ match({ type: "C", c: true }) // => "C(true)"
 **Matching discriminator prefixes**
 
 ```efx
-
 const match = Match.type<{ type: "A" } | { type: "B" } | { type: "A.A" } | {}>()
   |> Match.discriminatorStartsWith("type")("A", (_) => 1 as const)
   |> Match.discriminatorStartsWith("type")("B", (_) => 2 as const)
@@ -359,7 +356,6 @@ match({ type: "A.A" }) // => 1
 **Mapping discriminator handlers**
 
 ```efx
-
 const match = Match.type<
     { type: "A"; a: string } | { type: "B"; b: number } | {
       type: "C"
@@ -381,7 +377,6 @@ match({ type: "B", b: 42 }) // => 42
 **Handling all discriminator cases**
 
 ```efx
-
 const match = Match.type<
     { type: "A"; a: string } | { type: "B"; b: number } | {
       type: "C"
@@ -429,7 +424,6 @@ match({ _tag: "error", error: new Error("Oops!") }) // => "Error: Oops!"
 **Matching tag prefixes**
 
 ```efx
-
 const match = Match.type<{ _tag: "A" } | { _tag: "B" } | { _tag: "A.A" } | {}>()
   |> Match.tagStartsWith("A", (_) => 1 as const)
   |> Match.tagStartsWith("B", (_) => 2 as const)
@@ -445,7 +439,6 @@ match({ _tag: "A.A" }) // => 1
 **Mapping tag handlers**
 
 ```efx
-
 const match = Match.type<
     { _tag: "A"; a: string } | { _tag: "B"; b: number } | {
       _tag: "C"
@@ -466,7 +459,6 @@ match({ _tag: "A", a: "ok" }) // => "ok"
 **Handling all tag cases**
 
 ```efx
-
 const match = Match.type<
     { _tag: "A"; a: string } | { _tag: "B"; b: number } | {
       _tag: "C"

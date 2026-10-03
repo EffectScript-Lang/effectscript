@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxReentrantLock.ts`, in Effect
 **Using read and write locks**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
 
@@ -36,7 +35,6 @@ await runPromise(program) // => ["reading", "writing"]
 **Creating a reentrant lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   return await TxReentrantLock.locked(lock)
@@ -50,7 +48,6 @@ await runPromise(program) // => false
 **Acquiring a read lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   const count = await TxReentrantLock.acquireRead(lock)
@@ -66,7 +63,6 @@ await runPromise(program) // => 1
 **Acquiring a write lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   const count = await TxReentrantLock.acquireWrite(lock)
@@ -82,7 +78,6 @@ await runPromise(program) // => 1
 **Releasing a read lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   await TxReentrantLock.acquireRead(lock)
@@ -97,7 +92,6 @@ await runPromise(program) // => 0
 **Releasing a write lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   await TxReentrantLock.acquireWrite(lock)
@@ -112,7 +106,6 @@ await runPromise(program) // => 0
 **Holding a scoped read lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
 
@@ -135,7 +128,6 @@ await runPromise(program) // => [1, 0]
 **Holding a scoped write lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
 
@@ -158,7 +150,6 @@ await runPromise(program) // => [1, 0]
 **Running an effect with a read lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   return await TxReentrantLock.withReadLock(
@@ -175,7 +166,6 @@ await runPromise(program) // => "read data"
 **Running an effect with a write lock**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   return await TxReentrantLock.withWriteLock(
@@ -192,7 +182,6 @@ await runPromise(program) // => "wrote data"
 **Running an effect with exclusive access**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   return await TxReentrantLock.withLock(
@@ -209,7 +198,6 @@ await runPromise(program) // => "exclusive operation"
 **Counting read locks**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   await TxReentrantLock.acquireRead(lock)
@@ -226,7 +214,6 @@ await runPromise(program) // => 1
 **Counting write locks**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   return await TxReentrantLock.writeLocks(lock)
@@ -240,7 +227,6 @@ await runPromise(program) // => 0
 **Checking whether a lock is held**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   return await TxReentrantLock.locked(lock)
@@ -254,7 +240,6 @@ await runPromise(program) // => false
 **Checking whether a read lock is held**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   return await TxReentrantLock.readLocked(lock)
@@ -268,7 +253,6 @@ await runPromise(program) // => false
 **Checking whether a write lock is held**
 
 ```efx
-
 const program = effect {
   const lock = await TxReentrantLock.make()
   return await TxReentrantLock.writeLocked(lock)

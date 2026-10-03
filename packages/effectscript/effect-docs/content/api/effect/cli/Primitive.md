@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/cli/Primitive.ts`, in EffectSc
 **Parsing values with primitives**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -49,7 +48,6 @@ await runPromise(program.pipe(provide(CliTestLayer))) // => ["hello", 42, true]
 **Parsing boolean values**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -82,7 +80,6 @@ await runPromise(parseBoolean.pipe(provide(CliTestLayer))) // => [true, true, fa
 **Parsing finite numbers**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -114,7 +111,6 @@ await runPromise(parseFloat.pipe(provide(CliTestLayer))) // => [3.14, -42.5, 0]
 **Parsing integer values**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -146,7 +142,6 @@ await runPromise(parseInteger.pipe(provide(CliTestLayer))) // => [42, -123, 0]
 **Parsing date values**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -177,7 +172,6 @@ await runPromise(parseDate.pipe(provide(CliTestLayer))) // => "2023-12-25T00:00:
 **Parsing string values**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -209,7 +203,6 @@ await runPromise(parseString.pipe(provide(CliTestLayer))) // => ["hello world", 
 **Parsing choices**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -268,7 +261,6 @@ const tags = [filePath._tag, dirPath._tag, anyPath._tag] // => ["Path", "Path", 
 **Parsing file system paths**
 
 ```efx
-
 const services = Layer.mergeAll(
   Path.layer,
   FileSystem.layerNoop({
@@ -303,7 +295,6 @@ await runPromise(program) // => true
 **Parsing redacted values**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -334,7 +325,6 @@ await runPromise(parseRedacted.pipe(provide(CliTestLayer))) // => ["secret-passw
 **Reading file text**
 
 ```efx
-
 const services = Layer.mergeAll(
   Path.layer,
   FileSystem.layerNoop({
@@ -369,7 +359,6 @@ await runPromise(readConfigFile) // => { private: true }
 **Parsing file content**
 
 ```efx
-
 const services = Layer.mergeAll(
   Path.layer,
   FileSystem.layerNoop({
@@ -406,7 +395,6 @@ await runPromise(loadConfig) // => { private: true }
 **Parsing file content with a schema**
 
 ```efx
-
 const services = Layer.mergeAll(
   Path.layer,
   FileSystem.layerNoop({
@@ -448,7 +436,6 @@ await runPromise(loadConfig) // => { private: true }
 **Parsing key-value pairs**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -481,7 +468,6 @@ result // => [{ name: "john" }, { port: "3000" }, { debug: "true" }]
 **Rejecting option values**
 
 ```efx
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,

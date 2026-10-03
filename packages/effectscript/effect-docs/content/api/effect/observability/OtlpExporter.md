@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/observability/OtlpExporter.ts`
 **Flushing exporters**
 
 ```efx
-
 const program = effect {
   const flusher = await OtlpExporter.Flusher
   await flusher.flush

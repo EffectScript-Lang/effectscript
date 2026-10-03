@@ -33,7 +33,6 @@ await runPromise(provide(program, TestClock.layer()))
 **Advancing time deterministically**
 
 ```efx
-
 const program = effect {
   let executed = false
 
@@ -57,7 +56,6 @@ await runPromise(provide(program, TestClock.layer()))
 **Configuring a test clock**
 
 ```efx
-
 const program = effect {
   // Create a TestClock with custom options
   const testClock = await TestClock.make({
@@ -77,7 +75,6 @@ await runPromise(scoped(program))
 **Configuring the warning delay**
 
 ```efx
-
 const program = effect {
   // Create a TestClock with custom warning delay
   const testClock = await TestClock.make({
@@ -97,7 +94,6 @@ await runPromise(scoped(program))
 **Creating a test clock**
 
 ```efx
-
 const program = effect {
   // Create a TestClock with default settings
   const testClock = await TestClock.make()
@@ -121,7 +117,6 @@ await runPromise(scoped(program))
 **Providing a test clock layer**
 
 ```efx
-
 // Create a TestClock layer
 const testClockLayer = TestClock.layer()
 
@@ -147,7 +142,6 @@ await runPromise(provide(program, customTestClockLayer)) // => 3_600_000
 **Accessing the test clock**
 
 ```efx
-
 const program = effect {
   // Use testClockWith to access the TestClock instance
   const currentTime = await TestClock.testClockWith((testClock) =>
@@ -168,7 +162,6 @@ await runPromise(provide(program, TestClock.layer()))
 **Advancing the test clock**
 
 ```efx
-
 const program = effect {
   let executed = false
 
@@ -194,7 +187,6 @@ await runPromise(provide(program, TestClock.layer()))
 **Setting the test clock time**
 
 ```efx
-
 const program = effect {
   let executed = false
 
@@ -221,7 +213,6 @@ await runPromise(provide(program, TestClock.layer()))
 **Running with the live clock**
 
 ```efx
-
 const program = effect {
   // Get the current test time (starts at epoch)
   const testTime = Date.now()

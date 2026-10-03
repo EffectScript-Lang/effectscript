@@ -467,7 +467,6 @@ You can also call `Schema.toIso` on custom types when their schema supplies `toC
 **Example** (Generating an Optic from a Class schema)
 
 ```efx
-
 // Define a class schema
 schema Person {
   name: string

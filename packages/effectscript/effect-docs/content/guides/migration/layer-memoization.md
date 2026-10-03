@@ -22,7 +22,6 @@ deduplicated across `Effect.provide` calls.
 ## Example
 
 ```efx
-
 const MyService = Context.Service<{ readonly value: string }>("MyService")
 
 const MyServiceLayer = Layer.effect(
@@ -91,7 +90,6 @@ fiber's shared one. The layer and all its sublayers are built from scratch and
 are not shared with other `provide` calls.
 
 ```efx
-
 const main = program.pipe(
   provide(MyServiceLayer),
   provide(MyServiceLayer, { local: true })

@@ -42,7 +42,6 @@ const program = Effect.fail("error").pipe(
 **v4**
 
 ```efx
-
 const program = fail("error").pipe(
   Effect.catch((error) => succeed(`recovered: ${error}`))
 )
@@ -92,7 +91,6 @@ const program = Effect.fail(42).pipe(
 **v4**
 
 ```efx
-
 const program = fail(42).pipe(
   catchFilter(
     Filter.fromPredicate((error: number) => error === 42),

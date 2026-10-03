@@ -40,12 +40,17 @@ export const convertBlock = (code: string, filename = "example.ts"): Block => {
   if (!parsed) return { ts: code, efx: code, changed: false, parsed, valid: false }
   const efx = toEffectScript(code, { filename }).code
   const valid = verdict(code, efx, { filename }) > 0
+  // where an `import` the prelude provides was the first line, the reverse compiler leaves a blank
+  // one: dropping it can't change the program (Plan 21, as `efx fix` does)
+  const shown = /^\s/.test(code) ? efx : efx.replace(/^\n+/, "")
   return valid
-    ? { ts: code, efx, changed: efx !== code, parsed, valid }
+    ? { ts: code, efx: shown, changed: shown !== code, parsed, valid }
     : { ts: code, efx: code, changed: false, parsed, valid }
 }
 
-const fenceOpen = /^( *)(`{3,}|~{3,})(ts|typescript|tsx)\b([^\n]*)$/
+// a fence is indented at most three spaces (four is indented code); its language is a whole word
+const anyFence = /^( {0,3})(`{3,}|~{3,})([^\n]*)$/
+const fenceOpen = /^( {0,3})(`{3,}|~{3,})(ts|typescript|tsx)(?=$|\s|\{)([^\n]*)$/
 
 /**
  * Rewrites the TypeScript fences of a markdown document as `efx` fences (code that doesn't parse
@@ -61,6 +66,19 @@ export const convertMarkdown = (markdown: string): { readonly markdown: string; 
   for (let i = 0; i < lines.length; i++) {
     const open = fenceOpen.exec(lines[i]!)
     if (open === null) {
+      // any other fence is copied whole: a ts fence inside it is an example of Markdown (Plan 21)
+      const other = anyFence.exec(lines[i]!)
+      if (other !== null) {
+        const [, , marker] = other
+        const close = lines.findIndex((line, j) =>
+          j > i && new RegExp(`^ {0,3}${marker![0]}{${marker!.length},}\\s*$`).test(line)
+        )
+        if (close !== -1) {
+          out.push(...lines.slice(i, close + 1))
+          i = close
+          continue
+        }
+      }
       out.push(lines[i]!)
       continue
     }

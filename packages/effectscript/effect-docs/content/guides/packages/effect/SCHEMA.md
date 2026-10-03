@@ -657,7 +657,6 @@ In `FiniteFromString`, the `Encoded` type is `string` and the `Type` is `number`
 The default `"1"` is a **string** (the Encoded type), which is then decoded to `1`.
 
 ```efx
-
 const schema = Schema.Struct({
   //                                          ┌─── "1" is a string (Encoded type)
   //                                          ▼
@@ -695,7 +694,6 @@ Here the default `1` is a **number** (the Type), not a string. It does not go
 through the `FiniteFromString` decoding transformation.
 
 ```efx
-
 const schema = Schema.Struct({
   //                                              ┌─── 1 is a number (Type)
   //                                              ▼
@@ -727,7 +725,6 @@ You can also apply decoding defaults within nested structures.
 **Example** (Nested struct with defaults for missing or undefined fields)
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.Struct({
     b: Schema.FiniteFromString.pipe(Schema.withDecodingDefault(succeed("1")))
@@ -2406,7 +2403,6 @@ The annotation only defines the link; the consuming parser chooses its execution
 **Example** (Making `URL` JSON-serializable)
 
 ```efx
-
 const URLSchema = Schema.declare(
   (u): u is URL => u instanceof URL,
   {
@@ -2477,7 +2473,6 @@ The parsing function you return from `run` is responsible for:
 **Example** (A generic `Box<A>` container)
 
 ```efx
-
 // 1. Define the type
 interface Box<A> {
   readonly value: A
@@ -2900,7 +2895,6 @@ Define an effectful filter with `Getter.checkEffect` as part of a transformation
 **Example** (Asynchronous validation of a numeric value)
 
 ```efx
-
 // Simulated API call that fails when userId is 0
 const myapi = (userId: number) =>
   effect {
@@ -3072,7 +3066,6 @@ You can define a default value for a field using `Schema.withConstructorDefault`
 **Example** (Providing a default number)
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.Number.pipe(Schema.withConstructorDefault(succeed(-1)))
 })
@@ -3089,7 +3082,6 @@ The Effect passed to `withConstructorDefault` will be executed each time a defau
 **Example** (Re-executing the default function)
 
 ```efx
-
 let counter = 0
 
 const schema = Schema.Struct({
@@ -3110,7 +3102,6 @@ Default values can be nested inside composed schemas. In this case, inner defaul
 **Example** (Nested default values)
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.Struct({
     b: Schema.Number.pipe(Schema.withConstructorDefault(succeed(-1)))
@@ -3130,7 +3121,6 @@ Default values can also come from an `Effect`, for example, reading from a confi
 **Example** (Using an effect to provide a default)
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.Number.pipe(
     Schema.withConstructorDefault(
@@ -3149,7 +3139,6 @@ SchemaParser.makeEffect(schema)({}).pipe(runPromise).then(console.log)
 **Example** (Providing a default from an optional service)
 
 ```efx
-
 // Define a service that may provide a default value
 class ConstructorService extends Context.Service<ConstructorService, { defaultValue: Effect<number> }>()(
   "ConstructorService"
@@ -3386,7 +3375,6 @@ This is useful when you need to validate input or enforce rules that may not alw
 **Example** (Converting a string URL into a `URL` object)
 
 ```efx
-
 const URLFromString = Schema.String.pipe(
   Schema.decodeTo(
     Schema.instanceOf(URL),
@@ -3587,7 +3575,6 @@ For this to work, the encoded side must be marked as optional with `Schema.optio
 **Example** (Field present when decoded, omitted when encoded)
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.FiniteFromString,
   b: Schema.String.pipe(
@@ -4425,7 +4412,6 @@ To keep static members from the base class, pass `typeof Base` as the second gen
 **Example** (Preserving static members on subclasses)
 
 ```efx
-
 schema A {
   a: string
   static readonly foo = "foo"
@@ -4541,7 +4527,6 @@ The tag value doubles as the identifier by default. Pass an explicit identifier 
 **Example** (Basic tagged class)
 
 ```efx
-
 schema Person {
   _tag: "Person"
   name: string
@@ -4572,7 +4557,6 @@ console.log(new Person({ name: "Mike" })._tag)
 **Example** (Discriminated union)
 
 ```efx
-
 schema Cat {
   _tag: "Cat"
   lives: number
@@ -4610,7 +4594,6 @@ Like `TaggedClass`, the tag value doubles as the identifier by default, and you 
 **Example** (Defining and catching a tagged error)
 
 ```efx
-
 error HttpError {
   status: number
   message: string
@@ -4627,7 +4610,6 @@ const recovered = program
 **Example** (Multiple tagged errors in a union)
 
 ```efx
-
 error NotFound {
   path: string
 }
@@ -5181,7 +5163,6 @@ The ISO canonical codec (`toCodecIso`) converts schemas to their `Iso` represent
 **Example** (Using the ISO canonical codec with a Class)
 
 ```efx
-
 // Define a class schema
 schema Person {
   name: string
@@ -5217,7 +5198,6 @@ It uses the `toCodecStringTree` serializer internally.
 **Example**
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.String,
   b: Schema.Array(Schema.NullOr(Schema.String)),
@@ -5811,7 +5791,6 @@ To work around this, you can define an `Iso` between your custom type and a plai
 **Example** (Defining an `Iso` manually between a custom type and a plain JavaScript object)
 
 ```efx
-
 // Define custom schema-based classes
 schema A { s: string }
 schema B { a: A }
@@ -5839,7 +5818,6 @@ This allows you to keep working with plain JavaScript objects and collections wh
 **Example** (Generating an `Iso` automatically from a schema)
 
 ```efx
-
 schema A { s: string }
 schema B { a: A }
 
@@ -5899,7 +5877,6 @@ console.log(patched)
 **Example** (Compare two custom types)
 
 ```efx
-
 schema A { n: number }
 schema B { a: A }
 
@@ -6425,7 +6402,6 @@ option.
 **Example** (Decoding array elements concurrently)
 
 ```efx
-
 const item = Schema.String.pipe(Schema.decode({
   decode: SchemaGetter.transformEffect((value) => sleep("10 millis").pipe(as(value))),
   encode: SchemaGetter.passthrough()
@@ -6534,7 +6510,6 @@ Default hooks are just for demo purposes:
 - CheckHook: returns the meta infos of the check as a string
 
 ```efx
-
 const schema = Schema.Struct({
   a: Schema.NonEmptyString,
   b: Schema.NonEmptyString
@@ -6769,7 +6744,6 @@ This API uses an Effect without a context. If you need a fallback value that dep
 **Example** (Returning a simple fallback value)
 
 ```efx
-
 // Provide a fallback string when decoding does not succeed
 const schema = Schema.String.pipe(Schema.catchDecoding(() => succeedSome("b")))
 
@@ -6783,7 +6757,6 @@ This is useful when working with optional fields.
 **Example** (Omitting a field when decoding fails)
 
 ```efx
-
 // Omit the field when decoding does not succeed
 const schema = Schema.Struct({
   a: Schema.optionalKey(Schema.String).pipe(Schema.catchDecoding(() => succeedNone))
@@ -6800,7 +6773,6 @@ You can use `Schema.catchDecodingWithContext` to get a fallback value from a ser
 **Example** (Retrieving a fallback value from a service)
 
 ```efx
-
 // Define a service that provides a fallback value
 service Service { fallback: Effect<string> }
 

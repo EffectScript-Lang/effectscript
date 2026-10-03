@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Deferred.ts`, in EffectScript 
 **Creating a Deferred for inter-fiber communication**
 
 ```efx
-
 const program = effect {
   const deferred: Deferred<string> = await Deferred.make<string>()
   const producer = await forkChild(
@@ -49,7 +48,6 @@ Deferred.isDoneUnsafe(deferred) // => false
 **Creating a Deferred**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   await Deferred.succeed(deferred, 42)
@@ -64,7 +62,6 @@ await runPromise(program) // => 42
 **Awaiting a Deferred value**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   await Deferred.succeed(deferred, 42)
@@ -80,7 +77,6 @@ await runPromise(program) // => 42
 **Completing a Deferred from an effect**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   const completed = await Deferred.complete(deferred, succeed(42))
@@ -96,7 +92,6 @@ await runPromise(program) // => [true, 42]
 **Completing a Deferred with an effect**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   const completed = await Deferred.completeWith(deferred, succeed(42))
@@ -112,7 +107,6 @@ await runPromise(program) // => [true, 42]
 **Completing a Deferred with an Exit**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   await Deferred.done(deferred, Exit.succeed(42))
@@ -231,7 +225,6 @@ await runPromise(program) // => [true, Exit.die(defect)]
 **Interrupting a Deferred**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   const success = await Deferred.interrupt(deferred)
@@ -266,7 +259,6 @@ await runPromise(program) // => [true, Exit.interrupt(42)]
 **Checking Deferred completion**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   const beforeCompletion = await Deferred.isDone(deferred)
@@ -302,7 +294,6 @@ await runPromise(program) // => [Option.none(), Option.some(42)]
 **Completing a Deferred with a value**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   await Deferred.succeed(deferred, 42)
@@ -318,7 +309,6 @@ await runPromise(program) // => 42
 **Completing a Deferred with a lazy value**
 
 ```efx
-
 const program = effect {
   const deferred = await Deferred.make<number>()
   await Deferred.sync(deferred, () => 42)
@@ -333,7 +323,6 @@ await runPromise(program) // => 42
 **Completing a Deferred unsafely**
 
 ```efx
-
 const deferred = Deferred.makeUnsafe<number>()
 Deferred.doneUnsafe(deferred, succeed(42)) // => true
 ```
@@ -343,7 +332,6 @@ Deferred.doneUnsafe(deferred, succeed(42)) // => true
 **Completing a Deferred from an effect result**
 
 ```efx
-
 const successEffect = succeed(42)
 
 const program = effect {

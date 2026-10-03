@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/RcMap.ts`, in EffectScript (AD
 **Inspecting a reference-counted map**
 
 ```efx
-
 const program = effect {
   // Create an RcMap that manages database connections
   const dbConnectionMap = await RcMap.make({
@@ -43,7 +42,6 @@ await runPromise(scoped(program)) // => 10
 **Creating a reference-counted map**
 
 ```efx
-
 const events: Array<string> = []
 
 const program = effect {
@@ -72,7 +70,6 @@ events // => ["released foo"]
 **Acquiring a resource**
 
 ```efx
-
 const events: Array<string> = []
 
 const program = effect {
@@ -120,7 +117,6 @@ await runPromise(scoped(program)) // => [Option.none(), Option.some("Resource: d
 **Listing keys**
 
 ```efx
-
 const program = effect {
   const map = await RcMap.make({
     lookup: (key: string) => succeed(`value-${key}`)
@@ -144,7 +140,6 @@ await runPromise(scoped(program)) // => ["foo", "bar", "baz"]
 **Invalidating a resource**
 
 ```efx
-
 const events: Array<string> = []
 
 const program = effect {
@@ -176,7 +171,6 @@ events // => ["released cache", "released cache"]
 **Extending resource idle time**
 
 ```efx
-
 const events: Array<string> = []
 
 const program = effect {

@@ -36,7 +36,6 @@ const fiber = Effect.fork(myEffect)
 **v4**
 
 ```efx
-
 const fiber = forkChild(myEffect)
 ```
 
@@ -53,7 +52,6 @@ const fiber = Effect.forkDaemon(myEffect)
 **v4**
 
 ```efx
-
 const fiber = forkDetach(myEffect)
 ```
 
@@ -78,7 +76,6 @@ optional options object with the following fields:
 **Usage as data-last (curried)**
 
 ```efx
-
 const fiber = myEffect.pipe(
   forkChild({ startImmediately: true })
 )
@@ -87,7 +84,6 @@ const fiber = myEffect.pipe(
 **Usage as data-first**
 
 ```efx
-
 const fiber = forkChild(myEffect, { startImmediately: true })
 ```
 

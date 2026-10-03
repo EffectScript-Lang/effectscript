@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/References.ts`, in EffectScrip
 **Managing log annotations**
 
 ```efx
-
 const logAnnotationExample = effect {
   // Get current annotations (empty by default)
   const current = await References.CurrentLogAnnotations
@@ -63,7 +62,6 @@ await runPromise(logAnnotationExample) // => [0, ["req-123", "user-456", "1.0.0"
 **Changing the level of an unqualified log**
 
 ```efx
-
 const levels: Array<string> = []
 const logger = Logger.make<unknown, void>(({ logLevel }) => {
   levels.push(logLevel)
@@ -85,7 +83,6 @@ levels // => ["Info", "Error"]
 **Tracking log spans**
 
 ```efx
-
 const logSpanExample = effect {
   // Get current spans (empty by default)
   const current = await References.CurrentLogSpans
@@ -137,7 +134,6 @@ await runPromise(logSpanExample) // => [0, ["database-connection"], ["database-c
 **Filtering logs below the minimum level**
 
 ```efx
-
 const levels: Array<string> = []
 const logger = Logger.make<unknown, void>(({ logLevel }) => {
   levels.push(logLevel)
@@ -161,7 +157,6 @@ levels // => ["Warn", "Error"]
 **Toggling tracing**
 
 ```efx
-
 const tracingControl = effect {
   // Check if tracing is enabled (default is true)
   const current = await References.TracerEnabled
@@ -191,7 +186,6 @@ await runPromise(tracingControl) // => [true, false, true]
 **Managing span annotations**
 
 ```efx
-
 const spanAnnotationExample = effect {
   // Get current annotations (empty by default)
   const current = await References.TracerSpanAnnotations
@@ -233,7 +227,6 @@ await runPromise(spanAnnotationExample) // => [0, ["user-service", "1.2.3", "pro
 **Managing span links**
 
 ```efx
-
 const spanLinksExample = effect {
   // Get current links (empty by default)
   const current = await References.TracerSpanLinks
@@ -279,7 +272,6 @@ await runPromise(spanLinksExample) // => [0, 1, 0]
 **Toggling trace timing**
 
 ```efx
-
 const tracingControl = effect {
   // Check if trace timing is enabled (default is true)
   const current = await References.TracerTimingEnabled
@@ -309,7 +301,6 @@ await runPromise(tracingControl) // => [true, false, true]
 **Providing a custom scheduler**
 
 ```efx
-
 const customScheduling = effect {
   // Get current scheduler (default is MixedScheduler)
   const current = await References.Scheduler

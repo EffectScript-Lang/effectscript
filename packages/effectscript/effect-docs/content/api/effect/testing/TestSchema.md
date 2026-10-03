@@ -72,7 +72,6 @@ await asserts.verifyRoundTrip({ seed: 1, runs: 20 }) // => undefined
 **Composing round-trip assertions**
 
 ```efx
-
 const asserts = new TestSchema.Asserts(Schema.NumberFromString)
 const test = effect {
   await asserts.decoding().succeedEffect("42", 42)

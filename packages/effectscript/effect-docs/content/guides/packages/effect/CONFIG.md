@@ -23,7 +23,6 @@ You describe _what_ you need with `Config`, and the library figures out _how_ to
 The simplest case: read one value from an environment variable.
 
 ```efx
-
 const program = Effect.gen(function*() {
   const host = yield* Config.String("HOST")
   console.log(host)
@@ -40,7 +39,6 @@ When you yield a `Config` inside `Effect.gen`, it automatically uses the default
 Use `Config.all` to group related keys:
 
 ```efx
-
 const dbConfig = Config.all({
   host: Config.String("host"),
   port: Config.Int("port")
@@ -60,7 +58,6 @@ const result = runSync(dbConfig.parse(provider))
 For larger configs, use `Config.schema` with a `Schema.Struct`:
 
 ```efx
-
 const AppConfig = Config.schema(
   Schema.Struct({
     host: Schema.String,
@@ -124,7 +121,6 @@ The same rule applies when a `Config` is yielded as an `Effect`: the config uses
 Triggers when the config is absent. For `Config.all`, any absent child makes the group absent unless another child fails. A group default replaces the entire group; apply defaults to individual children to keep other supplied values. Validation and source errors still propagate.
 
 ```efx
-
 const port = Config.Int("port").pipe(Config.withDefault(3000))
 
 const provider = ConfigProvider.fromUnknown({})
@@ -136,7 +132,6 @@ runSync(port.parse(provider)) // 3000
 Returns `Option.some(value)` on success and `Option.none()` when the config is absent. A successful `undefined` value is still a success, so a schema that accepts missing input produces `Option.some(undefined)`, not `Option.none()`.
 
 ```efx
-
 const maybePort = Config.option(Config.Int("port"))
 
 const provider = ConfigProvider.fromUnknown({})
@@ -170,7 +165,6 @@ const host = Config.String("HOST").pipe(
 Prepends a logical path segment to every key the inner config reads. The prefix is used for both provider lookups and schema error paths:
 
 ```efx
-
 const dbConfig = Config.all({
   host: Config.String("host"),
   port: Config.Int("port")
@@ -187,7 +181,6 @@ runSync(dbConfig.parse(provider))
 With environment variables, nesting uses `_` as separator:
 
 ```efx
-
 const host = Config.String("host").pipe(Config.nested("database"))
 
 const provider = ConfigProvider.fromEnv({
@@ -200,7 +193,6 @@ runSync(host.parse(provider)) // "localhost"
 Multiple `Config.nested` calls compose with the outermost prefix first:
 
 ```efx
-
 const config = Config.String("host").pipe(
   Config.nested("database"),
   Config.nested("production")
@@ -336,7 +328,6 @@ scalar value.
 This is the default provider. Path segments are joined with `_` for lookup.
 
 ```efx
-
 const provider = ConfigProvider.fromEnv({
   env: {
     DATABASE_HOST: "localhost",
@@ -414,7 +405,6 @@ const provider = ConfigProvider.fromDotEnvContents(contents, {
 Reads a `.env` file from disk. Returns an `Effect` (requires `FileSystem` in context):
 
 ```efx
-
 const program = effect {
   const provider = await ConfigProvider.fromDotEnv()
   // or: yield* ConfigProvider.fromDotEnv({ path: "/custom/.env" })
@@ -435,7 +425,6 @@ Reads config from a file-system tree where each file is a leaf and each director
 ```
 
 ```efx
-
 const program = effect {
   const provider = await ConfigProvider.fromDir({
     rootPath: "/etc/myapp"
@@ -453,7 +442,6 @@ Missing files and directories return `undefined`, so fallback providers can hand
 Build a provider from any backing store:
 
 ```efx
-
 const data: Record<string, string> = {
   host: "localhost",
   port: "5432"
@@ -634,7 +622,6 @@ When `mapInput` is applied to a provider built with `ConfigProvider.orElse`, the
 Replaces the active provider for all downstream effects:
 
 ```efx
-
 const TestLayer = ConfigProvider.layer(
   ConfigProvider.fromUnknown({ port: 8080 })
 )
@@ -670,7 +657,6 @@ Set `{ asPrimary: true }` to make the new provider the primary source instead.
 For one-off overrides without layers:
 
 ```efx
-
 const provider = ConfigProvider.fromUnknown({ HOST: "localhost" })
 
 const program = effect {
@@ -709,7 +695,6 @@ Config operations fail with `ConfigError`, which wraps either:
 Check `error.cause._tag` to distinguish:
 
 ```efx
-
 const program = Config.Int("PORT").parse(
   ConfigProvider.fromUnknown({ PORT: "not-a-number" })
 ).pipe(
@@ -730,7 +715,6 @@ const program = Config.Int("PORT").parse(
 ## Practical Example: Web Server Config
 
 ```efx
-
 // Define your config shape
 const ServerConfig = Config.schema(
   Schema.Struct({

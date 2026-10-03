@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxChunk.ts`, in EffectScript (
 **Using a transactional chunk**
 
 ```efx
-
 const program = effect {
   // Create a transactional chunk
   const txChunk: TxChunk<number> = await TxChunk.fromIterable([
@@ -49,7 +48,6 @@ await runPromise(program) // => [[1, 2, 3, 4], [0, 1, 2, 3, 4, 5]]
 **Creating a TxChunk from a chunk**
 
 ```efx
-
 const program = effect {
   // Create a TxChunk with initial values
   const initialChunk = Chunk.fromIterable([1, 2, 3])
@@ -68,7 +66,6 @@ await runPromise(program) // => [1, 2, 3]
 **Creating an empty TxChunk**
 
 ```efx
-
 const program = effect {
   // Create an empty TxChunk
   const txChunk = await TxChunk.empty<number>()
@@ -91,7 +88,6 @@ await runPromise(program) // => [true, false]
 **Creating from an iterable**
 
 ```efx
-
 const program = effect {
   // Create TxChunk from array
   const txChunk = await TxChunk.fromIterable([1, 2, 3, 4, 5])
@@ -119,7 +115,6 @@ await runPromise(program) // => [[1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5, 6]]
 **Wrapping an existing TxRef**
 
 ```efx
-
 // Create a TxChunk from an existing TxRef (advanced usage)
 const ref = TxRef.makeUnsafe(Chunk.fromIterable([1, 2, 3]))
 const txChunk = TxChunk.makeUnsafe(ref)
@@ -144,7 +139,6 @@ TxChunk.isTxChunk(Chunk.empty()) // => false
 **Modifying while returning a value**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3])
 
@@ -166,7 +160,6 @@ await runPromise(program) // => [3, [1, 2, 3, 4]]
 **Updating the stored chunk**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3])
 
@@ -185,7 +178,6 @@ await runPromise(program) // => [3, 2, 1]
 **Reading the current chunk**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3])
 
@@ -202,7 +194,6 @@ await runPromise(program) // => [[1, 2, 3], 3]
 **Replacing the stored chunk**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3])
 
@@ -222,7 +213,6 @@ await runPromise(program) // => [10, 20, 30, 40]
 **Appending an element**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3])
 
@@ -241,7 +231,6 @@ await runPromise(program) // => [1, 2, 3, 4]
 **Prepending an element**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([2, 3, 4])
 
@@ -260,7 +249,6 @@ await runPromise(program) // => [1, 2, 3, 4]
 **Getting the size**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3, 4, 5])
 
@@ -281,7 +269,6 @@ await runPromise(program) // => [5, 6]
 **Checking for an empty chunk**
 
 ```efx
-
 const program = effect {
   const emptyChunk = await TxChunk.empty<number>()
   const nonEmptyChunk = await TxChunk.fromIterable([1, 2, 3])
@@ -301,7 +288,6 @@ await runPromise(program) // => [true, false]
 **Checking for a non-empty chunk**
 
 ```efx
-
 const program = effect {
   const emptyChunk = await TxChunk.empty<number>()
   const nonEmptyChunk = await TxChunk.fromIterable([1, 2, 3])
@@ -321,7 +307,6 @@ await runPromise(program) // => [false, true]
 **Taking leading elements**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3, 4, 5])
 
@@ -340,7 +325,6 @@ await runPromise(program) // => [1, 2, 3]
 **Dropping leading elements**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3, 4, 5])
 
@@ -359,7 +343,6 @@ await runPromise(program) // => [3, 4, 5]
 **Taking a slice**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3, 4, 5, 6, 7])
 
@@ -378,7 +361,6 @@ await runPromise(program) // => [3, 4, 5]
 **Mapping elements**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3, 4])
 
@@ -397,7 +379,6 @@ await runPromise(program) // => [2, 4, 6, 8]
 **Filtering elements**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3, 4, 5, 6])
 
@@ -416,7 +397,6 @@ await runPromise(program) // => [2, 4, 6]
 **Appending another chunk**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([1, 2, 3])
   const otherChunk = Chunk.fromIterable([4, 5, 6])
@@ -436,7 +416,6 @@ await runPromise(program) // => [1, 2, 3, 4, 5, 6]
 **Prepending another chunk**
 
 ```efx
-
 const program = effect {
   const txChunk = await TxChunk.fromIterable([4, 5, 6])
   const otherChunk = Chunk.fromIterable([1, 2, 3])
@@ -456,7 +435,6 @@ await runPromise(program) // => [1, 2, 3, 4, 5, 6]
 **Concatenating TxChunks**
 
 ```efx
-
 const program = effect {
   const txChunk1 = await TxChunk.fromIterable([1, 2, 3])
   const txChunk2 = await TxChunk.fromIterable([4, 5, 6])

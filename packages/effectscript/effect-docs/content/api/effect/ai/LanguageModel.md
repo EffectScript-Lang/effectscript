@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ai/LanguageModel.ts`, in Effec
 **Accessing the language model service**
 
 ```efx
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -75,7 +74,6 @@ response.text // => '{"name":"John Doe","email":"john@example.com"}'
 **Generating text with options**
 
 ```efx
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -116,7 +114,6 @@ await runPromise(program) // => ["Code flows through types / Errors become value
 **Generating an object**
 
 ```efx
-
 const EventSchema = Schema.Struct({
   title: Schema.String,
   date: Schema.String,
@@ -152,7 +149,6 @@ await runPromise(program) // => { title: "Tech Conference", date: "March 15th", 
 **Streaming text deltas**
 
 ```efx
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({

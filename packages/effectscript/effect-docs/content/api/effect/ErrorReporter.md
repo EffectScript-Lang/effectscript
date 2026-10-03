@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ErrorReporter.ts`, in EffectSc
 **Forwarding errors to a callback**
 
 ```efx
-
 const reports: Array<{ message: string; severity: string; attributes: object }> = []
 const reporter = ErrorReporter.make(({ error, severity, attributes }) => {
   reports.push({ message: error.message, severity, attributes })
@@ -37,7 +36,6 @@ reports // => [{ message: "boom", severity: "Info", attributes: {} }]
 **Providing error reporters**
 
 ```efx
-
 const reports: Array<string> = []
 const firstReporter = ErrorReporter.make(({ error, severity }) => {
   reports.push(`[${severity}] ${error.message}`)
@@ -73,7 +71,6 @@ reports // => ["[Info] boom", "Info: boom"]
 **Reporting a cause manually**
 
 ```efx
-
 const messages: Array<string> = []
 const program = effect {
   const cause = Cause.fail("something went wrong")

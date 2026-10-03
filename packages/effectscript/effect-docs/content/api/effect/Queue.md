@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Queue.ts`, in EffectScript (AD
 **Offering through enqueue handles**
 
 ```efx
-
 // Function that only needs write access to a queue
 const producer = (enqueue: Queue.Enqueue<string>) =>
   effect {
@@ -38,7 +37,6 @@ await runPromise(program) // => ["hello", "world", "!"]
 **Taking through dequeue handles**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<string, never>(10)
 
@@ -61,7 +59,6 @@ await runPromise(program) // => "a"
 **Offering and taking queue values**
 
 ```efx
-
 const program = effect {
   // Create a bounded queue
   const queue = await Queue.bounded<string>(10)
@@ -86,7 +83,6 @@ await runPromise(program) // => ["hello", "world", "!"]
 **Creating queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.make<number, string | Cause.Done>()
 
@@ -116,7 +112,6 @@ await runPromise(program) // => { messages: [1, 2, 3, 4, 5], done: Cause.Done(),
 **Creating bounded queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<string>(5)
 
@@ -136,7 +131,6 @@ await runPromise(program) // => 2
 **Creating sliding queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.sliding<number>(3)
 
@@ -160,7 +154,6 @@ await runPromise(program) // => [2, 3, 4]
 **Creating dropping queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.dropping<number>(2)
 
@@ -183,7 +176,6 @@ await runPromise(program) // => [true, true, false, [1, 2]]
 **Creating unbounded queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.unbounded<string>()
 
@@ -208,7 +200,6 @@ await runPromise(program) // => { size: 5, messages: ["message1", "message2", "m
 **Offering a value**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number>(3)
 
@@ -229,7 +220,6 @@ await runPromise(program) // => { offered: [true, true], size: 2 }
 **Offering a value synchronously**
 
 ```efx
-
 // Create a queue effect and extract the queue for unsafe operations
 const program = effect {
   const queue = await Queue.bounded<number>(3)
@@ -251,7 +241,6 @@ await runPromise(program) // => { offered: [true, true], size: 2 }
 **Offering multiple values**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.dropping<number>(3)
 
@@ -268,7 +257,6 @@ await runPromise(program) // => [4, 5]
 **Offering multiple values synchronously**
 
 ```efx
-
 // Create a bounded queue and use unsafe API
 const program = effect {
   const queue = await Queue.bounded<number>(3)
@@ -354,7 +342,6 @@ await runPromise(program) // => [true, Exit.failCause(Cause.fail("Processing err
 **Ending queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(10)
 
@@ -381,7 +368,6 @@ await runPromise(program) // => [true, false, 1]
 **Ending queues synchronously**
 
 ```efx
-
 // Create a queue and use unsafe operations
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(10)
@@ -445,7 +431,6 @@ await runPromise(program) // => { interrupted: true, offerResult: false, message
 **Shutting down queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number>(2)
 
@@ -469,7 +454,6 @@ await runPromise(program) // => { wasShutdown: true, size: 0 }
 **Clearing queued values**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number>(10)
 
@@ -495,7 +479,6 @@ await runPromise(program) // => { messages: [1, 2, 3, 4, 5], size: 0, empty: [] 
 **Taking all available values**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(5)
 
@@ -515,7 +498,6 @@ await runPromise(program) // => [1, 2, 3, 4, 5]
 **Collecting values until completion**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(5)
 
@@ -535,7 +517,6 @@ await runPromise(program) // => [1, 2, 3, 4, 5]
 **Taking a fixed number of values**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(10)
 
@@ -688,7 +669,6 @@ await runPromise(program) // => [Exit.succeed(1), Exit.succeed(2), undefined]
 **Releasing a waiting taker synchronously**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.unbounded<number>()
   const taker = await Queue.take(queue).pipe(forkChild)
@@ -708,7 +688,6 @@ await runPromise(program) // => 1
 **Releasing a waiting taker**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.unbounded<number>()
   const taker = await Queue.take(queue).pipe(forkChild)
@@ -728,7 +707,6 @@ await runPromise(program) // => 1
 **Checking queue size**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(10)
 
@@ -757,7 +735,6 @@ await runPromise(program) // => [0, 5, 5]
 **Checking if queues are full**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(3)
 
@@ -778,7 +755,6 @@ await runPromise(program) // => [false, true]
 **Checking queue size synchronously**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(10)
 
@@ -809,7 +785,6 @@ await runPromise(program) // => [0, 3, 3]
 **Checking fullness synchronously**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(3)
 

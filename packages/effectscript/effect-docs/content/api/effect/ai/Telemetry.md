@@ -124,7 +124,6 @@ const result = [telemetryOptions.system, telemetryOptions.usage?.inputTokens] //
 **Adding GenAI telemetry annotations**
 
 ```efx
-
 const directUsage = effect {
   const span = await currentSpan
 

@@ -58,7 +58,6 @@ await runPromise(program) // => true
 **Taking values through dequeue handles**
 
 ```efx
-
 const program = effect {
   // Queue without error channel
   const queue = await TxQueue.bounded<number>(10)
@@ -83,7 +82,6 @@ await runPromise(program) // => [42, "processing failed", "processing failed"]
 **Combining enqueue and dequeue operations**
 
 ```efx
-
 const program = effect {
   // Create a bounded transactional queue (E defaults to never)
   const queue = await TxQueue.bounded<number>(10)
@@ -142,7 +140,6 @@ TxQueue.isTxQueue(someValue) // => false
 **Creating bounded queues**
 
 ```efx
-
 const program = effect {
   // Create a bounded queue (E defaults to never)
   const queue = await TxQueue.bounded<number>(10)
@@ -165,7 +162,6 @@ await runPromise(program) // => 1
 **Creating unbounded queues**
 
 ```efx
-
 const program = effect {
   // Create an unbounded queue (E defaults to never)
   const queue = await TxQueue.unbounded<string>()
@@ -188,7 +184,6 @@ await runPromise(program) // => 2
 **Creating dropping queues**
 
 ```efx
-
 const program = effect {
   // Create a dropping queue with capacity 2
   const queue = await TxQueue.dropping<number>(2)
@@ -209,7 +204,6 @@ await runPromise(program) // => false
 **Creating sliding queues**
 
 ```efx
-
 const program = effect {
   // Create a sliding queue with capacity 2
   const queue = await TxQueue.sliding<number>(2)
@@ -232,7 +226,6 @@ await runPromise(program) // => 2
 **Offering a value**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
 
@@ -248,7 +241,6 @@ await runPromise(program) // => true
 **Offering multiple values**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
 
@@ -337,7 +329,6 @@ await runPromise(errorExample) // => Exit.fail("processing error")
 **Taking a fixed number of values**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(5)
   await TxQueue.offerAll(queue, [1, 2, 3, 4])
@@ -358,7 +349,6 @@ await runPromise(program) // => [[1, 2, 3, 4], [5, 6, 7, 8, 9]]
 **Taking batches within bounds**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
   await TxQueue.offerAll(queue, [1, 2, 3, 4, 5, 6, 7, 8])
@@ -414,7 +404,6 @@ await runPromise(errorExample) // => Exit.fail("queue failed")
 **Reading queue size**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
   await TxQueue.offerAll(queue, [1, 2, 3])
@@ -430,7 +419,6 @@ await runPromise(program) // => 3
 **Checking whether a queue is empty**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
 
@@ -449,7 +437,6 @@ await runPromise(program) // => [true, false]
 **Checking whether a queue is non-empty**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
 
@@ -468,7 +455,6 @@ await runPromise(program) // => [false, true]
 **Checking whether a queue is full**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(2)
 
@@ -487,7 +473,6 @@ await runPromise(program) // => [false, true]
 **Interrupting queues**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
   await TxQueue.offer(queue, 42)
@@ -504,7 +489,6 @@ await runPromise(program) // => true
 **Failing queues**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number, string>(10)
 
@@ -520,7 +504,6 @@ await runPromise(program) // => true
 **Failing queues with causes**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
 
@@ -561,7 +544,6 @@ await runPromise(program) // => [true, Exit.fail(Cause.Done()), Exit.fail(Cause.
 **Clearing queues**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
   await TxQueue.offerAll(queue, [1, 2, 3, 4, 5])
@@ -582,7 +564,6 @@ await runPromise(program) // => [5, [1, 2, 3, 4, 5], 0]
 **Shutting down queues**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
   await TxQueue.offerAll(queue, [1, 2, 3, 4, 5])
@@ -605,7 +586,6 @@ await runPromise(program) // => [5, 0, true]
 **Checking open state**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
 
@@ -624,7 +604,6 @@ await runPromise(program) // => [true, false]
 **Checking closing state**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
   await TxQueue.offer(queue, 42)
@@ -644,7 +623,6 @@ await runPromise(program) // => [false, true]
 **Checking done state**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
 
@@ -663,7 +641,6 @@ await runPromise(program) // => [false, true]
 **Checking shutdown state**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
 
@@ -682,7 +659,6 @@ await runPromise(program) // => [false, true]
 **Awaiting queue completion**
 
 ```efx
-
 const program = effect {
   const queue = await TxQueue.bounded<number, string>(10)
 

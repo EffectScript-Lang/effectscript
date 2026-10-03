@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Pipeable.ts`, in EffectScript 
 **Chaining operations with pipe**
 
 ```efx
-
 // The Pipeable interface allows Effect values to be chained using the pipe method
 const program = succeed(1).pipe(
   map((x) => x + 1),

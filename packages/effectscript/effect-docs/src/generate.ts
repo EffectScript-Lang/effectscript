@@ -4,9 +4,10 @@
  *
  * @since 4.0.0
  */
+import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import { type Block, convertBlock, convertMarkdown, jsdocExamples, tokens } from "./translate.ts"
+import { type Block, convertBlock, convertMarkdown, type JsdocExample, jsdocExamples, tokens } from "./translate.ts"
 
 /**
  * One example in the parallel corpus.
@@ -53,12 +54,24 @@ export const editionNote = [
 const entries = (dir: string) =>
   fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
 
+/**
+ * The files git tracks in the repository being read, while `generate` runs: an untracked file in
+ * the working tree (a scratch note, `.DS_Store`) is never an input (Plan 21).
+ */
+let tracked: { readonly root: string; readonly files: ReadonlySet<string> } | undefined
+
+const isInput = (file: string): boolean => {
+  if (tracked === undefined) return true
+  const relative = path.relative(tracked.root, file)
+  return relative.startsWith("..") || tracked.files.has(posix(relative))
+}
+
 const walk = (dir: string, skip: (name: string) => boolean, out: Array<string> = []): Array<string> => {
   for (const entry of entries(dir)) {
     if (skip(entry.name)) continue
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) walk(full, skip, out)
-    else out.push(full)
+    else if (isInput(full)) out.push(full)
   }
   return out
 }
@@ -168,7 +181,9 @@ const aiDocs = (repo: string, out: Map<string, string>, corpus: Array<CorpusEntr
 
 /** Package READMEs, `packages/effect/*.md` and the migration guides, with EffectScript fences. */
 const guides = (repo: string, out: Map<string, string>, corpus: Array<CorpusEntry>) => {
-  const skip = (name: string) => ["node_modules", "dist", "effectscript", "build", ".git"].includes(name)
+  // test and fixture folders hold READMEs for the tests, not for users (Plan 21)
+  const skip = (name: string) =>
+    ["node_modules", "dist", "effectscript", "build", ".git", "test", "fixtures"].includes(name)
   const files = [
     ...walk(path.join(repo, "packages"), skip).filter((f) => path.basename(f) === "README.md"),
     ...entries(path.join(repo, "packages/effect")).filter((e) =>
@@ -199,7 +214,13 @@ const api = (repo: string, out: Map<string, string>, corpus: Array<CorpusEntry>)
     if (!fs.existsSync(src)) continue
     const name: string = JSON.parse(fs.readFileSync(manifest, "utf8")).name
     for (const file of walk(src, (n) => n === "internal").filter((f) => f.endsWith(".ts") && !f.endsWith(".d.ts"))) {
-      const examples = jsdocExamples(fs.readFileSync(file, "utf8"))
+      // a symbol's examples sit under one heading, even when an interface and a constant share
+      // its name (Plan 21); the first appearance sets the order
+      const bySymbol = new Map<string | undefined, Array<JsdocExample>>()
+      for (const example of jsdocExamples(fs.readFileSync(file, "utf8"))) {
+        bySymbol.set(example.symbol, [...(bySymbol.get(example.symbol) ?? []), example])
+      }
+      const examples = [...bySymbol.values()].flat()
       if (examples.length === 0) continue
       const source = posix(path.relative(repo, file))
       const module = posix(path.relative(src, file)).replace(/\.ts$/, "")
@@ -277,9 +298,17 @@ const report = (corpus: ReadonlyArray<CorpusEntry>): string => {
 export const generate = (repo: string): Map<string, string> => {
   const out = new Map<string, string>()
   const corpus: Array<CorpusEntry> = []
-  aiDocs(repo, out, corpus)
-  guides(repo, out, corpus)
-  api(repo, out, corpus)
+  const listed = spawnSync("git", ["ls-files", "-z"], { cwd: repo, encoding: "utf8", maxBuffer: 1 << 28 })
+  tracked = listed.status === 0
+    ? { root: repo, files: new Set(listed.stdout.split("\0").filter((f) => f !== "")) }
+    : undefined
+  try {
+    aiDocs(repo, out, corpus)
+    guides(repo, out, corpus)
+    api(repo, out, corpus)
+  } finally {
+    tracked = undefined
+  }
   out.set("corpus.jsonl", corpus.map((e) => JSON.stringify(e)).join("\n") + "\n")
   out.set("REPORT.md", report(corpus))
   return new Map([...out].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
@@ -292,7 +321,10 @@ export const generate = (repo: string): Map<string, string> => {
  * @category generate
  */
 export const drift = (files: ReadonlyMap<string, string>, dir: string): Array<string> => {
-  const existing = fs.existsSync(dir) ? walk(dir, () => false).map((f) => posix(path.relative(dir, f))) : []
+  // dotfiles (`.DS_Store`) are the file system's, not generated content (Plan 21)
+  const existing = fs.existsSync(dir)
+    ? walk(dir, (name) => name.startsWith(".")).map((f) => posix(path.relative(dir, f)))
+    : []
   const problems: Array<readonly [string, string]> = []
   for (const [file, text] of files) {
     const full = path.join(dir, file)

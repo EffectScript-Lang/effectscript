@@ -56,7 +56,6 @@ await runPromise(program) // => "Serving /public/guide.txt"
 **Mounting static files on a router**
 
 ```efx
-
 const ApiLayer = HttpRouter.add("GET", "/health", HttpServerResponse.text("ok"))
 
 const StaticFilesLayer = HttpStaticServer.layer({

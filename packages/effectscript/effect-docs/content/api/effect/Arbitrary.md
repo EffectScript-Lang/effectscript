@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Arbitrary.ts`, in EffectScript
 **Removing irrelevant commands**
 
 ```efx
-
 const command = Arbitrary.schema(Schema.Literals(["Add", "Reset", "Stop"]))
 const commands = Arbitrary.array(command, { maxLength: 50 })
 const result = await runPromise(

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Ref.ts`, in EffectScript (ADR-
 **Reading and updating a ref**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(0)
   const value = await Ref.get(counter)
@@ -33,7 +32,6 @@ await runPromise(program) // => [0, 1]
 **Using invariant refs**
 
 ```efx
-
 const program = effect {
   const ref = await Ref.make(42)
   const value = await Ref.get(ref)
@@ -60,7 +58,6 @@ Ref.getUnsafe(counter) // => 0
 **Creating a ref**
 
 ```efx
-
 const program = effect {
   const ref = await Ref.make(42)
   return await Ref.get(ref)
@@ -74,7 +71,6 @@ await runPromise(program) // => 42
 **Getting the current value**
 
 ```efx
-
 const program = effect {
   const ref = await Ref.make(42)
   return await Ref.get(ref)
@@ -88,7 +84,6 @@ await runPromise(program) // => 42
 **Setting a value**
 
 ```efx
-
 const program = effect {
   const ref = await Ref.make(0)
   await Ref.set(ref, 42)
@@ -110,7 +105,6 @@ await runPromise(program2) // => 100
 **Replacing a value atomically**
 
 ```efx
-
 const program = effect {
   const ref = await Ref.make("initial")
 
@@ -127,7 +121,6 @@ await runPromise(program) // => ["initial", "updated"]
 **Updating and returning the previous value**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(10)
 
@@ -144,7 +137,6 @@ await runPromise(program) // => [10, 20]
 **Conditionally updating and returning the previous value**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(5)
 
@@ -169,7 +161,6 @@ await runPromise(program) // => [5, 10, 10, 10]
 **Setting and returning the new value**
 
 ```efx
-
 const program = effect {
   const ref = await Ref.make(10)
 
@@ -192,7 +183,6 @@ await runPromise(program2) // => 20
 **Modifying a value atomically**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(10)
 
@@ -221,7 +211,6 @@ await runPromise(program2) // => 0
 **Conditionally modifying a value**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(5)
 
@@ -252,7 +241,6 @@ await runPromise(program) // => ["incremented 5", 15, "no change", 15]
 **Updating a value**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(5)
 
@@ -275,7 +263,6 @@ await runPromise(program2) // => 15
 **Updating and returning the new value**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(5)
 
@@ -292,7 +279,6 @@ await runPromise(program) // => [15, 15]
 **Conditionally updating a value**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(5)
 
@@ -318,7 +304,6 @@ await runPromise(program) // => [5, 12]
 **Conditionally updating and returning the current value**
 
 ```efx
-
 const program = effect {
   const counter = await Ref.make(10)
 

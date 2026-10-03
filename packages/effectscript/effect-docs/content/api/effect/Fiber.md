@@ -34,7 +34,6 @@ actual // => Exit.succeed(42)
 **Working with fiber types**
 
 ```efx
-
 const program = effect {
   // Create a fiber
   const fiber = await forkChild(succeed(42))
@@ -55,7 +54,6 @@ actual // => 42
 **Upcasting fibers safely**
 
 ```efx
-
 // Variance allows safe subtyping
 const fiber: Fiber<number, never> = runFork(succeed(1))
 const upcast: Fiber<unknown, unknown> = fiber
@@ -101,7 +99,6 @@ actual // => [Exit.succeed(1), Exit.succeed(2)]
 **Joining a fiber**
 
 ```efx
-
 const program = effect {
   const fiber = await forkChild(succeed(42))
   return await Fiber.join(fiber)
@@ -116,7 +113,6 @@ actual // => 42
 **Interrupting a fiber**
 
 ```efx
-
 const program = effect {
   const fiber = await forkChild(
     delay("1 second")(succeed(42))
@@ -132,7 +128,6 @@ await runPromise(program)
 **Interrupting a fiber as another fiber**
 
 ```efx
-
 const program = effect {
   const targetFiber = await forkChild(
     delay("5 seconds")(succeed("task completed"))
@@ -150,7 +145,6 @@ await runPromise(program)
 **Interrupting multiple fibers**
 
 ```efx
-
 const program = effect {
   const fiber1 = await forkChild(never)
   const fiber2 = await forkChild(never)
@@ -166,7 +160,6 @@ await runPromise(program)
 **Interrupting multiple fibers as another fiber**
 
 ```efx
-
 const program = effect {
   // Create a controlling fiber
   const controllerFiber = await forkChild(succeed("controller"))
@@ -185,7 +178,6 @@ await runPromise(program)
 **Checking for fibers**
 
 ```efx
-
 const program = effect {
   // Create a fiber
   const fiber = await forkChild(succeed(42))
@@ -203,7 +195,6 @@ actual // => [true, false, false, false]
 **Getting the current fiber**
 
 ```efx
-
 const program = effect {
   const current = Fiber.getCurrent()
   return current !== undefined

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/FiberHandle.ts`, in EffectScri
 **Managing a single fiber**
 
 ```efx
-
 const program = effect {
   // Create a FiberHandle that can hold fibers producing strings
   const handle = await FiberHandle.make<string, never>()
@@ -35,7 +34,6 @@ actual // => "hello"
 **Checking fiber handles**
 
 ```efx
-
 const program = effect {
   const handle = await FiberHandle.make()
 
@@ -51,7 +49,6 @@ actual // => [true, false]
 **Creating a scoped fiber handle**
 
 ```efx
-
 const program = effect {
   const handle = await FiberHandle.make()
 
@@ -99,7 +96,6 @@ actual // => [Exit.failCause(Cause.interrupt(-1)), Exit.succeed("second")]
 **Running effects as promises**
 
 ```efx
-
 const program = effect {
   const run = await FiberHandle.makeRuntimePromise()
 
@@ -117,7 +113,6 @@ actual // => "hello"
 **Setting a fiber unsafely**
 
 ```efx
-
 const program = Effect.gen(function*() {
   const handle = yield* FiberHandle.make()
   const fiber = runFork(succeed("hello"))
@@ -138,7 +133,6 @@ actual // => "hello"
 **Setting a fiber safely**
 
 ```efx
-
 const program = Effect.gen(function*() {
   const handle = yield* FiberHandle.make()
   const fiber = runFork(succeed("hello"))
@@ -159,7 +153,6 @@ actual // => "hello"
 **Reading the current fiber unsafely**
 
 ```efx
-
 const program = effect {
   const handle = await FiberHandle.make()
 
@@ -181,7 +174,6 @@ actual // => [Option.none(), Option.some(true)]
 **Reading the current fiber**
 
 ```efx
-
 const program = effect {
   const handle = await FiberHandle.make()
 
@@ -226,7 +218,6 @@ actual // => Option.none()
 **Running an effect in a fiber handle**
 
 ```efx
-
 const program = effect {
   const handle = await FiberHandle.make()
 
@@ -249,7 +240,6 @@ actual // => ["hello", "world"]
 **Capturing a runtime for fiber handles**
 
 ```efx
-
 service Users {
   readonly getAll: Effect<Array<unknown>>
 }
@@ -280,7 +270,6 @@ actual // => 0
 **Capturing a runtime for promises**
 
 ```efx
-
 const program = effect {
   const handle = await FiberHandle.make()
   const runPromise = await FiberHandle.runtimePromise(handle)<never>()

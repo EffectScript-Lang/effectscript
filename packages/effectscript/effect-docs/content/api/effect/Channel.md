@@ -28,7 +28,6 @@ Channel.isChannel("not a channel") // => false
 **Typing channels**
 
 ```efx
-
 // A channel that outputs numbers and requires no environment
 type NumberChannel = Channel<number>
 
@@ -55,7 +54,6 @@ runSync(Channel.runCollect(channel)) // => [1]
 **Creating channels from transforms**
 
 ```efx
-
 const channel = Channel.fromTransform((upstream, scope) =>
   succeed(upstream)
 )
@@ -67,7 +65,6 @@ await runPromise(Channel.runCollect(channel)) // => []
 **Transforming pull behavior**
 
 ```efx
-
 // Transform a channel by modifying its pull behavior
 const originalChannel = Channel.fromIterable([1, 2, 3])
 
@@ -86,7 +83,6 @@ await runPromise(Channel.runCollect(transformedChannel)) // => [2, 4, 6]
 **Creating channels from pulls**
 
 ```efx
-
 const channel = Channel.fromPull(sync(() => {
   let emitted = false
   return suspend(() => {
@@ -103,7 +99,6 @@ await runPromise(Channel.runCollect(channel)) // => [42]
 **Extracting channel transforms**
 
 ```efx
-
 const channel = Channel.succeed(42)
 const transform = Channel.toTransform(channel)
 typeof transform // => "function"
@@ -125,7 +120,6 @@ Channel.DefaultChunkSize // => 4096
 **Creating channels from callbacks**
 
 ```efx
-
 const channel = Channel.callback<number>((queue) =>
   effect {
     await Queue.offer(queue, 1)
@@ -142,7 +136,6 @@ await runPromise(Channel.runCollect(channel)) // => [1, 2, 3]
 **Creating array channels from callbacks**
 
 ```efx
-
 const channel = Channel.callbackArray<number>(Effect.fn(function*(queue) {
   yield* Queue.offer(queue, 1)
   yield* Queue.offer(queue, 2)
@@ -156,7 +149,6 @@ await runPromise(Channel.runCollect(channel)) // => [[1, 2]]
 **Suspending channel creation**
 
 ```efx
-
 const channel = Channel.suspend(() => Channel.succeed(42))
 runSync(Channel.runCollect(channel)) // => [42]
 ```
@@ -166,7 +158,6 @@ runSync(Channel.runCollect(channel)) // => [42]
 **Managing resources with acquire-use-release**
 
 ```efx
-
 const released: Array<string> = []
 const channel = Channel.acquireUseRelease(
   succeed("resource"),
@@ -181,7 +172,6 @@ const observed = [await runPromise(Channel.runCollect(channel)), released] // =>
 **Managing resources with acquire-release**
 
 ```efx
-
 const released: Array<string> = []
 const channel = Channel.acquireRelease(
   succeed("resource"),
@@ -195,7 +185,6 @@ const observed = [await runPromise(Channel.runCollect(channel)), released] // =>
 **Creating channels from iterators**
 
 ```efx
-
 const numbers = [1, 2, 3, 4, 5]
 const channel = Channel.fromIterator(() => numbers[Symbol.iterator]())
 runSync(Channel.runCollect(channel)) // => [1, 2, 3, 4, 5]
@@ -206,7 +195,6 @@ runSync(Channel.runCollect(channel)) // => [1, 2, 3, 4, 5]
 **Creating channels from arrays**
 
 ```efx
-
 const channel = Channel.fromArray([1, 2, 3, 4, 5])
 runSync(Channel.runCollect(channel)) // => [1, 2, 3, 4, 5]
 ```
@@ -216,7 +204,6 @@ runSync(Channel.runCollect(channel)) // => [1, 2, 3, 4, 5]
 **Creating channels from chunks**
 
 ```efx
-
 const chunk = Chunk.make(1, 2, 3)
 const channel = Channel.fromChunk(chunk)
 runSync(Channel.runCollect(channel)) // => [1, 2, 3]
@@ -227,7 +214,6 @@ runSync(Channel.runCollect(channel)) // => [1, 2, 3]
 **Batching iterator output**
 
 ```efx
-
 // Create a channel from a simple iterator
 const numberIterator = (): Iterator<number, string> => {
   let count = 0
@@ -248,7 +234,6 @@ runSync(Channel.runCollect(channel)) // => [[0, 1], [2]]
 **Batching generator output**
 
 ```efx
-
 // Create channel from a generator function
 function* fibonacci(): Generator<number, void, unknown> {
   let a = 0, b = 1
@@ -267,7 +252,6 @@ runSync(Channel.runCollect(fibChannel)) // => [[0, 1, 1], [2, 3]]
 **Creating channels from iterables**
 
 ```efx
-
 const set = new Set([1, 2, 3])
 const channel = Channel.fromIterable(set)
 runSync(Channel.runCollect(channel)) // => [1, 2, 3]
@@ -278,7 +262,6 @@ runSync(Channel.runCollect(channel)) // => [1, 2, 3]
 **Batching iterable output**
 
 ```efx
-
 const numbers = [1, 2, 3, 4, 5]
 const channel = Channel.fromIterableArray(numbers, 4)
 runSync(Channel.runCollect(channel)) // => [[1, 2, 3, 4], [5]]
@@ -289,7 +272,6 @@ runSync(Channel.runCollect(channel)) // => [[1, 2, 3, 4], [5]]
 **Creating channels that succeed**
 
 ```efx
-
 const channel = Channel.succeed(42)
 runSync(Channel.runCollect(channel)) // => [42]
 ```
@@ -299,7 +281,6 @@ runSync(Channel.runCollect(channel)) // => [42]
 **Ending with a value**
 
 ```efx
-
 const channel = Channel.end("done")
 runSync(Channel.runCollect(channel)) // => []
 ```
@@ -309,7 +290,6 @@ runSync(Channel.runCollect(channel)) // => []
 **Computing values lazily**
 
 ```efx
-
 let requests = 0
 
 const channel = Channel.sync(() => {
@@ -324,7 +304,6 @@ runSync(Channel.runCollect(channel)) // => ["request-1"]
 **Creating empty channels**
 
 ```efx
-
 // Create an empty channel
 const emptyChannel = Channel.empty
 
@@ -440,7 +419,6 @@ runSync(exit(Channel.runCollect(diedChannel))) // => Exit.failCause(Cause.die(de
 **Creating channels from effects**
 
 ```efx
-
 const successChannel = Channel.fromEffect(
   succeed("Hello from effect!")
 )
@@ -452,7 +430,6 @@ runSync(Channel.runCollect(successChannel)) // => ["Hello from effect!"]
 **Creating channels from queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<string, Cause.Done>(3)
   await Queue.offerAll(queue, ["item1", "item2", "item3"])
@@ -468,7 +445,6 @@ await runPromise(program) // => ["item1", "item2", "item3"]
 **Creating batched channels from queues**
 
 ```efx
-
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(4)
   await Queue.offerAll(queue, [1, 2, 3, 4])
@@ -583,7 +559,6 @@ await runPromise(batch) // => Option.some(["ONE", "TWO"])
 **Aggregating subscription metrics**
 
 ```efx
-
 const metricsAggregator = effect {
   const metricsPubSub = await PubSub.bounded<
     { timestamp: number; value: number }
@@ -744,7 +719,6 @@ await runPromise(result) // => Option.some([1, 2, 3, 4])
 **Processing PubSub orders in batches**
 
 ```efx
-
 interface Order {
   readonly id: string
   readonly customerId: string
@@ -788,7 +762,6 @@ Option.map(result, (batch) => [batch.batchSize, batch.totalRevenue, batch.unique
 **Processing PubSub logs in batches**
 
 ```efx
-
 interface LogEntry {
   readonly timestamp: number
   readonly level: "info" | "warn" | "error"
@@ -842,7 +815,6 @@ Option.map(result, (batch) => [batch.batchId, batch.totalEntries, batch.infoCoun
 **Reading from a Web stream**
 
 ```efx
-
 const channel = Channel.fromReadableStream({
   evaluate: () => new ReadableStream({
     start(controller) {
@@ -861,7 +833,6 @@ await runPromise(Channel.runCollect(channel)) // => [[1]]
 **Writing channel input**
 
 ```efx
-
 const written: Array<number> = []
 const sink = Channel.fromWritableStream<never, Error, number>({
   evaluate: () => new WritableStream({
@@ -886,7 +857,6 @@ written // => [1, 2]
 **Transforming channel input**
 
 ```efx
-
 const transform = Channel.fromTransformStream<never, number, number, Error>({
   evaluate: () => new TransformStream({
     transform(value, controller) {
@@ -909,7 +879,6 @@ await runPromise(program) // => [[2], [4]]
 **Mapping channel output**
 
 ```efx
-
 class TransformError extends Data.TaggedError("TransformError")<{
   readonly reason: string
 }> {}
@@ -944,7 +913,6 @@ runSync(Channel.runCollect(displayChannel)) // => [{ displayName: "User: Alice",
 **Mapping channel output with effects**
 
 ```efx
-
 const numbersChannel = Channel.fromIterable([1, 2, 3, 4, 5])
 const processedChannel = Channel.mapEffect(
   numbersChannel,
@@ -958,7 +926,6 @@ await runPromise(Channel.runCollect(processedChannel)) // => [1, 4, 9, 16, 25]
 **Tapping channel output**
 
 ```efx
-
 class LogError extends Data.TaggedError("LogError")<{
   readonly message: string
 }> {}
@@ -981,7 +948,6 @@ const observed = [await runPromise(Channel.runCollect(tappedChannel)), processed
 **Flat mapping channel output**
 
 ```efx
-
 class ProcessError extends Data.TaggedError("ProcessError")<{
   readonly cause: string
 }> {}
@@ -1004,7 +970,6 @@ runSync(Channel.runCollect(flatMappedChannel)) // => ["item-1-0", "item-2-0", "i
 **Concatenating with completion values**
 
 ```efx
-
 class ConcatError extends Data.TaggedError("ConcatError")<{
   readonly reason: string
 }> {}
@@ -1022,7 +987,6 @@ runSync(Channel.runCollect(numberChannel)) // => [1, 2, 3, "Completed processing
 **Concatenating channels**
 
 ```efx
-
 class ConcatError extends Data.TaggedError("ConcatError")<{
   readonly reason: string
 }> {}
@@ -1042,7 +1006,6 @@ runSync(Channel.runCollect(concatenatedChannel)) // => [1, 2, 3, "a", "b", "c"]
 **Flattening nested channels**
 
 ```efx
-
 class FlattenError extends Data.TaggedError("FlattenError")<{
   readonly cause: string
 }> {}
@@ -1065,7 +1028,6 @@ runSync(Channel.runCollect(flattenedChannel)) // => [1, 2, 3, 4, 5, 6]
 **Flattening arrays of channel output**
 
 ```efx
-
 class FlattenError extends Data.TaggedError("FlattenError")<{
   readonly message: string
 }> {}
@@ -1088,7 +1050,6 @@ runSync(Channel.runCollect(flattenedChannel)) // => [1, 2, 3, 4, 5, 6, 7, 8, 9]
 **Draining channel output**
 
 ```efx
-
 // Create a channel that outputs values
 const sourceChannel = Channel.fromIterable([1, 2, 3, 4, 5])
 
@@ -1103,7 +1064,6 @@ runSync(Channel.runCollect(drainedChannel)) // => []
 **Filtering channel output**
 
 ```efx
-
 // Create a channel with mixed numbers
 const numbersChannel = Channel.fromIterable([1, 2, 3, 4, 5, 6, 7, 8])
 
@@ -1156,7 +1116,6 @@ runSync(Channel.runCollect(filteredOddChannel)) // => [[2, 4]]
 **Mapping with accumulated state**
 
 ```efx
-
 // Create a channel with numbers
 const numbersChannel = Channel.fromIterable([1, 2, 3, 4])
 
@@ -1189,7 +1148,6 @@ runSync(Channel.runCollect(asyncMapAccum)) // => ["1-processed", "1", "2-process
 **Scanning channel output**
 
 ```efx
-
 // Create a channel with numbers
 const numbersChannel = Channel.fromIterable([1, 2, 3, 4, 5])
 
@@ -1213,7 +1171,6 @@ runSync(Channel.runCollect(sentenceChannel)) // => ["", "hello", "hello world", 
 **Scanning channel output with effects**
 
 ```efx
-
 class ScanError extends Data.TaggedError("ScanError")<{
   readonly reason: string
 }> {}
@@ -1251,7 +1208,6 @@ await runPromise(Channel.runCollect(errorHandlingScan)) // => [0, 1, 3, 6, 10]
 **Recovering from failure causes**
 
 ```efx
-
 class ProcessError extends Data.TaggedError("ProcessError")<{
   readonly reason: string
 }> {}
@@ -1281,7 +1237,6 @@ runSync(Channel.runCollect(recoveredChannel)) // => ["Recovered from failure"]
 **Recovering from a defect**
 
 ```efx
-
 const channel = Channel.fromEffect(die("boom")).pipe(
   Channel.catchDefect((defect) => Channel.succeed(`recovered: ${defect}`))
 )
@@ -1294,7 +1249,6 @@ runSync(Channel.runCollect(channel)) // => ["recovered: boom"]
 **Recovering from nested reasons**
 
 ```efx
-
 class RateLimitError extends Data.TaggedError("RateLimitError")<{
   retryAfter: number
 }> {}
@@ -1370,7 +1324,6 @@ runSync(exit(Channel.runCollect(fatalChannel))) // => Exit.failCause(Cause.die(e
 **Switching mapped channels**
 
 ```efx
-
 class SwitchError extends Data.TaggedError("SwitchError")<{
   readonly reason: string
 }> {}
@@ -1392,7 +1345,6 @@ await runPromise(Channel.runCollect(switchedChannel)) // => ["value-3"]
 **Merging nested channels**
 
 ```efx
-
 class MergeAllError extends Data.TaggedError("MergeAllError")<{
   readonly reason: string
 }> {}
@@ -1429,7 +1381,6 @@ const strategies: Array<Channel.HaltStrategy> = ["left", "right", "both", "eithe
 **Merging channels**
 
 ```efx
-
 // Create two channels
 const leftChannel = Channel.fromIterable([1, 2, 3])
 const rightChannel = Channel.fromIterable(["a", "b", "c"])
@@ -1446,7 +1397,6 @@ values.map(String).sort() // => ["1", "2", "3", "a", "b", "c"]
 **Splitting string chunks into lines**
 
 ```efx
-
 const result = await runPromise(Stream.runCollect(
   Stream.splitLines(Stream.make("hel", "lo\r\nwor", "ld\n"))
 ))
@@ -1458,7 +1408,6 @@ result // => ["hello", "world"]
 **Piping one channel into another**
 
 ```efx
-
 class PipeError extends Data.TaggedError("PipeError")<{
   readonly stage: string
 }> {}
@@ -1500,7 +1449,6 @@ runSync(exit(Channel.runCollect(safePipedChannel))) // => Exit.fail(error)
 **Unwrapping channel effects**
 
 ```efx
-
 class UnwrapError extends Data.TaggedError("UnwrapError")<{
   readonly reason: string
 }> {}
@@ -1521,7 +1469,6 @@ runSync(Channel.runCollect(unwrappedChannel)) // => [1, 2, 3]
 **Embedding custom input handling**
 
 ```efx
-
 // Create a base channel
 const baseChannel = Channel.fromIterable([1, 2, 3])
 
@@ -1542,7 +1489,6 @@ await runPromise(Channel.runCollect(embeddedChannel)) // => [1, 2, 3]
 **Running exit finalizers**
 
 ```efx
-
 class ExitError extends Data.TaggedError("ExitError")<{
   readonly stage: string
 }> {}
@@ -1564,7 +1510,6 @@ const observed = [await runPromise(Channel.runCollect(channelWithExit)), exits] 
 **Ensuring cleanup runs**
 
 ```efx
-
 class EnsureError extends Data.TaggedError("EnsureError")<{
   readonly operation: string
 }> {}
@@ -1586,7 +1531,6 @@ const observed = [await runPromise(Channel.runCollect(channelWithCleanup)), even
 **Counting channel output**
 
 ```efx
-
 class CountError extends Data.TaggedError("CountError")<{
   readonly reason: string
 }> {}
@@ -1605,7 +1549,6 @@ runSync(countEffect) // => 5
 **Draining channel output at runtime**
 
 ```efx
-
 class DrainError extends Data.TaggedError("DrainError")<{
   readonly stage: string
 }> {}
@@ -1625,7 +1568,6 @@ runSync(drainEffect) // => "completed"
 **Running effects for each output**
 
 ```efx
-
 class ForEachError extends Data.TaggedError("ForEachError")<{
   readonly element: unknown
 }> {}
@@ -1649,7 +1591,6 @@ processed // => [1, 2, 3]
 **Joining channel byte chunks**
 
 ```efx
-
 const channel = Channel.fromArray([
   [new Uint8Array([1, 2])],
   [new Uint8Array([3, 4])]
@@ -1664,7 +1605,6 @@ Array.from(bytes) // => [1, 2, 3, 4]
 **Collecting channel output**
 
 ```efx
-
 class CollectError extends Data.TaggedError("CollectError")<{
   readonly reason: string
 }> {}
@@ -1683,7 +1623,6 @@ runSync(collectEffect) // => [1, 2, 3, 4, 5]
 **Folding channel output**
 
 ```efx
-
 class FoldError extends Data.TaggedError("FoldError")<{
   readonly operation: string
 }> {}
@@ -1702,7 +1641,6 @@ runSync(sumEffect) // => 15
 **Converting channels to pulls**
 
 ```efx
-
 class PullError extends Data.TaggedError("PullError")<{
   readonly step: string
 }> {}
@@ -1745,7 +1683,6 @@ await runPromise(scoped(scopedPullEffect)) // => [1, 2, 3]
 **Converting channels to queues**
 
 ```efx
-
 class QueueError extends Data.TaggedError("QueueError")<{
   readonly operation: string
 }> {}

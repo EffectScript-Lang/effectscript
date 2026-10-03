@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ai/Tokenizer.ts`, in EffectScr
 **Accessing the Tokenizer service**
 
 ```efx
-
 const useTokenizer = effect {
   const tokenizer = await Tokenizer.Tokenizer
   const tokens = await tokenizer.tokenize("Hello, world!")
@@ -53,7 +52,6 @@ const messageCount = (await runPromise(customTokenizer.truncate("hello world", 1
 **Creating a word tokenizer**
 
 ```efx
-
 // Simple word-based tokenizer
 const wordTokenizer = Tokenizer.make({
   tokenize: (prompt) =>

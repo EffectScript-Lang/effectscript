@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/PubSub.ts`, in EffectScript (A
 **Publishing and subscribing to messages**
 
 ```efx
-
 const program = scoped(effect {
   // Create a bounded PubSub with capacity 10
   const pubsub = await PubSub.bounded<string>(10)
@@ -42,7 +41,6 @@ actual // => ["Hello", "World"]
 **Checking if a value is a PubSub**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(10)
   return [PubSub.isPubSub(pubsub), PubSub.isPubSub({}), PubSub.isPubSub(null)]
@@ -57,7 +55,6 @@ actual // => [true, false, false]
 **Taking messages from a subscription**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -84,7 +81,6 @@ actual // => { message: "msg1", messages: ["msg2"], allMessages: ["msg3"] }
 **Creating a PubSub with a custom strategy**
 
 ```efx
-
 const program = effect {
   // Create custom PubSub with specific atomic implementation and strategy
   const pubsub = await PubSub.make<string>({
@@ -107,7 +103,6 @@ actual // => true
 **Creating a bounded PubSub**
 
 ```efx
-
 const program = effect {
   // Create bounded PubSub with capacity 100
   const pubsub = await PubSub.bounded<string>(100)
@@ -133,7 +128,6 @@ actual // => [100, 100]
 **Dropping messages when full**
 
 ```efx
-
 const program = scoped(effect {
   // Create dropping PubSub that drops new messages when full
   const pubsub = await PubSub.dropping<string>(3)
@@ -159,7 +153,6 @@ actual // => { dropped: true, messages: ["msg1", "msg2", "msg3"] }
 **Sliding old messages when full**
 
 ```efx
-
 const program = scoped(effect {
   // Create sliding PubSub that evicts old messages when full
   const pubsub = await PubSub.sliding<string>(3)
@@ -184,7 +177,6 @@ actual // => ["msg2", "msg3", "msg4"]
 **Creating an unbounded PubSub**
 
 ```efx
-
 const program = scoped(effect {
   // Create unbounded PubSub
   const pubsub = await PubSub.unbounded<string>()
@@ -208,7 +200,6 @@ actual // => ["message-0", "message-1", "message-2"]
 **Getting PubSub capacity**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(100)
   const unboundedPubsub = await PubSub.unbounded<string>()
@@ -224,7 +215,6 @@ actual // => [100, Number.MAX_SAFE_INTEGER]
 **Getting PubSub size**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -251,7 +241,6 @@ actual // => { initialSize: 0, afterPublish: 2, messages: ["msg1", "msg2"] }
 **Reading size synchronously**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(2)
   return PubSub.sizeUnsafe(pubsub)
@@ -266,7 +255,6 @@ actual // => 0
 **Checking whether a PubSub is full**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(2)
 
@@ -293,7 +281,6 @@ actual // => { initiallyFull: false, nowFull: true, messages: ["msg1", "msg2"] }
 **Checking whether a PubSub is empty**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -319,7 +306,6 @@ actual // => { initiallyEmpty: true, nowEmpty: false, message: "Hello" }
 **Shutting down a PubSub**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(1)
 
@@ -342,7 +328,6 @@ actual // => { isShutdown: true, published: false }
 **Ending a PubSub**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(2)
   const subscription = await PubSub.subscribe(pubsub)
@@ -372,7 +357,6 @@ actual // => [true, false, "Hello", "Bye", "Bye"]
 **Checking whether a PubSub is shut down**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -395,7 +379,6 @@ actual // => [false, true]
 **Checking shutdown synchronously**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(2)
   const initiallyShutdown = PubSub.isShutdownUnsafe(pubsub)
@@ -412,7 +395,6 @@ actual // => [false, true]
 **Waiting for shutdown**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -440,7 +422,6 @@ actual // => "PubSub has been shutdown!"
 **Publishing a message**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -463,7 +444,6 @@ actual // => { published: true, message: "Hello" }
 **Publishing without suspending**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(2)
   return PubSub.publishUnsafe(pubsub, "Hello")
@@ -478,7 +458,6 @@ actual // => true
 **Publishing multiple messages**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -507,7 +486,6 @@ actual // => { allPublished: true, firstBatch: ["msg1", "msg2"], result: true, s
 **Subscribing to messages**
 
 ```efx
-
 const program = effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -551,7 +529,6 @@ actual // => [["Hello", "World"], ["Broadcast", "Broadcast"]]
 **Taking a message**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -576,7 +553,6 @@ actual // => "Hello"
 **Taking all available messages**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -598,7 +574,6 @@ actual // => ["msg1", "msg2", "msg3"]
 **Taking up to a maximum number of messages**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -627,7 +602,6 @@ actual // => [["msg1", "msg2", "msg3"], ["msg4", "msg5"], []]
 **Taking between a minimum and maximum**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -652,7 +626,6 @@ actual // => ["msg1", "msg2", "msg3"]
 **Checking remaining messages**
 
 ```efx
-
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(10)
 
@@ -697,7 +670,6 @@ actual // => Option.some(0)
 **Applying a dropping strategy**
 
 ```efx
-
 const program = scoped(effect {
   // Explicitly create a PubSub with a dropping strategy
   const pubsub = await PubSub.make<string>({
@@ -726,7 +698,6 @@ actual // => { published: [true, true, false], messages: ["msg1", "msg2"] }
 **Applying a sliding strategy**
 
 ```efx
-
 const program = scoped(effect {
   // Explicitly create a PubSub with a sliding strategy
   const pubsub = await PubSub.make<string>({

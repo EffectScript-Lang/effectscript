@@ -211,7 +211,6 @@ const result = [parseError.description, parseError.isRetryable] // => ["Expected
 **Creating an invalid output error from a schema error**
 
 ```efx
-
 const schemaError = await runPromise(
   Schema.decodeUnknownEffect(Schema.Number)("not a number").pipe(flip)
 )
@@ -239,7 +238,6 @@ const result = [error.description, error.responseText, error.isRetryable] // => 
 **Creating a structured output error from a schema error**
 
 ```efx
-
 const schemaError = await runPromise(
   Schema.decodeUnknownEffect(Schema.Struct({ name: Schema.String }))({}).pipe(flip)
 )
@@ -384,7 +382,6 @@ const result = [error._tag, error.isRetryable] // => ["InvalidUserInputError", f
 **Handling an AI error by tag**
 
 ```efx
-
 const aiOperation = fail(new AiError.AiError({
   module: "OpenAI",
   method: "generateText",

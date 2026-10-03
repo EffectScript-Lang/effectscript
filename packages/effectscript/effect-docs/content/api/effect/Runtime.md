@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Runtime.ts`, in EffectScript (
 **Customizing teardown behavior**
 
 ```efx
-
 // Custom teardown that maps completion status to an exit code
 const customTeardown: Runtime.Teardown = (exit, onExit) => {
   onExit(Exit.isSuccess(exit) ? 0 : 1)
@@ -60,7 +59,6 @@ exitCodes // => [0, 1, 130]
 **Creating platform runners**
 
 ```efx
-
 const events: Array<string> = []
 const completed = new Promise<readonly [Exit<unknown, unknown>, number]>((resolve) => {
 // Create a simple runner for a hypothetical platform

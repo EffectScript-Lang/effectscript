@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/TxRef.ts`, in EffectScript (AD
 **Using a transactional reference**
 
 ```efx
-
 const program = effect {
   // Create a transactional reference
   const ref: TxRef<number> = await TxRef.make(0)
@@ -38,7 +37,6 @@ await runPromise(program) // => 1
 **Creating transactional references**
 
 ```efx
-
 const program = effect {
   // Create a transactional reference with initial value
   const counter = await TxRef.make(0)
@@ -77,7 +75,6 @@ config.value // => { timeout: 5000, retries: 3 }
 **Modifying transactional references**
 
 ```efx
-
 const program = effect {
   const counter = await TxRef.make(0)
 
@@ -95,7 +92,6 @@ await runPromise(program) // => [0, 1]
 **Updating transactional references**
 
 ```efx
-
 const program = effect {
   const counter = await TxRef.make(10)
 
@@ -115,7 +111,6 @@ await runPromise(program) // => 20
 **Reading transactional references**
 
 ```efx
-
 const program = effect {
   const counter = await TxRef.make(42)
 
@@ -135,7 +130,6 @@ await runPromise(program) // => 42
 **Setting transactional references**
 
 ```efx
-
 const program = effect {
   const counter = await TxRef.make(0)
 

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Pool.ts`, in EffectScript (ADR
 **Creating a connection pool**
 
 ```efx
-
 interface Connection {
   readonly execute: (sql: string) => Effect<ReadonlyArray<string>>
   readonly close: Effect<void>
@@ -50,7 +49,6 @@ await runPromise(program) // => ["executed: select 1"]
 **Running a single operation with a pooled item**
 
 ```efx
-
 const program = scoped(
   flatMap(
     Pool.make({ acquire: succeed("resource"), size: 2 }),

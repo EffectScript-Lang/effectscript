@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/FileSystem.ts`, in EffectScrip
 **Accessing file system operations**
 
 ```efx
-
 const fileSystem = FileSystem.makeNoop({
   exists: () => succeed(true),
   makeDirectory: () => Effect.void,
@@ -48,23 +47,9 @@ ByteSize.toBigInt(result.size) // => 22n
 result.content // => "{\"env\": \"development\"}"
 ```
 
-## OpenFlag
-
-**Opening files with flags**
-
-```efx
-import type { FileSystem } from "effect"
-
-const flags: ReadonlyArray<FileSystem.OpenFlag> = ["r", "w", "a", "r+"]
-flags // => ["r", "w", "a", "r+"]
-```
-
-## FileSystem
-
 **Accessing and providing FileSystem**
 
 ```efx
-
 const customFs = FileSystem.makeNoop({
   exists: () => succeed(true),
   readFileString: () => succeed("contents")
@@ -86,12 +71,22 @@ const withCustomFs = provideService(
 runSync(withCustomFs) // => "contents"
 ```
 
+## OpenFlag
+
+**Opening files with flags**
+
+```efx
+import type { FileSystem } from "effect"
+
+const flags: ReadonlyArray<FileSystem.OpenFlag> = ["r", "w", "a", "r+"]
+flags // => ["r", "w", "a", "r+"]
+```
+
 ## makeNoop
 
 **Creating a no-op FileSystem**
 
 ```efx
-
 // Create a test filesystem that only allows reading specific files
 const testFs = FileSystem.makeNoop({
   readFileString: (path) => {
@@ -131,7 +126,6 @@ runSync(testProgram) // => "{\"test\": true}"
 **Providing a no-op FileSystem layer**
 
 ```efx
-
 // Create a test layer with specific behaviors
 const testLayer = FileSystem.layerNoop({
   readFileString: (path) => succeed("mocked content"),
@@ -154,7 +148,6 @@ runSync(testProgram) // => "mocked content"
 **Working with file handles**
 
 ```efx
-
 const file: FileSystem.File = {
   [FileSystem.FileTypeId]: FileSystem.FileTypeId,
   stat: succeed({ size: ByteSize.bytes(5) } as FileSystem.File.Info),
@@ -226,7 +219,6 @@ info.type === "File" // => true
 **Providing a custom watch backend**
 
 ```efx
-
 // Custom watch backend implementation
 const customWatchBackend = {
   register: (path: string, stat: FileSystem.File.Info) => {

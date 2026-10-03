@@ -230,3 +230,36 @@ describe("Plan 13 review fixes", () => {
     expect(jsdocExamples(source).map((e) => e.symbol)).toEqual(["Schema.Type", "Service.method", "some", "let"])
   })
 })
+
+describe("Plan 21: odd Markdown keeps its text", () => {
+  const fence = (lang: string, body: string, marker = "```") => `${marker}${lang}\n${body}${marker}`
+
+  it("leaves a ts fence that sits inside another fence", () => {
+    const md = `${fence("md", `${fence("ts", effectCode)}\n`, "````")}\n`
+    expect(convertMarkdown(md).markdown).toBe(md)
+  })
+
+  it("leaves code indented four spaces, even when it looks like a fence", () => {
+    const md = `Text\n\n    ${fence("ts", effectCode).split("\n").join("\n    ")}\n`
+    expect(convertMarkdown(md).markdown).toBe(md)
+  })
+
+  it("converts only the languages it knows: ts-node stays", () => {
+    const md = `${fence("ts-node", effectCode)}\n`
+    expect(convertMarkdown(md).markdown).toBe(md)
+  })
+
+  it("keeps CRLF line endings and a byte order mark", () => {
+    const md = `﻿# Title\r\n\r\n${fence("ts", effectCode).replace(/\n/g, "\r\n")}\r\n`
+    const out = convertMarkdown(md).markdown
+    expect(out.startsWith("﻿# Title\r\n")).toBe(true)
+    expect(out).toContain("```efx\r\n")
+    expect(out.replace(/\r\n/g, "")).not.toContain("\n")
+  })
+
+  it("doesn't start a converted fence with a blank line where the import was", () => {
+    const out = convertMarkdown(`${fence("ts", effectCode)}\n`).markdown
+    expect(out.startsWith("```efx\nexport effect f(")).toBe(true)
+    expect(convertBlock(effectCode).efx.startsWith("\n")).toBe(false)
+  })
+})

@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/SubscriptionRef.ts`, in Effect
 **Streaming changes**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(0)
   const ready = await Deferred.make<void>()
@@ -44,7 +43,6 @@ await runPromise(program) // => [0, 1, 2]
 **Reading the current value unsafely**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(42)
 
@@ -59,7 +57,6 @@ await runPromise(program) // => 42
 **Reading the current value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(42)
 
@@ -74,7 +71,6 @@ await runPromise(program) // => 42
 **Getting and setting a value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -91,7 +87,6 @@ await runPromise(program) // => [10, 20]
 **Getting and updating a value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -108,7 +103,6 @@ await runPromise(program) // => [10, 20]
 **Getting and updating with an effect**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -128,7 +122,6 @@ await runPromise(program) // => [10, 15]
 **Getting and conditionally updating a value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -148,7 +141,6 @@ await runPromise(program) // => [10, 20]
 **Getting and conditionally updating with an effect**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -168,7 +160,6 @@ await runPromise(program) // => [10, 13]
 **Modifying a value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -188,7 +179,6 @@ await runPromise(program) // => ["Old value was 10", 20]
 **Modifying with an effect**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -208,7 +198,6 @@ await runPromise(program) // => ["Doubled from 10", 20]
 **Conditionally modifying a value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -229,7 +218,6 @@ await runPromise(program) // => ["Updated", 20]
 **Conditionally modifying with an effect**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -254,7 +242,6 @@ await runPromise(program) // => ["Updated", 15]
 **Setting a value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(0)
 
@@ -271,7 +258,6 @@ await runPromise(program) // => 42
 **Setting and reading the new value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(0)
 
@@ -286,7 +272,6 @@ await runPromise(program) // => 42
 **Updating a value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -303,7 +288,6 @@ await runPromise(program) // => 20
 **Updating with an effect**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -320,7 +304,6 @@ await runPromise(program) // => 15
 **Updating and reading the new value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -335,7 +318,6 @@ await runPromise(program) // => 20
 **Updating with an effect and reading the new value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -353,7 +335,6 @@ await runPromise(program) // => 15
 **Conditionally updating a value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -373,7 +354,6 @@ await runPromise(program) // => 20
 **Conditionally updating with an effect**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -393,7 +373,6 @@ await runPromise(program) // => 13
 **Conditionally updating and reading the new value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 
@@ -411,7 +390,6 @@ await runPromise(program) // => 20
 **Conditionally updating with an effect and reading the new value**
 
 ```efx
-
 const program = effect {
   const ref = await SubscriptionRef.make(10)
 

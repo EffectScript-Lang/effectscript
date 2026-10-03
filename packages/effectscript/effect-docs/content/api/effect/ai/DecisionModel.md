@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ai/DecisionModel.ts`, in Effec
 **Triaging a ticket**
 
 ```efx
-
 const TicketTriage = Decision.make({
   input: Schema.String,
   decisions: {

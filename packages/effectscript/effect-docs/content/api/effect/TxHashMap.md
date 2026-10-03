@@ -105,7 +105,6 @@ await runPromise(program) // => Option.some({ name: "Alice", age: 30 })
 **Extracting value types**
 
 ```efx
-
 const program = effect {
   // Create a product catalog TxHashMap
   const catalog = await TxHashMap.make(
@@ -132,7 +131,6 @@ await runPromise(program) // => Option.some("electronics: $999")
 **Extracting entry types**
 
 ```efx
-
 const program = effect {
   // Create a configuration TxHashMap
   const config = await TxHashMap.make(
@@ -161,7 +159,6 @@ await runPromise(program) // => ["api_url=https://api.example.com", "retries=3",
 **Creating an empty map**
 
 ```efx
-
 const program = effect {
   // Create an empty transactional hash map
   const emptyMap = await TxHashMap.empty<string, number>()
@@ -292,7 +289,6 @@ await runPromise(program) // => Option.some(8)
 **Checking for keys**
 
 ```efx
-
 const program = effect {
   const permissions = await TxHashMap.make(
     ["alice", ["read", "write"]],
@@ -316,7 +312,6 @@ await runPromise(program) // => true
 **Removing keys**
 
 ```efx
-
 const program = effect {
   const cache = await TxHashMap.make(
     ["user:1", { name: "Alice", lastSeen: "2024-01-01" }],
@@ -343,7 +338,6 @@ await runPromise(program) // => 2
 **Clearing all entries**
 
 ```efx
-
 const program = effect {
   const sessionMap = await TxHashMap.make(
     ["session1", { userId: "alice", expires: "2024-01-01T12:00:00Z" }],
@@ -370,7 +364,6 @@ await runPromise(program) // => true
 **Counting entries**
 
 ```efx
-
 const program = effect {
   const metrics = await TxHashMap.make(
     ["requests", 1000],
@@ -397,7 +390,6 @@ await runPromise(program) // => 3
 **Checking for an empty map**
 
 ```efx
-
 const program = effect {
   // Start with empty map
   const cache = await TxHashMap.empty<string, any>()
@@ -420,7 +412,6 @@ await runPromise(program) // => true
 **Checking for a non-empty map**
 
 ```efx
-
 const program = effect {
   const inventory = await TxHashMap.make(["laptop", 5])
 
@@ -478,7 +469,6 @@ await runPromise(program) // => Option.some(500)
 **Updating values with Option**
 
 ```efx
-
 const program = effect {
   const storage = await TxHashMap.make<string, string | number>([
     "file1.txt",
@@ -542,7 +532,6 @@ await runPromise(program) // => ["alice: admin", "bob: user", "charlie: moderato
 **Reading values**
 
 ```efx
-
 const program = effect {
   const scores = await TxHashMap.make(
     ["alice", 95],
@@ -570,7 +559,6 @@ await runPromise(program) // => 95
 **Reading entries**
 
 ```efx
-
 const program = effect {
   const config = await TxHashMap.make(
     ["host", "localhost"],
@@ -810,7 +798,6 @@ await runPromise(program) // => Option.none()
 **Checking keys with precomputed hashes**
 
 ```efx
-
 const program = effect {
   // Create an access control map
   const permissions = await TxHashMap.make(
@@ -889,7 +876,6 @@ await runPromise(program) // => Option.some({ name: "Alice", age: 30, active: tr
 **Filtering entries**
 
 ```efx
-
 const program = effect {
   // Create a product inventory
   const inventory = await TxHashMap.make(
@@ -930,7 +916,6 @@ await runPromise(program)
 **Reducing entries**
 
 ```efx
-
 const program = effect {
   // Create a sales data map
   const sales = await TxHashMap.make(
@@ -1019,7 +1004,6 @@ await runPromise(program) // => 3
 **Checking entries with a predicate**
 
 ```efx
-
 const program = effect {
   // Create a user status map
   const currentTime = 1_700_000_000_000
@@ -1087,7 +1071,6 @@ await runPromise(program) // => Option.some(["task1", { priority: 1, assignee: "
 **Checking whether some entries match**
 
 ```efx
-
 const program = effect {
   // Create a product inventory
   const inventory = await TxHashMap.make(
@@ -1122,7 +1105,6 @@ await runPromise(program) // => true
 **Checking whether every entry matches**
 
 ```efx
-
 const program = effect {
   // Create a user permissions map
   const permissions = await TxHashMap.make(
@@ -1157,7 +1139,6 @@ await runPromise(program) // => true
 **Running effects for each entry**
 
 ```efx
-
 const program = effect {
   // Create a log processing map
   const logs = await TxHashMap.make(
@@ -1225,7 +1206,6 @@ await runPromise(program) // => 4
 **Compacting optional values**
 
 ```efx
-
 const program = effect {
   // Create a map with optional user data
   const userData = await TxHashMap.make<
@@ -1260,7 +1240,6 @@ await runPromise(program) // => [["alice", 30], ["charlie", 25], ["eve", 28]]
 **Converting to entries**
 
 ```efx
-
 const program = effect {
   const settings = await TxHashMap.make(
     ["theme", "dark"],
@@ -1285,7 +1264,6 @@ await runPromise(program) // => { language: "en-US", theme: "dark", timezone: "U
 **Converting to values**
 
 ```efx
-
 const program = effect {
   const inventory = await TxHashMap.make(
     ["laptop", { price: 999, stock: 5 }],

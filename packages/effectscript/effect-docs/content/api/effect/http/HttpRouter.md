@@ -16,7 +16,6 @@ The examples in the JSDoc of `packages/effect/src/http/HttpRouter.ts`, in Effect
 **Registering routes during layer construction**
 
 ```efx
-
 const Routes = HttpRouter.use((router) =>
   router.add("GET", "/health", HttpServerResponse.text("ready"))
 )
@@ -74,7 +73,6 @@ Layer.isLayer(Routes) // => true
 **Applying route and global middleware**
 
 ```efx
-
 const RouteMiddleware = HttpRouter.middleware((httpEffect) =>
   map(httpEffect, HttpServerResponse.setHeader("x-route", "route"))
 ).layer

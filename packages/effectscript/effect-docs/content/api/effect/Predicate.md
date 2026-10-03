@@ -23,6 +23,17 @@ const isPositive: Predicate.Predicate<number> = (n) => n > 0
 isPositive(1) // => true
 ```
 
+**Extracting predicate input**
+
+```efx
+import { Predicate } from "effect"
+
+type IsString = Predicate.Predicate<string>
+type Input = Predicate.Predicate.In<IsString>
+
+const input: Input = "value"
+```
+
 ## PredicateTypeLambda
 
 **Type-level usage**
@@ -52,17 +63,16 @@ if (isString(data)) {
 }
 ```
 
-## Predicate
-
-**Extracting predicate input**
+**Extracting refinement types**
 
 ```efx
 import { Predicate } from "effect"
 
-type IsString = Predicate.Predicate<string>
-type Input = Predicate.Predicate.In<IsString>
+type IsString = Predicate.Refinement<unknown, string>
+type Input = Predicate.Refinement.In<IsString>
+type Output = Predicate.Refinement.Out<IsString>
 
-const input: Input = "value"
+const output: Output = "value"
 ```
 
 ## Predicate.In
@@ -89,20 +99,6 @@ type AnyPredicate = Predicate.Predicate.Any
 
 const witness: AnyPredicate = () => true
 witness("value") // => true
-```
-
-## Refinement
-
-**Extracting refinement types**
-
-```efx
-import { Predicate } from "effect"
-
-type IsString = Predicate.Refinement<unknown, string>
-type Input = Predicate.Refinement.In<IsString>
-type Output = Predicate.Refinement.Out<IsString>
-
-const output: Output = "value"
 ```
 
 ## Refinement.In
