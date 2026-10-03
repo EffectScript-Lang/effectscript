@@ -1464,6 +1464,17 @@ the diff of newly exposed names for review, and nothing becomes a builtin unrevi
 
 ## 9. Site and docs (`packages/effectscript/site`, at effectscript.dev)
 
+**Status (Plan 16, ADR-0054):** built and tested locally; not deployed.
+
+- **The landing page:** the problem → solution hero; a VS Code-style gallery of the ten
+  scenarios, with real `o200k_base` counts and a token toggle; the agents, constructs,
+  zero-risk, roadmap and install sections; and the Follow call to action.
+- **The playground:** two-way, with the compiler in a worker, presets and share links.
+- **Starlight docs:** the reference, the guides, and the Effect docs in EffectScript, plus
+  `llms.txt`.
+- **Not yet:** the in-browser tokenizer and Claude token counts. The counts are computed at build
+  time, which is exact and testable.
+
 **Content available to the site:** `packages/effectscript/effect-docs/content` (ADR-0050). It has
 the Effect docs and examples in EffectScript, with `LLMS.efx.md`, guides, per-module API
 examples, a TS ↔ EffectScript corpus, and `REPORT.md` with the token numbers that §9's claims
@@ -1647,8 +1658,8 @@ The order was revised after the plan review (ADR-0016).
 9. **AI skill (Plan 14, done):** `SKILL.md` + references, generated syntax reference, and
    `efx skill` (ADR-0051). Also done: the Effect docs and examples in EffectScript, a parallel
    corpus for agents and training (Plan 13, ADR-0050).
-10. **Site:** VS Code-style before/after gallery, Monaco two-way playground, and the narrative
-   sections. Every claim links to evidence (review R15).
+10. **Site (Plan 16, built locally):** VS Code-style before/after gallery, Monaco two-way
+   playground, and the narrative sections. Every claim links to evidence (review R15).
 11. **Monorepo registration and release prep:** §10 surfaces, changeset, README.
 
 ## 14. Roadmap (explicitly out of v0.1)

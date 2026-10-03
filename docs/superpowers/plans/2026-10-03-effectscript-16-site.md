@@ -132,3 +132,24 @@ ADR-0036.
 
 - Spec §9 status, COMPATIBILITY row, a site README (run, build, how content is generated), and
   this plan's execution record.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **Monaco:** the official `monaco-editor` instead of the undocumented 0.0.x fork. Monaco
+  highlights through Shiki (`@shikijs/monaco`), with the same grammar as the docs.
+- **Generated docs inputs are gitignored,** and built by `scripts/content.ts` before `dev` and
+  `build`, so they are fresh by construction rather than drift-checked.
+- **`astro build --force`:** Astro's content cache kept a failed render (an empty page).
+- **Token counts are computed at build time** (`o200k_base`). The "show tokens" toggle switches to
+  pre-split token spans, so no tokenizer ships to the browser.
+- **The `src/samples/*/plain.ts` files are display code:** they are excluded from the strict
+  type check and lint. The EffectScript samples are type-checked by a test.
+- **Type-checking found a mistake in the `errors` sample:** `timeout` fails with Effect's
+  `TimeoutError`, not a user error.
+- **The numbers:** 42% fewer tokens than Effect TypeScript and 40% fewer than plain TypeScript
+  across the ten scenarios. The corpus: 4,019 examples, with 20.3% fewer tokens in the 1,714 that
+  changed.
