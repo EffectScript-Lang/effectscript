@@ -136,6 +136,7 @@ export default defineConfig({
       ...project("effectscript", "packages/effectscript/core", true, { test: { testTimeout: 60_000 } }),
       ...project("@effectscript/language", "packages/effectscript/language", true, { test: { testTimeout: 60_000 } }),
       ...project("@effectscript/vscode", "packages/effectscript/vscode"),
+      ...project("tree-sitter-effectscript", "packages/effectscript/tree-sitter"),
       ...project("@effectscript/effect-docs", "packages/effectscript/effect-docs"),
       ...project("@effectscript/site", "packages/effectscript/site"),
       ...project("@effectscript/examples", "packages/effectscript/examples", true, { plugins: [efx()] }, undefined, [

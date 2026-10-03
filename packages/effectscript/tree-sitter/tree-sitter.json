@@ -1,0 +1,29 @@
+{
+  "grammars": [
+    {
+      "name": "effectscript",
+      "camelcase": "EffectScript",
+      "scope": "source.efx",
+      "path": ".",
+      "file-types": ["efx"],
+      "highlights": "queries/highlights.scm",
+      "injection-regex": "^(efx|effectscript)$"
+    }
+  ],
+  "metadata": {
+    "version": "4.0.0-alpha.0",
+    "license": "MIT",
+    "description": "EffectScript grammar for tree-sitter: TypeScript with Effect as syntax",
+    "links": {
+      "repository": "https://github.com/EffectScript-Lang/tree-sitter-effectscript"
+    }
+  },
+  "bindings": {
+    "c": false,
+    "go": false,
+    "node": false,
+    "python": false,
+    "rust": false,
+    "swift": false
+  }
+}

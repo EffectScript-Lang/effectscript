@@ -1,0 +1,22 @@
+{
+  "name": "tree-sitter-effectscript",
+  "version": "4.0.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "EffectScript grammar for tree-sitter: TypeScript with Effect as syntax",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EffectScript-Lang/effect-lang.git",
+    "directory": "packages/effectscript/tree-sitter"
+  },
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "test": "tree-sitter test"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.27.0",
+    "tree-sitter-javascript": "0.23.1",
+    "tree-sitter-typescript": "0.23.2"
+  }
+}

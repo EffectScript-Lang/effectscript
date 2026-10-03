@@ -549,6 +549,18 @@ importers:
         specifier: ^5.0.2
         version: 5.0.2(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.1)(@types/node@26.6.3)(@vitest/coverage-v8@5.0.2)(happy-dom@20.14.5)(jsdom@30.0.1)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
+  packages/effectscript/tree-sitter:
+    devDependencies:
+      tree-sitter-cli:
+        specifier: ^0.27.0
+        version: 0.27.0
+      tree-sitter-javascript:
+        specifier: 0.23.1
+        version: 0.23.1(tree-sitter@0.21.1)
+      tree-sitter-typescript:
+        specifier: 0.23.2
+        version: 0.23.2(tree-sitter@0.21.1)
+
   packages/effectscript/vscode:
     dependencies:
       '@effectscript/language':
@@ -7805,6 +7817,11 @@ packages:
   tr46@6.0.0:
     resolution: {integrity: sha512-bLVMLPtstlZ4iMQHpFHTR7GAGj2jxi8Dg0s2h2MafAE4uSWF98FC/3MomU51iQAMf8/qDUbKWf5GxuvvVcXEhw==}
     engines: {node: '>=20'}
+
+  tree-sitter-cli@0.27.0:
+    resolution: {integrity: sha512-E42kR0og1mFlZBxPj7K4fBXCTjxPTGe19U9RXGWNq0FQKzXOxIp8bhCYFMKhddiVZUsJwW35MYGU9Q1oVYtpbA==}
+    engines: {node: '>=12.0.0'}
+    hasBin: true
 
   tree-sitter-javascript@0.23.1:
     resolution: {integrity: sha512-/bnhbrTD9frUYHQTiYnPcxyHORIw157ERBa6dqzaKxvR/x3PC4Yzd+D1pZIMS6zNg2v3a8BZ0oK7jHqsQo9fWA==}
@@ -15456,6 +15473,8 @@ snapshots:
   tr46@6.0.0:
     dependencies:
       punycode: 2.3.1
+
+  tree-sitter-cli@0.27.0: {}
 
   tree-sitter-javascript@0.23.1(tree-sitter@0.21.1):
     dependencies:

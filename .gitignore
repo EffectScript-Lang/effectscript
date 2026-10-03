@@ -52,6 +52,16 @@ dist-pack/
 !packages/effectscript/site/src/lib/
 !packages/effectscript/effect-docs/content/ai-docs/
 
+# EffectScript tree-sitter grammar: the generated parser and the compiled ones (ADR-0058)
+packages/effectscript/tree-sitter/src/parser.c
+packages/effectscript/tree-sitter/src/grammar.json
+packages/effectscript/tree-sitter/src/node-types.json
+packages/effectscript/tree-sitter/src/tree_sitter/
+packages/effectscript/tree-sitter/.tree-sitter-cache/
+packages/effectscript/tree-sitter/*.so
+packages/effectscript/tree-sitter/*.dylib
+packages/effectscript/tree-sitter/*.wasm
+
 # EffectScript site: generated inputs and output (packages/effectscript/site/scripts/content.ts)
 packages/effectscript/site/public/
 packages/effectscript/site/src/assets/

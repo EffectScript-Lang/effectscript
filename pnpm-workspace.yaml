@@ -24,6 +24,8 @@ allowBuilds:
   sharp: false
   ssh2: false
   tree-sitter: false
+  # the CLI's install script downloads the tree-sitter binary (packages/effectscript/tree-sitter)
+  tree-sitter-cli: true
   tree-sitter-javascript: false
   tree-sitter-typescript: false
   workerd: false
