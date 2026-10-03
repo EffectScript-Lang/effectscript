@@ -29,10 +29,10 @@ field point at `EffectScript-Lang/effect-lang` (ADR-0036).
 | Secret or account            | Where                                   | Used by                                   |
 | ---------------------------- | --------------------------------------- | ----------------------------------------- |
 | npm org `effectscript`       | npmjs.com (it exists; you're its owner) | `@effectscript/language`                  |
-| `NPM_TOKEN`                  | your machine (`npm login`)              | step 8                                    |
+| npm login                    | your machine: `npm login`               | step 8                                    |
 | `HOMEBREW_TAP_TOKEN`         | repository secret                       | the release workflow's tap job (step 7)   |
-| `VSCE_PAT`                   | your machine                            | step 9, publisher `effectscript`          |
-| `OVSX_PAT`                   | your machine                            | step 9, Open VSX namespace `effectscript` |
+| `VSCE_PAT`                   | exported in your shell                  | step 9, publisher `effectscript`          |
+| `OVSX_PAT`                   | exported in your shell                  | step 9, Open VSX namespace `effectscript` |
 | Cloudflare account and token | your machine                            | step 12                                   |
 
 `HOMEBREW_TAP_TOKEN` is a fine-grained token with "Contents: read and write" on
@@ -160,12 +160,15 @@ node packages/effectscript/vscode/scripts/package.ts --out packages/effectscript
 The `.vsix` carries the Marketplace's form of the version: `x.y.z-alpha.N` becomes
 `x.y.(z·1000+N)`, marked as a pre-release, and `x.y.z` becomes `x.y.(z·1000+999)` (ADR-0055).
 
+`vsce` comes from the workspace, so it is the version the `.vsix` was packaged with. Both tools
+read their token from the environment (`VSCE_PAT`, `OVSX_PAT`).
+
 ```bash
-npx @vscode/vsce publish --packagePath packages/effectscript/dist-pack/effectscript-<version>.vsix --pre-release
+pnpm --filter effectscript-vscode exec vsce publish --packagePath "$PWD/packages/effectscript/dist-pack/effectscript-<version>.vsix" --pre-release
 ```
 
 ```bash
-npx ovsx publish packages/effectscript/dist-pack/effectscript-<version>.vsix --pre-release
+pnpm dlx ovsx@0 publish packages/effectscript/dist-pack/effectscript-<version>.vsix --pre-release
 ```
 
 For a stable version, drop `--pre-release` from both.

@@ -1,0 +1,15 @@
+# EffectScript (.efx) is a TypeScript superset; highlight and count it as TypeScript
+# until GitHub Linguist and GitLab recognize the extension natively.
+*.efx linguist-language=TypeScript
+*.efx gitlab-language=typescript
+
+# EffectScript's generated files: pull requests collapse them (each is rebuilt by its generator)
+packages/effectscript/effect-docs/content/** linguist-generated=true
+packages/effectscript/core/src/cli/main.ts linguist-generated=true
+packages/effectscript/core/src/compiler/prelude/tables.ts linguist-generated=true
+packages/effectscript/core/skills/effectscript/references/syntax.md linguist-generated=true
+packages/effectscript/core/skills/effectscript/references/effect-docs.md linguist-generated=true
+packages/effectscript/tree-sitter/queries/*.scm linguist-generated=true
+packages/effectscript/tree-sitter/queries/helix/*.scm linguist-generated=true
+packages/effectscript/zed/languages/effectscript/highlights.scm linguist-generated=true
+packages/effectscript/zed/languages/effectscript/injections.scm linguist-generated=true

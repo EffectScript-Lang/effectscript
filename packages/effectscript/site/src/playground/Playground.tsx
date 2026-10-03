@@ -149,6 +149,8 @@ export default function Playground() {
       let worker = spawn()
       const changed = (side: Side) => () => {
         if (applying) return
+        // a link shown for copying by hand would no longer match the code
+        setShared((current) => (current === "copied" ? current : "no"))
         lastEdited = side
         setSource(side)
         if (timer !== undefined) clearTimeout(timer)
