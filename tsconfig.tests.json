@@ -12,7 +12,10 @@
     "./packages/**/test/**/*.ts",
     "./packages/**/test/**/*.json",
     "./packages/**/typetest/**/*.ts",
-    "./packages/**/benchmark/**/*.ts"
+    "./packages/**/benchmark/**/*.ts",
+    // EffectScript scripts whose functions tests import
+    "./packages/effectscript/core/scripts/release.ts",
+    "./packages/effectscript/vscode/scripts/marketplace.ts"
   ],
   "exclude": [
     "**/node_modules/**",

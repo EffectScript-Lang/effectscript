@@ -11,13 +11,15 @@
  *   `typescriptServerPlugins` names, with the compiler inside.
  *
  * The icons come from `brand/icons/editor`. `vsce package` writes the `.vsix`, with the plugin pack as
- * its only dependency.
+ * its only dependency. Its manifest carries the Marketplace's form of the version, and an `alpha`
+ * is packaged as a pre-release (ADR-0055).
  */
 import { build } from "esbuild"
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
+import { marketplaceVersion } from "./marketplace.ts"
 
 const root = path.join(import.meta.dirname, "..")
 const language = path.join(root, "../language")
@@ -53,7 +55,8 @@ try {
   )
   // the manifest's only dependency is the bundled plugin pack: vsce packages what `npm list` reports
   const { dependencies: _dependencies, devDependencies: _devDependencies, ...rest } = manifest
-  const packed = { ...rest, dependencies: { "@effectscript/language": manifest.version } }
+  const marketplace = marketplaceVersion(manifest.version)
+  const packed = { ...rest, version: marketplace.version, dependencies: { "@effectscript/language": manifest.version } }
   fs.writeFileSync(path.join(stage, "package.json"), `${JSON.stringify(packed, null, 2)}\n`)
   for (const file of ["README.md", "language-configuration.json"]) {
     fs.copyFileSync(path.join(root, file), path.join(stage, file))
@@ -65,7 +68,7 @@ try {
     fs.copyFileSync(path.join(brand, icon), path.join(stage, "images", icon))
   }
   const vsce = path.join(root, "node_modules/.bin/vsce")
-  const result = spawnSync(vsce, ["package", "--out", out], { cwd: stage, encoding: "utf8" })
+  const result = spawnSync(vsce, ["package", "--out", out, ...(marketplace.preRelease ? ["--pre-release"] : [])], { cwd: stage, encoding: "utf8" })
   if (result.status !== 0) throw new Error(`vsce package failed:\n${result.stdout}${result.stderr}`)
   process.stdout.write(`${out}\n`)
 } catch (error) {

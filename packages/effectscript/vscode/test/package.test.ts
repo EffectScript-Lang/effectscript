@@ -4,6 +4,7 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { startTsserver } from "../../language/test/utils/tsserver.ts"
+import { marketplaceVersion } from "../scripts/marketplace.ts"
 
 const extensionDir = path.resolve(import.meta.dirname, "..")
 const packages = path.resolve(extensionDir, "../..")
@@ -48,6 +49,12 @@ describe("the .vsix (Plan 11 Task 5, ADR-0041)", () => {
     // the bundled plugin pack is its only dependency
     expect(packed.dependencies).toEqual({ "@effectscript/language": manifest.version })
     expect(packed.devDependencies).toBeUndefined()
+    // the Marketplace refuses semver prereleases (ADR-0055)
+    expect(packed.version).toBe(marketplaceVersion(manifest.version).version)
+    const vsixManifest = fs.readFileSync(path.join(unpacked, "extension.vsixmanifest"), "utf8")
+    expect(vsixManifest.includes(`"Microsoft.VisualStudio.Code.PreRelease" Value="true"`)).toBe(
+      marketplaceVersion(manifest.version).preRelease
+    )
     expect(packed.main).toBe("./out/extension.cjs")
     for (const p of [packed.icon, ...Object.values(packed.contributes.languages[0].icon as object)]) {
       expect(fs.existsSync(inside(p))).toBe(true)
