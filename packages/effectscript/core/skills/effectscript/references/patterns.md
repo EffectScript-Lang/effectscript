@@ -61,6 +61,22 @@ export service Audit {
 export layer AppLive = Clock2.layer & Audit.layer
 ```
 
+A `default` makes a service optional: code that uses it without a layer gets the default, so it is
+never in `needs`. A layer still overrides it, in tests or in production.
+
+```efx
+export service Greeting {
+  effect phrase(name: string): string
+  default = { phrase: effect (name: string) => `Hello, ${name}` }
+  layer formal = { phrase: effect (name: string) => `Good day, ${name}` }
+}
+
+// no `needs Greeting`: the default is there when nothing is provided
+export effect introduce(name: string): string {
+  return await Greeting.phrase(name)
+}
+```
+
 ## Errors
 
 Declare each failure as an `error`, throw it in `effect` code, and name it in `throws`. The type
@@ -111,6 +127,26 @@ export schema Shape =
 export effect register(input: unknown) {
   const signup = await Schema.decodeUnknownEffect(Signup)(input)
   return signup.name
+}
+```
+
+An `effect` method on a schema class returns an effect, with `this` as the instance:
+
+```efx
+export error Suspended { name: string }
+
+export schema Account {
+  name: string
+  suspended: boolean
+
+  effect greet(greeting: string): string throws Suspended {
+    if (this.suspended) throw new Suspended({ name: this.name })
+    return `${greeting}, ${this.name}`
+  }
+}
+
+export effect welcome(account: Account) {
+  return await account.greet("Hello")
 }
 ```
 
@@ -205,7 +241,8 @@ export schema Todo {
   title: string
 }
 
-export error TodoNotFound { id: string }
+// the status the API answers with when a handler fails with it
+export error TodoNotFound status 404 { id: string }
 
 export group TodosApi {
   get list "/": Todo[]
@@ -369,6 +406,25 @@ export const resilient = callApi("/health")
 ```
 
 ## Streams
+
+An `effect*` function produces a stream: `yield` emits an element, `await` runs an effect, and
+`throw` fails the stream. The return type names the element type. The stream pulls one element at
+a time and stops the body when the consumer stops.
+
+```efx
+export error Exhausted { after: number }
+
+export effect* countdown(from: number): number throws Exhausted {
+  defer { console.log("countdown closed") }
+  for (let i = from; i > 0; i--) {
+    yield i
+    await sleep("10 millis")
+  }
+  if (from > 100) throw new Exhausted({ after: from })
+}
+```
+
+`for await` consumes one:
 
 ```efx
 export effect total(numbers: Stream<number>) {

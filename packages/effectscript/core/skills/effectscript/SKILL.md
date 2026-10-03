@@ -71,6 +71,11 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
     }
   ```
 
+  A guard narrows an arm (`when Circle(c) if c.radius > 10:`), but never counts as handling the
+  case. Object patterns match fields and bind shorthands: `when { status: 404, body }: body`.
+
+- **Produce a stream with `effect*`:** `yield` emits, `await` runs effects, the return type
+  names the element: `effect* ticks(n: number): number { … }`.
 - **Clean up resources with `defer`** (Go-style, in reverse order) and `using x = await acquire`.
 
 ## `async` ↔ `effect`
