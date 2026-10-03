@@ -68,10 +68,12 @@ extension" and pick `<dir>/extension`.
 The `tree-sitter-effectscript` grammar (`packages/effectscript/tree-sitter`, ADR-0058) parses
 every EffectScript construct, where TypeScript's grammar stops at the first `effect` or `|>`. Its
 repository, `EffectScript-Lang/tree-sitter-effectscript`, holds the generated parser and the
-queries. Until it is published, `node packages/effectscript/tree-sitter/scripts/export.mjs --out
+queries (highlights, locals, injections, folds and indents). Until it is published, this writes the
+same repository locally; use its path in place of the URL below:
 
-<dir> --git` writes the same repository locally, and the settings below take `<dir>` in place of
-the URL.
+```bash
+node packages/effectscript/tree-sitter/scripts/export.mjs --out ~/src/tree-sitter-effectscript --git
+```
 
 - **Neovim, with nvim-treesitter (main branch):**
 
@@ -90,9 +92,9 @@ the URL.
   Then `:TSInstall effectscript`.
 
 - **Helix:** in `languages.toml`, point the language at the grammar, then run `hx --grammar fetch`
-  and `hx --grammar build`. Copy the repository's `queries/helix/highlights.scm` to
-  `~/.config/helix/runtime/queries/effectscript/` (it puts EffectScript's patterns before Helix's
-  TypeScript ones, because in Helix the first pattern wins).
+  and `hx --grammar build`. Copy the repository's `queries/helix/*.scm` to
+  `~/.config/helix/runtime/queries/effectscript/`: they are self-contained, with the patterns in
+  the order Helix reads them (the first match wins there).
 
   ```toml
   [[language]]

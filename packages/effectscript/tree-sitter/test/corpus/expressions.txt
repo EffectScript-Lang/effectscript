@@ -103,3 +103,31 @@ const size = do {
           (expression_statement
             (string
               (string_fragment))))))))
+
+======================================
+Pipelines between ?? and the conditional
+======================================
+
+const z = a ?? b |> f
+const y = c ? d : e |> f
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (pipeline_expression
+        (binary_expression
+          (identifier)
+          (identifier))
+        (identifier))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (ternary_expression
+        (identifier)
+        (identifier)
+        (pipeline_expression
+          (identifier)
+          (identifier))))))

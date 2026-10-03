@@ -29,9 +29,16 @@ const run = (command, args, cwd) => {
   return result.stdout
 }
 
-run(path.join(root, "node_modules/.bin/tree-sitter"), ["generate"], root)
-fs.rmSync(out, { recursive: true, force: true })
+// regenerate only when the grammar changed since the last parser (tests share one generation)
+const mtime = (file) => fs.statSync(path.join(root, file), { throwIfNoEntry: false })?.mtimeMs ?? 0
+if (mtime("src/parser.c") === 0 || mtime("src/parser.c") < Math.max(mtime("grammar.js"), mtime("src/scanner.c"))) {
+  run(path.join(root, "node_modules/.bin/tree-sitter"), ["generate"], root)
+}
+// an existing clone of the grammar repository keeps its history (review I8): only its files go
 fs.mkdirSync(out, { recursive: true })
+for (const entry of fs.readdirSync(out)) {
+  if (entry !== ".git") fs.rmSync(path.join(out, entry), { recursive: true, force: true })
+}
 for (const entry of ["grammar.js", "tree-sitter.json", "src", "queries", "test/corpus"]) {
   fs.cpSync(path.join(root, entry), path.join(out, entry), { recursive: true })
 }
@@ -73,8 +80,9 @@ later patterns win). MIT.
 )
 if (argv.includes("--git")) {
   const git = (...args) => run("git", ["-c", "user.name=EffectScript", "-c", "user.email=noreply@effectscript.dev", ...args], out)
-  git("init", "-q", "-b", "main")
+  if (!fs.existsSync(path.join(out, ".git"))) git("init", "-q", "-b", "main")
   git("add", "-A")
-  git("commit", "-q", "-m", `tree-sitter-effectscript ${pkg.version}`)
+  // an unchanged export has nothing to commit: its commit is the current one
+  if (git("status", "--porcelain").trim() !== "") git("commit", "-q", "-m", `tree-sitter-effectscript ${pkg.version}`)
   process.stdout.write(`${git("rev-parse", "HEAD").trim()}\n`)
 }

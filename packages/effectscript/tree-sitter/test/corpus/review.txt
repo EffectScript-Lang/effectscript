@@ -1,0 +1,122 @@
+=====================
+Service with a custom key
+=====================
+
+service Clock as "my/clock" {
+  effect now(): number
+}
+
+---
+
+(program
+  (service_declaration
+    (identifier)
+    (string
+      (string_fragment))
+    (service_body
+      (effect_method_signature
+        (property_identifier)
+        (formal_parameters)
+        (type_annotation
+          (predefined_type))))))
+
+=====================
+Api with an id and member expressions
+=====================
+
+api MyApi "api" { X.y("a"), Z }
+
+---
+
+(program
+  (api_declaration
+    (identifier)
+    (string
+      (string_fragment))
+    (call_expression
+      (member_expression
+        (identifier)
+        (property_identifier))
+      (arguments
+        (string
+          (string_fragment))))
+    (identifier)))
+
+=====================
+Throws in a function type
+=====================
+
+type F = (id: string) => User throws NotFound
+
+---
+
+(program
+  (type_alias_declaration
+    (type_identifier)
+    (function_type
+      (formal_parameters
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))))
+      (type_identifier)
+      (effect_clauses
+        (type_identifier)))))
+
+=====================
+Schema with type parameters
+=====================
+
+schema Box<A> {
+  value: A
+}
+
+---
+
+(program
+  (schema_declaration
+    (identifier)
+    (type_parameters
+      (type_parameter
+        (type_identifier)))
+    (schema_body
+      (schema_field
+        (property_identifier)
+        (type_annotation
+          (type_identifier))))))
+
+=====================
+Body-less effect method in a class
+=====================
+
+class S {
+  effect find(id: string): User throws E
+  effect load() { await x }
+}
+
+---
+
+(program
+  (class_declaration
+    (type_identifier)
+    (class_body
+      (method_signature
+        (effect_method_signature
+          (property_identifier)
+          (formal_parameters
+            (required_parameter
+              (identifier)
+              (type_annotation
+                (predefined_type))))
+          (type_annotation
+            (type_identifier))
+          (effect_clauses
+            (type_identifier))))
+      (method_definition
+        (effect_method
+          (property_identifier)
+          (formal_parameters)
+          (statement_block
+            (expression_statement
+              (await_expression
+                (identifier)))))))))

@@ -4,6 +4,7 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { parse } from "smol-toml"
 import { afterAll, describe, expect, it, vi } from "vitest"
+import { generateOnce } from "../../tree-sitter/test/utils/generate.ts"
 
 // the grammar is generated and compiled alongside other tests
 vi.setConfig({ testTimeout: 120_000 })
@@ -37,7 +38,7 @@ describe("the Zed extension (Plan 19 Task 5, ADR-0058)", () => {
     expect(cargo.package.version).toBe(pkg.version)
   })
 
-  it("uses the grammar's own queries, and every query compiles against the grammar", () => {
+  it("uses the grammar's own queries, and every query compiles against the grammar", async () => {
     for (const file of ["highlights.scm", "injections.scm"]) {
       expect(fs.readFileSync(path.join(languages, file), "utf8"), file).toBe(
         fs.readFileSync(path.join(grammar, "queries", file), "utf8")
@@ -45,7 +46,7 @@ describe("the Zed extension (Plan 19 Task 5, ADR-0058)", () => {
     }
     const cli = path.join(grammar, "node_modules/.bin/tree-sitter")
     const env = { ...process.env, TREE_SITTER_LIBDIR: path.join(grammar, ".tree-sitter-cache") }
-    expect(spawnSync(cli, ["generate"], { cwd: grammar, env }).status).toBe(0)
+    await generateOnce()
     const sample = path.join(grammar, "../core/test/fixtures/service/basic.efx")
     for (const file of fs.readdirSync(languages).filter((f) => f.endsWith(".scm"))) {
       const query = spawnSync(cli, ["query", path.join(languages, file), sample], {
@@ -79,7 +80,8 @@ describe("the Zed extension (Plan 19 Task 5, ADR-0058)", () => {
     expect(result.status, result.stderr).toBe(0)
   }, 600_000)
 
-  it("builds a dev extension whose grammar is a local repository (scripts/dev.mjs)", () => {
+  it("builds a dev extension whose grammar is a local repository (scripts/dev.mjs)", async () => {
+    await generateOnce()
     const work = fs.mkdtempSync(path.join(os.tmpdir(), "efx-zed-dev-"))
     afterAll(() => fs.rmSync(work, { recursive: true, force: true }))
     const result = spawnSync(process.execPath, [path.join(root, "scripts/dev.mjs"), "--out", work], {

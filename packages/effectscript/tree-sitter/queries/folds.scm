@@ -1,0 +1,18 @@
+; Folds for Neovim (vim.treesitter.foldexpr) and other editors: every bracketed block (ADR-0058)
+[
+  (statement_block)
+  (class_body)
+  (object)
+  (array)
+  (arguments)
+  (formal_parameters)
+  (object_type)
+  (switch_body)
+  (template_string)
+  (schema_body)
+  (service_body)
+  (command_parameters)
+  (match_expression)
+  (group_declaration)
+  (api_declaration)
+] @fold

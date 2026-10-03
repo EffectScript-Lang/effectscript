@@ -112,3 +112,16 @@ ADR-0036 (coordinates).
 **Found while doing it:** named precedences only compare within one list, so `|>` first had no
 relation to calls or `+`; the auto-added conflicts hid that, and the trees were wrong until the
 pipeline joined JavaScript's operator list.
+
+**Final review (fresh reviewer, 2 Critical, 8 Important), fixed in one pass with tests that failed
+first:** keywords are type names where TypeScript reads one (`Schema.make<typeof schema>(` in
+Effect's own source broke), and the superset test covers every effect source file; the Neovim
+queries drop `#is-not? local`; Helix gets self-contained queries in reverse pattern order, tested
+in Helix itself; `defer(x)` and a split `do … while` stay TypeScript; `|>` binds between `??` and
+the conditional, as in the compiler; five valid EffectScript forms parse; export keeps a clone's
+history; the parser is generated once under a lock; Neovim and Helix get folds and indents.
+
+**Deferred minors:** the Zed `rev` isn't checked to be a SHA; the runbook's submodule details and
+step order for Zed; `release.ts` leaves `Cargo.lock` and `tree-sitter.json` versions; `efx setup`
+names an unpublished Zed extension; no Zed `overrides.scm`; unnecessary-conflict warnings, ABI 15,
+and the CLI's lock files in `~/.cache`.

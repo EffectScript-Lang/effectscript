@@ -47,7 +47,6 @@ export default grammar(TypeScript, {
       [$.schema_variant, $.nested_type_identifier],
       [$.schema_variant, $.generic_type],
       [$.throw_statement, $.throw_expression],
-      [$.do_statement, $.do_expression],
       [$.service_property, $._property_name],
       [$.route, $.primary_expression],
       [$.primary_expression, $.test_statement],
@@ -73,12 +72,22 @@ export default grammar(TypeScript, {
       [$._property_name, $.accessibility_modifier],
       [$._property_name, $.override_modifier],
       [$.method_definition, $.service_body],
-      [$._pipe_tail, $.pipeline_expression]
+      [$._pipe_tail, $.pipeline_expression],
+      [$.primary_expression, $._keyword_identifier],
+      [$.primary_expression, $.generic_type, $.effect_arrow_function],
+      [$.primary_expression, $.primary_type, $.impl_expression],
+      [$.primary_expression, $.generic_type, $.impl_expression],
+      [$.primary_type, $._keyword_identifier],
+      [$.primary_expression, $._keyword_identifier, $.effect_arrow_function],
+      [$.primary_expression, $._keyword_identifier, $.impl_expression],
+      [$.primary_expression, $._keyword_identifier, $.match_expression]
       // keyword-or-identifier and construct overlaps, resolved by GLR
     ]),
 
-  // `|>` binds looser than every other operator and tighter than `,` and `=>`: JavaScript's
-  // operator order with "pipeline" after the ternary (named precedences only compare within a list)
+  // `|>` binds looser than `??` and every operator above it, and tighter than the conditional, `,`
+  // and `=>`, as in the compiler (Plan 19 review I6). JavaScript gives `??` the conditional's
+  // precedence name; `??` gets its own, just above it, which leaves TypeScript's trees as they were.
+  // (Named precedences only compare within one list.)
   precedences: ($, previous) =>
     previous.concat([
       [
@@ -99,8 +108,9 @@ export default grammar(TypeScript, {
         "bitwise_or",
         "logical_and",
         "logical_or",
-        "ternary",
+        "nullish",
         "pipeline",
+        "ternary",
         $.sequence_expression,
         $.arrow_function
       ],
@@ -110,6 +120,133 @@ export default grammar(TypeScript, {
 
   rules: {
     _reserved_identifier: ($, previous) => choice(...keywords, previous),
+
+    // In type positions TypeScript reads names where its grammar has no `_reserved_identifier`:
+    // there, EffectScript's keywords are names too (Plan 19 review C1)
+    _keyword_identifier: ($) => alias(choice(...keywords), $.identifier),
+
+    _type_identifier: ($) =>
+      choice(alias($.identifier, $.type_identifier), alias(choice(...keywords), $.type_identifier)),
+
+    asserts: ($) => seq("asserts", choice($.type_predicate, $.identifier, $._keyword_identifier, $.this)),
+
+    tuple_parameter: ($) =>
+      seq(
+        field("name", choice($.identifier, $._keyword_identifier, $.rest_pattern)),
+        field("type", $.type_annotation)
+      ),
+
+    optional_tuple_parameter: ($) =>
+      seq(field("name", choice($.identifier, $._keyword_identifier)), "?", field("type", $.type_annotation)),
+
+    type_predicate: ($) =>
+      seq(
+        field("name", choice($.identifier, $._keyword_identifier, $.this, alias($.predefined_type, $.identifier))),
+        "is",
+        field("type", $.type)
+      ),
+
+    nested_type_identifier: ($) =>
+      prec(
+        "member",
+        seq(
+          field("module", choice($.identifier, $._keyword_identifier, $.nested_identifier)),
+          ".",
+          field("name", $._type_identifier)
+        )
+      ),
+
+    nested_identifier: ($) =>
+      prec(
+        "member",
+        seq(
+          field("object", choice($.identifier, $._keyword_identifier, alias($.nested_identifier, $.member_expression))),
+          ".",
+          field("property", alias($.identifier, $.property_identifier))
+        )
+      ),
+
+    type_query: ($) =>
+      prec.right(
+        seq(
+          "typeof",
+          choice(
+            alias($._type_query_subscript_expression, $.subscript_expression),
+            alias($._type_query_member_expression, $.member_expression),
+            alias($._type_query_call_expression, $.call_expression),
+            alias($._type_query_instantiation_expression, $.instantiation_expression),
+            $.identifier,
+            $._keyword_identifier,
+            $.this
+          )
+        )
+      ),
+
+    _type_query_member_expression: ($) =>
+      seq(
+        field(
+          "object",
+          choice(
+            $.identifier,
+            $._keyword_identifier,
+            $.this,
+            alias($._type_query_subscript_expression, $.subscript_expression),
+            alias($._type_query_member_expression, $.member_expression),
+            alias($._type_query_call_expression, $.call_expression)
+          )
+        ),
+        choice(".", "?."),
+        field("property", choice($.private_property_identifier, alias($.identifier, $.property_identifier)))
+      ),
+
+    _type_query_subscript_expression: ($) =>
+      seq(
+        field(
+          "object",
+          choice(
+            $.identifier,
+            $._keyword_identifier,
+            $.this,
+            alias($._type_query_subscript_expression, $.subscript_expression),
+            alias($._type_query_member_expression, $.member_expression),
+            alias($._type_query_call_expression, $.call_expression)
+          )
+        ),
+        optional("?."),
+        "[",
+        field("index", choice($.predefined_type, $.string, $.number)),
+        "]"
+      ),
+
+    _type_query_call_expression: ($) =>
+      seq(
+        field(
+          "function",
+          choice(
+            $.import,
+            $.identifier,
+            $._keyword_identifier,
+            alias($._type_query_member_expression, $.member_expression),
+            alias($._type_query_subscript_expression, $.subscript_expression)
+          )
+        ),
+        field("arguments", $.arguments)
+      ),
+
+    _type_query_instantiation_expression: ($) =>
+      seq(
+        field(
+          "function",
+          choice(
+            $.import,
+            $.identifier,
+            $._keyword_identifier,
+            alias($._type_query_member_expression, $.member_expression),
+            alias($._type_query_subscript_expression, $.subscript_expression)
+          )
+        ),
+        field("type_arguments", $.type_arguments)
+      ),
 
     declaration: ($, previous) =>
       choice(
@@ -136,7 +273,65 @@ export default grammar(TypeScript, {
         $.defer_statement
       ),
 
-    expression: ($, previous) => choice(previous, $.pipeline_expression, $.throw_expression, $.do_expression),
+    expression: ($, previous) => choice(previous, $.pipeline_expression, $.throw_expression),
+
+    binary_expression: ($) =>
+      choice(
+        ...[
+          ["&&", "logical_and"],
+          ["||", "logical_or"],
+          [">>", "binary_shift"],
+          [">>>", "binary_shift"],
+          ["<<", "binary_shift"],
+          ["&", "bitwise_and"],
+          ["^", "bitwise_xor"],
+          ["|", "bitwise_or"],
+          ["+", "binary_plus"],
+          ["-", "binary_plus"],
+          ["*", "binary_times"],
+          ["/", "binary_times"],
+          ["%", "binary_times"],
+          ["**", "binary_exp", "right"],
+          ["<", "binary_relation"],
+          ["<=", "binary_relation"],
+          ["==", "binary_equality"],
+          ["===", "binary_equality"],
+          ["!=", "binary_equality"],
+          ["!==", "binary_equality"],
+          [">=", "binary_relation"],
+          [">", "binary_relation"],
+          ["??", "nullish"],
+          ["instanceof", "binary_relation"],
+          ["in", "binary_relation"]
+        ].map(([operator, precedence, associativity]) =>
+          (associativity === "right" ? prec.right : prec.left)(
+            precedence,
+            seq(
+              field("left", operator === "in" ? choice($.expression, $.private_property_identifier) : $.expression),
+              field("operator", operator),
+              field("right", $.expression)
+            )
+          )
+        )
+      ),
+
+    // `(id: string) => User throws NotFound`: a function type's contract
+    function_type: ($) =>
+      prec.left(
+        seq(
+          field("type_parameters", optional($.type_parameters)),
+          field("parameters", $.formal_parameters),
+          "=>",
+          field("return_type", choice($.type, $.asserts, $.type_predicate)),
+          optional($.effect_clauses)
+        )
+      ),
+
+    // a class's `effect find(): T throws E` declares an effect method without a body
+    method_signature: ($, previous) => choice(previous, $.effect_method_signature),
+
+    // `const x = do { … }`: in statement position `do` is always the loop (review I5)
+    _initializer: ($) => seq("=", field("value", choice($.expression, $.do_expression))),
 
     primary_expression: ($, previous) =>
       choice(
@@ -220,6 +415,7 @@ export default grammar(TypeScript, {
         seq(
           "schema",
           field("name", $.identifier),
+          optional(field("type_parameters", $.type_parameters)),
           choice(
             field("body", $.schema_body),
             seq("=", field("value", choice($.schema_variants, $.type)))
@@ -259,7 +455,14 @@ export default grammar(TypeScript, {
 
     // services and layers
 
-    service_declaration: ($) => seq("service", field("name", $.identifier), field("body", $.service_body)),
+    // `as "key"` names the service's key (ADR-0014)
+    service_declaration: ($) =>
+      seq(
+        "service",
+        field("name", $.identifier),
+        optional(seq("as", field("key", $.string))),
+        field("body", $.service_body)
+      ),
 
     service_body: ($) =>
       seq(
@@ -328,11 +531,15 @@ export default grammar(TypeScript, {
 
     main_statement: ($) => prec.right(seq("main", field("body", $.statement_block), optional($._pipe_tail))),
 
+    // `defer(x)` is a call, as in the compiler (review I4): where both readings fit, the call wins
     defer_statement: ($) =>
-      prec.right(
-        seq(
-          "defer",
-          choice(field("body", $.statement_block), seq(field("value", $.expression), optional($._semicolon)))
+      prec.dynamic(
+        -1,
+        prec.right(
+          seq(
+            "defer",
+            choice(field("body", $.statement_block), seq(field("value", $.expression), optional($._semicolon)))
+          )
         )
       ),
 
@@ -420,8 +627,9 @@ export default grammar(TypeScript, {
       seq(
         "api",
         field("name", $.identifier),
+        optional(field("id", $.string)),
         "{",
-        optional(seq(sep1($.identifier, ","), optional(","))),
+        optional(seq(sep1($.expression, ","), optional(","))),
         "}"
       ),
 
@@ -449,6 +657,6 @@ export default grammar(TypeScript, {
 
     throw_expression: ($) => prec.right(-1, seq("throw", field("value", $.expression))),
 
-    do_expression: ($) => prec(-1, seq("do", field("body", $.statement_block)))
+    do_expression: ($) => seq("do", field("body", $.statement_block))
   }
 })
