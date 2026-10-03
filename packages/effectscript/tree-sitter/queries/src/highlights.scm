@@ -24,6 +24,7 @@
   "when"
   "middleware"
   "status"
+  "rpc"
 ] @keyword
 
 (match_arm "default" @keyword)

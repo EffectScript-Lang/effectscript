@@ -33,6 +33,7 @@ const constructs: ReadonlyArray<readonly [dir: string, title: string]> = [
   ["test", "`test` / `describe` on `@effect/vitest`"],
   ["http", "`api` / `group` / `impl`: HttpApi"],
   ["cli", "`command`: CLIs on `effect/cli`"],
+  ["rpc", "`rpc` / `impl`: RPC groups on `effect/rpc`"],
   ["atom", "`atom`: reactive state"],
   ["ambient", "Ambient capture: `console`, `Date`, `Math`, `process.env`"],
   ["hygiene", "Name hygiene: what the compiler generates never clashes with your names"]

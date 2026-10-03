@@ -1,0 +1,28 @@
+export schema User {
+  id: string
+  name: string
+}
+
+export error UserNotFound { id: string }
+export error Forbidden {}
+
+export rpc UsersRpc {
+  getUser(id: string): User throws UserNotFound
+  rename(id: string, name: string): User throws UserNotFound | Forbidden
+  ping()
+  watch(id: string, limit?: number): Stream<string>
+}
+
+export const UsersLive = impl UsersRpc {
+  const users = new Map([["1", new User({ id: "1", name: "Ada" })]])
+  return {
+    getUser: effect ({ id }) => users.get(id) ?? throw new UserNotFound({ id }),
+    effect rename({ id, name }) {
+      if (id === "0") throw new Forbidden()
+      const user = users.get(id) ?? throw new UserNotFound({ id })
+      return new User({ id: user.id, name })
+    },
+    ping: effect () => {},
+    watch: ({ id }) => Stream.make(`${id}:a`, `${id}:b`)
+  }
+}

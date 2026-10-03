@@ -30,7 +30,8 @@ const keywords = [
   "match",
   "when",
   "middleware",
-  "status"
+  "status",
+  "rpc"
 ]
 
 /** One or more `rule`, separated by `separator`. */
@@ -253,6 +254,7 @@ export default grammar(TypeScript, {
         $.config_declaration,
         $.atom_declaration,
         $.group_declaration,
+        $.rpc_declaration,
         $.api_declaration,
         $.command_declaration
       ),
@@ -640,8 +642,24 @@ export default grammar(TypeScript, {
         "}"
       ),
 
+    // `impl Api.group { … }` (HttpApi), or `impl Name { … }` for anything with `toLayer` (ADR-0069)
     impl_expression: ($) =>
-      prec.right(seq("impl", field("group", $.member_expression), field("body", $.statement_block))),
+      prec.right(
+        seq("impl", field("group", choice($.member_expression, $.identifier)), field("body", $.statement_block))
+      ),
+
+    // `rpc Name { name(fields): A throws E … }` (ADR-0069)
+    rpc_declaration: ($) => seq("rpc", field("name", $.identifier), "{", repeat(choice($.signature, ";")), "}"),
+
+    signature: ($) =>
+      prec.right(
+        seq(
+          field("name", $.identifier),
+          field("parameters", $.formal_parameters),
+          optional(field("type", $.type_annotation)),
+          optional($.effect_clauses)
+        )
+      ),
 
     // expressions
 

@@ -125,3 +125,42 @@ service Greeter {
                   (type_annotation
                     (predefined_type))))
               (identifier))))))))
+
+======================
+RPC group and its impl
+======================
+
+export rpc UsersRpc {
+  getUser(id: string): User throws UserNotFound
+  ping()
+}
+const UsersLive = impl UsersRpc { return {} }
+
+---
+
+(program
+  (export_statement
+    (rpc_declaration
+      (identifier)
+      (signature
+        (identifier)
+        (formal_parameters
+          (required_parameter
+            (identifier)
+            (type_annotation
+              (predefined_type))))
+        (type_annotation
+          (type_identifier))
+        (effect_clauses
+          (type_identifier)))
+      (signature
+        (identifier)
+        (formal_parameters))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (impl_expression
+        (identifier)
+        (statement_block
+          (return_statement
+            (object)))))))

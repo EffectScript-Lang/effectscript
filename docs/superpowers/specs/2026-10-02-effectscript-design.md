@@ -799,6 +799,31 @@ export const UsersHandlers = HttpApiBuilder.group(Api, "users", Effect.fn("Api.u
 - `del` lowers to `HttpApiEndpoint.delete`. Several errors (`throws A | B`) become `error: [A, B]`.
   Optional section fields are `Schema.optionalKey` (ADR-0013).
 
+#### `rpc` and `impl Name` (`effect/rpc`, ADR-0069)
+
+```ts
+export rpc UsersRpc {
+  getUser(id: string): User throws UserNotFound
+  rename(id: string, name: string): User throws UserNotFound | Forbidden
+  watch(id: string): Stream<UserEvent>
+}
+export const UsersLive = impl UsersRpc {
+  return { getUser: effect ({ id }) => … }
+}
+```
+
+→ `const UsersRpc = RpcGroup.make(Rpc.make("getUser", { payload: { id: Schema.String }, success:
+User, error: UserNotFound }), …)` and `UsersRpc.toLayer(Effect.gen(function*() { … return
+UsersRpc.of({ … }) }))`.
+
+- **Signature lines** (shared with `entity` and `tool`): the fields are the payload's struct fields
+  (`x?: T` is an optional key); no fields → no payload; no return type → `void`; `throws A | B` →
+  `Schema.Union([A, B])`. A `Stream<A>` (or `Stream<A, E>`) return type is a streaming RPC.
+- **`impl Name { … }`** works for any value with `toLayer` and `of` (`RpcGroup`, `Toolkit`,
+  `Entity`): every top-level `return { … }` is wrapped in `Name.of(…)`, `effect` methods are
+  spanned `Name.method`, and pipes apply to the layer. `impl Api.group` keeps its HttpApi meaning.
+- RPC handlers get the payload; a streaming one returns a `Stream`.
+
 #### `command` (CLI, `effect/cli`)
 
 ```ts

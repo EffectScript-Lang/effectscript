@@ -9,6 +9,7 @@ import { diagnosticError } from "../diagnostics.ts"
 import { ref, unused } from "../names.ts"
 import { optionalField, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
+import { genericImpl } from "./library.ts"
 import type { HandlerGroup } from "./registry.ts"
 
 const module = "effect/http-api"
@@ -105,7 +106,9 @@ const apiDeclaration: Handler = (node, _parent, ctx) => {
  * Top-level `return { … }` objects become `handlers.handleAll({ … })`; `effect` methods are spanned
  * `Api.group.method`; pipes resolve in the `Layer` namespace.
  */
-const implExpression: Handler = (node, _parent, ctx) => {
+const implExpression: Handler = (node, parent, ctx) => {
+  // `impl Name { … }`: a layer from `Name.toLayer` (ADR-0069)
+  if (node.group === null) return genericImpl(node, parent, ctx)
   const api: string = node.api.name
   const group: string = node.group.name
   const handlers = unused(ctx, "handlers")

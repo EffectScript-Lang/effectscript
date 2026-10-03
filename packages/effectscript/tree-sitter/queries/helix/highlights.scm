@@ -79,6 +79,7 @@
   "when"
   "middleware"
   "status"
+  "rpc"
 ] @keyword
 
 [ "abstract"

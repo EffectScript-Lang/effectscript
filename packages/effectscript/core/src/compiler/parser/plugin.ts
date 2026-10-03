@@ -215,6 +215,7 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsCommandStart()) return this.efxParseCommand()
       if (this.efxIsHttpApiStart("group")) return this.efxParseGroup()
       if (this.efxIsHttpApiStart("api")) return this.efxParseApi()
+      if (this.efxIsSignatureBlockStart("rpc")) return this.efxParseSignatureBlock("RpcDeclaration")
       if (this.efxIsDescribeStart()) return this.efxParseDescribe()
       if (this.efxIsTestStart()) return this.efxParseTest()
       if (this.efxIsDoctestStart()) return this.efxParseDoctest()
@@ -225,6 +226,7 @@ export const efxPlugin = (Base: any): any =>
       return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() ||
         this.efxIsBindingDeclarationStart("layer") || this.efxIsBindingDeclarationStart("atom") ||
         this.efxIsHttpApiStart("group") || this.efxIsHttpApiStart("api") || this.efxIsCommandStart() ||
+        this.efxIsSignatureBlockStart("rpc") ||
         super.shouldParseExportStatement()
     }
 
@@ -624,6 +626,52 @@ export const efxPlugin = (Base: any): any =>
       return this.finishNode(node, "GroupDeclaration")
     }
 
+    /**
+     * A signature line (ADR-0069): `name(field: T, other?: U): A throws E`, shared by `rpc`,
+     * `entity` and `tool`. The fields are a struct; no return type means `void`.
+     */
+    efxParseSignatureLine(): any {
+      const line = this.startNode()
+      line.name = this.parseIdent(true)
+      this.expect(tt.parenL)
+      line.fields = []
+      while (!this.eat(tt.parenR)) {
+        const field = this.startNode()
+        field.key = this.parseIdent(true)
+        field.optional = this.eat(tt.question)
+        this.expect(tt.colon)
+        field.annotation = this.tsInType(() => this.tsParseType())
+        line.fields.push(this.finishNode(field, "SignatureField"))
+        if (this.type !== tt.parenR) this.expect(tt.comma)
+      }
+      line.success = this.eat(tt.colon) ? this.tsInType(() => this.tsParseType()) : null
+      line.error = null
+      if (this.efxIsWord("throws")) {
+        this.next()
+        line.error = this.tsInType(() => this.tsParseType())
+      }
+      this.eat(tt.semi)
+      return this.finishNode(line, "SignatureLine")
+    }
+
+    /** `rpc Name { line… }` (ADR-0069) and `entity Name { line… }` (ADR-0071). */
+    efxIsSignatureBlockStart(keyword: string): boolean {
+      if (!this.efxIsWord(keyword) || !this.efxNextIsNameSameLine()) return false
+      const name = this.lookahead()
+      return this.input[skipSpace(this.input, name.end)] === "{"
+    }
+
+    efxParseSignatureBlock(type: string): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.id = this.parseIdent()
+      this.expect(tt.braceL)
+      node.lines = []
+      while (!this.eat(tt.braceR)) node.lines.push(this.efxParseSignatureLine())
+      return this.finishNode(node, type)
+    }
+
     efxParseApi(): any {
       const node = this.startNode()
       this.efxParseHttpApiHead(node)
@@ -672,7 +720,8 @@ export const efxPlugin = (Base: any): any =>
       if (!this.efxIsWord("impl")) return false
       const lineEnd = this.input.indexOf("\n", this.end)
       const rest = this.input.slice(this.end, lineEnd === -1 ? undefined : lineEnd)
-      return /^\s*[A-Za-z_$][\w$]*\s*\.\s*[A-Za-z_$][\w$]*\s*\{/.test(rest)
+      // `impl Api.group {` (HttpApi) or `impl Name {` (anything with `toLayer` and `of`, ADR-0069)
+      return /^\s*[A-Za-z_$][\w$]*\s*(\.\s*[A-Za-z_$][\w$]*\s*)?\{/.test(rest)
     }
 
     efxParseImpl(): any {
@@ -680,8 +729,7 @@ export const efxPlugin = (Base: any): any =>
       node.keyword = { start: this.start, end: this.end }
       this.next()
       node.api = this.parseIdent()
-      this.expect(tt.dot)
-      node.group = this.parseIdent(true)
+      node.group = this.eat(tt.dot) ? this.parseIdent(true) : null
       node.body = this.efxParseAsyncBlock()
       return this.finishNode(node, "ImplExpression")
     }

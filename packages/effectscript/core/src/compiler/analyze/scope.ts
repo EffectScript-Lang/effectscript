@@ -293,6 +293,12 @@ export const analyze = (program: Node): ScopeAnalysis => {
         bindings.add(node.id)
         return
       }
+      // a library construct declares a constant (ADR-0069…0072)
+      case "RpcDeclaration": {
+        scope.values.add(node.id.name)
+        bindings.add(node.id)
+        return
+      }
       case "AtomDeclaration":
       case "LayerDeclaration": {
         scope.values.add(node.id.name)

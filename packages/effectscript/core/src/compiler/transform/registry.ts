@@ -11,6 +11,7 @@ import { effectHandlers } from "./effect.ts"
 import { httpApiHandlers } from "./httpApi.ts"
 import { importRewriteHandlers } from "./imports.ts"
 import { layerHandlers } from "./layer.ts"
+import { libraryHandlers } from "./library.ts"
 import { mainHandlers } from "./main.ts"
 import { matchHandlers } from "./match.ts"
 import { pipelineHandlers } from "./pipeline.ts"
@@ -60,6 +61,7 @@ export const handlers = registry(
   layerHandlers,
   atomHandlers,
   httpApiHandlers,
+  libraryHandlers,
   commandHandlers,
   serviceHandlers,
   effectHandlers,
