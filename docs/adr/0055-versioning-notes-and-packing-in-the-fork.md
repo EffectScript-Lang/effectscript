@@ -1,6 +1,6 @@
 # ADR-0055: How EffectScript is versioned, noted and packed in a fork whose changesets are upstream's
 
-- **Status:** Accepted
+- **Status:** Accepted, amended below (dependency ranges)
 - **Date:** 2026-10-03
 - **Deciders:** agent ruling for Plan 17 (phase 11), within ADR-0015
 - **Related:** ADR-0008, ADR-0015, ADR-0036, ADR-0038, ADR-0041; spec §7.6, §10
@@ -62,3 +62,18 @@ EffectScript's own.
 - **Marketplace version `x.y.N` for `alpha.N`:** collides with the stable `x.y.0`.
 - **Date-based Marketplace versions:** monotonic, but they no longer tell you which npm release a
   `.vsix` is.
+
+## Amendment 1: dependency ranges (Plan 17 Task 4)
+
+Writing the runbook showed that `effectscript` shipped `effect` and `@effect/platform-node` as
+`^4.0.0` dependencies. Spec §7.6 makes `effect` a peer on the same minor, and a `^` dependency lets
+npm install a second, newer `effect` beside the project's, which splits Effect's services in two.
+
+- **Effect packages are peers on the same minor** (`workspace:~`, packed as `~4.0.0`), and dev
+  dependencies in the workspace.
+- **The EffectScript packages pin each other's exact version** (`workspace:*`): the language
+  server and the compiler share internal APIs that may change in any alpha.
+- `release.ts pack` refuses a tarball whose manifest breaks either rule (`manifestProblems`).
+
+**Rejected:** upstream's convention, a `workspace:^` peer. It accepts the next Effect minor,
+which lockstep says EffectScript doesn't support until it releases for it.

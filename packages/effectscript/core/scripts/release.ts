@@ -213,6 +213,32 @@ export const tarballProblems = (
   ]
 }
 
+/**
+ * What is wrong with a packed manifest's dependencies (spec §7.6): Effect packages are peers on the
+ * same major.minor (`~x.y.0`), and EffectScript packages are pinned to this release's version.
+ */
+export const manifestProblems = (manifest: {
+  readonly name?: string
+  readonly version: string
+  readonly dependencies?: Readonly<Record<string, string>>
+  readonly peerDependencies?: Readonly<Record<string, string>>
+}): Array<string> => {
+  const { major, minor } = parse(manifest.version)
+  const effectRange = `~${major}.${minor}.0`
+  const isEffect = (name: string) => name === "effect" || name.startsWith("@effect/")
+  const isOurs = (name: string) => name === "effectscript" || name.startsWith("@effectscript/")
+  const pinned = ([name, range]: readonly [string, string]) =>
+    isOurs(name) && range !== manifest.version ? [`${name} must be ${manifest.version} (got ${range})`] : []
+  return [
+    ...Object.entries(manifest.dependencies ?? {}).flatMap((entry) =>
+      isEffect(entry[0]) ? [`${entry[0]} must be a peer dependency, not a dependency`] : pinned(entry)
+    ),
+    ...Object.entries(manifest.peerDependencies ?? {}).flatMap((entry) =>
+      isEffect(entry[0]) && entry[1] !== effectRange ? [`${entry[0]} must be ${effectRange} (got ${entry[1]})`] : pinned(entry)
+    )
+  ]
+}
+
 const run = (command: string, args: ReadonlyArray<string>, cwd: string): string => {
   const result = spawnSync(command, [...args], { cwd, encoding: "utf8", maxBuffer: 1 << 28 })
   if (result.status !== 0) {
@@ -237,7 +263,11 @@ const pack = (root: string, out: string) => {
     const tarball = fs.readdirSync(out).find((f) => f.endsWith(".tgz") && !before.has(f)) ??
       `${manifest.name.replace(/^@/, "").replace("/", "-")}-${manifest.version}.tgz`
     const full = path.join(out, tarball)
-    const problems = tarballProblems(manifest, run("tar", ["-tzf", full], root).trim().split("\n"))
+    const packed = JSON.parse(run("tar", ["-xzOf", full, "package/package.json"], root))
+    const problems = [
+      ...tarballProblems(manifest, run("tar", ["-tzf", full], root).trim().split("\n")),
+      ...manifestProblems(packed)
+    ]
     if (problems.length > 0) throw new Error(`${tarball}: ${problems.join(", ")}`)
     return full
   }).join("\n")

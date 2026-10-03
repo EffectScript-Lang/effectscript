@@ -1585,6 +1585,14 @@ implementation.
 | `README.md`                | A catalog entry for EffectScript                                                         |
 | dprint/oxlint              | Apply to `.ts` sources. `.efx` is ignored by both.                                       |
 
+**Status (Plan 17, ADR-0055):** every surface is registered or classified (the Plan 17 execution
+record lists each). `jsdocs.config.json` excludes `packages/effectscript/**`. The changesets are
+EffectScript's own notes: `core/scripts/release.ts` versions the family in lockstep and moves the
+notes into `packages/effectscript/CHANGELOG.md`, and upstream's `changeset version` never touches
+EffectScript. `effect` and `@effect/platform-node` are `~major.minor` peers (§7.6), and the
+EffectScript packages pin each other's exact version. The publish steps are in
+`packages/effectscript/RELEASING.md`.
+
 ---
 
 ## 11. Testing strategy

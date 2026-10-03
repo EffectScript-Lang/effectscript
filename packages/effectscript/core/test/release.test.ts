@@ -3,7 +3,7 @@ import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
 import { afterAll, describe, expect, it } from "vitest"
-import { nextVersion, tarballProblems } from "../scripts/release.ts"
+import { manifestProblems, nextVersion, tarballProblems } from "../scripts/release.ts"
 
 const script = path.join(import.meta.dirname, "../scripts/release.ts")
 const work = fs.mkdtempSync(path.join(os.tmpdir(), "efx-release-"))
@@ -216,6 +216,63 @@ describe("tarballProblems (Plan 17 Task 3)", () => {
   })
 })
 
+describe("manifestProblems (spec §7.6, ADR-0055)", () => {
+  const core = {
+    name: "effectscript",
+    version: "4.0.0-alpha.3",
+    dependencies: { acorn: "^8.18.0" },
+    peerDependencies: { effect: "~4.0.0", "@effect/platform-node": "~4.0.0", "@effectscript/language": "4.0.0-alpha.3" }
+  }
+
+  it("accepts Effect as a ~major.minor peer and EffectScript packages pinned to the same version", () => {
+    expect(manifestProblems(core)).toEqual([])
+    expect(manifestProblems({ name: "@effectscript/language", version: "4.1.2", dependencies: { effectscript: "4.1.2" } }))
+      .toEqual([])
+  })
+
+  it("names Effect packages that are dependencies or not pinned to the minor", () => {
+    expect(manifestProblems({
+      ...core,
+      dependencies: { effect: "^4.0.0" },
+      peerDependencies: { "@effect/platform-node": "^4.0.0" }
+    })).toEqual([
+      "effect must be a peer dependency, not a dependency",
+      "@effect/platform-node must be ~4.0.0 (got ^4.0.0)"
+    ])
+  })
+
+  it("names EffectScript packages on another version", () => {
+    expect(manifestProblems({ name: "@effectscript/language", version: "4.0.1", dependencies: { effectscript: "^4.0.0" } }))
+      .toEqual(["effectscript must be 4.0.1 (got ^4.0.0)"])
+  })
+
+  it("holds for the workspace manifests, as pnpm will pack them", () => {
+    const packages = path.join(import.meta.dirname, "../..")
+    for (const dir of ["core", "language"]) {
+      const manifest = JSON.parse(fs.readFileSync(path.join(packages, dir, "package.json"), "utf8"))
+      const packed = (deps: Record<string, string> | undefined) =>
+        deps && Object.fromEntries(
+          Object.entries(deps).map(([name, range]) => [
+            name,
+            range === "workspace:*"
+              ? manifest.version
+              : range === "workspace:~"
+              ? "~4.0.0"
+              : range.replace("workspace:", "") === "^"
+              ? "^4.0.0"
+              : range
+          ])
+        )
+      expect(manifestProblems({
+        ...manifest,
+        version: manifest.version,
+        dependencies: packed(manifest.dependencies),
+        peerDependencies: packed(manifest.peerDependencies)
+      }), dir).toEqual([])
+    }
+  })
+})
+
 describe.runIf(process.env.EFX_PACK === "1")("release.ts pack, installed in a clean project (EFX_PACK=1)", () => {
   it("builds and packs both packages, and the installed efx runs", () => {
     const out = path.join(work, "packed")
@@ -227,6 +284,10 @@ describe.runIf(process.env.EFX_PACK === "1")("release.ts pack, installed in a cl
       expect.stringMatching(/^effectscript-\d.*\.tgz$/),
       expect.stringMatching(/^effectscript-language-\d.*\.tgz$/)
     ])
+    for (const tarball of tarballs) {
+      const manifest = JSON.parse(spawnSync("tar", ["-xzOf", tarball, "package/package.json"], { encoding: "utf8" }).stdout)
+      expect(manifestProblems(manifest), tarball).toEqual([])
+    }
     const project = path.join(work, "clean")
     fs.mkdirSync(project)
     fs.writeFileSync(

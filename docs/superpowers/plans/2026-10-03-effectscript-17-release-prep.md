@@ -87,3 +87,44 @@ changesets belong to upstream. Builds on ADR-0015, ADR-0036 and ADR-0038.
   9. `.vsix`;
   10. site deploy.
 - Spec §10 status, COMPATIBILITY, and this plan's execution record.
+
+---
+
+## Execution record
+
+**Registration surfaces (Task 1):**
+
+| Surface                  | State                                                                       |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `pnpm-workspace.yaml`    | covered by `packages/effectscript/*`; `allowBuilds` classified (Plan 11)    |
+| `tsconfig.packages.json` | core, language, vscode, effect-docs and the site's check config             |
+| `tsconfig.tests.json`    | covered by the globs, plus the two scripts that tests import                |
+| `vitest.config.ts`       | six projects                                                                |
+| `tstyche.json`           | n/a: EffectScript has no type tests                                         |
+| `vitest.docs.ts`         | covered; EffectScript's JSDoc has no runnable fences                        |
+| `jsdocs.config.json`     | `packages/effectscript/**` excluded (spec §10)                              |
+| `deno.json`              | excluded since Plan 1                                                       |
+| `.changeset`             | EffectScript's own notes, consumed by `release.ts changelog` (ADR-0055)     |
+| `README.md`              | an EffectScript section before the packages table                           |
+| snapshot workflow        | n/a: it publishes upstream paths only                                       |
+| runtime CI               | n/a: `effectscript-release.yml` runs Bun and Node for the binaries          |
+
+**Rulings:**
+
+- **`release.ts` lives in `core/scripts`,** not `packages/effectscript/scripts`. Core's test, lint
+  and type-check setup covers it, and it still works on the whole family.
+- **No "dirty tree" refusal:** the version files are dirty right after `version`, which would break
+  running it twice. Running it twice is safe because it computes from the changelog's released
+  version, and packages that disagree are refused.
+- **The Marketplace version mapping** (ADR-0055): `vsce publish` refuses semver prereleases, which
+  the runbook's `.vsix` step would have hit.
+- **The clean install takes `effect` from the registry,** not the workspace. A linked workspace
+  `effect` resolves to `.ts` sources under `node_modules`, which Node refuses to strip. The check
+  is opt-in (`EFX_PACK=1`) because it needs the network.
+- **`effect` and `@effect/platform-node` became `~major.minor` peers,** and the EffectScript
+  packages pin each other exactly (ADR-0055 amendment 1). Found while writing the runbook.
+
+**Found for the polish plan:**
+
+- `efx run` on Node 24 prints Node's `ExperimentalWarning` for `stripTypeScriptTypes`.
+- `efx init` without a `tsconfig.json` says to create one, but still edits the rest of the project.

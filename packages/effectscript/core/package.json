@@ -59,17 +59,17 @@
     "codegen": "node scripts/generate-prelude.ts && dprint fmt src/compiler/prelude/tables.ts && node scripts/compile-cli.ts && node scripts/generate-skill.ts"
   },
   "dependencies": {
-    "@effect/platform-node": "workspace:^",
     "@sveltejs/acorn-typescript": "^1.0.13",
     "acorn": "^8.18.0",
-    "effect": "workspace:^",
     "magic-string": "^1.4.2",
     "smol-toml": "^1.9.0"
   },
   "devDependencies": {
     "@effect/platform-bun": "workspace:^",
+    "@effect/platform-node": "workspace:^",
     "@effect/vitest": "workspace:^",
     "@types/node": "^26.6.3",
+    "effect": "workspace:^",
     "typescript": "^6.0.3",
     "vite": "^8.3.1",
     "vitest": "^5.0.2"
@@ -78,7 +78,9 @@
     "efx": "./bin/efx.js"
   },
   "peerDependencies": {
-    "@effectscript/language": "workspace:^",
+    "@effect/platform-node": "workspace:~",
+    "@effectscript/language": "workspace:*",
+    "effect": "workspace:~",
     "typescript": "^6.0.3",
     "vite": "^8.0.0"
   },
