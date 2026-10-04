@@ -17,7 +17,13 @@ const scopesOf = async (code: string) => {
     ]
   })
   const out = new Map<string, string>()
-  for (const line of highlighter.codeToTokensBase(code, { lang: "efx", theme: "dark-plus", includeExplanation: true })) {
+  for (
+    const line of highlighter.codeToTokensBase(code, {
+      lang: "efx" as "tsx",
+      theme: "dark-plus",
+      includeExplanation: true
+    })
+  ) {
     for (const token of line) {
       for (const part of token.explanation ?? []) {
         out.set(part.content.trim(), part.scopes.map((s) => s.scopeName).join(" "))

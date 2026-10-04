@@ -48,7 +48,8 @@ describe("effectscript syntax themes (ADR-0078)", () => {
     for (const mode of ["dark", "light"] as const) {
       const tokens = highlighter.codeToTokensBase(
         "export effect f(id: string): User throws NotFound | Timeout needs Db {\n}",
-        { lang: "efx", theme: `effectscript-${mode}` }
+        // our grammar and themes, registered above: Shiki's types only know its bundled names
+        { lang: "efx" as "tsx", theme: `effectscript-${mode}` as "dark-plus" }
       ).flat()
       const colour = (text: string) => tokens.find((t) => t.content.trim() === text)?.color?.toLowerCase()
       expect(colour("User"), mode).toBe(signals[mode].pass)

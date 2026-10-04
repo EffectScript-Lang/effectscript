@@ -72,6 +72,7 @@
     "@effect/platform-bun": "workspace:^",
     "@effect/platform-node": "workspace:^",
     "@effect/vitest": "workspace:^",
+    "@types/fontkit": "^2.0.9",
     "@types/node": "^26.6.3",
     "effect": "workspace:^",
     "fontkit": "^2.0.4",

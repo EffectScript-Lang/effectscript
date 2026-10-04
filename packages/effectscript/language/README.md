@@ -18,6 +18,10 @@ Both editor hosts show the `await` guardrails (ADR-0039):
 
 ## Editor setup
 
+**Font:** EffectScript's docs set code in JetBrains Mono with its ligatures on, so `|>` draws as
+▷ (ADR-0080). In VS Code and its forks: `"editor.fontFamily": "JetBrains Mono"` and
+`"editor.fontLigatures": true`. Ligatures only change how code looks, never what you type.
+
 **Neovim 0.11+:**
 
 ```lua

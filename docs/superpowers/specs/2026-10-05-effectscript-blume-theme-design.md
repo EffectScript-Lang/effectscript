@@ -1,7 +1,7 @@
 # effectscript.dev on Blume, with an EffectScript theme: design spec
 
 - **Date:** 2026-10-05
-- **Status:** Approved (Plan 28, `docs/superpowers/plans/2026-10-05-effectscript-28-blume-site.md`)
+- **Status:** Implemented (Plan 28, `docs/superpowers/plans/2026-10-05-effectscript-28-blume-site.md`)
 - **Decisions:** ADR-0078 (signal colours for state), ADR-0079 (effectscript.dev on Blume, with a
   public EffectScript theme), ADR-0080 (code ligatures on)
 - **Supersedes:** the "our own site stays on Starlight" part of ADR-0043, and main spec §9.3–§9.4
