@@ -29,15 +29,15 @@ const Tools = Toolkit.make(Tool.make("getCurrentTime", {
   success: Schema.String
 }))
 
-const ToolsLayer = Tools.toLayer(effect {
+const ToolsLayer = impl Tools {
   console.debug("Initializing tools...")
-  return Tools.of({
-    getCurrentTime: Effect.fn("Tools.getCurrentTime")(function*(_) {
-      const now = yield* DateTime.now
+  return {
+    effect getCurrentTime(_) {
+      const now = await DateTime.now
       return DateTime.formatIso(now)
-    })
-  })
-})
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Service that wraps Chat for a domain use-case

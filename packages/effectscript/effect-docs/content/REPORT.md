@@ -7,17 +7,17 @@ Tokens are the parser's tokens of the re-sugared examples, before and after.
 
 | area | examples | re-sugared | unchanged | left as TS | TS tokens | EffectScript tokens | saved |
 | ---- | -------: | ---------: | --------: | ---------: | --------: | ------------------: | ----: |
-| ai-docs | 40 | 38 | 2 | 0 | 15311 | 12639 | 17.5% |
-| guides | 565 | 141 | 351 | 73 | 21476 | 18671 | 13.1% |
-| api | 3415 | 1536 | 1876 | 3 | 154707 | 121287 | 21.6% |
-| **total** | **4020** | **1715** | **2229** | **76** | **191494** | **152597** | **20.3%** |
+| ai-docs | 40 | 38 | 2 | 0 | 15311 | 12553 | 18.0% |
+| guides | 565 | 141 | 351 | 73 | 21476 | 18659 | 13.1% |
+| api | 3415 | 1536 | 1876 | 3 | 154707 | 121279 | 21.6% |
+| **total** | **4020** | **1715** | **2229** | **76** | **191494** | **152491** | **20.4%** |
 
 ## API examples by package
 
 | package | examples | re-sugared | unchanged | left as TS | TS tokens | EffectScript tokens | saved |
 | ------- | -------: | ---------: | --------: | ---------: | --------: | ------------------: | ----: |
 | packages/atom/react | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
-| packages/effect | 3407 | 1532 | 1873 | 2 | 154143 | 120843 | 21.6% |
+| packages/effect | 3407 | 1532 | 1873 | 2 | 154143 | 120835 | 21.6% |
 | packages/opentelemetry | 1 | 1 | 0 | 0 | 219 | 194 | 11.4% |
 | packages/platform/deno | 1 | 1 | 0 | 0 | 61 | 35 | 42.6% |
 | packages/sql/pg | 2 | 0 | 1 | 1 | 0 | 0 | 0.0% |

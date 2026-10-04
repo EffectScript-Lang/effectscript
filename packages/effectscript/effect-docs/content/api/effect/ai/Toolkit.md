@@ -28,7 +28,7 @@ const SummarizeText = Tool.make("SummarizeText", {
   success: Schema.String
 })
 
-const AiToolkit = Toolkit.make(SearchDocs, SummarizeText)
+toolkit AiToolkit { SearchDocs, SummarizeText }
 
 const ready = AiToolkit.pipe(provide(AiToolkit.toLayer({
   SearchDocs: ({ query }) => succeed([query]),
@@ -81,7 +81,7 @@ const GetWeather = Tool.make("get_weather", {
   })
 })
 
-const toolkit = Toolkit.make(GetCurrentTime, GetWeather)
+toolkit toolkit { GetCurrentTime, GetWeather }
 const ready = toolkit.pipe(provide(toolkit.toLayer({
   GetCurrentTime: () => succeed(0),
   get_weather: () => succeed({ temperature: 20, condition: "clear" })

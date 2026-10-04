@@ -67,7 +67,7 @@ const GetInventory = Tool.make("GetInventory", {
 
 // `Toolkit.make` accepts any number of tools and produces a typed toolkit that
 // knows the names and schemas of every tool it contains.
-const ProductToolkit = Toolkit.make(SearchProducts, GetInventory)
+toolkit ProductToolkit { SearchProducts, GetInventory }
 
 // ---------------------------------------------------------------------------
 // 3. Implementing handlers via toLayer
@@ -76,24 +76,24 @@ const ProductToolkit = Toolkit.make(SearchProducts, GetInventory)
 // `toLayer` returns a `Layer` that satisfies the handler requirements for every
 // tool in the toolkit. Each handler receives the decoded parameters and returns
 // an Effect producing the success type.
-const ProductToolkitLayer = ProductToolkit.toLayer(effect {
+const ProductToolkitLayer = impl ProductToolkit {
   console.log("Initializing ProductToolkitLive")
   // Here you could access other services or resources needed to implement the
   // handlers, e.g. a database client or external API client.
   //
   // const client = yield* SomeDatabaseClient
-  return ProductToolkit.of({
-    SearchProducts: Effect.fn("ProductToolkit.SearchProducts")(function*({ query, maxResults }) {
+  return {
+    effect SearchProducts({ query, maxResults }) {
       return [
         new Product({ id: ProductId.make("p-1"), name: `${query} widget`, price: 19.99 }),
         new Product({ id: ProductId.make("p-2"), name: `${query} gadget`, price: 29.99 })
       ].slice(0, maxResults)
-    }),
-    GetInventory: Effect.fn("ProductToolkit.GetInventory")(function*({ productId }) {
+    },
+    effect GetInventory({ productId }) {
       return { productId, available: 42 }
-    })
-  })
-})
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // 4. Using tools with LanguageModel
@@ -198,21 +198,21 @@ const webSearch = OpenAiTool.WebSearch({
 })
 
 // Combine user-defined and provider-defined tools in a single toolkit.
-const AssistantToolkit = Toolkit.make(SearchProducts, GetInventory, webSearch)
+toolkit AssistantToolkit { SearchProducts, GetInventory, webSearch }
 
 // Only user-defined tools that require handlers appear in `toLayer`. The
 // provider-defined `WebSearch` is executed server-side by the provider.
-export const AssistantToolkitLayer = AssistantToolkit.toLayer(effect {
+export const AssistantToolkitLayer = impl AssistantToolkit {
   console.log("Initializing AssistantToolkitLive")
-  return AssistantToolkit.of({
-    SearchProducts: Effect.fn("AssistantToolkit.SearchProducts")(function*({ query, maxResults }) {
+  return {
+    effect SearchProducts({ query, maxResults }) {
       return [
         new Product({ id: ProductId.make("p-1"), name: `${query} widget`, price: 19.99 }),
         new Product({ id: ProductId.make("p-2"), name: `${query} gadget`, price: 29.99 })
       ].slice(0, maxResults)
-    }),
-    GetInventory: Effect.fn("AssistantToolkit.GetInventory")(function*({ productId }) {
+    },
+    effect GetInventory({ productId }) {
       return { productId, available: 42 }
-    })
-  })
-})
+    }
+  }
+}

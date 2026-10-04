@@ -31,7 +31,7 @@ const DemoTool = Tool.make("DemoTool", {
   success: Schema.String
 })
 
-const MyToolkit = Toolkit.make(DemoTool)
+toolkit MyToolkit { DemoTool }
 
 const DemoResource = McpServer.resource({
   uri: "file:///demo.txt",
@@ -186,7 +186,7 @@ const OtherDemoTool = Tool.make("OtherDemoTool", {
   success: Schema.String
 })
 
-const MyToolkit = Toolkit.make(DemoTool, OtherDemoTool)
+toolkit MyToolkit { DemoTool, OtherDemoTool }
 
 const ToolkitLayer = McpServer.toolkit(MyToolkit).pipe(
   Layer.provideMerge(
@@ -265,7 +265,7 @@ const CalculatorTool = Tool.make("CalculatorTool", {
 })
 
 // Create toolkit
-const MyToolkit = Toolkit.make(GreetTool, CalculatorTool)
+toolkit MyToolkit { GreetTool, CalculatorTool }
 
 // Define a resource
 const ReadmeResource = McpServer.resource({
