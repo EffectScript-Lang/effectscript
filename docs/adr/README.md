@@ -89,8 +89,9 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0079](0079-effectscript-dev-on-blume-with-a-public-theme.md) | effectscript.dev moves to Blume, with a public EffectScript theme | Accepted |
 | [0080](0080-code-ligatures-on.md) | Code is set with JetBrains Mono's ligatures on | Accepted |
 | [0081](0081-signature-clause-scopes.md) | The grammar scopes an effect's success, error and requirement types | Accepted |
-| [0083](0083-language-extensions.md) | Abstractions outside Effect come as language extensions that never overlap | Accepted (mechanism open) |
 | [0082](0082-the-landing-page-as-an-exhibition.md) | The landing page is an exhibition: computed rooms, vgpu WebGPU scenes and generated photography | Accepted |
+| [0083](0083-language-extensions.md) | Abstractions outside Effect come as language extensions that never overlap | Accepted (mechanism open) |
+| [0084](0084-the-playground-maps-each-part-live.md) | The playground is a full-screen editor that links each EffectScript part to its TypeScript | Accepted |
 
 ## Template
 

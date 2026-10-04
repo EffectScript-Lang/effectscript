@@ -3,6 +3,7 @@
  * both ways, diagnostics and notes with line and column, dropping stale results, and share hashes.
  */
 import { toEffectScript, toTypeScript } from "effectscript/compiler"
+import { type Link, toLinks } from "./mapping.ts"
 
 /** Larger sources are refused: the compiler runs on every keystroke. */
 export const maxSource = 200_000
@@ -37,6 +38,8 @@ export interface Response {
   readonly code: string | undefined
   readonly diagnostics: ReadonlyArray<Problem>
   readonly notes: ReadonlyArray<Note>
+  /** EffectScript → TypeScript only: how each part of the source became output (ADR-0084). */
+  readonly links: ReadonlyArray<Link>
 }
 
 const position = (source: string, offset: number) => {
@@ -60,6 +63,7 @@ export const compile = (request: Request): Response => {
       direction,
       code: undefined,
       notes: [],
+      links: [],
       diagnostics: [{
         code: "EFX0000",
         message: `This source is too large for the playground (over ${maxSource} characters)`,
@@ -79,6 +83,7 @@ export const compile = (request: Request): Response => {
         direction,
         code: result.code,
         notes: [],
+        links: toLinks(source, result.code, result.mappings),
         diagnostics: result.diagnostics.map((d) => {
           const start = position(source, d.start)
           const end = position(source, Math.max(d.end, d.start + 1))
@@ -100,6 +105,7 @@ export const compile = (request: Request): Response => {
       direction,
       code: result.code,
       diagnostics: [],
+      links: [],
       notes: result.notes.map((n) => ({ message: n.message, ...position(source, n.start) }))
     }
   } catch (error) {
@@ -108,6 +114,7 @@ export const compile = (request: Request): Response => {
       direction,
       code: undefined,
       notes: [],
+      links: [],
       diagnostics: [{
         code: "EFX1000",
         message: `Internal error: ${error instanceof Error ? error.message : String(error)}`,

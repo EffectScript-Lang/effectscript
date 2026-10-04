@@ -10,6 +10,7 @@ import shellscript from "shiki/langs/shellscript.mjs"
 import tsx from "shiki/langs/tsx.mjs"
 import typescript from "shiki/langs/typescript.mjs"
 import { efxGrammars } from "../playground/grammar.ts"
+import { signalColours, signalRanges } from "./signals.ts"
 
 /**
  * The brand's code colours (brand README: white carries the brand, grays set hierarchy): keywords
@@ -52,38 +53,36 @@ export const mono: ThemeRegistration = {
 
 let highlighter: Promise<Highlighter> | undefined
 
-/** The signal colours on Ink (ADR-0078): Effect's A, E and R in a signature. */
-const signals = { pass: "#4ADE80", fail: "#F87171", need: "#60A5FA" } as const
-
-/** A line that declares a signature: an `effect`, a service method, a tool or a workflow. */
-const signature = /^\s*(export\s+)?(effect\*?|tool|workflow)\b|\b(throws|needs)\b/
-
 /**
- * Colours a signature the way the Blume theme will (spec 2026-10-05 §5.2, ADR-0078): the return
- * type Pass, the types after `throws` Fail and the services after `needs` Need. The grammar has no
- * scopes for these clauses yet, so this reads the tokens of one line: a clause runs until `{`,
- * `=`, `=>`, `|>` or the end of the line.
+ * Splits each token at the signal ranges (`signals.ts`) and recolours the parts inside them: the
+ * return type Pass, `throws` Fail, `needs` Need, as the Blume theme will (ADR-0078).
  */
-const withSignals = (line: Array<ThemedToken>): Array<ThemedToken> => {
-  if (!signature.test(line.map((t) => t.content).join(""))) return line
-  let mode: keyof typeof signals | undefined
-  let depth = 0
-  let previous = ""
-  // Shiki merges neighbours of one colour, so a token can hold a whole `find(id: string): User`
-  const pieces = line.flatMap((token) =>
-    (token.content.match(/\s+|=>|\|>|[A-Za-z_$][\w$.]*|./g) ?? []).map((content) => ({ ...token, content }))
-  )
-  return pieces.map((token) => {
-    const text = token.content.trim()
-    let colour: string | undefined
-    if (text === "throws") mode = "fail"
-    else if (text === "needs") mode = "need"
-    else if (text.startsWith(":") && depth === 0 && previous === ")" && mode === undefined) mode = "pass"
-    else if (["{", "=", "=>", "|>", "key"].includes(text) || text.startsWith("{")) mode = undefined
-    else if (mode !== undefined && /^[A-Za-z_$]/.test(text)) colour = signals[mode]
-    for (const char of token.content) depth += char === "(" ? 1 : char === ")" ? -1 : 0
-    if (text !== "") previous = text.at(-1)!
-    return colour === undefined ? token : { ...token, color: colour }
+const withSignals = (lines: Array<Array<ThemedToken>>, code: string): Array<Array<ThemedToken>> => {
+  const ranges = signalRanges(code, "efx")
+  if (ranges.length === 0) return lines
+  let offset = 0
+  return lines.map((line) => {
+    const out: Array<ThemedToken> = []
+    for (const token of line) {
+      const start = offset
+      const end = offset + token.content.length
+      // the boundaries inside this token, where a signal range starts or ends
+      const cuts = [start, end, ...ranges.flatMap((r) => [r.start, r.end]).filter((x) => x > start && x < end)]
+        .sort((a, b) => a - b)
+      for (let i = 0; i + 1 < cuts.length; i++) {
+        const [from, to] = [cuts[i]!, cuts[i + 1]!]
+        if (from === to) continue
+        const signal = ranges.find((r) => r.start <= from && to <= r.end)?.signal
+        out.push({
+          ...token,
+          content: token.content.slice(from - start, to - start),
+          ...(signal === undefined ? {} : { color: signalColours[signal] })
+        })
+      }
+      offset = end
+    }
+    offset += 1
+    return out
   })
 }
 
@@ -106,10 +105,10 @@ export const highlight = async (
       lang: lang as BundledLanguage,
       theme: "efx-mono"
     })
-    return tokens
+    return withSignals(tokens, code.replace(/\n$/, ""))
       .map((line) =>
         `<span class="line">${
-          withSignals(line).map((t) =>
+          line.map((t) =>
             `<span style="color:${t.color}${(t.fontStyle ?? 0) & 1 ? ";font-style:italic" : ""}">${
               escape(t.content)
             }</span>`

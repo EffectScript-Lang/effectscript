@@ -87,3 +87,42 @@ describe("the playground protocol (Plan 16 Task 4, ADR-0054)", () => {
     }
   })
 })
+
+describe("the playground's live mapping (ADR-0084)", async () => {
+  const { toTypeScript } = await import("effectscript/compiler")
+  const { fromGenerated, fromSource, toGeneratedOffset, toLinks } = await import(
+    "@effectscript/site/playground/mapping"
+  )
+  const { signalRanges } = await import("@effectscript/site/lib/signals")
+  const source =
+    "error UserNotFound { id: string }\n\nexport effect greet(id: string): string throws UserNotFound needs Users {\n  const user = await Users.find(id)\n  return user.name\n} |> retry({ times: 3 })\n"
+  const { code, mappings } = toTypeScript(source, { filename: "playground.efx" })
+  const links = toLinks(source, code, mappings)
+  const generatedOf = (offset: number) =>
+    fromSource(links, source, offset)!.generated.map(([from, to]) => code.slice(from, to))
+
+  it("links each rewritten part to everything it became", () => {
+    expect(generatedOf(source.indexOf("await"))).toEqual(["yield*"])
+    expect(generatedOf(source.indexOf("effect greet")).join("")).toContain("Effect.fn(\"greet\")(function*")
+    expect(generatedOf(source.indexOf("|>")).join("")).toContain("Effect.")
+    expect(links.find((l) => l.kind === "prelude")).toBeDefined()
+  })
+
+  it("follows a copied word to its twin, and back from the output", () => {
+    const user = source.indexOf("user.name")
+    expect(generatedOf(user)).toEqual(["user"])
+    const back = fromGenerated(links, code, code.indexOf("yield*"))!
+    expect(source.slice(back.source[0], back.source[1])).toBe("await")
+  })
+
+  it("lines the output up with the source for scrolling, in order", () => {
+    const offsets = [0, source.indexOf("export"), source.indexOf("const user"), source.indexOf("|>")]
+    const mapped = offsets.map((o) => toGeneratedOffset(links, o))
+    expect([...mapped].sort((a, b) => a - b)).toEqual(mapped)
+  })
+
+  it("finds A, E and R in Effect.fn.Return in the output", () => {
+    const named = signalRanges(code, "ts").map((r) => [code.slice(r.start, r.end), r.signal])
+    expect(named).toEqual([["string", "pass"], ["UserNotFound", "fail"], ["Users", "need"]])
+  })
+})
