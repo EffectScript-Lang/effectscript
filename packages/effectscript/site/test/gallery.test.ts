@@ -1,14 +1,14 @@
 import { constructs } from "@effectscript/site/data/constructs"
-import { gallery, tokenPieces } from "@effectscript/site/data/gallery"
+import { gallery } from "@effectscript/site/data/gallery"
+import { count, pieces } from "@effectscript/tokens"
 import { toTypeScript } from "effectscript/compiler"
-import { encode } from "gpt-tokenizer/encoding/o200k_base"
 import { describe, expect, it, vi } from "vitest"
 import { typecheck } from "../../core/test/utils/typecheck.ts"
 
 // the type check blocks the event loop while the other tests in this file wait
 vi.setConfig({ testTimeout: 180_000 })
 
-const scenarios = gallery()
+const scenarios = await gallery()
 
 describe("the gallery (Plan 16 Task 3, ADR-0054)", () => {
   it("has the ten scenarios of spec §9.2, each in plain TS, Effect TS and EffectScript", () => {
@@ -36,9 +36,10 @@ describe("the gallery (Plan 16 Task 3, ADR-0054)", () => {
     expect(typecheck(files)).toEqual([])
   }, 180_000)
 
-  it("counts tokens with o200k_base, exactly as shown", () => {
+  it("counts o200k tokens with Hugging Face tokenizers, exactly as shown (ADR-0092)", async () => {
     for (const s of scenarios) {
-      for (const pane of s.panes) expect(pane.tokens, `${s.id} ${pane.kind}`).toBe(encode(pane.code).length)
+      const counts = await count(s.panes.map((pane) => pane.code))
+      for (const [i, pane] of s.panes.entries()) expect(pane.tokens, `${s.id} ${pane.kind}`).toBe(counts[i])
       const [plain, effect, efx] = s.panes
       expect(efx!.tokens).toBeLessThan(effect!.tokens)
       expect(plain!.tokens).toBeGreaterThan(0)
@@ -53,11 +54,11 @@ describe("the gallery (Plan 16 Task 3, ADR-0054)", () => {
 })
 
 describe("token pieces (Plan 21)", () => {
-  it("split at token boundaries without breaking a character", () => {
+  it("split at token boundaries without breaking a character", async () => {
     const code = "const s = \"héllo ƒx 🎉 日本語\"\n"
-    const pieces = tokenPieces(code)
-    expect(pieces.join("")).toBe(code)
-    expect(pieces.join("")).not.toContain("\uFFFD")
+    const split = await pieces(code)
+    expect(split.join("")).toBe(code)
+    expect(split.join("")).not.toContain("\uFFFD")
   })
 
   it("match each sample's own text", () => {

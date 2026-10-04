@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest"
 
 const repo = path.resolve(import.meta.dirname, "../../../..")
 const content = path.resolve(import.meta.dirname, "../content")
-const files = generate(repo)
+const files = await generate(repo)
 const headings = (markdown: string) => markdown.split("\n").filter((line) => /^#{1,6} /.test(line))
 
 describe("the generated docs (Plan 13 Task 2, ADR-0050)", () => {
@@ -102,19 +102,19 @@ describe("Plan 21: the generator's inputs and pages", () => {
     return root
   }
 
-  it("reads tracked files only, and skips test and fixture folders", () => {
-    const out = generate(fixture())
+  it("reads tracked files only, and skips test and fixture folders", async () => {
+    const out = await generate(fixture())
     expect([...out.keys()].filter((f) => f.startsWith("guides/"))).toEqual(["guides/packages/x/README.md"])
-  })
+  }, 60_000)
 
-  it("puts each symbol's examples under one heading", () => {
-    const page = generate(fixture()).get("api/@scope/x/a.md")!
+  it("puts each symbol's examples under one heading", async () => {
+    const page = (await generate(fixture())).get("api/@scope/x/a.md")!
     expect(page.match(/^## Foo$/gm)).toHaveLength(1)
-  })
+  }, 60_000)
 
-  it("ignores dotfiles when checking for drift", () => {
+  it("ignores dotfiles when checking for drift", async () => {
     const root = fixture()
-    const files = generate(root)
+    const files = await generate(root)
     const dir = path.join(root, "content")
     for (const [file, text] of files) {
       fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true })
@@ -122,5 +122,5 @@ describe("Plan 21: the generator's inputs and pages", () => {
     }
     fs.writeFileSync(path.join(dir, ".DS_Store"), "")
     expect(drift(files, dir)).toEqual([])
-  })
+  }, 60_000)
 })

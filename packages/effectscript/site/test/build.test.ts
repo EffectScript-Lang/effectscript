@@ -149,7 +149,7 @@ describe("the landing page (Plan 16 Task 3, ADR-0054)", () => {
   it("shows all ten scenarios, each pane with its exact token count", async () => {
     const { gallery } = await import("@effectscript/site/data/gallery")
     const page = read("index.html")
-    for (const scenario of gallery()) {
+    for (const scenario of await gallery()) {
       expect(page).toContain(`id="scenario-${scenario.id}"`)
       for (const pane of scenario.panes) expect(page).toContain(`data-count="${pane.tokens}"`)
     }

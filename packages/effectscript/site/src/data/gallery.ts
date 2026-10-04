@@ -1,10 +1,11 @@
 /**
  * The before/after gallery (spec §9.2, ADR-0054): each scenario in plain TypeScript, in Effect
  * TypeScript, and in EffectScript. The Effect pane is compiled from the EffectScript at build time,
- * so it can't drift. Token counts are o200k_base (the GPT-4o tokenizer), counted on the code shown.
+ * so it can't drift. Token counts are o200k (the GPT-4o and GPT-5 vocabulary) through Hugging Face
+ * tokenizers, counted on the code shown (ADR-0092).
  */
+import { count, pieces } from "@effectscript/tokens"
 import { toTypeScript } from "effectscript/compiler"
-import { decode, encode } from "gpt-tokenizer/encoding/o200k_base"
 import { scenarios } from "../samples/scenarios.ts"
 
 const sources = import.meta.glob<string>("../samples/*/*.{ts,efx}", { query: "?raw", import: "default", eager: true })
@@ -34,36 +35,17 @@ export interface Scenario {
   readonly diagnostics: ReadonlyArray<string>
 }
 
-/**
- * The code split at token boundaries. A character can span tokens (é, 🎉, 日): such tokens are
- * shown together, so every piece is whole text (Plan 21).
- */
-export const tokenPieces = (code: string): Array<string> => {
-  const pieces: Array<string> = []
-  let pending: Array<number> = []
-  for (const id of encode(code)) {
-    pending.push(id)
-    const text = decode(pending)
-    if (!text.includes("\uFFFD")) {
-      pieces.push(text)
-      pending = []
-    }
-  }
-  if (pending.length > 0) pieces.push(decode(pending))
-  return pieces
-}
-
-const pane = (kind: Pane["kind"], name: string, language: Pane["language"], code: string): Pane => ({
+const pane = async (kind: Pane["kind"], name: string, language: Pane["language"], code: string): Promise<Pane> => ({
   kind,
   name,
   language,
   code,
-  tokens: encode(code).length,
-  pieces: tokenPieces(code)
+  tokens: (await count([code]))[0]!,
+  pieces: await pieces(code)
 })
 
-export const gallery = (): Array<Scenario> =>
-  scenarios.map(({ file, id, title }) => {
+export const gallery = (): Promise<Array<Scenario>> =>
+  Promise.all(scenarios.map(async ({ file, id, title }): Promise<Scenario> => {
     const efx = source(id, "app.efx")
     const compiled = toTypeScript(efx, { filename: `${file}.efx` })
     return {
@@ -71,12 +53,12 @@ export const gallery = (): Array<Scenario> =>
       title,
       diagnostics: compiled.diagnostics.filter((d) => d.severity === "error").map((d) => `${d.code} ${d.message}`),
       panes: [
-        pane("plain", `${file}.ts`, "ts", source(id, "plain.ts")),
-        pane("effect", `${file}.effect.ts`, "ts", compiled.code),
-        pane("efx", `${file}.efx`, "efx", efx)
+        await pane("plain", `${file}.ts`, "ts", source(id, "plain.ts")),
+        await pane("effect", `${file}.effect.ts`, "ts", compiled.code),
+        await pane("efx", `${file}.efx`, "efx", efx)
       ]
     }
-  })
+  }))
 
 /** How much smaller `after` is than `before`, as a whole percentage. */
 export const saving = (before: number, after: number): number => Math.round((1 - after / before) * 100)

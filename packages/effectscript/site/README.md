@@ -39,7 +39,8 @@ pages. Hand-written pages are `content/index.mdx`, `content/start/install.md` an
 
 - **The gallery:** `src/samples/<scenario>/{plain.ts,app.efx}`. The Effect TypeScript pane is
   compiled from `app.efx` at build time.
-- **Token counts:** `o200k_base`, the GPT-4o tokenizer, on the exact code shown.
+- **Token counts:** `o200k` (the GPT-4o and GPT-5 vocabulary) through Hugging Face tokenizers, on
+  the exact code shown (`@effectscript/tokens`, ADR-0092).
 - **Tests:**
   - every `app.efx` compiles and type-checks against `effect`;
   - the counts on the page match the tokenizer.

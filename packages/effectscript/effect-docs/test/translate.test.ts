@@ -1,4 +1,4 @@
-import { convertBlock, convertMarkdown, jsdocExamples, tokens } from "@effectscript/effect-docs/translate"
+import { convertBlock, convertMarkdown, jsdocExamples } from "@effectscript/effect-docs/translate"
 import { toTypeScript } from "effectscript/compiler"
 import ts from "typescript"
 import { describe, expect, it } from "vitest"
@@ -157,13 +157,6 @@ describe("jsdocExamples (Plan 13 Task 1)", () => {
   })
 })
 
-describe("tokens (Plan 13 Task 1)", () => {
-  it("counts scanner tokens, not characters", () => {
-    expect(tokens("const a = 1 // comment\n")).toBe(4)
-    expect(tokens("export effect f() {\n  return await g()\n}\n")).toBe(12)
-  })
-})
-
 describe("Plan 13 review fixes", () => {
   it("keeps a block as TypeScript when, as EffectScript, it wouldn't compile back (I2)", () => {
     // EffectScript would import Option automatically; the original relies on a global
@@ -183,12 +176,6 @@ describe("Plan 13 review fixes", () => {
     expect(converted.markdown).toContain("**v3**\n\n```ts\nimport { Effect } from \"effect\"\nconst x = Effect.gen(")
     expect(converted.markdown).toContain("**v4**\n\n```efx\n")
     expect(converted.blocks).toHaveLength(1)
-  })
-
-  it("counts tokens inside template literals (I6)", () => {
-    const template = "const a = `x ${b} y`"
-    const after = "const c = d + e + f"
-    expect(tokens(`${template}\n${after}\n`)).toBe(tokens(`${template}\n`) + tokens(`${after}\n`))
   })
 
   it("names the documented symbol for export specifiers, members and namespace members (I3)", () => {

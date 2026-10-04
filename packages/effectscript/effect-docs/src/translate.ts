@@ -241,20 +241,3 @@ export const jsdocExamples = (source: string): Array<JsdocExample> => {
   }
   return examples
 }
-
-/**
- * The number of tokens TypeScript's scanner sees (comments and whitespace excluded): a fair
- * measure of how much code there is to read.
- *
- * @since 4.0.0
- * @category translate
- */
-export const tokens = (code: string): number => {
-  const parsed = parse(code, { tokens: true })
-  if (parsed._tag === "Success") return parsed.tokens.length
-  // code that doesn't parse: TypeScript's scanner, as an estimate
-  const scanner = ts.createScanner(ts.ScriptTarget.Latest, true, ts.LanguageVariant.JSX, code)
-  let count = 0
-  while (scanner.scan() !== ts.SyntaxKind.EndOfFileToken) count++
-  return count
-}

@@ -1,0 +1,22 @@
+{
+  "name": "@effectscript/tokens",
+  "version": "4.0.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Token counts for EffectScript's samples and docs, with Hugging Face tokenizers and the vocabularies of current frontier models (ADR-0092)",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "tokenizers": "0.23.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "vitest": "^5.0.2"
+  }
+}

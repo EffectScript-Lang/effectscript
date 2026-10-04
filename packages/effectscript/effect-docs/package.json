@@ -14,6 +14,7 @@
     "check": "tsc -b tsconfig.json"
   },
   "dependencies": {
+    "@effectscript/tokens": "workspace:^",
     "effectscript": "workspace:^",
     "typescript": "^6.0.3"
   },

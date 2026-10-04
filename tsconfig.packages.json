@@ -18,6 +18,7 @@
     { "path": "packages/effectscript/language" },
     { "path": "packages/effectscript/vscode" },
     { "path": "packages/effectscript/effect-docs" },
+    { "path": "packages/effectscript/tokens" },
     { "path": "packages/effectscript/site/tsconfig.check.json" },
     { "path": "packages/opentelemetry" },
     { "path": "packages/platform/browser" },

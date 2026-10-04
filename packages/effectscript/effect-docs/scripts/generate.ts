@@ -7,7 +7,7 @@ import * as path from "node:path"
 import { drift, generate } from "../src/generate.ts"
 
 const content = path.join(import.meta.dirname, "../content")
-const files = generate(path.join(import.meta.dirname, "../../../.."))
+const files = await generate(path.join(import.meta.dirname, "../../../.."))
 if (process.argv.includes("--check")) {
   const problems = drift(files, content)
   for (const problem of problems) process.stderr.write(`${problem}\n`)

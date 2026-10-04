@@ -2,13 +2,13 @@
  * The landing page's computed facts (ADR-0082): every number, diagnostic and compiled snippet on
  * the page comes from the compiler, the gallery or the tokenizer when the site is built.
  */
+import { count } from "@effectscript/tokens"
 import { toTypeScript } from "effectscript/compiler"
-import { encode } from "gpt-tokenizer/encoding/o200k_base"
 import { gallery, saving } from "./gallery.ts"
 
-export const scenarios = gallery()
+export const scenarios = await gallery()
 
-/** o200k_base totals of the ten scenarios, per pane. */
+/** o200k totals of the ten scenarios, per pane. */
 export const totals = scenarios.reduce(
   (sum, s) => ({
     plain: sum.plain + s.panes[0].tokens,
@@ -84,11 +84,12 @@ export const mistakes: ReadonlyArray<Diagnosed> = [
 ]
 
 /** One small file, and the Effect TypeScript it compiles to. */
-export const outputExample = (() => {
+export const outputExample = await (async () => {
   const efx =
     "export error UserNotFound { id: string }\n\nexport effect getUser(id: string): string throws UserNotFound {\n  if (id === \"\") throw new UserNotFound({ id })\n  return id\n} |> retry({ times: 3 })"
   const ts = toTypeScript(efx, { filename: "users.efx" }).code.trim()
-  return { efx, ts, efxTokens: encode(efx).length, tsTokens: encode(ts).length }
+  const [efxTokens, tsTokens] = await count([efx, ts])
+  return { efx, ts, efxTokens: efxTokens!, tsTokens: tsTokens! }
 })()
 
 /** The Effect TypeScript the hero's strands are made of: the samples' compiled panes. */
