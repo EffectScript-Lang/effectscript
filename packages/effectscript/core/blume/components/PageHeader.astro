@@ -1,0 +1,29 @@
+---
+/**
+ * The construct badge above a page's title (spec §4.3), from its `kind` frontmatter. Blume passes
+ * this slot only `title`, `description` and `route`, so the page's entry is read from its route.
+ */
+import { getEntry } from "astro:content"
+import data from "blume:data"
+import { kindGlyph } from "effectscript/blume"
+
+interface Props {
+  readonly route?: string
+}
+const { route } = Astro.props
+const current = data.routes.find((r: { path: string }) => r.path === route)
+const entry = current === undefined ? undefined : await getEntry(current.collection, current.entryId)
+const kind = (entry?.data as { kind?: unknown } | undefined)?.kind
+const badge = typeof kind === "string" ? kindGlyph(kind) : undefined
+---
+
+{
+  badge && (
+    <p class="efx-kind efx-label" data-signal={badge.signal}>
+      <b>
+        {badge.glyph} {kind}
+      </b>
+      <span>construct · language reference</span>
+    </p>
+  )
+}

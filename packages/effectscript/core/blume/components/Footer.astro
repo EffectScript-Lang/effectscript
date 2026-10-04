@@ -1,0 +1,62 @@
+---
+/**
+ * The site footer (spec §4.6): the tagline, the Effect disclaimer, and the repository and social
+ * links that Blume's own footer carries. Replaces Blume's `Footer` slot.
+ */
+interface Props {
+  readonly footer?: { readonly socials?: Readonly<Record<string, string>> }
+  readonly navigation?: { readonly repoUrl?: string }
+}
+const { footer, navigation } = Astro.props
+const links = [
+  ...(navigation?.repoUrl === undefined ? [] : [["GitHub", navigation.repoUrl] as const]),
+  ...Object.entries(footer?.socials ?? {}).map(([name, href]) => [name === "x" ? "X" : name, href] as const)
+]
+---
+
+<footer class="efx-footer" data-blume-footer>
+  <div>
+    <p class="efx-tagline">All of Effect. None of the ceremony.</p>
+    <p class="efx-disclaimer">Built on Effect. Not affiliated with or endorsed by Effectful Technologies.</p>
+  </div>
+  {
+    links.length > 0 && (
+      <nav class="efx-label" aria-label="Elsewhere">
+        {links.map(([label, href]) => <a href={href}>{label}</a>)}
+      </nav>
+    )
+  }
+</footer>
+
+<style is:global>
+  .efx-footer {
+    border-top: 1px solid var(--blume-border);
+    padding: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--blume-muted-foreground);
+    font-size: 0.875rem;
+  }
+  .efx-footer p {
+    margin: 0;
+  }
+  .efx-tagline {
+    font-family: var(--blume-font-display);
+    font-weight: 600;
+    color: var(--blume-foreground);
+  }
+  .efx-footer nav {
+    display: flex;
+    gap: 1.25rem;
+  }
+  .efx-footer nav a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .efx-footer nav a:hover {
+    color: var(--blume-foreground);
+  }
+</style>

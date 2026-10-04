@@ -1,0 +1,40 @@
+---
+/**
+ * The EffectScript lockup in Blume's header (spec §4.1): black on light, white on dark, and the
+ * preview pill in the Warn signal. Replaces Blume's `Logo` slot.
+ */
+import black from "./lockup-black.svg?raw"
+import white from "./lockup-white.svg?raw"
+
+interface Props {
+  readonly site?: { readonly title: string }
+}
+const { site } = Astro.props
+---
+
+<a href="/" class="efx-logo" aria-label={site?.title ?? "EffectScript"}>
+  <span class="efx-logo-light" set:html={black} />
+  <span class="efx-logo-dark" set:html={white} />
+  <span class="efx-label efx-version">alpha</span>
+</a>
+
+<style is:global>
+  .efx-logo {
+    display: inline-flex;
+    align-items: center;
+  }
+  .efx-logo svg {
+    display: block;
+    height: 1.25rem;
+    width: auto;
+  }
+  .efx-logo-dark {
+    display: none;
+  }
+  :root[data-theme="dark"] .efx-logo-light {
+    display: none;
+  }
+  :root[data-theme="dark"] .efx-logo-dark {
+    display: inline-flex;
+  }
+</style>
