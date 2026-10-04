@@ -195,3 +195,23 @@ content of its string literal, so TS2367 and hovers land on the name. The skill,
   because "temporary" wasn't well defined.
 - **Literal and object patterns now:** the tag form covers retries and the docs corpus. Literals,
   object patterns, bindings, `and` and guards can follow `match`'s grammar later.
+
+## Amendment 1 (Plan 29)
+
+Details settled while planning the implementation:
+
+- **Groups:** a pattern may be parenthesized without `not` too, `x is (A or B)`, since TC39
+  patterns group with parentheses. `is (` at the start of an expression is still a call.
+- **Line breaks:** `or` is on the same line as the tag before it, and the tag after `or` may be on
+  the next line, as after a comma in a `where` list (ADR-0077). A long test wraps after `or`.
+- **Editor mapping:** each tag name maps to its string for diagnostics, so TS2367 lands on the
+  test. Hover and navigation aren't mapped: the name isn't emitted, and the string has nothing to
+  show. "And hovers" under Tooling is withdrawn.
+- **Reverse compiler:**
+  - A tag named after a primitive's constructor (`String`, `Number`, `Boolean`, `BigInt`,
+    `Symbol`) stays TypeScript. Under TC39, `x is String` tests for a string, and the converted
+    code would read that way.
+  - So do reserved words, and the words `is` can't take as a name (`as`, `satisfies`, `of`, `or`,
+    `not`).
+  - When exactly one module class has the tag, the conversion writes that class's name
+    (`x is NotFoundError` for the tag `"NotFound"`), which compiles back to the same tag.
