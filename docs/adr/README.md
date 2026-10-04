@@ -77,6 +77,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0067](0067-generator-streams.md) | `effect*` declares a generator stream on `Stream.callback` | Accepted |
 | [0069](0069-rpc-groups-and-generic-impl.md) | `rpc` groups, signature lines, and a generic `impl Name` | Accepted |
 | [0068](0068-linked-dev-install-of-the-editor-extension.md) | The editor extension installs from the checkout as a symlink | Accepted |
+| [0070](0070-tools-and-toolkits.md) | `tool` declares an AI tool with its doc comment as the description | Accepted |
 
 ## Template
 
