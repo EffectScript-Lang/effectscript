@@ -233,14 +233,14 @@ reading models.
 | `.efx` / TypeScript | Bend model | Notes |
 | ------------------- | ---------- | ----- |
 | `boolean` | `Bool` | |
-| `bigint`; `Int` and schemas built on it (`Int.check(…)`, `Int & Brand<"X">`) | `Efx.Int` | Unbounded in the model. `Schema.Int` checks safe integers, so decoded values are exact; arithmetic past ±2^53 is a documented gap. Bend's own runtime stops at ±(2^48 − 1). |
+| `bigint`; `Int` and schemas built on it (`Int.check(…)` or `Int where …`, `Int & Brand<"X">` or `brand X = Int`) | `Efx.Int` | Unbounded in the model. `Schema.Int` checks safe integers, so decoded values are exact; arithmetic past ±2^53 is a documented gap. Bend's own runtime stops at ±(2^48 − 1). |
 | `number` (other) | opaque | Floats aren't modeled (Bend's `F32` is axiomatic). |
 | `string` | `String` | `Efx.String.eq`; lemmas in the prelude |
 | Literal unions (`"a" \| "b"`) | `type … is Data` with one constructor per literal | |
 | `schema X { … }` (class), `schema X = { … }` (struct) | `type X is Data: X{field: T, …}` | Fields in declaration order; generated accessors `X.field(x)` and structural `X.equals(a, b)` |
 | `schema S = \| A { … } \| B { … }` | `type S is Data: A{…} B{…}` | `_tag` checks become `match` |
 | `error E { … }` | constructor `E{…}` of `Err.Errors` | One program-wide type in `proofs/_efx/errors.bend`; same-named errors in two modules get the module's name as a prefix |
-| `T & Brand<"X">` | `T` | Brands are erased |
+| `brand X = T`, `T & Brand<"X">` | `T` | Brands are erased (ADR-0077) |
 | `ReadonlyArray<T>`, `T[]` (not mutated) | `List<&2, T>` | |
 | `[A, B]` | `A & B` | |
 | `Option<T>` | `Maybe<&2, T>` | |
