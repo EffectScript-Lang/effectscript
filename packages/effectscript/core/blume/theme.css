@@ -1,0 +1,233 @@
+/*
+ * EffectScript for Blume (ADR-0078, ADR-0079, ADR-0080). Import it from a project's theme.css:
+ *   @import "effectscript/blume/theme.css";
+ * The brand is ink and white; the four signal colours only ever mean state.
+ */
+
+@font-face {
+  font-family: "Inter Display";
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/InterDisplay-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter Display";
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/InterDisplay-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/Inter-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/Inter-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-Medium.woff2") format("woff2");
+}
+
+:root {
+  --blume-font-display: "Inter Display", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --blume-font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --blume-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --blume-radius: 0.625rem;
+  --blume-background: #ffffff;
+  --blume-foreground: #09090b;
+  --blume-muted: #f4f4f5;
+  --blume-muted-foreground: #52525b;
+  --blume-border: #e4e4e7;
+  --blume-accent: #09090b;
+  --blume-accent-foreground: #ffffff;
+  --blume-action: #09090b;
+  --blume-action-foreground: #ffffff;
+  --blume-code-background: #fafafa;
+  --efx-pass: #15803d;
+  --efx-pass-tint: rgb(21 128 61 / 0.08);
+  --efx-fail: #b91c1c;
+  --efx-fail-tint: rgb(185 28 28 / 0.08);
+  --efx-warn: #854d0e;
+  --efx-warn-tint: rgb(133 77 14 / 0.08);
+  --efx-need: #1d4ed8;
+  --efx-need-tint: rgb(29 78 216 / 0.08);
+  --efx-fade-end: #a1a1aa;
+  --efx-grid: rgb(9 9 11 / 0.07);
+  --blume-code-add: var(--efx-pass-tint);
+  --blume-code-add-border: var(--efx-pass);
+  --blume-code-remove: var(--efx-fail-tint);
+  --blume-code-remove-border: var(--efx-fail);
+}
+
+:root[data-theme="dark"] {
+  --blume-background: #09090b;
+  --blume-foreground: #fafafa;
+  --blume-muted: #18181a;
+  --blume-muted-foreground: #a1a1aa;
+  --blume-border: #27272a;
+  --blume-accent: #ffffff;
+  --blume-accent-foreground: #09090b;
+  --blume-action: #ffffff;
+  --blume-action-foreground: #09090b;
+  --blume-code-background: #0b0b0d;
+  --efx-pass: #4ade80;
+  --efx-pass-tint: rgb(74 222 128 / 0.1);
+  --efx-fail: #f87171;
+  --efx-fail-tint: rgb(248 113 113 / 0.1);
+  --efx-warn: #facc15;
+  --efx-warn-tint: rgb(250 204 21 / 0.1);
+  --efx-need: #60a5fa;
+  --efx-need-tint: rgb(96 165 250 / 0.1);
+  --efx-fade-end: #71717a;
+  --efx-grid: rgb(255 255 255 / 0.05);
+  --blume-code-add: var(--efx-pass-tint);
+  --blume-code-add-border: var(--efx-pass);
+  --blume-code-remove: var(--efx-fail-tint);
+  --blume-code-remove-border: var(--efx-fail);
+}
+
+/* code: JetBrains Mono with its ligatures on, so `|>` draws as ▷ (ADR-0080) */
+code,
+pre,
+kbd {
+  font-family: var(--blume-font-mono);
+  font-variant-ligatures: contextual common-ligatures;
+}
+
+/* the canvas: a quiet dot grid behind the docs */
+body {
+  background-image: radial-gradient(var(--efx-grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* headings: Inter Display, tight, and the brand's headline fade on the page title */
+h1,
+h2,
+h3 {
+  font-family: var(--blume-font-display);
+  letter-spacing: -0.025em;
+}
+article h1 {
+  background: linear-gradient(90deg, var(--blume-foreground) 55%, var(--efx-fade-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* // LABELS */
+.efx-label {
+  font: 500 0.6875rem/1 var(--blume-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* the construct badge above a reference page's title (PageHeader) */
+.efx-kind {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0 0 0.75rem;
+  color: var(--blume-muted-foreground);
+}
+.efx-kind b {
+  font-weight: 500;
+  color: var(--blume-foreground);
+  border: 1px solid var(--blume-border);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.45rem;
+  text-transform: none;
+}
+.efx-kind[data-signal="fail"] b {
+  color: var(--efx-fail);
+  background: var(--efx-fail-tint);
+  border-color: var(--efx-fail);
+}
+.efx-kind[data-signal="need"] b {
+  color: var(--efx-need);
+  background: var(--efx-need-tint);
+  border-color: var(--efx-need);
+}
+
+/* the preview pill next to the logo: Warn, because the language is pre-release */
+.efx-version {
+  color: var(--efx-warn);
+  background: var(--efx-warn-tint);
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  margin-left: 0.625rem;
+}
+
+/* signal-coded facts: efx docs' Returns / Fails with / Needs rows, marked by effectscript/blume-facts */
+tr[data-efx-fact] > :first-child {
+  white-space: nowrap;
+}
+tr[data-efx-fact] > :first-child strong {
+  font: 500 0.6875rem/1 var(--blume-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+tr[data-efx-fact="a"] {
+  box-shadow: inset 2px 0 var(--efx-pass);
+}
+tr[data-efx-fact="e"] {
+  box-shadow: inset 2px 0 var(--efx-fail);
+}
+tr[data-efx-fact="r"] {
+  box-shadow: inset 2px 0 var(--efx-need);
+}
+tr[data-efx-fact="a"] > :first-child strong {
+  color: var(--efx-pass);
+}
+tr[data-efx-fact="e"] > :first-child strong {
+  color: var(--efx-fail);
+}
+tr[data-efx-fact="r"] > :first-child strong {
+  color: var(--efx-need);
+}
+tr[data-efx-fact="a"] > :first-child strong::before {
+  content: "✓ ";
+}
+tr[data-efx-fact="e"] > :first-child strong::before {
+  content: "! ";
+}
+tr[data-efx-fact="r"] > :first-child strong::before {
+  content: "◇ ";
+}
+
+/* callouts: tip ✓ Pass, caution ▲ Warn, danger ! Fail, note ◇ Need */
+[data-callout="tip"] {
+  border-color: var(--efx-pass);
+  background: var(--efx-pass-tint);
+}
+[data-callout="warning"],
+[data-callout="caution"] {
+  border-color: var(--efx-warn);
+  background: var(--efx-warn-tint);
+}
+[data-callout="danger"] {
+  border-color: var(--efx-fail);
+  background: var(--efx-fail-tint);
+}
+[data-callout="note"],
+[data-callout="info"] {
+  border-color: var(--efx-need);
+  background: var(--efx-need-tint);
+}
+
+/* a fence titled "Wrong…" (pitfalls, strict rules) */
+pre[data-title^="Wrong"] {
+  box-shadow: inset 2px 0 var(--efx-fail);
+}
