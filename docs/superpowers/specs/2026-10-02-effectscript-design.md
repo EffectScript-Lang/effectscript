@@ -1682,7 +1682,7 @@ The narrative follows §0: Effect is settled → verbosity is the complaint → 
    `config`, `layer`, and zero-config observability (§4.14–4.16).
 7. **"Zero risk":** the superset guarantee, mixing in one file, two-way conversion, `.ts` ↔ `.efx`
    imports, and "works with your tools" (Bun, Vite, Vitest, Astro, tsc, VS Code).
-8. **Roadmap teaser**, clearly labeled as future work (§14): proofs (Lean 4 / Bend2), Alchemy infra
+8. **Roadmap teaser**, clearly labeled as future work (§14): proofs (laws checked by Bend2, ADR-0074), Alchemy infra
    constructs, AoT-friendly output, and direct oxlint support.
 9. **Install/quickstart**, and the follow call to action.
 
@@ -1845,13 +1845,10 @@ The order was revised after the plan review (ADR-0016).
 - **Living docs** (delivered in Plan 12, ADR-0042/0043): doc comments written once at the
   definition, `efx` examples run as doctests, and `efx docs` writing Markdown for Blume. These are
   the first rung of the trust ladder that contracts, property tests and proofs build on.
-- **Proofs.** Generate Effect code *and* proof obligations automatically. Planned in stages:
-  1. **Contracts.** `requires`/`ensures` clauses on `effect` functions and schema refinements. They
-     are checked at runtime in development, and property tests are derived from them automatically
-     (fast-check through Schema `Arbitrary` and `it.effect.prop`).
-  2. **Export.** Pure functions plus their contracts and schemas are exported to Lean 4 theorem
-     statements and Bend2 specs.
-  3. **CI.** Proof status is reported in CI.
+- **Proofs** (ADR-0074, designed in `2026-10-04-effectscript-proofs-design.md`, Plans 24–27). One
+  `.efx` source: `law` declarations (ADR-0075) run as property tests, and `efx verify` models the
+  code in Bend2 (ADR-0076) so agent-written proofs can show a law holds for every input. Lean 4 is
+  not pursued. Contracts (`requires`/`ensures` on functions) come later as sugar for laws.
 - **Alchemy integration.** `infra`/`resource` constructs compile to Alchemy's Effect-based
   resources, so infrastructure is written in `.efx` as well.
 - **Linting `.efx` directly.** Run oxlint on the compiled TS, mapping diagnostics back through
