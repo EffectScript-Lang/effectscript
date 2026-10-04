@@ -33,7 +33,7 @@ Wrangler. During its beta, `cf` can't build Astro 6 or later, and the site uses 
 - **Secrets stay out of the repository:** the invite code lives in the package's gitignored
   `.dev.vars` and is uploaded with each version (`cf deploy --secrets-file .dev.vars`); the account
   id is in a gitignored `.env`. Changing the code locks out every earlier link and cookie.
-- **Deploy:** `pnpm --filter @effectscript/site-edge deploy` builds the site, then runs `cf deploy`.
+- **Deploy:** `pnpm --filter @effectscript/site-edge run deploy` (`run`, because `pnpm deploy` is a pnpm built-in) builds the site, then runs `cf deploy`.
 
 ## Consequences
 

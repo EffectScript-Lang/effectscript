@@ -265,7 +265,7 @@ the built site on Workers, behind an invite link. It is deployed with Cloudflare
 in with `cf auth login`, never Wrangler. To redeploy (it builds the site first):
 
 ```bash
-pnpm --filter @effectscript/site-edge deploy
+pnpm --filter @effectscript/site-edge run deploy
 ```
 
 At launch, change the gate in `site-edge/src/gate.ts` to serve every page without the banner or
