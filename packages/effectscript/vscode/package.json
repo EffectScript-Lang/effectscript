@@ -24,7 +24,8 @@
     "onLanguage:effectscript"
   ],
   "scripts": {
-    "package": "node scripts/package.ts"
+    "package": "node scripts/package.ts",
+    "dev-install": "node scripts/dev-install.ts"
   },
   "contributes": {
     "languages": [
