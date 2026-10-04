@@ -36,9 +36,8 @@ def text_path(text, name, size, x=0.0, y=0.0, tracking=0.0, features=None):
     buf.add_str(text)
     buf.guess_segment_properties()
     if features is None:
-        # code is shown as typed: no |> → ▷ style programming ligatures
-        code = name.startswith("JetBrainsMono")
-        features = {"kern": True, "liga": not code, "calt": not code}
+        # code keeps JetBrains Mono's ligatures: |> draws as ▷ (ADR-0080)
+        features = {"kern": True, "liga": True, "calt": True}
     hb.shape(font, buf, features)
     glyphs = tt.getGlyphSet()
     order = tt.getGlyphOrder()
