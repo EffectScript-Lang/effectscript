@@ -21,9 +21,9 @@
 **Success criteria:**
 1. `pnpm --filter @effectscript/site build` builds the landing page, the playground, the `/soon`
    teaser and every docs page with Blume 2.1.1 into `site/dist`. No Starlight package remains.
-2. site-edge serves that `dist` unchanged in behaviour: the invite gate, the teaser, 404s and the
-   trailing-slash URLs all work, and every link and anchor in `dist` resolves.
-3. A project made with `efx init` gets the same theme from three one-line files, and its API pages
+2. site-edge serves that `dist` with the same behaviour: the invite gate, the teaser and 404s work,
+   old slashed URLs redirect to the slashless ones, and every link and anchor in `dist` resolves.
+3. A project made with `efx init` gets the same theme from three short files, and its API pages
    show the signal-coded Returns / Fails with / Needs facts.
 4. Every text colour in the theme passes WCAG AA in both modes, checked by a test.
 5. `efx` code is highlighted with the signal-aware monochrome theme everywhere code appears: fenced
@@ -33,18 +33,17 @@
 
 ```
 packages/effectscript/core/
-  src/blume.ts                  effectscript(): Astro integration (grammars, theme, rehype plugin)
-  src/blume/rehype-facts.ts     facts tables → signal-coded facts
-  src/blume/highlight.ts        our Shiki highlighter for efx (Blume's <CodeBlock> can't see it)
-  blume/components/*.astro      Header, Logo, Sidebar, PageHeader, Footer, CodeFrame
-  blume/components.ts           defineComponents({ layout: {...} }) re-exporting the above
-  blume/theme.css               --blume-* and --efx-* tokens, light + dark, canvas, labels
+  src/blume.ts                  effectscript(), theme, markdown, navigation: the integration and config
+  src/blume-facts.ts            the facts enhancer, injected on every page (§4.4)
+  blume/components/*.astro      Logo, PageHeader, Footer
+  blume/theme.css               --blume-* and --efx-* tokens, light + dark, canvas, labels, callouts
   blume/shiki/effectscript-{dark,light}.json   the signal-aware monochrome syntax themes
+  blume/fonts/*.woff2           the brand fonts, subset with their ligatures (generated)
   grammars/                     + clause scopes (§5.2), copied from the VS Code extension
 
 packages/effectscript/site/     one Blume project (Starlight and astro.config.ts removed)
   blume.config.ts               basePath "/docs", content root, theme, search
-  components.ts, theme.css      one line each: re-export / @import the theme
+  components.ts, theme.css      the theme's three page parts, and an @import of its CSS
   pages/index.astro             landing (was src/pages/index.astro)
   pages/playground.astro        playground (React island, client:only)
   pages/soon.astro              teaser
@@ -53,8 +52,12 @@ packages/effectscript/site/     one Blume project (Starlight and astro.config.ts
 
 - Blume builds into `dist/` next to its config (no `outDir` in 2.1.1), which is `site/dist`, where
   site-edge already reads it (`publicDir: "../site/dist"`).
-- Docs mount at `/docs` with `basePath`. Custom pages (`pages/*.astro`) own `/`, `/playground/` and
-  `/soon/`. They use Blume's `PageLayout` with the theme's `Header`, so the site is one system.
+- Docs mount at `/docs` with `basePath`. Custom pages (`pages/*.astro`) own `/`, `/playground` and
+  `/soon`. They keep their own document shell (`Base.astro`) and header, restyled on the theme's
+  tokens, so the site reads as one system.
+- Blume builds directory pages (`docs/x/index.html`) and links them without a trailing slash
+  (`trailingSlash: "never"`). The site follows: links are slashless, and site-edge serves with
+  `htmlHandling: "drop-trailing-slash"` (§7).
 - Blume is pinned to exactly `2.1.1` in both the site and the `efx init` scaffold, and recorded in
   `COMPATIBILITY.md`. Upgrades are deliberate, with the build test as the gate.
 
@@ -66,76 +69,92 @@ exports three things and a project uses them in one line each:
 ```ts
 // blume.config.ts
 import { defineConfig } from "blume"
-import { effectscript, theme } from "effectscript/blume"
-export default defineConfig({ title: "my-lib", theme, integrations: [effectscript()] })
+import { effectscript, frontmatter, markdown, theme } from "effectscript/blume"
+export default defineConfig({ title: "my-lib", theme, markdown, frontmatter, integrations: [effectscript()] })
 
-// components.ts
-export { default } from "effectscript/blume/components"
+// components.ts: Blume reads this file statically, so it lists each part
+import { defineComponents } from "blume"
+import Footer from "effectscript/blume/components/Footer.astro"
+import Logo from "effectscript/blume/components/Logo.astro"
+import PageHeader from "effectscript/blume/components/PageHeader.astro"
+export default defineComponents({ layout: { Footer, Logo, PageHeader } })
 
 /* theme.css */
 @import "effectscript/blume/theme.css";
 ```
 
 - `theme`: the Blume `theme` config: `mode: "system"`, `radius: "md"`, the brand fonts as local
-  files (Inter Display 600/700, Inter 400/500, JetBrains Mono 400/500), accent white on dark and ink
-  on light.
-- `effectscript()`: the existing integration, extended. It still registers the grammars. It now also
-  sets `markdown.shikiConfig.themes` to the two syntax themes, adds the facts rehype plugin, and
-  registers the optional `kind` frontmatter key (§4.3) through `frontmatter.extend`.
-- `effectscript/blume/components`: the replaced layout parts (§4).
+  files shipped in the package (Inter Display 600/700, Inter 400/500, JetBrains Mono 400/500), accent
+  white on dark and ink on light.
+- `markdown`: `code.theme` set to the two syntax themes (§5.2).
+- `frontmatter`: `extend` registers the optional `kind` key (§4.3), validated through Standard
+  Schema with Effect Schema.
+- `effectscript()`: the existing integration, extended. It still registers the grammars, and now
+  also injects the facts enhancer (§4.4) on every page.
+- `effectscript/blume/components/*.astro`: the replaced layout parts (§4).
 - `effectscript/blume/theme.css`: the tokens (§5.1) and the global styles.
 
-**The first task of the plan is a spike** on whether Blume compiles `.astro` components imported from
-an npm package. If it doesn't, the fallback is that `efx init` and the site copy the components into
-the project (the way `blume add` does) and a check keeps the copies in sync. The import interface
-for users stays the same.
+A spike against Blume 2.1.1 (2026-10-05) confirmed: `.astro` components imported from a package in
+`components.ts` render; `basePath` and custom pages coexist; the efx grammars and custom Shiki theme
+objects highlight fenced code under Blume's Sätteri Markdown processor; a Monaco worker runs on a
+custom page; local font files load. It also found that Sätteri takes no project rehype plugins and
+that `PageHeader` receives only `title`, `description` and `route`, which shaped §4.3 and §4.4.
 
 ## 4. Components
 
 ### 4.1 Header
-The ƒx mark and wordmark (lockup SVG, black or white by mode), a `/` separator, the section name, a
-version pill (`v4.0 alpha` in the Warn signal), ⌘K search, the GitHub and X links, and a white
-"Playground ↗" pill. Below 768px it collapses to the mark, search and a menu button. Custom pages
-use the same header with a transparent background.
+Blume's own header, configured and styled rather than replaced, so search, the mobile drawer and
+tabs keep working across upgrades:
+
+- `Logo` (replaced): the lockup SVG, white on dark and black on light, and a version pill
+  (`alpha`) in the Warn signal.
+- Tabs from `navigation.tabs`, ⌘K search, `navigation.actions` for GitHub, and `navigation.cta` as the
+  white "Playground ↗" pill.
+- `theme.css` gives it the hairline border, the blurred ink background and mono uppercase tab
+  labels.
 
 ### 4.2 Sidebar
-Blume's generated navigation, styled: mono `// GROUP` labels, an active item as a tile with a
-hairline ring, and a construct glyph in a small square before reference items (§4.3). Groups are
-collapsible (`display: "group"`), so Blume lazy-loads the closed ones.
+Blume's generated navigation, styled by `theme.css`: mono `// GROUP` labels, and the active item as
+a tile with a hairline ring. Groups are collapsible (`display: "group"`), so Blume lazy-loads the
+closed ones.
 
 ### 4.3 PageHeader
-- A kind badge when the page's frontmatter has `kind` (`effect`, `error`, `schema`, `service`,
+- A kind badge when the page's frontmatter has `kind`. `PageHeader` receives only `title`,
+  `description` and `route`, so it finds the page's `blume:data` route and reads the entry with
+  Astro's `getEntry` (`effect`, `error`, `schema`, `service`,
   `config`, `command`, `pipe`, …). The badge carries the construct's glyph: ƒ effect, ! error (Fail),
   {} schema, ◇ service and layer (Need), ⚙ config, $ command, |> pipe. Glyphs for `error` and
   `service` use their signal colour, the rest stay monochrome.
-- The title in Inter Display with the brand's headline fade on its last words, then the lead
-  paragraph (the page description) in Subtle.
-- Breadcrumbs as a mono label above the title.
+- Blume still renders the title and description. `theme.css` sets the title in Inter Display with
+  the brand's headline fade, and the description in Subtle.
 
 ### 4.4 Signal-coded facts
 `efx docs` already writes a two-column facts table per declaration, with the rows **Returns**,
 **Fails with** and **Needs** (docs spec §3). The Markdown stays as it is, so the `.md` copies and
-`llms.txt` that agents read are unchanged. A rehype plugin from the integration recognises those
-tables and turns them into tiles:
+`llms.txt` that agents read are unchanged. Blume's Sätteri processor takes no project plugins, so a
+small script the integration injects on every page (and re-runs on `astro:page-load`, for Blume's
+client-side navigation) marks the rows, and `theme.css` styles them:
 
 - **Returns** gets a Pass rule and label `✓ SUCCESS · A`.
 - **Fails with** gets a Fail rule and label `! ERROR · E`.
 - **Needs** gets a Need rule and label `◇ NEEDS · R`.
 - Parameter rows stay a compact table under the tiles.
 
-A table is recognised only when its header row is empty and its first column holds only those bold
-labels or parameter names, so ordinary tables are untouched.
+A row is marked only when its table has an empty header row (as `efx docs` writes it) and its first
+cell is exactly one of those bold labels, so ordinary tables are untouched. Without JavaScript the
+facts stay a readable table.
 
-### 4.5 CodeFrame and callouts
-- Code blocks get a filename bar (from the fence's `title` meta when present) and an
-  "Open in playground ↗" link for `efx` blocks, which the content script already computes.
-- Diff markers and the `// error:` diagnostics convention render as Pass/Fail line markers and a red
-  wavy underline.
+### 4.5 Code and callouts
+- Code blocks keep Blume's header (the fence's `title` meta) and its copy button. The content
+  script's "Open in playground" link after each `efx` block is styled as a small mono link.
+- Blume's diff notation (`// [!code ++]`, `// [!code --]`) maps onto the Pass and Fail tints through
+  the `--blume-code-add/remove` tokens. Blocks titled "Wrong…" get a Fail rule.
 - Blume's callouts map to signals: tip ✓ Pass, caution and pitfall ▲ Warn, danger ! Fail, note ◇ Need.
 
 ### 4.6 Footer
 The tagline, "Built on Effect. Not affiliated with or endorsed by Effectful Technologies.", and the
-links. No colour.
+repository and social links Blume's own footer carries (Blume asks overrides to keep them). No
+colour.
 
 ## 5. Tokens and code
 
@@ -181,8 +200,9 @@ rebuilt to match.
 ## 6. Site migration
 
 - **Content.** `scripts/content.ts` keeps generating everything it does today, for Blume:
-  - It writes Blume frontmatter: `title`, `description` and `sidebar.order`. It also sets `kind` on
-    the language reference pages.
+  - It writes the pages to `site/content` (Blume's content root, mounted at `/docs`) with Blume
+    frontmatter: `title`, `description` and `sidebar.order`. It also sets `kind` on the language
+    reference pages, and writes links without a trailing slash.
   - It writes a `meta.ts` per generated folder for group titles, order and `collapsed`. This
     replaces `labelledGroups()` in `astro.config.ts`.
   - It computes anchors with Blume's heading slugger instead of github-slugger.
@@ -190,22 +210,23 @@ rebuilt to match.
     Markdown copies and the JSON API.
   - The three hand-written pages stay as Markdown or MDX, minus anything Starlight-specific.
 - **Navigation.** The same four sections as today: Start here, Guides (with Patterns), Language
-  reference, Effect in EffectScript. The header tabs are Docs, Reference, Effect API and Playground.
+  reference, Effect in EffectScript. The header tabs are Guides (the home, Start here and Guides),
+  Reference and Effect, each scoping the sidebar. Playground is the header's call to action, GitHub
+  an action.
 - **Search.** Blume's static Orama search, opened with ⌘K. MCP, server-side search and the
   assistant need a server build and are out of scope. They are a follow-up once the site leaves
   private preview.
-- **Landing, playground, teaser.** They move to `pages/` and keep their design. Their header becomes
-  the theme's `Header`. They keep `brand.css` for their own layout, now built on the theme's tokens.
-  The Monaco worker setup is checked in the spike, because Blume owns the Vite config (an
-  integration can add to it).
+- **Landing, playground, teaser.** They move to `pages/` and keep their design and their own document
+  shell. They keep `brand.css` for their layout, with the signal tokens added. The spike confirmed
+  that the Monaco worker builds and runs on a custom page.
 
 ## 7. Edge
 
-- Blume recommends `drop-trailing-slash` on Workers. The site keeps directory URLs with
-  `auto-trailing-slash`, if the build writes `dir/index.html`. The plan checks which one the build
-  writes and sets `htmlHandling` to match.
-- The gate's teaser allowlist gains the asset paths Blume adds (the fonts directory it writes to,
-  `/blume-nav/` is not needed by the teaser). Everything else keeps working because it's path-based.
+- `htmlHandling` becomes `drop-trailing-slash`, as Blume recommends on Workers: Blume links pages
+  without a trailing slash, and a slashed URL (old links, `/docs/`) redirects to the slashless one.
+- The gate's teaser path becomes `/soon` (it fetches `/soon` and allows `/soon` and `/soon/`). Its
+  allowlist keeps `/_astro/` and `/fonts/`, which still cover what the teaser loads. Everything else
+  keeps working because it's path-based.
 - `deployment.site` is `https://effectscript.dev`. `robots`, `noindex` and the banner stay in the
   gate, so Blume's sitemap does no harm while the site is private.
 
