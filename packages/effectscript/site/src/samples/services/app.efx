@@ -5,7 +5,7 @@ export schema User {
 
 export service Database {
   effect query(sql: string): ReadonlyArray<User>
-  layer test = { query: effect (sql: string) => [new User({ id: "1", name: "Ada" })] }
+  layer test = { query: effect (sql) => [new User({ id: "1", name: "Ada" })] }
 }
 
 export service Users {

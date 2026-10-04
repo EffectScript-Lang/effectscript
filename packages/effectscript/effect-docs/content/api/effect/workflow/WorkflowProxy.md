@@ -16,9 +16,8 @@ The examples in the JSDoc of `packages/effect/src/workflow/WorkflowProxy.ts`, in
 **Deriving RPC endpoints from workflows**
 
 ```efx
-import { Layer, Schema } from "effect"
 import { RpcServer } from "effect/rpc"
-import { Workflow, WorkflowProxy, WorkflowProxyServer } from "effect/workflow"
+import { Workflow } from "effect/workflow"
 
 const EmailWorkflow = Workflow.make("EmailWorkflow", {
   payload: {
@@ -36,9 +35,8 @@ class MyRpcs extends WorkflowProxy.toRpcGroup(myWorkflows) {}
 
 // Use WorkflowProxyServer.layerRpcHandlers to create a layer that implements
 // the rpc handlers
-const ApiLayer = RpcServer.layer(MyRpcs).pipe(
-  Layer.provide(WorkflowProxyServer.layerRpcHandlers(myWorkflows))
-)
+const ApiLayer = RpcServer.layer(MyRpcs)
+  |> Layer.provide(WorkflowProxyServer.layerRpcHandlers(myWorkflows))
 const result = [MyRpcs.requests.size, Layer.isLayer(ApiLayer)] // => [3, true]
 ```
 
@@ -66,10 +64,9 @@ api MyApi "api" { WorkflowProxy.toHttpApiGroup("workflows", myWorkflows) }
 
 // Use WorkflowProxyServer.layerHttpApi to create a layer that implements the
 // workflows HttpApiGroup
-const ApiLayer = HttpApiBuilder.layer(MyApi).pipe(
-  Layer.provide(
+const ApiLayer = HttpApiBuilder.layer(MyApi)
+  |> Layer.provide(
     WorkflowProxyServer.layerHttpApi(MyApi, "workflows", myWorkflows)
   )
-)
 const result = [Object.keys(MyApi.groups.workflows.endpoints).length, Layer.isLayer(ApiLayer)] // => [3, true]
 ```

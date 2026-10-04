@@ -50,12 +50,23 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
 - **Run once, at the edge:** `main { … } |> provide(AppLive)`. Never call `Effect.runPromise`
   inside `effect` code.
 - **Compose with `|>`.** Effect's combinators are builtins when the name is free:
-  `getUser(id) |> retry({ times: 3 }) |> timeout("5 seconds")`.
+  `getUser(id) |> retry({ times: 3 }) |> timeout("5 seconds")`. Write `|>`, not `.pipe(…)`:
+  `Stream.make(1, 2) |> Stream.map(f)` compiles to the same `.pipe(…)`.
+- **Say each thing once.** EffectScript has one form for each intent, and writes nothing the file
+  already states:
+  - a service implementation's parameters take their types from its signature:
+    `layer test = { find: effect (id) => … }`;
+  - a service's fields are read-only without `readonly`;
+  - an error with no fields has no body: `error Forbidden`, `error Unauthorized status 401`;
+  - an array in a schema is `T[]`;
+  - a tag is named by its tag: `catch (e: TimeoutError)`.
 - **Run effects concurrently:** `const [a, b] = await [loadA, loadB]` (an array _literal_). For
   a computed list use `await all(effects)` or `await forEach(items, (x) => load(x))`; `await
   xs.map(f)` doesn't do what it looks like (EFX8112).
 - **Handle errors with `try`:** `catch (e: NotFound)` catches by tag, and a final untyped `catch`
   catches the rest, defects included.
+- **Test a tag with `is`:** `e is TimeoutError`, `e is A or B`, `e is not A`, and `is A` alone is a
+  predicate: `retry({ times: 2, while: is TimeoutError })`, `errors.filter(is RateLimited)`.
 - **Branch on a union with `match`:** a `when` clause per case, checked for exhaustiveness. Match
   a `schema` union's cases by name, or literals with a `default`:
 

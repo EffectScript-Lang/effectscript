@@ -332,18 +332,15 @@ makeDebugParam(false) === disabledDebugParam // => true
 **Adding parameter aliases**
 
 ```efx
-import { Param } from "effect/cli"
-
-const force = Param.Boolean(Param.flagKind, "force").pipe(
-  Param.withAlias("-f"),
-  Param.withAlias("-F")
-)
+const force = Param.Boolean(Param.flagKind, "force")
+  |> Param.withAlias("-f")
+  |> Param.withAlias("-F")
 
 // Also works on composed params:
-const count = Param.Int(Param.flagKind, "count").pipe(
-  Param.optional,
-  Param.withAlias("-c") // finds the underlying Single and adds alias
-)
+const count = Param.Int(Param.flagKind, "count")
+  |> Param.optional
+  |> Param.withAlias("-c") // finds the underlying Single and adds alias
+
 const kinds = [force.kind, count.kind] // => ["flag", "flag"]
 ```
 
@@ -352,12 +349,9 @@ const kinds = [force.kind, count.kind] // => ["flag", "flag"]
 **Adding help descriptions**
 
 ```efx
-import { Param } from "effect/cli"
-
-const verbose = Param.Boolean(Param.flagKind, "verbose").pipe(
-  Param.withAlias("-v"),
-  Param.withDescription("Enable verbose output")
-)
+const verbose = Param.Boolean(Param.flagKind, "verbose")
+  |> Param.withAlias("-v")
+  |> Param.withDescription("Enable verbose output")
 verbose.kind // => "flag"
 ```
 
@@ -366,11 +360,8 @@ verbose.kind // => "flag"
 **Hiding a flag from help**
 
 ```efx
-import { Param } from "effect/cli"
-
-const experimental = Param.Boolean(Param.flagKind, "experimental-foo").pipe(
-  Param.withHidden
-)
+const experimental = Param.Boolean(Param.flagKind, "experimental-foo")
+  |> Param.withHidden
 experimental.kind // => "flag"
 ```
 
@@ -379,11 +370,8 @@ experimental.kind // => "flag"
 **Mapping parsed values**
 
 ```efx
-import { Param } from "effect/cli"
-
-const port = Param.Int(Param.flagKind, "port").pipe(
-  Param.map((n) => ({ port: n, url: `http://localhost:${n}` }))
-)
+const port = Param.Int(Param.flagKind, "port")
+  |> Param.map((n) => ({ port: n, url: `http://localhost:${n}` }))
 port.kind // => "flag"
 ```
 
@@ -392,6 +380,9 @@ port.kind // => "flag"
 **Mapping parsed values effectfully**
 
 ```efx
+import { CliError } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -409,8 +400,8 @@ const CliTestLayer = Layer.mergeAll(
   )
 )
 
-const validatedEmail = Param.String(Param.flagKind, "email").pipe(
-  Param.mapEffect((email) =>
+const validatedEmail = Param.String(Param.flagKind, "email")
+  |> Param.mapEffect((email) =>
     email.includes("@")
       ? succeed(email)
       : fail(
@@ -422,7 +413,6 @@ const validatedEmail = Param.String(Param.flagKind, "email").pipe(
         })
       )
   )
-)
 
 const [, value] = await runPromise(
   validatedEmail.parse({
@@ -438,6 +428,9 @@ value // => "alice@example.com"
 **Mapping thrown errors**
 
 ```efx
+import { Param } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -455,13 +448,12 @@ const CliTestLayer = Layer.mergeAll(
   )
 )
 
-const parsedJson = Param.String(Param.flagKind, "config").pipe(
-  Param.mapTryCatch(
+const parsedJson = Param.String(Param.flagKind, "config")
+  |> Param.mapTryCatch(
     (str) => JSON.parse(str),
     (error) =>
       `Invalid JSON: ${error instanceof Error ? error.message : String(error)}`
   )
-)
 
 const [, value] = await runPromise(
   parsedJson.parse({
@@ -491,19 +483,15 @@ port.kind // => "flag"
 **Providing default values**
 
 ```efx
-import { Param } from "effect/cli"
-
 // Using the pipe operator to make an option optional
-const port = Param.Int(Param.flagKind, "port").pipe(
-  Param.withDefault(8080)
-)
+const port = Param.Int(Param.flagKind, "port")
+  |> Param.withDefault(8080)
 
 // Can also be used with other combinators
-const verbose = Param.Boolean(Param.flagKind, "verbose").pipe(
-  Param.withAlias("-v"),
-  Param.withDescription("Enable verbose output"),
-  Param.withDefault(false)
-)
+const verbose = Param.Boolean(Param.flagKind, "verbose")
+  |> Param.withAlias("-v")
+  |> Param.withDescription("Enable verbose output")
+  |> Param.withDefault(false)
 const kinds = [port.kind, verbose.kind] // => ["flag", "flag"]
 ```
 
@@ -536,21 +524,17 @@ const kinds = [tags.kind, inputs.kind, limited.kind] // => ["flag", "flag", "fla
 **Bounding repeated values**
 
 ```efx
-import { Param } from "effect/cli"
-
 // Allow 1-3 file inputs
-const files = Param.String(Param.flagKind, "file").pipe(
-  Param.between(1, 3),
-  Param.withAlias("-f")
-)
+const files = Param.String(Param.flagKind, "file")
+  |> Param.between(1, 3)
+  |> Param.withAlias("-f")
 
 // Parse: --file a.txt --file b.txt
 // Result: ["a.txt", "b.txt"]
 
 // Allow 0 or more tags
-const tags = Param.String(Param.flagKind, "tag").pipe(
-  Param.between(0, Number.MAX_SAFE_INTEGER)
-)
+const tags = Param.String(Param.flagKind, "tag")
+  |> Param.between(0, Number.MAX_SAFE_INTEGER)
 
 // Parse: --tag dev --tag staging --tag v1.0
 // Result: ["dev", "staging", "v1.0"]
@@ -562,12 +546,9 @@ const kinds = [files.kind, tags.kind] // => ["flag", "flag"]
 **Limiting repeated values**
 
 ```efx
-import { Param } from "effect/cli"
-
 // Allow at most 3 warning suppressions
-const suppressions = Param.String(Param.flagKind, "suppress").pipe(
-  Param.atMost(3)
-)
+const suppressions = Param.String(Param.flagKind, "suppress")
+  |> Param.atMost(3)
 
 // Parse: --suppress warning1 --suppress warning2
 // Result: ["warning1", "warning2"]
@@ -579,13 +560,10 @@ suppressions.kind // => "flag"
 **Requiring repeated values**
 
 ```efx
-import { Param } from "effect/cli"
-
 // Require at least 2 input files
-const inputs = Param.String(Param.flagKind, "input").pipe(
-  Param.atLeast(2),
-  Param.withAlias("-i")
-)
+const inputs = Param.String(Param.flagKind, "input")
+  |> Param.atLeast(2)
+  |> Param.withAlias("-i")
 
 // Parse: --input file1.txt --input file2.txt --input file3.txt
 // Result: ["file1.txt", "file2.txt", "file3.txt"]
@@ -597,14 +575,12 @@ inputs.kind // => "flag"
 **Filtering and transforming values**
 
 ```efx
-import { Option } from "effect"
 import { Param } from "effect/cli"
-const positiveInt = Param.Int(Param.flagKind, "count").pipe(
-  Param.filterMap(
+const positiveInt = Param.Int(Param.flagKind, "count")
+  |> Param.filterMap(
     (n) => n > 0 ? Option.some(n) : Option.none(),
     (n) => `Expected positive integer, got ${n}`
   )
-)
 positiveInt.kind // => "flag"
 ```
 
@@ -613,14 +589,11 @@ positiveInt.kind // => "flag"
 **Filtering parsed values**
 
 ```efx
-import { Param } from "effect/cli"
-
-const evenNumber = Param.Int(Param.flagKind, "num").pipe(
-  Param.filter(
+const evenNumber = Param.Int(Param.flagKind, "num")
+  |> Param.filter(
     (n) => n % 2 === 0,
     (n) => `Expected even number, got ${n}`
   )
-)
 evenNumber.kind // => "flag"
 ```
 
@@ -629,15 +602,12 @@ evenNumber.kind // => "flag"
 **Setting metavars**
 
 ```efx
-import { Param } from "effect/cli"
-
-const port = Param.Int(Param.flagKind, "port").pipe(
-  Param.withMetavar("PORT"),
-  Param.filter(
+const port = Param.Int(Param.flagKind, "port")
+  |> Param.withMetavar("PORT")
+  |> Param.filter(
     (p) => p >= 1 && p <= 65535,
     () => "Port must be between 1 and 65535"
   )
-)
 port.kind // => "flag"
 ```
 
@@ -646,17 +616,14 @@ port.kind // => "flag"
 **Validating with schemas**
 
 ```efx
-import { Schema } from "effect"
 import { Param } from "effect/cli"
 const isEmail = Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
 
-const Email = Schema.String.pipe(
-  Schema.check(isEmail)
-)
+const Email = Schema.String
+  |> Schema.check(isEmail)
 
-const email = Param.String(Param.flagKind, "email").pipe(
-  Param.withSchema(Email)
-)
+const email = Param.String(Param.flagKind, "email")
+  |> Param.withSchema(Email)
 email.kind // => "flag"
 ```
 
@@ -665,11 +632,8 @@ email.kind // => "flag"
 **Falling back to another parameter**
 
 ```efx
-import { Param } from "effect/cli"
-
-const config = Param.File(Param.flagKind, "config").pipe(
-  Param.orElse(() => Param.String(Param.flagKind, "config-url"))
-)
+const config = Param.File(Param.flagKind, "config")
+  |> Param.orElse(() => Param.String(Param.flagKind, "config-url"))
 config.kind // => "flag"
 ```
 
@@ -678,11 +642,8 @@ config.kind // => "flag"
 **Returning fallback results**
 
 ```efx
-import { Param } from "effect/cli"
-
-const configSource = Param.File(Param.flagKind, "config").pipe(
-  Param.orElseResult(() => Param.String(Param.flagKind, "config-url"))
-)
+const configSource = Param.File(Param.flagKind, "config")
+  |> Param.orElseResult(() => Param.String(Param.flagKind, "config-url"))
 // Returns Result<string, string>
 configSource.kind // => "flag"
 ```

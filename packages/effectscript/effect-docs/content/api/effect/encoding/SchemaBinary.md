@@ -31,10 +31,7 @@ const person = Schema.decodeUnknownSync(codec)(bytes)
 **Assigning a wire field id**
 
 ```efx
-import { Schema } from "effect"
-import { SchemaBinary } from "effect/encoding"
-
 const Person = Schema.Struct({
-  id: Schema.String.pipe(SchemaBinary.fieldId(1))
+  id: Schema.String |> SchemaBinary.fieldId(1)
 })
 ```

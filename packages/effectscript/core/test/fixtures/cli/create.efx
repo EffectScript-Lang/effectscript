@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 
-const Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))
+const Email = Schema.String |> Schema.check(Schema.isPattern(/@/))
 
 /** Create a task */
 export command create(

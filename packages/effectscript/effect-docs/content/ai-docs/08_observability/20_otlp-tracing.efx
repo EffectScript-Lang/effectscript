@@ -33,10 +33,9 @@ export const OtlpLoggingLayer = OtlpLogger.layer({
 //
 // - OtlpTracer/OtlpLogger require an OTLP serializer and an HttpClient.
 // - FetchHttpClient.layer provides the HttpClient used by the exporter.
-export const ObservabilityLayer = Layer.merge(OtlpTracingLayer, OtlpLoggingLayer).pipe(
-  Layer.provide(OtlpSerialization.layerJson),
-  Layer.provide(FetchHttpClient.layer)
-)
+export const ObservabilityLayer = Layer.merge(OtlpTracingLayer, OtlpLoggingLayer)
+  |> Layer.provide(OtlpSerialization.layerJson)
+  |> Layer.provide(FetchHttpClient.layer)
 
 export service Checkout as "acme/Checkout" {
   processCheckout(orderId: string): Effect<void>
@@ -47,17 +46,15 @@ export service Checkout as "acme/Checkout" {
         effect processCheckout(orderId: string) {
           console.info("starting checkout", { orderId })
 
-          await sleep("50 millis").pipe(
-            withSpan("checkout.charge-card"),
-            annotateSpans({
+          await sleep("50 millis")
+            |> withSpan("checkout.charge-card")
+            |> annotateSpans({
               "checkout.order_id": orderId,
               "checkout.provider": "acme-pay"
             })
-          )
 
-          await sleep("20 millis").pipe(
-            withSpan("checkout.persist-order")
-          )
+          await sleep("20 millis")
+            |> withSpan("checkout.persist-order")
 
           console.info("checkout completed", { orderId })
         }
@@ -73,11 +70,10 @@ const CheckoutTest = Layer.effectDiscard(
   }.pipe(
     withSpan("checkout-test-run")
   )
-).pipe(
-  // You can also attach spans to Layers
-  Layer.withSpan("checkout-test"),
-  Layer.provide(Checkout.layer)
 )
+  // You can also attach spans to Layers
+  |> Layer.withSpan("checkout-test")
+  |> Layer.provide(Checkout.layer)
 
 const Main = CheckoutTest.pipe(
   // Provide the observability layer at the very end, so that all spans created
@@ -86,6 +82,5 @@ const Main = CheckoutTest.pipe(
 )
 
 // Launch the app
-Layer.launch(Main).pipe(
-  NodeRuntime.runMain
-)
+Layer.launch(Main)
+  |> NodeRuntime.runMain

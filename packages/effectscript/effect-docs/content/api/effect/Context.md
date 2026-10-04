@@ -31,15 +31,17 @@ Context.get(context, Database).query("SELECT 1") // => "Result: SELECT 1"
 **Creating service keys**
 
 ```efx
+import { Context } from "effect"
+
 // Create a simple service
 const Database = Context.Service<{
   query: (sql: string) => string
 }>("Database")
 
 // Create a service class
-service Config {
+class Config extends Context.Service<Config, {
   port: number
-}
+}>()("Config") {}
 
 // Use the services to create contexts
 const db = Context.make(Database, {
@@ -168,8 +170,6 @@ Database.key // => "Database"
 **Creating a context with multiple services**
 
 ```efx
-import { Context } from "effect"
-
 // Create a context with multiple services
 const Logger = Context.Service<{ log: (msg: string) => void }>("Logger")
 const Database = Context.Service<{ query: (sql: string) => string }>(
@@ -177,7 +177,7 @@ const Database = Context.Service<{ query: (sql: string) => string }>(
 )
 
 const context = Context.make(Logger, { log: (_msg: string) => {} })
-  .pipe(Context.add(Database, { query: (sql) => `Result: ${sql}` }))
+   |> Context.add(Database, { query: (sql) => `Result: ${sql}` })
 Context.get(context, Database).query("SELECT 1") // => "Result: SELECT 1"
 ```
 
@@ -258,13 +258,17 @@ Context.get(context, Port).PORT // => 8080
 **Adding a service to a context**
 
 ```efx
+import { Context, pipe } from "effect"
+
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
 
 const someContext = Context.make(Port, { PORT: 8080 })
 
-const context = someContext
-  |> Context.add(Timeout, { TIMEOUT: 5000 })
+const context = pipe(
+  someContext,
+  Context.add(Timeout, { TIMEOUT: 5000 })
+)
 
 const values = [Context.get(context, Port).PORT, Context.get(context, Timeout).TIMEOUT]
 values // => [8080, 5000]
@@ -275,13 +279,10 @@ values // => [8080, 5000]
 **Adding optional services**
 
 ```efx
-import { Context, Option } from "effect"
-
 const Port = Context.Service<{ PORT: number }>("Port")
 
-const withPort = Context.empty().pipe(
-  Context.addOrOmit(Port, Option.some({ PORT: 8080 }))
-)
+const withPort = Context.empty()
+  |> Context.addOrOmit(Port, Option.some({ PORT: 8080 }))
 
 const withoutPort = withPort.pipe(
   Context.addOrOmit(Port, Option.none())
@@ -336,11 +337,15 @@ Context.getOption(context, Timeout) // => Option.none()
 **Getting a service from a context**
 
 ```efx
+import { Context, pipe } from "effect"
+
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
 
-const context = Context.make(Port, { PORT: 8080 })
-  |> Context.add(Timeout, { TIMEOUT: 5000 })
+const context = pipe(
+  Context.make(Port, { PORT: 8080 }),
+  Context.add(Timeout, { TIMEOUT: 5000 })
+)
 
 Context.get(context, Timeout).TIMEOUT // => 5000
 ```
@@ -414,8 +419,10 @@ import { Context, Option } from "effect"
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
 
-const someContext = Context.make(Port, { PORT: 8080 })
-  |> Context.add(Timeout, { TIMEOUT: 5000 })
+const someContext = pipe(
+  Context.make(Port, { PORT: 8080 }),
+  Context.add(Timeout, { TIMEOUT: 5000 })
+)
 
 const context = someContext |> Context.pick(Port)
 
@@ -433,8 +440,10 @@ import { Context, Option } from "effect"
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
 
-const someContext = Context.make(Port, { PORT: 8080 })
-  |> Context.add(Timeout, { TIMEOUT: 5000 })
+const someContext = pipe(
+  Context.make(Port, { PORT: 8080 }),
+  Context.add(Timeout, { TIMEOUT: 5000 })
+)
 
 const context = someContext |> Context.omit(Timeout)
 

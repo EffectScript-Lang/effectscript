@@ -17,7 +17,7 @@ The examples in the JSDoc of `packages/effect/src/Layer.ts`, in EffectScript (AD
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 // Create a custom MemoMap for manual layer building
@@ -43,7 +43,7 @@ runSync(database.query("SELECT 1")) // => "result"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const dbLayer = Layer.succeed(Database, {
@@ -61,7 +61,7 @@ Layer.isLayer(notALayer) // => false
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const databaseLayer = Layer.fromBuild(() =>
@@ -82,7 +82,7 @@ runSync(provide(program, databaseLayer)) // => "result"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const databaseLayer = Layer.fromBuildMemo(() =>
@@ -103,7 +103,7 @@ runSync(provide(program, databaseLayer)) // => "result"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 // Create a memo map for manual layer building
@@ -129,7 +129,7 @@ runSync(database.query("SELECT 1")) // => "result"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 // Create a memo map safely within an Effect
@@ -155,11 +155,11 @@ runSync(database.query("SELECT 1")) // => "result"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service Logger {
-  readonly log: (msg: string) => Effect<void>
+  log: (msg: string) => Effect<void>
 }
 
 const logs: Array<string> = []
@@ -202,7 +202,7 @@ logs // => ["ready"]
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 // Build a layer to get its services
@@ -229,7 +229,7 @@ runSync(scoped(program)) // => "result"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const logs: Array<string> = []
@@ -265,7 +265,7 @@ logs // => ["Initializing database...", "Database closed"]
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const DatabaseLayer = Layer.succeed(Database, {
@@ -281,21 +281,20 @@ runSync(provide(program, DatabaseLayer)) // => "Query result: SELECT 1"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service Logger {
-  readonly log: (msg: string) => Effect<void>
+  log: (msg: string) => Effect<void>
 }
 
 const logs: Array<string> = []
 const context = Context.make(Database, {
   query: Effect.fn("Database.query")((sql: string) => succeed("result"))
-}).pipe(
-  Context.add(Logger, {
+})
+  |> Context.add(Logger, {
     log: (msg: string) => sync(() => logs.push(msg))
   })
-)
 
 const layer = Layer.succeedContext(context)
 const program = Logger.use((logger) => logger.log("ready"))
@@ -321,7 +320,7 @@ Context.getOption(context, Service) // => Option.none()
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const layer = Layer.sync(Database, () => ({
@@ -337,7 +336,7 @@ runSync(provide(program, layer)) // => "Query: SELECT 1"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const layer = Layer.syncContext(() =>
@@ -355,7 +354,7 @@ runSync(provide(program, layer)) // => "Query: SELECT 1"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const layer = Layer.effect(Database,
@@ -424,7 +423,7 @@ runSync(provide(Config, layer)) // => "https://api.example.com"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const layerEffect = succeed(
@@ -442,11 +441,11 @@ runSync(provide(program, unwrappedLayer)) // => "result"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service Logger {
-  readonly log: (msg: string) => Effect<void>
+  log: (msg: string) => Effect<void>
 }
 
 const dbLayer = Layer.succeed(Database, {
@@ -469,11 +468,11 @@ logs // => ["ready"]
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service Logger {
-  readonly log: (msg: string) => Effect<void>
+  log: (msg: string) => Effect<void>
 }
 
 const dbLayer = Layer.succeed(Database, {
@@ -494,18 +493,18 @@ runSync(provide(program, mergedLayer)) // => "result"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service UserService {
-  readonly getUser: (id: string) => Effect<{
+  getUser: (id: string) => Effect<{
     id: string
     name: string
   }>
 }
 
 service Logger {
-  readonly log: (msg: string) => Effect<void>
+  log: (msg: string) => Effect<void>
 }
 
 // Create dependency layers
@@ -535,9 +534,8 @@ const userServiceLayer = Layer.effect(UserService, effect {
 })
 
 // Provide dependencies to UserService layer
-const userServiceWithDependencies = userServiceLayer.pipe(
-  Layer.provide(Layer.mergeAll(databaseLayer, loggerLayer))
-)
+const userServiceWithDependencies = userServiceLayer
+  |> Layer.provide(Layer.mergeAll(databaseLayer, loggerLayer))
 
 // Now UserService layer has no dependencies
 const program = effect {
@@ -555,15 +553,15 @@ logs // => ["[LOG] Looking up user 123"]
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service Logger {
-  readonly log: (msg: string) => Effect<void>
+  log: (msg: string) => Effect<void>
 }
 
 service UserService {
-  readonly getUser: (id: string) => Effect<{
+  getUser: (id: string) => Effect<{
     id: string
     name: string
   }>
@@ -596,9 +594,8 @@ const userServiceLayer = Layer.effect(UserService, effect {
 })
 
 // Provide dependencies and merge all services together
-const allServicesLayer = userServiceLayer.pipe(
-  Layer.provideMerge(Layer.mergeAll(databaseLayer, loggerLayer))
-)
+const allServicesLayer = userServiceLayer
+  |> Layer.provideMerge(Layer.mergeAll(databaseLayer, loggerLayer))
 
 // Now the resulting layer provides UserService, Database, AND Logger
 const program = effect {
@@ -622,16 +619,16 @@ logs // => ["[LOG] Looking up user 123", "[LOG] Found user: DB: SELECT * FROM us
 
 ```efx
 service Config {
-  readonly dbUrl: string
-  readonly logLevel: string
+  dbUrl: string
+  logLevel: string
 }
 
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service Logger {
-  readonly log: (msg: string) => Effect<void>
+  log: (msg: string) => Effect<void>
 }
 
 const logs: Array<string> = []
@@ -643,8 +640,8 @@ const configLayer = Layer.succeed(Config, {
 })
 
 // Dynamically create services based on config
-const dynamicServiceLayer = configLayer.pipe(
-  Layer.flatMap((context) => {
+const dynamicServiceLayer = configLayer
+  |> Layer.flatMap((context) => {
     const config = Context.get(context, Config)
 
     // Create database layer based on config
@@ -667,7 +664,6 @@ const dynamicServiceLayer = configLayer.pipe(
     // Return combined layer
     return Layer.mergeAll(dbLayer, loggerLayer)
   })
-)
 
 // Use the dynamic services
 const program = effect {
@@ -696,7 +692,7 @@ class DatabaseError extends Data.TaggedError("DatabaseError")<{
 }> {}
 
 service Database {
-  readonly query: (sql: string) => Effect.Effect<string>
+  query: (sql: string) => Effect.Effect<string>
 }
 
 // Layer that can fail during construction
@@ -707,7 +703,7 @@ const flakyDatabaseLayer = Layer.effect(
 )
 
 // Convert failures to fiber death - removes error from type
-const reliableDatabaseLayer = flakyDatabaseLayer.pipe(Layer.orDie)
+const reliableDatabaseLayer = flakyDatabaseLayer |> Layer.orDie
 
 // Now the layer type is Layer<Database, never, never> - no error in type
 const program = effect {
@@ -727,16 +723,15 @@ runSync(exit(program)) // => Exit.die(error)
 class ConfigError extends Data.TaggedError("ConfigError") {}
 
 service Config {
-  readonly apiUrl: string
+  apiUrl: string
 }
 
 const configLayer = Layer.effect(Config, fail(new ConfigError()))
 
 const fallbackLayer = Layer.succeed(Config, { apiUrl: "http://localhost" })
 
-const recovered = configLayer.pipe(
-  Layer.catchTag("ConfigError", () => fallbackLayer)
-)
+const recovered = configLayer
+  |> Layer.catchTag("ConfigError", () => fallbackLayer)
 const program = Config.useSync((config) => config.apiUrl)
 runSync(provide(program, recovered)) // => "http://localhost"
 ```
@@ -751,20 +746,19 @@ class DatabaseError extends Data.TaggedError("DatabaseError")<{
 }> {}
 
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const primaryDatabaseLayer = Layer.effect(Database,
   fail(new DatabaseError({ message: "Primary DB unreachable" }))
 )
 
-const databaseWithFallback = primaryDatabaseLayer.pipe(
-  Layer.catchCause(() => {
+const databaseWithFallback = primaryDatabaseLayer
+  |> Layer.catchCause(() => {
     return Layer.succeed(Database, {
       query: Effect.fn("Database.query")((sql: string) => succeed(`Memory: ${sql}`))
     })
   })
-)
 
 const program = effect {
   const database = await Database
@@ -781,15 +775,15 @@ await runPromise(program) // => "Memory: SELECT * FROM users"
 
 ```efx
 service Counter {
-  readonly id: number
+  id: number
 }
 
 service Left {
-  readonly counterId: number
+  counterId: number
 }
 
 service Right {
-  readonly counterId: number
+  counterId: number
 }
 
 const leftLayer = Layer.effect(Left, effect {
@@ -843,7 +837,7 @@ await runPromise(program) // => { shared: true, fresh: false }
 
 ```efx
 service HttpServer {
-  readonly port: number
+  port: number
 }
 
 const program = effect {
@@ -871,12 +865,12 @@ await runPromise(program) // => ["Starting HTTP server..."]
 
 ```efx
 service UserService {
-  readonly config: { apiUrl: string }
-  readonly getUser: (
+  config: { apiUrl: string }
+  getUser: (
     id: string
   ) => Effect<{ id: string; name: string }, Error>
-  readonly deleteUser: (id: string) => Effect<void, Error>
-  readonly updateUser: (
+  deleteUser: (id: string) => Effect<void, Error>
+  updateUser: (
     id: string,
     data: object
   ) => Effect<{ id: string; name: string }, Error>
@@ -959,7 +953,7 @@ const validLayer = satisfiesNumber(numberLayer)
 import type { Tracer } from "effect"
 
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 const logs: Array<string> = []
@@ -977,10 +971,10 @@ const databaseLayer = Layer.effect(Database, effect {
   return {
     query: Effect.fn("Database.query")((sql: string) => succeed(`Result: ${sql}`))
   }
-}).pipe(Layer.provide(Layer.span("database-init", {
+}) |> Layer.provide(Layer.span("database-init", {
   onEnd: (span, exit) =>
     sync(() => logs.push(`Span ${span.name} ended with: ${exit._tag}`))
-})))
+}))
 
 const program = Database.use((database) => database.query("SELECT 1"))
 runSync(provide(program, databaseLayer)) // => "Result: SELECT 1"
@@ -993,8 +987,8 @@ logs // => ["Connecting to database", "Database connected", "database-init", "Sp
 
 ```efx
 service Database {
-  readonly spanId: string
-  readonly query: (sql: string) => Effect<string>
+  spanId: string
+  query: (sql: string) => Effect<string>
 }
 
 // Create a layer that uses an existing span as parent
@@ -1008,10 +1002,10 @@ const databaseLayer = Layer.effect(
       query: Effect.fn("Database.query")((sql: string) => succeed(`Result: ${sql}`))
     }
   }
-).pipe(Layer.provide(Layer.parentSpan(Tracer.externalSpan({
+) |> Layer.provide(Layer.parentSpan(Tracer.externalSpan({
   spanId: "42",
   traceId: "000"
-}))))
+})))
 const program = Database.use((database) =>
   map(database.query("SELECT 1"), (result) => ({ spanId: database.spanId, result })))
 runSync(provide(program, databaseLayer)) // => { spanId: "42", result: "Result: SELECT 1" }
@@ -1023,11 +1017,11 @@ runSync(provide(program, databaseLayer)) // => { spanId: "42", result: "Result: 
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service Logger {
-  readonly log: (msg: string) => Effect<void>
+  log: (msg: string) => Effect<void>
 }
 
 const logs: Array<string> = []
@@ -1037,13 +1031,13 @@ const databaseLayer = Layer.effect(Database, effect {
   return {
     query: Effect.fn("Database.query")((sql: string) => succeed(`Result: ${sql}`))
   }
-}).pipe(Layer.withSpan("database-initialization", {
+}) |> Layer.withSpan("database-initialization", {
   attributes: { dbType: "postgres" }
-}))
+})
 
 const loggerLayer = Layer.succeed(Logger, {
   log: Effect.fn("Logger.log")((msg: string) => sync(() => logs.push(msg)))
-}).pipe(Layer.withSpan("logger-initialization"))
+}) |> Layer.withSpan("logger-initialization")
 
 // Combine traced layers
 layer appLayer = databaseLayer & loggerLayer
@@ -1069,11 +1063,11 @@ logs // => ["Application ready", "Application initialization completed: Success"
 
 ```efx
 service Database {
-  readonly query: (sql: string) => Effect<string>
+  query: (sql: string) => Effect<string>
 }
 
 service Cache {
-  readonly get: (key: string) => Effect<string | null>
+  get: (key: string) => Effect<string | null>
 }
 
 // Create layers
@@ -1095,9 +1089,8 @@ const program = withSpan("application-startup")(
     const parentSpan = await Tracer.ParentSpan
 
     // Both layers will be children of "application-startup" span
-    const AppLayer = Layer.mergeAll(DatabaseLayer, CacheLayer).pipe(
-      Layer.withParentSpan(parentSpan)
-    )
+    const AppLayer = Layer.mergeAll(DatabaseLayer, CacheLayer)
+      |> Layer.withParentSpan(parentSpan)
 
     const context = await Layer.build(AppLayer)
     const database = Context.get(context, Database)

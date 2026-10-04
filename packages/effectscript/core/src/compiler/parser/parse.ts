@@ -79,12 +79,20 @@ const parseWith = (
 interface ParseError {
   readonly pos: number
   readonly message: string
+  /** A parse error's own code (ADR-0077), EFX1001 otherwise. */
+  readonly code: string
+  readonly hint: string | undefined
 }
 
 const toParseError = (error: unknown): ParseError => {
-  const e = error as { pos?: unknown; message?: unknown }
+  const e = error as { pos?: unknown; message?: unknown; efxCode?: unknown; efxHint?: unknown }
   const message = typeof e.message === "string" ? e.message.replace(/ \(\d+:\d+\)$/, "") : String(error)
-  return { pos: typeof e.pos === "number" ? e.pos : 0, message }
+  return {
+    pos: typeof e.pos === "number" ? e.pos : 0,
+    message,
+    code: typeof e.efxCode === "string" ? e.efxCode : "EFX1001",
+    hint: typeof e.efxHint === "string" ? e.efxHint : undefined
+  }
 }
 
 /**
@@ -115,7 +123,13 @@ export const parse = (
   return {
     _tag: "Failure",
     diagnostics: [
-      diagnosticError("EFX1001", furthest?.message ?? "Syntax error", pos, Math.min(pos + 1, source.length))
+      diagnosticError(
+        furthest?.code ?? "EFX1001",
+        furthest?.message ?? "Syntax error",
+        pos,
+        Math.min(pos + 1, source.length),
+        furthest?.hint
+      )
     ]
   }
 }

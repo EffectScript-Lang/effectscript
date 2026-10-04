@@ -26,11 +26,9 @@ ConfigProvider.makeValue("3000") // => { _tag: "Value", value: "3000" }
 **Creating a record node**
 
 ```efx
-import { ConfigProvider } from "effect"
-
 const node = ConfigProvider.makeRecord(new Set(["host", "port"]))
 node._tag // => "Record"
-if (node._tag === "Record") {
+if (node is Record) {
   node.keys // => new Set(["host", "port"])
   node.value // => undefined
 }
@@ -151,7 +149,7 @@ node?.value // => "localhost"
 ```efx
 const provider = ConfigProvider.fromEnv({
   env: { DATABASE_HOST: "localhost" }
-}).pipe(ConfigProvider.constantCase)
+}) |> ConfigProvider.constantCase
 
 // path ["databaseHost"] now resolves to env var DATABASE_HOST
 const node = runSync(provider.load(["databaseHost"]))

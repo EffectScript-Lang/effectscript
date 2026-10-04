@@ -4,13 +4,13 @@
  *
  * @since 0.1.0
  */
-import type { Scope } from "../analyze/scope.ts"
 import { children, containsThis, type Node } from "../ast.ts"
 import type { Ctx, Handler } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
 import { ref, unused } from "../names.ts"
 import { walk, walkInScopeOf } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
+import { tagOf } from "./tags.ts"
 
 const boundaryTypes = new Set([
   "FunctionDeclaration",
@@ -121,16 +121,6 @@ export const findCrossingJump = (
   return undefined
 }
 
-const lastSegment = (name: Node): string => (name.type === "TSQualifiedName" ? name.right.name : name.name)
-
-/** Whether the nearest binding of type name `name` is the module scope. */
-const boundAtModule = (ctx: Ctx, name: string): boolean => {
-  for (let scope: Scope | undefined = ctx.scope; scope !== undefined; scope = scope.parent) {
-    if (scope.types.has(name)) return scope === ctx.analysis.module
-  }
-  return false
-}
-
 /** The `_tag`s a typed clause catches; `undefined` for an untyped clause. */
 const tagsOf = (ctx: Ctx, clause: Node): Array<string> | undefined => {
   const annotation: Node | undefined = clause.param?.typeAnnotation?.typeAnnotation
@@ -139,14 +129,7 @@ const tagsOf = (ctx: Ctx, clause: Node): Array<string> | undefined => {
   }
   const types: Array<Node> = annotation.type === "TSUnionType" ? annotation.types : [annotation]
   if (!types.every((t) => t.type === "TSTypeReference")) return undefined
-  return types.map((t) => {
-    const name: Node = t.typeName
-    if (name.type === "Identifier" && boundAtModule(ctx, name.name)) {
-      const tag = ctx.analysis.localTags.get(name.name)
-      if (tag !== undefined) return tag
-    }
-    return lastSegment(name)
-  })
+  return types.map((t) => tagOf(ctx, t.typeName))
 }
 
 const paramText = (ctx: Ctx, clause: Node, typed: boolean): string => {

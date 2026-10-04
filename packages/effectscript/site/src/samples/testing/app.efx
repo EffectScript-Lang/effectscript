@@ -1,6 +1,6 @@
 service Users {
   effect find(id: string): string
-  layer test = { find: effect (id: string) => `user-${id}` }
+  layer test = { find: effect (id) => `user-${id}` }
 }
 
 describe "Users" with Users.layerTest {

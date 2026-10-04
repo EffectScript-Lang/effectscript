@@ -99,8 +99,6 @@ result // => ["PipedCommand", "stderr", "all"]
 **Prefixing commands**
 
 ```efx
-import { ChildProcess } from "effect/process"
-
 const command = ChildProcess.make`echo "foo"`
 
 const prefixed = command.pipe(
@@ -108,7 +106,7 @@ const prefixed = command.pipe(
 )
 
 // now prefixed will execute `time echo "foo"`
-const result = prefixed._tag === "StandardCommand" ? `${prefixed.command} ${prefixed.args[0]}` : prefixed._tag
+const result = prefixed is StandardCommand ? `${prefixed.command} ${prefixed.args[0]}` : prefixed._tag
 result // => "time echo"
 ```
 
@@ -117,12 +115,10 @@ result // => "time echo"
 **Setting command working directories**
 
 ```efx
-import { ChildProcess } from "effect/process"
-
 const cmd = ChildProcess.make`ls -la`.pipe(
   ChildProcess.setCwd("/tmp")
 )
-const result = cmd._tag === "StandardCommand" && cmd.options.cwd // => "/tmp"
+const result = cmd is StandardCommand && cmd.options.cwd // => "/tmp"
 ```
 
 ## setEnv
@@ -130,12 +126,10 @@ const result = cmd._tag === "StandardCommand" && cmd.options.cwd // => "/tmp"
 **Setting command environment variables**
 
 ```efx
-import { ChildProcess } from "effect/process"
-
 const cmd = ChildProcess.make`node script.js`.pipe(
   ChildProcess.setEnv({ NODE_ENV: "test" })
 )
-const result = cmd._tag === "StandardCommand" && cmd.options.env?.NODE_ENV // => "test"
+const result = cmd is StandardCommand && cmd.options.env?.NODE_ENV // => "test"
 ```
 
 ## splitByWhitespaces

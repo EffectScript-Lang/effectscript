@@ -17,6 +17,7 @@ export type DocKind =
   | "effect"
   | "function"
   | "schema"
+  | "brand"
   | "error"
   | "service"
   | "layer"
@@ -245,6 +246,8 @@ const declaration = (b: Builder, node: Node, start: number): DocDeclaration | un
     }
     case "SchemaAliasDeclaration":
       return { ...leaf, kind: "schema", name: node.id.name, start, signature: whole(), doc }
+    case "BrandDeclaration":
+      return { ...leaf, kind: "brand", name: node.id.name, start, signature: whole(), doc }
     case "SchemaAdtDeclaration":
       return {
         ...leaf,

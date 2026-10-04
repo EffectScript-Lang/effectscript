@@ -122,9 +122,8 @@ const program = reduce(
   [1, 2, 3],
   () => 0,
   (total, value, index) =>
-    sync(() => { output.push(`Adding ${value} at index ${index}`) }).pipe(
-      as(total + value)
-    )
+    sync(() => { output.push(`Adding ${value} at index ${index}`) })
+      |> as(total + value)
 )
 
 void output.push(await runPromise(program))
@@ -167,7 +166,7 @@ const output: Array<unknown> = []
 const result = forEach(
   [1, 2, 3, 4, 5],
   (n, index) =>
-    sync(() => { output.push(`Currently at index ${index}`) }).pipe(as(n * 2))
+    sync(() => { output.push(`Currently at index ${index}`) }) |> as(n * 2)
 )
 
 void output.push(await runPromise(result))
@@ -183,7 +182,7 @@ const output: Array<unknown> = []
 const result = forEach(
   [1, 2, 3, 4, 5],
   (n, index) =>
-    sync(() => { output.push(`Currently at index ${index}`) }).pipe(as(n * 2)),
+    sync(() => { output.push(`Currently at index ${index}`) }) |> as(n * 2),
   { discard: true }
 )
 
@@ -201,7 +200,7 @@ import { Effect, Option } from "effect"
 const first = await runPromise(head(succeed([1, 2, 3])))
 first // => 1
 
-const empty = head(succeed([] as Array<number>)).pipe(catchNoSuchElement)
+const empty = head(succeed([] as Array<number>)) |> catchNoSuchElement
 await runPromise(empty) // => Option.none()
 ```
 
@@ -428,10 +427,12 @@ await runPromise(program) // => Option.none()
 **Starting do notation**
 
 ```efx
-const program = Do
-  |> bind("x", () => succeed(2))
-  |> bind("y", ({ x }) => succeed(x + 1))
-  |> Effect.let("sum", ({ x, y }) => x + y)
+const program = pipe(
+  Do,
+  bind("x", () => succeed(2)),
+  bind("y", ({ x }) => succeed(x + 1)),
+  Effect.let("sum", ({ x, y }) => x + y)
+)
 
 runSync(program) // => { x: 2, y: 3, sum: 5 }
 ```
@@ -708,9 +709,9 @@ const output: Array<unknown> = []
 const myEffect = succeed(1)
 const transformation = (n: number) => succeed(n + 1)
 
-const flatMappedWithPipe = myEffect |> flatMap(transformation)
+const flatMappedWithPipe = pipe(myEffect, flatMap(transformation))
 const flatMappedWithDataFirst = flatMap(myEffect, transformation)
-const flatMappedWithMethod = myEffect.pipe(flatMap(transformation))
+const flatMappedWithMethod = myEffect |> flatMap(transformation)
 
 void output.push(runSync(all([
   flatMappedWithPipe,
@@ -738,8 +739,10 @@ const applyDiscount = (
 const fetchTransactionAmount = promise(() => Promise.resolve(100))
 
 // Chaining the fetch and discount application using `flatMap`
-const finalAmount = fetchTransactionAmount
-  |> flatMap((amount) => applyDiscount(amount, 5))
+const finalAmount = pipe(
+  fetchTransactionAmount,
+  flatMap((amount) => applyDiscount(amount, 5))
+)
 
 await runPromise(finalAmount) // => 95
 ```
@@ -772,9 +775,9 @@ const output: Array<unknown> = []
 const myEffect = succeed(1)
 const anotherEffect = succeed("done")
 
-const transformedWithPipe = myEffect |> andThen(anotherEffect)
+const transformedWithPipe = pipe(myEffect, andThen(anotherEffect))
 const transformedWithDataFirst = andThen(myEffect, anotherEffect)
-const transformedWithMethod = myEffect.pipe(andThen(anotherEffect))
+const transformedWithMethod = myEffect |> andThen(anotherEffect)
 
 void output.push(runSync(all([
   transformedWithPipe,
@@ -802,16 +805,20 @@ const applyDiscount = (
 const fetchTransactionAmount = promise(() => Promise.resolve(100))
 
 // Using Effect.map and Effect.flatMap
-const result1 = fetchTransactionAmount
-  |> map((amount) => amount * 2)
-  |> flatMap((amount) => applyDiscount(amount, 5))
+const result1 = pipe(
+  fetchTransactionAmount,
+  map((amount) => amount * 2),
+  flatMap((amount) => applyDiscount(amount, 5))
+)
 
 await runPromise(result1) // => 190
 
 // Using Effect.andThen
-const result2 = fetchTransactionAmount
-  |> andThen((amount) => succeed(amount * 2))
-  |> andThen((amount) => applyDiscount(amount, 5))
+const result2 = pipe(
+  fetchTransactionAmount,
+  andThen((amount) => succeed(amount * 2)),
+  andThen((amount) => applyDiscount(amount, 5))
+)
 
 await runPromise(result2) // => 190
 ```
@@ -837,11 +844,13 @@ const applyDiscount = (
 // Simulated asynchronous task to fetch a transaction amount from database
 const fetchTransactionAmount = promise(() => Promise.resolve(100))
 
-const finalAmount = fetchTransactionAmount
+const finalAmount = pipe(
+  fetchTransactionAmount,
   // Log the fetched transaction amount
-  |> tap((amount) => sync(() => { output.push(`Apply a discount to: ${amount}`) }))
+  tap((amount) => sync(() => { output.push(`Apply a discount to: ${amount}`) })),
   // `amount` is still available!
-  |> flatMap((amount) => applyDiscount(amount, 5))
+  flatMap((amount) => applyDiscount(amount, 5))
+)
 
 void output.push(await runPromise(finalAmount))
 output // => ["Apply a discount to: 100", 95]
@@ -908,9 +917,9 @@ const output: Array<unknown> = []
 const myEffect = succeed(1)
 const transformation = (n: number) => n + 1
 
-const mappedWithPipe = myEffect |> map(transformation)
+const mappedWithPipe = pipe(myEffect, map(transformation))
 const mappedWithDataFirst = map(myEffect, transformation)
-const mappedWithMethod = myEffect.pipe(map(transformation))
+const mappedWithMethod = myEffect |> map(transformation)
 
 void output.push(runSync(all([
   mappedWithPipe,
@@ -927,8 +936,10 @@ const addServiceCharge = (amount: number) => amount + 1
 
 const fetchTransactionAmount = promise(() => Promise.resolve(100))
 
-const finalAmount = fetchTransactionAmount
-  |> map(addServiceCharge)
+const finalAmount = pipe(
+  fetchTransactionAmount,
+  map(addServiceCharge)
+)
 
 await runPromise(finalAmount) // => 101
 ```
@@ -939,7 +950,7 @@ await runPromise(finalAmount) // => 101
 
 ```efx
 // Replaces the value 5 with the constant "new value"
-const program = succeed(5) |> as("new value")
+const program = pipe(succeed(5), as("new value"))
 
 runSync(program) // => "new value"
 ```
@@ -973,7 +984,7 @@ runSync(program) // => undefined
 ```efx
 //      ┌─── Effect<number, string, never>
 //      ▼
-const program = fail("Oh uh!").pipe(as(2))
+const program = fail("Oh uh!") |> as(2)
 
 //      ┌─── Effect<string, number, never>
 //      ▼
@@ -1105,11 +1116,10 @@ const program: Effect<string, AiError> = fail(
 )
 
 // Handle rate limits specifically
-const handled = program.pipe(
-  catchReason("AiError", "RateLimitError", (reason) =>
+const handled = program
+  |> catchReason("AiError", "RateLimitError", (reason) =>
     succeed(`Retry after ${reason.retryAfter}s`)
   )
-)
 
 runSync(handled) // => "Retry after 30s"
 ```
@@ -1135,14 +1145,13 @@ const program: Effect<string, AiError> = fail(
   new AiError({ reason: new QuotaExceededError({ limit: 100 }) })
 )
 
-const handled = program.pipe(
-  catchReasons("AiError", {
+const handled = program
+  |> catchReasons("AiError", {
     RateLimitError: (reason) =>
       succeed(`Retry after ${reason.retryAfter}s`),
     QuotaExceededError: (reason) =>
       succeed(`Quota exceeded: ${reason.limit}`)
   })
-)
 
 runSync(handled) // => "Quota exceeded: 100"
 ```
@@ -1170,7 +1179,7 @@ const program: Effect<string, AiError> = fail(
 
 // Before: Effect<string, AiError>
 // After:  Effect<string, RateLimitError | QuotaExceededError>
-const unwrapped = program.pipe(unwrapReason("AiError"))
+const unwrapped = program |> unwrapReason("AiError")
 runSync(flip(unwrapped))._tag // => "RateLimitError"
 ```
 
@@ -1187,9 +1196,8 @@ const program = die("Something went wrong")
 // Recover from any cause (including defects)
 const recovered = catchCause(program, (cause) => {
   if (Cause.hasDies(cause)) {
-    return sync(() => { output.push("Caught defect") }).pipe(
-      as("Recovered from defect")
-    )
+    return sync(() => { output.push("Caught defect") })
+      |> as("Recovered from defect")
   }
   return succeed("Unknown error")
 })
@@ -1212,9 +1220,8 @@ const program = sync(() => {
 
 // Recover from defects only
 const recovered = catchDefect(program, (defect) => {
-  return sync(() => { output.push(`Caught defect: ${(defect as Error).message}`) }).pipe(
-    as("Recovered from defect")
-  )
+  return sync(() => { output.push(`Caught defect: ${(defect as Error).message}`) })
+    |> as("Recovered from defect")
 })
 
 void output.push(runSync(recovered))
@@ -1231,20 +1238,18 @@ class NotFound extends Data.TaggedError("NotFound")<{ id: string }> {}
 const program = fail(new NotFound({ id: "user-1" }))
 
 // With a refinement
-const recovered = program.pipe(
-  catchIf(
-    (error): error is NotFound => error._tag === "NotFound",
+const recovered = program
+  |> catchIf(
+    (error): error is NotFound => error is NotFound,
     (error) => succeed(`missing:${error.id}`)
   )
-)
 
 // With a Filter
-const recovered2 = program.pipe(
-  catchFilter(
+const recovered2 = program
+  |> catchFilter(
     Filter.tagged("NotFound"),
     (error) => succeed(`missing:${error.id}`)
   )
-)
 
 runSync(all([recovered, recovered2])) // => ['missing:user-1', 'missing:user-1']
 ```
@@ -1257,8 +1262,8 @@ runSync(all([recovered, recovered2])) // => ['missing:user-1', 'missing:user-1']
 import { Effect, Option } from "effect"
 const output: Array<unknown> = []
 
-const some = fromNullishOr(1).pipe(catchNoSuchElement)
-const none = fromNullishOr(null).pipe(catchNoSuchElement)
+const some = fromNullishOr(1) |> catchNoSuchElement
+const none = fromNullishOr(null) |> catchNoSuchElement
 
 void output.push(runSync(some))
 void output.push(runSync(none))
@@ -1298,7 +1303,7 @@ class TaskError extends Data.TaggedError("TaskError")<{ readonly message: string
 
 //      ┌─── Effect<number, string, never>
 //      ▼
-const simulatedTask = fail("Oh no!").pipe(as(1))
+const simulatedTask = fail("Oh no!") |> as(1)
 
 //      ┌─── Effect<number, TaskError, never>
 //      ▼
@@ -1318,7 +1323,7 @@ class TaskError extends Data.TaggedError("TaskError")<{ readonly message: string
 
 //      ┌─── Effect<number, string, never>
 //      ▼
-const simulatedTask = fail("Oh no!").pipe(as(1))
+const simulatedTask = fail("Oh no!") |> as(1)
 
 //      ┌─── Effect<boolean, TaskError, never>
 //      ▼
@@ -1565,7 +1570,7 @@ runSync(program) // => "Caught cause: Something went wrong"
 ```efx
 //      ┌─── Effect<number, string, never>
 //      ▼
-const task = fail("Uh oh!").pipe(as(5))
+const task = fail("Uh oh!") |> as(5)
 
 //      ┌─── Effect<void, never, never>
 //      ▼
@@ -1578,7 +1583,7 @@ runSync(program) // => undefined
 ```efx
 const task = fail("Uh oh!")
 
-const program = task.pipe(ignore)
+const program = task |> ignore
 runSync(program) // => undefined
 ```
 
@@ -1589,7 +1594,7 @@ runSync(program) // => undefined
 ```efx
 const task = fail("boom")
 
-const program = task.pipe(ignoreCause)
+const program = task |> ignoreCause
 runSync(program) // => undefined
 ```
 
@@ -1692,7 +1697,7 @@ runSync(program) // => "secondary result"
 **Failing when work takes too long**
 
 ```efx
-const timedEffect = never.pipe(timeout(0))
+const timedEffect = Effect.never.pipe(Effect.timeout(0))
 const error = await runPromise(flip(timedEffect))
 error._tag // => "TimeoutError"
 ```
@@ -1704,7 +1709,7 @@ error._tag // => "TimeoutError"
 ```efx
 import { Effect, Option } from "effect"
 
-const timedOutEffect = never.pipe(timeoutOption(0))
+const timedOutEffect = Effect.never.pipe(Effect.timeoutOption(0))
 await runPromise(timedOutEffect) // => Option.none()
 ```
 
@@ -1717,9 +1722,8 @@ const output: Array<unknown> = []
 
 const program = timeoutOrElse(never, {
   duration: 0,
-  orElse: () => sync(() => { output.push("Query timed out, using cached data") }).pipe(
-    as("Cached result")
-  )
+  orElse: () => sync(() => { output.push("Query timed out, using cached data") })
+    |> as("Cached result")
 })
 
 void output.push(await runPromise(program))
@@ -2110,7 +2114,7 @@ const program = effect {
 }
 
 const context = Context.make(Logger, { log: () => {} })
-  .pipe(Context.add(Database, { query: () => "result" }))
+   |> Context.add(Database, { query: () => "result" })
 
 const provided = provideContext(program, context)
 runSync(provided)
@@ -2198,7 +2202,7 @@ const Database = Context.Service<{
 
 // Create a context with multiple services
 const context = Context.make(Logger, { log: (message) => { output.push(message) } })
-  .pipe(Context.add(Database, { query: () => "result" }))
+   |> Context.add(Database, { query: () => "result" })
 
 // An effect that requires both services
 const program = effect {
@@ -2219,7 +2223,7 @@ output // => ["Querying database", "result"]
 
 ```efx
 service Config {
-  readonly greeting: string
+  greeting: string
 }
 
 const program = effect {
@@ -2296,9 +2300,8 @@ const Config = Context.Service<{
   name: string
 }>("Config")
 
-const program = service(Config).pipe(
-  map((config) => `Hello ${config.name}!`)
-)
+const program = service(Config)
+  |> map((config) => `Hello ${config.name}!`)
 
 // Transform services by providing Config while keeping Logger requirement
 const configured = program.pipe(
@@ -2783,8 +2786,8 @@ const expensiveTask = sync(() => {
 
 const program = effect {
   void output.push("non-cached version:")
-  await expensiveTask.pipe(andThen(record))
-  await expensiveTask.pipe(andThen(record))
+  await expensiveTask |> andThen(record)
+  await expensiveTask |> andThen(record)
   void output.push("cached version:")
   const cached = await Effect.cached(expensiveTask)
   await cached.pipe(andThen(record))
@@ -2828,9 +2831,8 @@ const task = suspend(() =>
   ++attempts === 1 ? fail("temporary failure") : succeed(42)
 )
 const program = effect {
-  const cached = await task.pipe(
-    cachedWithTTL((exit) => Exit.isSuccess(exit) ? "1 hour" : 0)
-  )
+  const cached = await task
+    |> cachedWithTTL((exit) => Exit.isSuccess(exit) ? "1 hour" : 0)
   await Effect.exit(cached)
   return await cached
 }
@@ -2887,9 +2889,8 @@ runSyncExit(program)._tag // => "Failure"
 ```efx
 import { Effect, Option } from "effect"
 
-const program = interruptible(never).pipe(
-  timeoutOption(0)
-)
+const program = interruptible(never)
+  |> timeoutOption(0)
 await runPromise(program) // => Option.none()
 ```
 
@@ -3062,7 +3063,7 @@ const program = repeatOrElse(
       `Final failure: ${error}, after ${
         Option.isSome(previous) ? previous.value.attempt : 0
       } attempts`
-    ) }).pipe(map(() => 0))
+    ) }) |> map(() => 0)
 )
 
 void output.push(runSync(program))
@@ -3158,11 +3159,10 @@ runSync(program) // => "completed"
 **Enabling or disabling tracing**
 
 ```efx
-const program = succeed(42).pipe(
-  withSpan("my-span"),
+const program = succeed(42)
+  |> withSpan("my-span")
   // the span will not be registered with the tracer
-  withTracerEnabled(false)
-)
+  |> withTracerEnabled(false)
 runSync(program) // => 42
 ```
 
@@ -3171,11 +3171,10 @@ runSync(program) // => 42
 **Enabling or disabling tracing timing**
 
 ```efx
-const program = succeed(42).pipe(
-  withSpan("my-span"),
+const program = succeed(42)
+  |> withSpan("my-span")
   // the span will not have timing information
-  withTracerTiming(false)
-)
+  |> withTracerTiming(false)
 runSync(program) // => 42
 ```
 
@@ -3278,12 +3277,12 @@ runSync(program).length // => 0
 **Linking one span to another span**
 
 ```efx
-const program = withSpan(effect {
-  const parentSpan = await currentSpan
-  return await spanLinks.pipe(
-    linkSpans(parentSpan, { relationship: "follows" })
+const program = Effect.withSpan(Effect.gen(function*() {
+  const parentSpan = yield* Effect.currentSpan
+  return yield* Effect.spanLinks.pipe(
+    Effect.linkSpans(parentSpan, { relationship: "follows" })
   )
-}, "parent-operation")
+}), "parent-operation")
 
 runSync(program).length // => 1
 ```
@@ -3291,17 +3290,17 @@ runSync(program).length // => 1
 **Linking multiple spans at once**
 
 ```efx
-const program = effect {
-  const span1 = await makeSpan("span-1")
-  const span2 = await makeSpan("span-2")
+const program = Effect.gen(function*() {
+  const span1 = yield* Effect.makeSpan("span-1")
+  const span2 = yield* Effect.makeSpan("span-2")
 
-  return await spanLinks.pipe(
-    linkSpans([span1, span2], {
+  return yield* Effect.spanLinks.pipe(
+    Effect.linkSpans([span1, span2], {
       type: "dependency",
       source: "multiple-operations"
     })
   )
-}
+})
 
 runSync(program).length // => 2
 ```
@@ -3428,7 +3427,7 @@ output // => ["user-1"]
 const task = succeed("result")
 
 const program = effect {
-  const fiber = await task.pipe(forkChild)
+  const fiber = await task |> forkChild
   const result = await Fiber.join(fiber)
   return result
 }
@@ -3462,13 +3461,13 @@ await runPromise(program) // => "done"
 ```efx
 const backgroundTask = never
 
-const program = scoped(
-  effect {
-    await backgroundTask.pipe(forkScoped)
+const program = Effect.scoped(
+  Effect.gen(function*() {
+    yield* backgroundTask.pipe(Effect.forkScoped)
 
     // Fiber will be interrupted when scope closes
     return "scope completed"
-  }
+  })
 )
 
 await runPromise(program) // => "scope completed"
@@ -3482,7 +3481,7 @@ await runPromise(program) // => "scope completed"
 const daemonTask = succeed("daemon result")
 
 const program = effect {
-  const fiber = await daemonTask.pipe(forkDetach)
+  const fiber = await daemonTask |> forkDetach
   return await Fiber.join(fiber)
 }
 
@@ -3510,7 +3509,7 @@ output // => ["number"]
 **Accessing the current fiber id**
 
 ```efx
-const program = fiberId.pipe(map((id) => typeof id))
+const program = Effect.fiberId.pipe(Effect.map((id) => typeof id))
 runSync(program) // => "number"
 ```
 
@@ -3523,7 +3522,7 @@ const output: Array<unknown> = []
 
 //      ┌─── Effect<number, never, never>
 //      ▼
-const program = sync(() => { output.push("running...") }).pipe(as("done"))
+const program = sync(() => { output.push("running...") }) |> as("done")
 
 //      ┌─── RuntimeFiber<number, never>
 //      ▼
@@ -4294,11 +4293,10 @@ output // => ["Making HTTP request", "Connecting to database", "Executing query"
 ```efx
 const counter = Metric.counter("effect_executions", {
   description: "Counts effect executions"
-}).pipe(Metric.withConstantInput(1))
+}) |> Metric.withConstantInput(1)
 
-const program = succeed("Hello").pipe(
-  track(counter)
-)
+const program = succeed("Hello")
+  |> track(counter)
 
 runSync(program)
 runSync(Metric.value(counter)).count // => 1
@@ -4317,9 +4315,8 @@ const mapExitToString = (exit: Exit<string, Error>) => {
   return "defect"
 }
 
-const effect = succeed("result").pipe(
-  track(exitTracker, mapExitToString)
-)
+const effect = succeed("result")
+  |> track(exitTracker, mapExitToString)
 runSync(effect)
 runSync(Metric.value(exitTracker)).occurrences.get("success") // => 1
 ```
@@ -4329,13 +4326,11 @@ runSync(Metric.value(exitTracker)).occurrences.get("success") // => 1
 **Counting successful results**
 
 ```efx
-const successCounter = Metric.counter("successes").pipe(
-  Metric.withConstantInput(1)
-)
+const successCounter = Metric.counter("successes")
+  |> Metric.withConstantInput(1)
 
-const program = succeed(42).pipe(
-  trackSuccesses(successCounter)
-)
+const program = succeed(42)
+  |> trackSuccesses(successCounter)
 
 runSync(program)
 runSync(Metric.value(successCounter)).count // => 1
@@ -4347,9 +4342,8 @@ runSync(Metric.value(successCounter)).count // => 1
 // Track successful request sizes
 const requestSizeGauge = Metric.gauge("request_size_bytes")
 
-const program = succeed("Hello World!").pipe(
-  trackSuccesses(requestSizeGauge, (value: string) => value.length)
-)
+const program = succeed("Hello World!")
+  |> trackSuccesses(requestSizeGauge, (value: string) => value.length)
 
 runSync(program)
 runSync(Metric.value(requestSizeGauge)).value // => 12
@@ -4360,13 +4354,11 @@ runSync(Metric.value(requestSizeGauge)).value // => 12
 **Counting expected failures**
 
 ```efx
-const errorCounter = Metric.counter("errors").pipe(
-  Metric.withConstantInput(1)
-)
+const errorCounter = Metric.counter("errors")
+  |> Metric.withConstantInput(1)
 
-const program = fail("Network timeout").pipe(
-  trackErrors(errorCounter)
-)
+const program = fail("Network timeout")
+  |> trackErrors(errorCounter)
 
 runSyncExit(program)
 runSync(Metric.value(errorCounter)).count // => 1
@@ -4380,9 +4372,8 @@ class ConnectionFailedError extends Data.TaggedError("ConnectionFailedError")<{}
 // Track error types using frequency metric
 const errorTypeFrequency = Metric.frequency("error_types")
 
-const program = fail(new ConnectionFailedError()).pipe(
-  trackErrors(errorTypeFrequency, (error: ConnectionFailedError) => error._tag)
-)
+const program = fail(new ConnectionFailedError())
+  |> trackErrors(errorTypeFrequency, (error: ConnectionFailedError) => error._tag)
 
 runSyncExit(program)
 runSync(Metric.value(errorTypeFrequency)).occurrences.get("ConnectionFailedError") // => 1
@@ -4393,13 +4384,11 @@ runSync(Metric.value(errorTypeFrequency)).occurrences.get("ConnectionFailedError
 **Counting defects**
 
 ```efx
-const defectCounter = Metric.counter("defects").pipe(
-  Metric.withConstantInput(1)
-)
+const defectCounter = Metric.counter("defects")
+  |> Metric.withConstantInput(1)
 
-const program = die("Critical system failure").pipe(
-  trackDefects(defectCounter)
-)
+const program = die("Critical system failure")
+  |> trackDefects(defectCounter)
 
 runSyncExit(program)
 runSync(Metric.value(defectCounter)).count // => 1
@@ -4411,12 +4400,11 @@ runSync(Metric.value(defectCounter)).count // => 1
 // Track defect types using frequency metric
 const defectTypeFrequency = Metric.frequency("defect_types")
 
-const program = die(new Error("Null pointer exception")).pipe(
-  trackDefects(defectTypeFrequency, (defect: unknown) => {
+const program = die(new Error("Null pointer exception"))
+  |> trackDefects(defectTypeFrequency, (defect: unknown) => {
     if (defect instanceof Error) return defect.constructor.name
     return typeof defect
   })
-)
 
 runSyncExit(program)
 runSync(Metric.value(defectTypeFrequency)).occurrences.get("Error") // => 1
@@ -4429,9 +4417,8 @@ runSync(Metric.value(defectTypeFrequency)).occurrences.get("Error") // => 1
 ```efx
 const executionTimer = Metric.timer("execution_time")
 
-const program = succeed("done").pipe(
-  trackDuration(executionTimer)
-)
+const program = succeed("done")
+  |> trackDuration(executionTimer)
 
 runSync(program)
 runSync(Metric.value(executionTimer)).count // => 1
@@ -4443,9 +4430,8 @@ runSync(Metric.value(executionTimer)).count // => 1
 // Track execution time in milliseconds using custom mapping
 const durationGauge = Metric.gauge("execution_millis")
 
-const program = succeed("done").pipe(
-  trackDuration(durationGauge, () => 1)
-)
+const program = succeed("done")
+  |> trackDuration(durationGauge, () => 1)
 
 runSync(program)
 runSync(Metric.value(durationGauge)).value // => 1

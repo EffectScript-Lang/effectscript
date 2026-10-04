@@ -53,9 +53,8 @@ export service Smtp as "app/Smtp" {
               text: message.body
             }),
           catch: (cause) => new SmtpError({ cause })
-        }).pipe(
-          asVoid
-        )
+        })
+          |> asVoid
       )
 
       return { send }

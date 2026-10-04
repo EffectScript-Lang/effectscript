@@ -174,3 +174,54 @@ const y = c ? d : e |> f
         (pipeline_expression
           (identifier)
           (identifier))))))
+
+=======================
+is tests and predicates
+=======================
+
+const a = e is TimeoutError
+const b = e is Cause.TimeoutError or RateLimited
+const c = state is not (Open or Closing)
+retry({ times: 2, while: is TimeoutError })
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (is_expression
+        (identifier)
+        (is_pattern
+          (identifier)))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (is_expression
+        (identifier)
+        (is_pattern
+          (nested_identifier
+            (identifier)
+            (property_identifier))
+          (identifier)))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (is_expression
+        (identifier)
+        (is_pattern
+          (identifier)
+          (identifier)))))
+  (expression_statement
+    (call_expression
+      (identifier)
+      (arguments
+        (object
+          (pair
+            (property_identifier)
+            (number))
+          (pair
+            (property_identifier)
+            (is_predicate
+              (is_pattern
+                (identifier)))))))))

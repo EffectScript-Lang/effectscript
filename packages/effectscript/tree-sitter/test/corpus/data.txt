@@ -103,6 +103,27 @@ const status = 200
       (number))))
 
 ================
+Errors without a body (ADR-0091)
+================
+
+export error Forbidden
+error Unauthorized status 401
+error Empty {}
+
+---
+
+(program
+  (export_statement
+    (error_declaration
+      (identifier)))
+  (error_declaration
+    (identifier)
+    (number))
+  (error_declaration
+    (identifier)
+    (schema_body)))
+
+================
 Error and config
 ================
 
@@ -145,3 +166,99 @@ config App {
             (literal_type
               (string
                 (string_fragment)))))))))
+
+==================================
+Brands and where checks (ADR-0077)
+==================================
+
+export brand UserId = string
+brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })
+schema Server {
+  host: string where isNonEmpty, isMaxLength(255)
+  owner: string | null where isMaxLength(64)
+  where: string
+}
+schema Point = { x: number where isFinite, y: number }
+tool Search(query: string where isNonEmpty(), limit: Int): Products
+
+---
+
+(program
+  (export_statement
+    (brand_declaration
+      (identifier)
+      (predefined_type)))
+  (brand_declaration
+    (identifier)
+    (type_identifier)
+    (where_clause
+      (call_expression
+        (identifier)
+        (arguments
+          (object
+            (pair
+              (property_identifier)
+              (number))
+            (pair
+              (property_identifier)
+              (number)))))))
+  (schema_declaration
+    (identifier)
+    (schema_body
+      (schema_field
+        (property_identifier)
+        (type_annotation
+          (predefined_type))
+        (where_clause
+          (identifier)
+          (call_expression
+            (identifier)
+            (arguments
+              (number)))))
+      (schema_field
+        (property_identifier)
+        (type_annotation
+          (union_type
+            (predefined_type)
+            (literal_type
+              (null))))
+        (where_clause
+          (call_expression
+            (identifier)
+            (arguments
+              (number)))))
+      (schema_field
+        (property_identifier)
+        (type_annotation
+          (predefined_type)))))
+  (schema_declaration
+    (identifier)
+    (object_type
+      (property_signature
+        (property_identifier)
+        (type_annotation
+          (predefined_type))
+        (where_clause
+          (identifier)))
+      (property_signature
+        (property_identifier)
+        (type_annotation
+          (predefined_type)))))
+  (tool_declaration
+    (signature
+      (identifier)
+      (formal_parameters
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))
+          (where_clause
+            (call_expression
+              (identifier)
+              (arguments))))
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (type_identifier))))
+      (type_annotation
+        (type_identifier)))))

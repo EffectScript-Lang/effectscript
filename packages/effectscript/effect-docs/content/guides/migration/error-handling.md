@@ -42,9 +42,8 @@ const program = Effect.fail("error").pipe(
 **v4**
 
 ```efx
-const program = fail("error").pipe(
-  Effect.catch((error) => succeed(`recovered: ${error}`))
-)
+const program = fail("error")
+  |> Effect.catch((error) => succeed(`recovered: ${error}`))
 ```
 
 ## `Effect.catchAllCause` → `Effect.catchCause`
@@ -64,9 +63,8 @@ const program = Effect.die("defect").pipe(
 ```efx
 import { Cause } from "effect"
 
-const program = die("defect").pipe(
-  catchCause((cause) => succeed("recovered"))
-)
+const program = die("defect")
+  |> catchCause((cause) => succeed("recovered"))
 ```
 
 ## `Effect.catchSome` → `Effect.catchFilter`
@@ -91,12 +89,11 @@ const program = Effect.fail(42).pipe(
 **v4**
 
 ```efx
-const program = fail(42).pipe(
-  catchFilter(
+const program = fail(42)
+  |> catchFilter(
     Filter.fromPredicate((error: number) => error === 42),
     (error) => succeed("caught")
   )
-)
 ```
 
 ## New in v4

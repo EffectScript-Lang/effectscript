@@ -21,11 +21,12 @@ export service Users {
   effect find(id: string): User throws UserNotFound
   effect list(): ReadonlyArray<User>
 
-  // the live implementation: an `effect` block can acquire resources and use other services
+  // the live implementation: an `effect` block can acquire resources and use other services;
+  // its members take their parameter types from the signatures above
   layer = effect {
     const store = new Map<string, User>([["1", new User({ id: "1", name: "Ada" })]])
     return {
-      effect find(id: string) {
+      effect find(id) {
         return store.get(id) ?? throw new UserNotFound({ id })
       },
       list: effect () => [...store.values()]
@@ -33,7 +34,7 @@ export service Users {
   }
 
   layer test = {
-    find: effect (id: string) => new User({ id, name: "Test" }),
+    find: effect (id) => new User({ id, name: "Test" }),
     list: effect () => []
   }
 }
@@ -55,7 +56,7 @@ export service Clock2 {
 
 export service Audit {
   effect record(event: string): void
-  layer = { record: effect (event: string) => console.log(event) }
+  layer = { record: effect (event) => console.log(event) }
 }
 
 export layer AppLive = Clock2.layer & Audit.layer
@@ -67,8 +68,8 @@ never in `needs`. A layer still overrides it, in tests or in production.
 ```efx
 export service Greeting {
   effect phrase(name: string): string
-  default = { phrase: effect (name: string) => `Hello, ${name}` }
-  layer formal = { phrase: effect (name: string) => `Good day, ${name}` }
+  default = { phrase: effect (name) => `Hello, ${name}` }
+  layer formal = { phrase: effect (name) => `Good day, ${name}` }
 }
 
 // no `needs Greeting`: the default is there when nothing is provided
@@ -80,13 +81,16 @@ export effect introduce(name: string): string {
 ## Errors
 
 Declare each failure as an `error`, throw it in `effect` code, and name it in `throws`. The type
-checker then tracks exactly which errors a function can fail with.
+checker then tracks exactly which errors a function can fail with. An error with no fields needs no
+body.
 
 ```efx
 export error InvalidAmount { amount: number }
 export error InsufficientFunds { balance: number; amount: number }
+export error AccountFrozen
 
-export effect withdraw(balance: number, amount: number): number throws InvalidAmount | InsufficientFunds {
+export effect withdraw(balance: number, amount: number): number throws InvalidAmount | InsufficientFunds | AccountFrozen {
+  if (Number.isNaN(balance)) throw new AccountFrozen()
   if (amount <= 0) throw new InvalidAmount({ amount })
   if (amount > balance) throw new InsufficientFunds({ balance, amount })
   return balance - amount
@@ -98,7 +102,7 @@ export effect safeWithdraw(balance: number, amount: number): number {
   } catch (e: InsufficientFunds) {
     console.warn(`only ${e.balance} available`)
     return balance
-  } catch (e: InvalidAmount) {
+  } catch (e: InvalidAmount | AccountFrozen) {
     return balance
   }
 }
@@ -106,16 +110,18 @@ export effect safeWithdraw(balance: number, amount: number): number {
 
 ## Schemas
 
-A `schema` is a data type and its runtime schema at once. Field initializers (`=`) refine a
-field with checks.
+A `schema` is a data type and its runtime schema at once. A `brand` is a schema whose values
+carry their type's name, so a `UserId` can't be passed where an `Email` is expected. `where`
+adds checks to a type or a field; they run when decoding and in `make`, and they reach JSON
+Schema. A check without arguments drops its `()`. An `=` field takes any other schema expression.
 
 ```efx
-export schema Email = string & Brand<"Email">
+export brand Email = string where isPattern(/^[^@\s]+@[^@\s]+$/)
 
 export schema Signup {
   email: Email
-  name: string
-  age = Int.check(isGreaterThan(17))
+  name: string where isTrimmed, isNonEmpty
+  age: Int where isGreaterThan(17)
   plan: "free" | "pro"
   referrer?: string
 }
@@ -173,7 +179,7 @@ export effect describeConfig() {
 ```efx
 service Greeter {
   effect greet(name: string): string
-  layer = { greet: effect (name: string) => `Hello, ${name}` }
+  layer = { greet: effect (name) => `Hello, ${name}` }
 }
 
 main {
@@ -190,7 +196,7 @@ provides layers to the test.
 ```efx
 service Users {
   effect find(id: string): string
-  layer test = { find: effect (id: string) => `user-${id}` }
+  layer test = { find: effect (id) => `user-${id}` }
 }
 
 describe "Users" {
@@ -494,6 +500,20 @@ export const resilient = callApi("/health")
   |> retry({ times: 3, schedule: Schedule.exponential("100 millis") })
   |> timeout("2 seconds")
   |> orElseSucceed(() => "unavailable")
+```
+
+Retry only some errors by naming them with `is`, which compiles to the `_tag` comparison:
+
+```efx
+error RateLimited { retryAfter: number }
+
+declare const fetchUser: (id: string) => Effect<string, RateLimited>
+
+export effect loadUser(id: string): string throws RateLimited | Cause.TimeoutError {
+  return await fetchUser(id)
+    |> timeout("2 seconds")
+    |> retry({ times: 2, while: is TimeoutError or RateLimited })
+}
 ```
 
 ## Streams

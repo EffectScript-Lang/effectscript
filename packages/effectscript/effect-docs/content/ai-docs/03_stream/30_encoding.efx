@@ -4,7 +4,6 @@
  * Use `Stream.pipeThroughChannel` with the `Ndjson` and `SchemaBinary` modules to
  * decode and encode streams of structured data.
  */
-import { DateTime } from "effect"
 import { Ndjson } from "effect/encoding"
 
 // SchemaBinary derives a framed binary decoder directly from a schema.
@@ -37,10 +36,9 @@ schema LogEntry {
 export const decodeUntyped = Stream.make(
   "{\"timestamp\":\"2025-06-01T00:00:00Z\",\"level\":\"info\",\"message\":\"start\"}\n" +
     "{\"timestamp\":\"2025-06-01T00:00:01Z\",\"level\":\"error\",\"message\":\"oops\"}\n"
-).pipe(
-  Stream.pipeThroughChannel(Ndjson.decodeString()),
-  Stream.runCollect
 )
+  |> Stream.pipeThroughChannel(Ndjson.decodeString())
+  |> Stream.runCollect
 
 // When you need schema validation on top of the raw JSON parse, use
 // `Ndjson.decodeSchemaString(Schema)()`. This decodes each line, parses the
@@ -48,10 +46,9 @@ export const decodeUntyped = Stream.make(
 export const decodeTyped = Stream.make(
   "{\"timestamp\":\"2025-06-01T00:00:00Z\",\"level\":\"info\",\"message\":\"start\"}\n" +
     "{\"timestamp\":\"2025-06-01T00:00:01Z\",\"level\":\"error\",\"message\":\"oops\"}\n"
-).pipe(
-  Stream.pipeThroughChannel(Ndjson.decodeSchemaString(LogEntry)()),
-  Stream.runCollect
 )
+  |> Stream.pipeThroughChannel(Ndjson.decodeSchemaString(LogEntry)())
+  |> Stream.runCollect
 
 // ---------------------------------------------------------------------------
 // Encoding objects → NDJSON strings
@@ -62,10 +59,9 @@ export const decodeTyped = Stream.make(
 export const encodeUntyped = Stream.make(
   { timestamp: "2025-06-01T00:00:00Z", level: "info", message: "start" },
   { timestamp: "2025-06-01T00:00:01Z", level: "error", message: "oops" }
-).pipe(
-  Stream.pipeThroughChannel(Ndjson.encodeString()),
-  Stream.runCollect
 )
+  |> Stream.pipeThroughChannel(Ndjson.encodeString())
+  |> Stream.runCollect
 
 // `Ndjson.encodeSchemaString(Schema)()` encodes each value through the schema
 // first (applying any transformations such as date formatting), then
@@ -81,10 +77,9 @@ export const encodeTyped = Stream.make(
     level: "error",
     message: "oops"
   })
-).pipe(
-  Stream.pipeThroughChannel(Ndjson.encodeSchemaString(LogEntry)()),
-  Stream.runCollect
 )
+  |> Stream.pipeThroughChannel(Ndjson.encodeSchemaString(LogEntry)())
+  |> Stream.runCollect
 
 // ---------------------------------------------------------------------------
 // Binary (Uint8Array) variants
@@ -98,17 +93,15 @@ const enc = new TextEncoder()
 
 export const decodeBinary = Stream.make(
   enc.encode("{\"level\":\"info\",\"message\":\"binary\"}\n")
-).pipe(
-  Stream.pipeThroughChannel(Ndjson.decode()),
-  Stream.runCollect
 )
+  |> Stream.pipeThroughChannel(Ndjson.decode())
+  |> Stream.runCollect
 
 export const encodeBinary = Stream.make(
   { level: "info", message: "binary" }
-).pipe(
-  Stream.pipeThroughChannel(Ndjson.encode()),
-  Stream.runCollect
 )
+  |> Stream.pipeThroughChannel(Ndjson.encode())
+  |> Stream.runCollect
 
 // ---------------------------------------------------------------------------
 // Handling empty lines
@@ -119,10 +112,9 @@ export const encodeBinary = Stream.make(
 // instead of raising an `NdjsonError`.
 export const decodeIgnoringBlanks = Stream.make(
   "{\"ok\":true}\n\n{\"ok\":false}\n"
-).pipe(
-  Stream.pipeThroughChannel(Ndjson.decodeString({ ignoreEmptyLines: true })),
-  Stream.runCollect
 )
+  |> Stream.pipeThroughChannel(Ndjson.decodeString({ ignoreEmptyLines: true }))
+  |> Stream.runCollect
 
 // ---------------------------------------------------------------------------
 // Error handling
@@ -131,15 +123,14 @@ export const decodeIgnoringBlanks = Stream.make(
 // `Ndjson.NdjsonError` is raised when encoding (`kind: "Pack"`) or decoding
 // (`kind: "Unpack"`) fails. You can catch it with `Stream.catchTag` or
 // `Effect.catchTag`.
-export const handleDecodeErrors = Stream.make("not-valid-json\n").pipe(
-  Stream.pipeThroughChannel(Ndjson.decodeString()),
-  Stream.catchTag("NdjsonError", (err) =>
+export const handleDecodeErrors = Stream.make("not-valid-json\n")
+  |> Stream.pipeThroughChannel(Ndjson.decodeString())
+  |> Stream.catchTag("NdjsonError", (err) =>
     // The `kind` field indicates whether the error occurred during
     // encoding ("Pack") or decoding ("Unpack"), and `cause` contains
     // the underlying exception.
-    Stream.succeed({ recovered: true, kind: err.kind })),
-  Stream.runCollect
-)
+    Stream.succeed({ recovered: true, kind: err.kind }))
+  |> Stream.runCollect
 
 // ---------------------------------------------------------------------------
 // Realistic pipeline: decode → transform → re-encode
@@ -152,12 +143,11 @@ const ndjsonInput = "{\"timestamp\":\"2025-06-01T00:00:00Z\",\"level\":\"info\",
   "{\"timestamp\":\"2025-06-01T00:00:01Z\",\"level\":\"error\",\"message\":\"fail\"}\n" +
   "{\"timestamp\":\"2025-06-01T00:00:02Z\",\"level\":\"warn\",\"message\":\"slow\"}\n"
 
-export const filterAndReencode = Stream.make(ndjsonInput).pipe(
+export const filterAndReencode = Stream.make(ndjsonInput)
   // Decode each line into a validated LogEntry
-  Stream.pipeThroughChannel(Ndjson.decodeSchemaString(LogEntry)()),
+  |> Stream.pipeThroughChannel(Ndjson.decodeSchemaString(LogEntry)())
   // Keep only error-level entries
-  Stream.filter((entry) => entry.level === "error"),
+  |> Stream.filter((entry) => entry.level === "error")
   // Re-encode the filtered entries back to NDJSON strings
-  Stream.pipeThroughChannel(Ndjson.encodeSchemaString(LogEntry)()),
-  Stream.runCollect
-)
+  |> Stream.pipeThroughChannel(Ndjson.encodeSchemaString(LogEntry)())
+  |> Stream.runCollect

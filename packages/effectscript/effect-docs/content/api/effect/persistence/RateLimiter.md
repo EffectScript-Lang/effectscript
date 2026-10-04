@@ -24,15 +24,14 @@ const program = effect {
   const withLimiter = await RateLimiter.makeWithRateLimiter
 
   // Apply a rate limiter to an effect
-  await sync(() => messages.push("Making a request with rate limiting")).pipe(
-    withLimiter({
+  await sync(() => messages.push("Making a request with rate limiting"))
+    |> withLimiter({
       key: "some-key",
       limit: 10,
       onExceeded: "delay",
       window: "5 seconds",
       algorithm: "fixed-window"
     })
-  )
 }
   |> provide(RateLimiter.layer.pipe(Layer.provide(RateLimiter.layerStoreMemory)))
 

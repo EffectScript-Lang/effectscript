@@ -317,7 +317,7 @@ const program = effect {
   const deferred = await Deferred.make<void>()
   const cache = await Cache.make({
     capacity: 10,
-    lookup: (_key: string) => Deferred.await(deferred).pipe(as(42))
+    lookup: (_key: string) => Deferred.await(deferred) |> as(42)
   })
 
   // Start lookup in background

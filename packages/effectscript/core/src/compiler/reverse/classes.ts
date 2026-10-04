@@ -6,10 +6,11 @@
  * @since 4.0.0
  */
 import { children, type Node } from "../ast.ts"
-import { excludedNames, namespaceExports } from "../prelude/tables.ts"
 import type { Visit } from "./body.ts"
+import { isBareable, renderChecks } from "./checks.ts"
 import {
   commentsIn,
+  isCanonicalString,
   note,
   removeKeepingComments,
   replaceKeepingComments,
@@ -18,7 +19,7 @@ import {
   slice
 } from "./context.ts"
 import { isMember } from "./origin.ts"
-import { fieldType, schemaToType } from "./types.ts"
+import { checkedOf, declarationType, fieldType } from "./types.ts"
 
 type Field =
   | { readonly kind: "typed"; readonly property: Node; readonly optional: "" | "?"; readonly type: string }
@@ -99,7 +100,7 @@ const entriesOf = (ctx: ReverseCtx, fields: Node, schemaFields: boolean): Array<
   const entries: Array<Field> = []
   for (const property of fields.properties as Array<Node>) {
     if (commentsIn(ctx, property.start, property.end).length > 0) return undefined
-    const typed = fieldType(ctx.source, ctx.schema!, property)
+    const typed = fieldType(ctx.source, ctx.schema!, property, renderChecks(ctx))
     if (typed !== undefined) {
       entries.push({ kind: "typed", property, optional: typed.optional, type: typed.type })
       continue
@@ -140,14 +141,7 @@ export const classShape = (ctx: ReverseCtx, cls: Node, explain: boolean): ClassS
 
 /** `Schema.x` → `x` inside a `name = <schema>` field, where the forward compiler resolves in `Schema`. */
 const unqualifySchema = (ctx: ReverseCtx, node: Node): void => {
-  if (isMember(node, ctx.schema) && node.optional !== true) {
-    const name: string = node.property.name
-    const { innerBound, module } = ctx.analysis
-    const free = !innerBound.has(name) && !module.values.has(name) && !module.types.has(name)
-    if (free && !excludedNames.has(name) && namespaceExports.get("Schema")!.has(name)) {
-      ctx.s.remove(node.start, node.property.start)
-    }
-  }
+  if (isBareable(ctx, node)) ctx.s.remove(node.start, node.property.start)
   for (const child of children(node)) unqualifySchema(ctx, child)
 }
 
@@ -193,6 +187,19 @@ export const convertClass = (ctx: ReverseCtx, cls: Node, visit: Visit): boolean 
   const { entries, fields, keyword, name } = shape
   // the text between the fields and the class body is removed, so it can't hold a comment
   if (commentsIn(ctx, fields.end, cls.body.start + 1).length > 0) return false
+  // `error Forbidden`: an empty error writes no body (ADR-0091 A4)
+  if (
+    keyword === "error" && entries.length === 0 && !shape.tagField && cls.body.body.length === 0 &&
+    commentsIn(ctx, fields.start, fields.end).length === 0
+  ) {
+    replaceKeepingComments(
+      ctx,
+      cls.start,
+      cls.end,
+      `error ${name}${shape.status === undefined ? "" : ` status ${shape.status}`}`
+    )
+    return true
+  }
   replaceKeepingComments(
     ctx,
     cls.start,
@@ -220,6 +227,56 @@ export const convertClass = (ctx: ReverseCtx, cls: Node, visit: Visit): boolean 
   ctx.s.remove(close, end)
   for (const member of members) visit(member, cls.body, false)
   return true
+}
+
+/** `S.pipe(Schema.brand("K"))`: the branded schema and its key. */
+const brandOf = (ctx: ReverseCtx, node: Node): { readonly schema: Node; readonly key: string } | undefined => {
+  if (
+    node.type !== "CallExpression" || node.optional === true || node.callee.type !== "MemberExpression" ||
+    node.callee.computed || node.callee.optional === true || node.callee.property.name !== "pipe" ||
+    node.arguments.length !== 1
+  ) {
+    return undefined
+  }
+  const step: Node = node.arguments[0]
+  const key: Node | undefined = step.type === "CallExpression" && step.arguments.length === 1
+    ? step.arguments[0]
+    : undefined
+  return step.type === "CallExpression" && isMember(step.callee, ctx.schema, "brand") && key !== undefined &&
+      isCanonicalString(ctx, key)
+    ? { schema: node.callee.object, key: key.value as string }
+    : undefined
+}
+
+/** A brand can't include `null` or `undefined` (EFX3006): a branded nullable schema stays TypeScript. */
+const isNullable = (ctx: ReverseCtx, node: Node): boolean => {
+  const base = checkedOf(node)?.base ?? node
+  const nullish = (n: Node | null) =>
+    isMember(n, ctx.schema, "Null") || isMember(n, ctx.schema, "Undefined") ||
+    (n?.type === "Literal" && n.value === null && n.regex === undefined)
+  if (nullish(base)) return true
+  if (base.type !== "CallExpression") return false
+  if (["NullOr", "UndefinedOr", "NullishOr"].some((n) => isMember(base.callee, ctx.schema, n))) return true
+  // `Schema.Union([Schema.String, Schema.Null])`, `Schema.Literals(["a", null])`
+  const list: Node | undefined = base.arguments[0]
+  return (isMember(base.callee, ctx.schema, "Union") || isMember(base.callee, ctx.schema, "Literals")) &&
+    list?.type === "ArrayExpression" && (list.elements as Array<Node | null>).some(nullish)
+}
+
+/**
+ * `const X = <init>` as a declaration: `brand X = T [where …]` for `S[.check(…)].pipe(Schema.brand("X"))`
+ * (ADR-0077), otherwise `schema X = T [where …]`.
+ */
+const aliasDeclaration = (ctx: ReverseCtx, name: string, init: Node): string | undefined => {
+  const where = renderChecks(ctx)
+  const brand = brandOf(ctx, init)
+  if (brand?.key === name) {
+    if (isNullable(ctx, brand.schema)) return undefined
+    const type = declarationType(ctx.source, ctx.schema!, brand.schema, where)
+    return type === undefined ? undefined : `brand ${name} = ${type}`
+  }
+  const type = declarationType(ctx.source, ctx.schema!, init, where)
+  return type === undefined ? undefined : `schema ${name} = ${type}`
 }
 
 /** Whether `[from, to)` is a single line break, optionally with whole comment lines between. */
@@ -319,9 +376,9 @@ export const convertSchemaRun = (ctx: ReverseCtx, body: ReadonlyArray<Node>, ind
     ) {
       return 0
     }
-    const type = schemaToType(ctx.source, ctx.schema, declarator.init)
-    if (type === undefined || slice(ctx, declarator.init) === "") return 0
-    ctx.s.update(tops[0]!.start, tops[1]!.end, `${first.exported ? "export " : ""}schema ${name} = ${type}`)
+    const text = aliasDeclaration(ctx, name, declarator.init)
+    if (text === undefined || slice(ctx, declarator.init) === "") return 0
+    ctx.s.update(tops[0]!.start, tops[1]!.end, `${first.exported ? "export " : ""}${text}`)
     return 2
   }
   return 0

@@ -4,7 +4,7 @@ export schema User {
 }
 
 export error UserNotFound { id: string }
-export error Forbidden {}
+export error Forbidden
 
 export rpc UsersRpc {
   getUser(id: string): User throws UserNotFound

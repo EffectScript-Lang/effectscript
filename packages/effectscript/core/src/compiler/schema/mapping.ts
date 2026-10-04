@@ -3,11 +3,14 @@
  *
  * @since 0.1.0
  */
-import { isTypeFree } from "../analyze/scope.ts"
+import { isTypeFree, isValueFree } from "../analyze/scope.ts"
 import type { Node } from "../ast.ts"
-import type { Ctx } from "../context.ts"
+import { type Ctx, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
 import { ref } from "../names.ts"
+import { resolveValue } from "../prelude/resolve.ts"
+import { schemaGlobalChecks } from "../prelude/tables.ts"
+import { walk } from "../walk.ts"
 
 const keywords: Record<string, string> = {
   TSStringKeyword: "String",
@@ -97,8 +100,7 @@ const union = (ctx: Ctx, types: ReadonlyArray<Node>): string => {
 const member = (ctx: Ctx, node: Node): string => {
   if (node.type !== "TSPropertySignature" || node.typeAnnotation === undefined) return unsupported(ctx, node)
   const key = node.key.type === "Identifier" ? node.key.name : slice(ctx, node.key)
-  const type: Node = node.typeAnnotation.typeAnnotation
-  return `${key}: ${node.optional === true ? optionalField(ctx, type) : typeToSchema(ctx, type)}`
+  return `${key}: ${fieldSchema(ctx, node.typeAnnotation.typeAnnotation, node.optional === true, node.efxWhere)}`
 }
 
 /**
@@ -167,4 +169,123 @@ export const typeToSchema = (ctx: Ctx, node: Node): string => {
     default:
       return unsupported(ctx, node)
   }
+}
+
+const unparen = (type: Node): Node => (type.type === "TSParenthesizedType" ? unparen(type.typeAnnotation) : type)
+
+const isNullish = (type: Node): boolean => type.type === "TSNullKeyword" || type.type === "TSUndefinedKeyword"
+
+/**
+ * How a check's name resolves in a `where` list: `"builtin"` for a free name the Schema namespace
+ * resolves (the prelude qualifies it), `"global"` for a Schema check named like a JavaScript global
+ * (`isFinite`), which only a `where` list reads as the check; `undefined` for anything else.
+ */
+const checkName = (ctx: Ctx, node: Node): "builtin" | "global" | undefined => {
+  if (node.type !== "Identifier") return undefined
+  const name: string = node.name
+  if (schemaGlobalChecks.has(name)) {
+    return ctx.options.prelude && isValueFree(ctx.scope, name) && isTypeFree(ctx.scope, name) ? "global" : undefined
+  }
+  const resolution = resolveValue(ctx, name)
+  return resolution?.importName === "Schema" && resolution.prefix === "Schema." ? "builtin" : undefined
+}
+
+/**
+ * A `where` clause's checks as text, `a, b` (ADR-0077). The first call walks them in place, which
+ * qualifies their bare Schema builtins (`isNonEmpty(…)` → `Schema.isNonEmpty(…)`) and calls a check
+ * written without its `()` (`isTrimmed` → `Schema.isTrimmed()`, ADR-0091); later calls read the same
+ * text back.
+ *
+ * @since 4.0.0
+ * @category schema
+ */
+export const checksText = (ctx: Ctx, clause: Node): string => {
+  if (clause.efxWalked !== true) {
+    clause.efxWalked = true
+    withNamespace(ctx, "Schema", () => {
+      for (const check of clause.checks as Array<Node>) {
+        const name: Node = check.type === "CallExpression" ? check.callee : check
+        const kind = checkName(ctx, name)
+        if (kind === "global") ctx.s.appendRight(name.start, `${ref(ctx, "effect", "Schema")}.`)
+        if (kind !== undefined && check.type === "Identifier") ctx.s.appendLeft(check.end, "()")
+        walk(check, clause, ctx)
+      }
+    })
+  }
+  return (clause.checks as Array<Node>).map((check) => ctx.s.slice(check.start, check.end)).join(", ")
+}
+
+/**
+ * The text around a checked type's checks (ADR-0077): `open` ends with `.check(` and `close`
+ * closes it. The checks go on the type without its top-level `null` and `undefined`, which wrap the
+ * checked schema; an optional field's `optionalKey`, or `optional` when it allows `undefined`
+ * (ADR-0013), wraps that.
+ *
+ * @since 4.0.0
+ * @category schema
+ */
+export const checkedParts = (
+  ctx: Ctx,
+  type: Node,
+  optional: boolean,
+  clause: Node
+): { readonly open: string; readonly close: string } => {
+  const inner = unparen(type)
+  const all: Array<Node> = inner.type === "TSUnionType" ? inner.types : [inner]
+  const hasNull = all.some((t) => t.type === "TSNullKeyword")
+  const hasUndefined = all.some((t) => t.type === "TSUndefinedKeyword")
+  const rest = all.filter((t) => !isNullish(t))
+  const wrappers: Array<string> = []
+  if (optional) wrappers.push(schemaRef(ctx, hasUndefined ? "optional" : "optionalKey"))
+  // an optional field's `| undefined` belongs to `optional`; otherwise it wraps the checks
+  const undefinedOr = hasUndefined && !optional
+  if (hasNull && undefinedOr) wrappers.push(schemaRef(ctx, "NullishOr"))
+  else if (hasNull) wrappers.push(schemaRef(ctx, "NullOr"))
+  else if (undefinedOr) wrappers.push(schemaRef(ctx, "UndefinedOr"))
+  if (rest.length === 0) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX3005",
+        "`where` needs a type to check besides `null` and `undefined`",
+        clause.start,
+        clause.end
+      )
+    )
+  }
+  const base = rest.length === 0
+    ? schemaRef(ctx, "Unknown")
+    : typeToSchema(ctx, rest.length === 1 ? rest[0]! : { ...inner, types: rest })
+  return {
+    open: `${wrappers.map((wrapper) => `${wrapper}(`).join("")}${base}.check(`,
+    close: `)${")".repeat(wrappers.length)}`
+  }
+}
+
+/**
+ * Lowers a `where` clause where it stands (ADR-0077): `open` replaces the text from `from` to the
+ * first check, the checks are joined by `, ` on one line and walked in place (so the editor maps
+ * them), and `close` follows the last one.
+ *
+ * @since 4.0.0
+ * @category schema
+ */
+export const lowerChecks = (ctx: Ctx, from: number, clause: Node, open: string, close: string): void => {
+  const checks: Array<Node> = clause.checks
+  ctx.s.update(from, checks[0]!.start, open)
+  for (let i = 1; i < checks.length; i++) ctx.s.update(checks[i - 1]!.end, checks[i]!.start, ", ")
+  checksText(ctx, clause)
+  ctx.s.appendLeft(clause.end, close)
+}
+
+/**
+ * The schema of a field `name[?]: T [where …]` as text (ADR-0013, ADR-0077), for fields that are
+ * written out whole: type-literal members, ADT variants, signature lines and endpoint sections.
+ *
+ * @since 4.0.0
+ * @category schema
+ */
+export const fieldSchema = (ctx: Ctx, type: Node, optional: boolean, clause: Node | null | undefined): string => {
+  if (clause === null || clause === undefined) return optional ? optionalField(ctx, type) : typeToSchema(ctx, type)
+  const { close, open } = checkedParts(ctx, type, optional, clause)
+  return `${open}${checksText(ctx, clause)}${close}`
 }

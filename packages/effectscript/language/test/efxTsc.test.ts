@@ -36,6 +36,12 @@ describe("efx-tsc (ADR-0019)", () => {
     expect(result.status).toBe(2)
   }, 120_000)
 
+  it("reports a tag the value can't have at its is test (ADR-0087)", () => {
+    const result = run("check-is")
+    expect(result.stdout).toMatch(/src\/tag\.efx\(2,21\): error TS2367/)
+    expect(result.status).toBe(2)
+  }, 120_000)
+
   it("reports errors in generated code at a source anchor instead of dropping them (review I1)", () => {
     // outside the repository, so `effect` can't be found by walking up to a node_modules
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "efx-check-missing-"))

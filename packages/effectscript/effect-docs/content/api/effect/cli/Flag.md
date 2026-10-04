@@ -260,18 +260,14 @@ makeValueFlag(false) === Flag.Never // => true
 **Adding flag aliases**
 
 ```efx
-import { Flag } from "effect/cli"
-
 // Flag can be used as both --verbose and -v
-const verboseFlag = Flag.Boolean("verbose").pipe(
-  Flag.withAlias("v")
-)
+const verboseFlag = Flag.Boolean("verbose")
+  |> Flag.withAlias("v")
 
 // Multiple aliases can be chained
-const helpFlag = Flag.Boolean("help").pipe(
-  Flag.withAlias("h"),
-  Flag.withAlias("?")
-)
+const helpFlag = Flag.Boolean("help")
+  |> Flag.withAlias("h")
+  |> Flag.withAlias("?")
 const kinds = [verboseFlag.kind, helpFlag.kind] // => ["flag", "flag"]
 ```
 
@@ -280,15 +276,11 @@ const kinds = [verboseFlag.kind, helpFlag.kind] // => ["flag", "flag"]
 **Adding help descriptions**
 
 ```efx
-import { Flag } from "effect/cli"
+const portFlag = Flag.Int("port")
+  |> Flag.withDescription("The port number to listen on")
 
-const portFlag = Flag.Int("port").pipe(
-  Flag.withDescription("The port number to listen on")
-)
-
-const configFlag = Flag.File("config").pipe(
-  Flag.withDescription("Path to the configuration file")
-)
+const configFlag = Flag.File("config")
+  |> Flag.withDescription("Path to the configuration file")
 const kinds = [portFlag.kind, configFlag.kind] // => ["flag", "flag"]
 ```
 
@@ -297,17 +289,13 @@ const kinds = [portFlag.kind, configFlag.kind] // => ["flag", "flag"]
 **Setting metavars**
 
 ```efx
-import { Flag } from "effect/cli"
-
-const databaseFlag = Flag.String("database-url").pipe(
-  Flag.withMetavar("URL"),
-  Flag.withDescription("Database connection URL")
-)
+const databaseFlag = Flag.String("database-url")
+  |> Flag.withMetavar("URL")
+  |> Flag.withDescription("Database connection URL")
 // In help: --database-url URL
 
-const timeoutFlag = Flag.Int("timeout").pipe(
-  Flag.withMetavar("SECONDS")
-)
+const timeoutFlag = Flag.Int("timeout")
+  |> Flag.withMetavar("SECONDS")
 // In help: --timeout SECONDS
 const kinds = [databaseFlag.kind, timeoutFlag.kind] // => ["flag", "flag"]
 ```
@@ -317,12 +305,9 @@ const kinds = [databaseFlag.kind, timeoutFlag.kind] // => ["flag", "flag"]
 **Hiding a flag from help**
 
 ```efx
-import { Flag } from "effect/cli"
-
 // Flag still parses --experimental-foo, but it does not appear in --help.
-const experimental = Flag.Boolean("experimental-foo").pipe(
-  Flag.withHidden
-)
+const experimental = Flag.Boolean("experimental-foo")
+  |> Flag.withHidden
 experimental.kind // => "flag"
 ```
 
@@ -370,16 +355,12 @@ await runPromise(program.pipe(provide(CliTestLayer))) // => Option.some(4000)
 **Providing default values**
 
 ```efx
-import { Flag } from "effect/cli"
-
-const portFlag = Flag.Int("port").pipe(
-  Flag.withDefault(8080)
-)
+const portFlag = Flag.Int("port")
+  |> Flag.withDefault(8080)
 // If --port is not provided, defaults to 8080
 
-const hostFlag = Flag.String("host").pipe(
-  Flag.withDefault("localhost")
-)
+const hostFlag = Flag.String("host")
+  |> Flag.withDefault("localhost")
 // If --host is not provided, defaults to "localhost"
 const kinds = [portFlag.kind, hostFlag.kind] // => ["flag", "flag"]
 ```
@@ -389,12 +370,10 @@ const kinds = [portFlag.kind, hostFlag.kind] // => ["flag", "flag"]
 **Falling back to config**
 
 ```efx
-import { Config } from "effect"
 import { Flag } from "effect/cli"
 
-const verbose = Flag.Boolean("verbose").pipe(
-  Flag.withFallbackConfig(Config.Boolean("VERBOSE"))
-)
+const verbose = Flag.Boolean("verbose")
+  |> Flag.withFallbackConfig(Config.Boolean("VERBOSE"))
 verbose.kind // => "flag"
 ```
 
@@ -405,9 +384,8 @@ verbose.kind // => "flag"
 ```efx
 import { Flag, Prompt } from "effect/cli"
 
-const name = Flag.String("name").pipe(
-  Flag.withFallbackPrompt(Prompt.String({ message: "Name" }))
-)
+const name = Flag.String("name")
+  |> Flag.withFallbackPrompt(Prompt.String({ message: "Name" }))
 name.kind // => "flag"
 ```
 
@@ -416,17 +394,13 @@ name.kind // => "flag"
 **Mapping parsed values**
 
 ```efx
-import { Flag } from "effect/cli"
-
 // Convert string to uppercase
-const nameFlag = Flag.String("name").pipe(
-  Flag.map((name) => name.toUpperCase())
-)
+const nameFlag = Flag.String("name")
+  |> Flag.map((name) => name.toUpperCase())
 
 // Convert port to URL
-const urlFlag = Flag.Int("port").pipe(
-  Flag.map((port) => `http://localhost:${port}`)
-)
+const urlFlag = Flag.Int("port")
+  |> Flag.map((port) => `http://localhost:${port}`)
 const kinds = [nameFlag.kind, urlFlag.kind] // => ["flag", "flag"]
 ```
 
@@ -435,6 +409,9 @@ const kinds = [nameFlag.kind, urlFlag.kind] // => ["flag", "flag"]
 **Mapping parsed values effectfully**
 
 ```efx
+import { Flag } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -452,9 +429,8 @@ const CliTestLayer = Layer.mergeAll(
   )
 )
 
-const upperName = Flag.String("name").pipe(
-  Flag.mapEffect((name) => succeed(name.toUpperCase()))
-)
+const upperName = Flag.String("name")
+  |> Flag.mapEffect((name) => succeed(name.toUpperCase()))
 
 const [, value] = await runPromise(
   upperName.parse({
@@ -470,6 +446,9 @@ value // => "ALICE"
 **Mapping thrown errors**
 
 ```efx
+import { Flag } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -488,20 +467,18 @@ const CliTestLayer = Layer.mergeAll(
 )
 
 // Parse JSON string with error handling
-const jsonFlag = Flag.String("config").pipe(
-  Flag.mapTryCatch(
+const jsonFlag = Flag.String("config")
+  |> Flag.mapTryCatch(
     (json) => JSON.parse(json),
     (error) => `Invalid JSON: ${error}`
   )
-)
 
 // Parse URL with error handling
-const urlFlag = Flag.String("url").pipe(
-  Flag.mapTryCatch(
+const urlFlag = Flag.String("url")
+  |> Flag.mapTryCatch(
     (url) => new URL(url),
     (error) => `Invalid URL: ${error}`
   )
-)
 
 const [, value] = await runPromise(
   jsonFlag.parse({
@@ -517,15 +494,12 @@ value // => { enabled: true }
 **Requiring repeated values**
 
 ```efx
-import { Flag } from "effect/cli"
-
 const sourceFlag = Flag.atLeast(Flag.File("source"), 2)
 // Requires at least 2 source files
 // Usage: --source file1.ts --source file2.ts
 
-const tagFlag = Flag.String("tag").pipe(
-  Flag.atLeast(1)
-)
+const tagFlag = Flag.String("tag")
+  |> Flag.atLeast(1)
 // Requires at least 1 tag
 const kinds = [sourceFlag.kind, tagFlag.kind] // => ["flag", "flag"]
 ```
@@ -535,15 +509,12 @@ const kinds = [sourceFlag.kind, tagFlag.kind] // => ["flag", "flag"]
 **Limiting repeated values**
 
 ```efx
-import { Flag } from "effect/cli"
-
 const warningFlag = Flag.atMost(Flag.String("warning"), 3)
 // Allows up to 3 warning flags
 // Usage: --warning w1 --warning w2 --warning w3
 
-const debugFlag = Flag.String("debug").pipe(
-  Flag.atMost(1)
-)
+const debugFlag = Flag.String("debug")
+  |> Flag.atMost(1)
 // Allows at most 1 debug flag
 const kinds = [warningFlag.kind, debugFlag.kind] // => ["flag", "flag"]
 ```
@@ -553,15 +524,12 @@ const kinds = [warningFlag.kind, debugFlag.kind] // => ["flag", "flag"]
 **Bounding repeated values**
 
 ```efx
-import { Flag } from "effect/cli"
-
 const hostFlag = Flag.between(Flag.String("host"), 1, 3)
 // Requires 1-3 host flags
 // Usage: --host host1 --host host2
 
-const excludeFlag = Flag.String("exclude").pipe(
-  Flag.between(0, 5)
-)
+const excludeFlag = Flag.String("exclude")
+  |> Flag.between(0, 5)
 // Allows 0-5 exclude patterns
 const kinds = [hostFlag.kind, excludeFlag.kind] // => ["flag", "flag"]
 ```
@@ -571,24 +539,21 @@ const kinds = [hostFlag.kind, excludeFlag.kind] // => ["flag", "flag"]
 **Filtering and transforming values**
 
 ```efx
-import { Option } from "effect"
 import { Flag } from "effect/cli"
 
 // Parse positive integers only
-const positiveInt = Flag.Int("count").pipe(
-  Flag.filterMap(
+const positiveInt = Flag.Int("count")
+  |> Flag.filterMap(
     (n) => n > 0 ? Option.some(n) : Option.none(),
     (n) => `Expected positive integer, got ${n}`
   )
-)
 
 // Parse valid email addresses
-const emailFlag = Flag.String("email").pipe(
-  Flag.filterMap(
+const emailFlag = Flag.String("email")
+  |> Flag.filterMap(
     (email) => email.includes("@") ? Option.some(email) : Option.none(),
     (email) => `Invalid email address: ${email}`
   )
-)
 const kinds = [positiveInt.kind, emailFlag.kind] // => ["flag", "flag"]
 ```
 
@@ -597,23 +562,19 @@ const kinds = [positiveInt.kind, emailFlag.kind] // => ["flag", "flag"]
 **Filtering parsed values**
 
 ```efx
-import { Flag } from "effect/cli"
-
 // Ensure port is in valid range
-const portFlag = Flag.Int("port").pipe(
-  Flag.filter(
+const portFlag = Flag.Int("port")
+  |> Flag.filter(
     (port) => port >= 1 && port <= 65535,
     (port) => `Port ${port} is out of range (1-65535)`
   )
-)
 
 // Ensure non-empty string
-const nameFlag = Flag.String("name").pipe(
-  Flag.filter(
+const nameFlag = Flag.String("name")
+  |> Flag.filter(
     (name) => name.trim().length > 0,
     () => "Name cannot be empty"
   )
-)
 const kinds = [portFlag.kind, nameFlag.kind] // => ["flag", "flag"]
 ```
 
@@ -685,7 +646,6 @@ await runPromise(program.pipe(provide(CliTestLayer))) // => Result.fail("https:/
 **Validating with schemas**
 
 ```efx
-import { Schema } from "effect"
 import { Flag } from "effect/cli"
 
 const isEmail = Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
@@ -693,23 +653,20 @@ const isEmail = Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
 })
 
 // Parse and validate email with custom schema
-const EmailSchema = Schema.String.pipe(
-  Schema.check(isEmail)
-)
+const EmailSchema = Schema.String
+  |> Schema.check(isEmail)
 
-const emailFlag = Flag.String("email").pipe(
-  Flag.withSchema(EmailSchema)
-)
+const emailFlag = Flag.String("email")
+  |> Flag.withSchema(EmailSchema)
 
 // Parse JSON configuration with schema validation
 const ConfigSchema = Schema.Struct({
   port: Schema.Number,
   host: Schema.String,
   ssl: Schema.optional(Schema.Boolean)
-}).pipe(Schema.fromJsonString)
+}) |> Schema.fromJsonString
 
-const configFlag = Flag.String("config").pipe(
-  Flag.withSchema(ConfigSchema)
-)
+const configFlag = Flag.String("config")
+  |> Flag.withSchema(ConfigSchema)
 const kinds = [emailFlag.kind, configFlag.kind] // => ["flag", "flag"]
 ```

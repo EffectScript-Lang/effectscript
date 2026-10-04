@@ -12,9 +12,9 @@ export error DevToolsError {
 }
 
 export service DevTools as "docs/DevTools" {
-  readonly nodeVersion: Effect.Effect<string, DevToolsError>
-  readonly recentCommitSubjects: Effect.Effect<ReadonlyArray<string>, DevToolsError>
-  readonly runLintFix: Effect.Effect<void, DevToolsError>
+  nodeVersion: Effect.Effect<string, DevToolsError>
+  recentCommitSubjects: Effect.Effect<ReadonlyArray<string>, DevToolsError>
+  runLintFix: Effect.Effect<void, DevToolsError>
   changedTypeScriptFiles(baseRef: string): Effect.Effect<ReadonlyArray<string>, DevToolsError>
   layer = effect {
       // To run child processes, we need access to a `ChildProcessSpawner`.

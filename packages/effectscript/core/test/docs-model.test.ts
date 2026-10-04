@@ -144,3 +144,17 @@ describe("modulePath", () => {
     expect(modulePath("src\\win\\b.efx")).toBe("win/b")
   })
 })
+
+describe("docModule: brands (ADR-0077)", () => {
+  it("documents a brand with its type and checks", () => {
+    const { diagnostics, module } = docModule(
+      "/p/src/ids.efx",
+      "ids",
+      "/** A TCP port. */\nexport brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })\n"
+    )
+    expect(diagnostics).toEqual([])
+    expect(module.declarations.map((d) => [d.kind, d.name, d.signature, d.doc?.summary])).toEqual([
+      ["brand", "Port", "brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })", "A TCP port."]
+    ])
+  })
+})

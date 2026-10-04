@@ -1,0 +1,15 @@
+export schema Signup {
+  email: string where isPattern(/^[^@\s]+@[^@\s]+$/)
+  name: string where isTrimmed, isNonEmpty
+  nickname?: string where isMaxLength(20)
+  referrer?: string | undefined where isNonEmpty
+  manager: string | null where isMaxLength(64)
+  age: Int where isGreaterThan(17), isLessThan(150)
+  joinedAt = DateTimeUtcFromString
+}
+
+export error TooYoung { age: Int where isLessThanOrEqualTo(17) }
+
+export schema Percent = number where isBetween({ minimum: 0, maximum: 100 })
+
+schema Note = string | null where isMaxLength(280)

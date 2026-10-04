@@ -17,7 +17,7 @@ The examples in the JSDoc of `packages/effect/src/LayerRef.ts`, in EffectScript 
 
 ```efx
 service Database {
-  readonly query: Effect<string>
+  query: Effect<string>
 }
 
 const databaseLayer = Layer.succeed(Database, {
@@ -52,7 +52,7 @@ await runPromise(program) // => "result"
 
 ```efx
 service Database {
-  readonly query: Effect<string>
+  query: Effect<string>
 }
 
 const databaseLayer = Layer.succeed(Database, {

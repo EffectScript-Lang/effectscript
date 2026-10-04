@@ -55,10 +55,9 @@ const program = effect {
 
   // Get "foo" from the map twice, which will only acquire it once.
   // It will then be released once the scope closes.
-  await RcMap.get(map, "foo").pipe(
-    andThen(RcMap.get(map, "foo")),
-    scoped
-  )
+  await RcMap.get(map, "foo")
+    |> andThen(RcMap.get(map, "foo"))
+    |> scoped
 }
 
 await runPromise(scoped(program))

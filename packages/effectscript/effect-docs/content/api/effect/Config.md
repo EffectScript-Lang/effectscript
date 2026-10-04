@@ -27,9 +27,8 @@ Config.isConfig("not a config") // => false
 **Uppercasing a string config**
 
 ```efx
-const upper = Config.String("name").pipe(
-  Config.map((s) => s.toUpperCase())
-)
+const upper = Config.String("name")
+  |> Config.map((s) => s.toUpperCase())
 
 const provider = ConfigProvider.fromUnknown({ name: "alice" })
 runSync(upper.parse(provider)) // => "ALICE"
@@ -87,9 +86,8 @@ const hostConfig = ENV.pipe(
 **Wrapping a value in an effectful transformation**
 
 ```efx
-const trimmed = Config.String("name").pipe(
-  Config.mapEffect((s) => succeed(s.trim()))
-)
+const trimmed = Config.String("name")
+  |> Config.mapEffect((s) => succeed(s.trim()))
 const provider = ConfigProvider.fromUnknown({ name: " Alice " })
 runSync(trimmed.parse(provider)) // => "Alice"
 ```
@@ -99,10 +97,9 @@ runSync(trimmed.parse(provider)) // => "Alice"
 **Trying another port before using a default**
 
 ```efx
-const port = Config.Int("PORT").pipe(
-  Config.orElse(() => Config.Int("BACKUP_PORT")),
-  Config.withDefault(3000)
-)
+const port = Config.Int("PORT")
+  |> Config.orElse(() => Config.Int("BACKUP_PORT"))
+  |> Config.withDefault(3000)
 const provider = ConfigProvider.fromUnknown({ PORT: "invalid", BACKUP_PORT: "8080" })
 await runPromise(port.parse(provider)) // => 8080
 
@@ -118,7 +115,7 @@ await runPromise(port.parse(missingBackup)) // => 3000
 const dbConfig = Config.all({
   host: Config.String("host"),
   port: Config.Number("port")
-}).pipe(Config.withDefault({ host: "localhost", port: 5432 }))
+}) |> Config.withDefault({ host: "localhost", port: 5432 })
 
 const provider = ConfigProvider.fromUnknown({ host: "db.internal", port: 6000 })
 await runPromise(dbConfig.parse(provider)) // => { host: "db.internal", port: 6000 }
@@ -132,7 +129,7 @@ await runPromise(dbConfig.parse(missingPort)) // => { host: "localhost", port: 5
 **Defaulting a missing port**
 
 ```efx
-const port = Config.Number("port").pipe(Config.withDefault(3000))
+const port = Config.Number("port") |> Config.withDefault(3000)
 
 const provider = ConfigProvider.fromUnknown({})
 runSync(port.parse(provider)) // => 3000
@@ -193,9 +190,8 @@ runSync(DbConfig.parse(provider)) // => { host: "localhost", port: 5432 }
 **Returning a constant fallback**
 
 ```efx
-const host = Config.String("HOST").pipe(
-  Config.orElse(() => Config.succeed("localhost"))
-)
+const host = Config.String("HOST")
+  |> Config.orElse(() => Config.succeed("localhost"))
 const provider = ConfigProvider.fromUnknown({})
 runSync(host.parse(provider)) // => "localhost"
 ```
@@ -284,7 +280,7 @@ runSync(
 **Reading a duration**
 
 ```efx
-const program = Config.Duration("DURATION").pipe(map(Duration.toMillis))
+const program = Config.Duration("DURATION") |> map(Duration.toMillis)
 
 const provider = ConfigProvider.fromEnv({
   env: {
@@ -338,7 +334,7 @@ runSync(
 **Reading a secret**
 
 ```efx
-const program = Config.Redacted("API_KEY").pipe(map(String))
+const program = Config.Redacted("API_KEY") |> map(String)
 
 const provider = ConfigProvider.fromEnv({
   env: {
@@ -356,7 +352,7 @@ runSync(
 **Reading a URL**
 
 ```efx
-const program = Config.URL("URL").pipe(map((url) => url.href))
+const program = Config.URL("URL") |> map((url) => url.href)
 
 const provider = ConfigProvider.fromEnv({
   env: {
@@ -388,7 +384,7 @@ runSync(createdAt.parse(provider)).toISOString() // => "2024-01-15T00:00:00.000Z
 const dbConfig = Config.all({
   host: Config.String("host"),
   port: Config.Number("port")
-}).pipe(Config.nested("database"))
+}) |> Config.nested("database")
 
 const provider = ConfigProvider.fromUnknown({
   database: { host: "localhost", port: "5432" }
@@ -399,7 +395,7 @@ runSync(dbConfig.parse(provider)) // => { host: "localhost", port: 5432 }
 **Reading env vars with a nested prefix**
 
 ```efx
-const host = Config.String("host").pipe(Config.nested("database"))
+const host = Config.String("host") |> Config.nested("database")
 
 const provider = ConfigProvider.fromEnv({
   env: { database_host: "localhost" }

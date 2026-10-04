@@ -1292,3 +1292,27 @@ Append an `## Execution record` to this plan: the rulings made while implementin
 git add packages/effectscript/site/src/samples/errors/app.efx packages/effectscript/core/skills/effectscript/references/patterns.md packages/effectscript/core/skills/effectscript/references/pitfalls.md docs/superpowers/plans/2026-10-05-effectscript-29-is-tag-tests.md
 git commit -m "docs(effectscript): the errors sample and the skill retry with is (Plan 29 Task 5, ADR-0087)"
 ```
+
+## Execution record
+
+Executed on 2026-10-05 in the `effectscript-intent-compression` worktree, together with ADR-0091.
+No commits were made: the user hadn't asked for them, so each task's commit step was skipped and
+the work stays in the worktree.
+
+- **Task 1:** as planned. The superset cases passed on the first run, so `efxIsTestAhead` needed no
+  `inType` guard.
+- **Task 2:** tree-sitter needed more conflicts than the two the plan named, because `is` follows
+  TypeScript's contextual words: `type is`, `module is`, `async is`, and the type predicates after
+  `as … =>` and `asserts`. Two rulings:
+  - A predicate's pattern can't open with `(` unless `not` comes first (`_is_predicate_pattern`),
+    so `is (` stays a call, as ADR-0087 says.
+  - A dotted tag is its own rule, `_is_dotted_tag` (precedence 100, aliased to
+    `nested_identifier`). Otherwise the parser reduced `Cause` as the tag and read
+    `.TimeoutError` as a member access on the whole test; `nested_identifier`'s named `member`
+    precedence can't be compared with numeric ones.
+- **Task 3:** as planned; `is.ts` golden matches the expected exports exactly.
+- **Task 4:** as planned; `is.reverse.efx` is identical to `is.efx`. The docs corpus re-sugars 10
+  more examples (1,941 → 1,951).
+- **Task 5:** as planned, plus a core rule for `is` in `SKILL.md`.
+- **TDD gaps:** none; every test was taken from this plan before the code.
+

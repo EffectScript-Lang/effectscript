@@ -16,10 +16,9 @@ The examples in the JSDoc of `packages/effect/src/schema/Model.ts`, in EffectScr
 **Defining a variant model class**
 
 ```efx
-import { Schema } from "effect"
 import { Model } from "effect/schema"
 
-export const GroupId = Schema.Number.pipe(Schema.brand("GroupId"))
+export const GroupId = Schema.Number |> Schema.brand("GroupId")
 
 export class Group extends Model.Class<Group>("Group")({
   id: Model.GeneratedByDb(GroupId),

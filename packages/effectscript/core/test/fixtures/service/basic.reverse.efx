@@ -10,14 +10,14 @@ declare const SqlLive: Layer<never>
 export service Users {
   effect find(id: string): User throws UserNotFound
   effect list(): ReadonlyArray<User>
-  readonly size: number
+  size: number
 
   layer = effect {
     const cache = new Map<string, User>()
     defer log("users layer released")
     return {
       size: 0,
-      effect find(id: string) {
+      effect find(id) {
         return cache.get(id) ?? throw new UserNotFound({ id })
       },
       list: effect () => [...cache.values()]
@@ -26,7 +26,7 @@ export service Users {
 
   layer test = {
     size: 1,
-    find: effect (id: string) => new User({ id, name: "Test" }),
+    find: effect (id) => new User({ id, name: "Test" }),
     list: effect () => []
   }
 }

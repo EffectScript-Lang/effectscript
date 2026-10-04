@@ -843,10 +843,9 @@ const sink = Channel.fromWritableStream<never, Error, number>({
   onError: (cause) => new Error(String(cause))
 })
 
-const program = Channel.fromArray([[1, 2] as [number, number]]).pipe(
-  Channel.pipeTo(sink),
-  Channel.runDrain
-)
+const program = Channel.fromArray([[1, 2] as [number, number]])
+  |> Channel.pipeTo(sink)
+  |> Channel.runDrain
 
 await runPromise(program)
 written // => [1, 2]
@@ -866,10 +865,9 @@ const transform = Channel.fromTransformStream<never, number, number, Error>({
   onError: (cause) => new Error(String(cause))
 })
 
-const program = Channel.fromArray([[1, 2] as [number, number]]).pipe(
-  Channel.pipeTo(transform),
-  Channel.runCollect
-)
+const program = Channel.fromArray([[1, 2] as [number, number]])
+  |> Channel.pipeTo(transform)
+  |> Channel.runCollect
 
 await runPromise(program) // => [[2], [4]]
 ```
@@ -975,9 +973,8 @@ class ConcatError extends Data.TaggedError("ConcatError")<{
 }> {}
 
 // Create a channel that outputs numbers and terminates with sum
-const numberChannel = Channel.fromIterable([1, 2, 3]).pipe(
-  Channel.concatWith((sum: void) => Channel.succeed(`Completed processing`))
-)
+const numberChannel = Channel.fromIterable([1, 2, 3])
+  |> Channel.concatWith((sum: void) => Channel.succeed(`Completed processing`))
 
 runSync(Channel.runCollect(numberChannel)) // => [1, 2, 3, "Completed processing"]
 ```
@@ -1094,7 +1091,7 @@ const arrayChannel = Channel.fromIterable([
   Array.make(1, 2, 3, 4, 5),
   Array.make(6, 7, 8, 9, 10),
   Array.make(11, 12, 13, 14, 15)
-]).pipe(Channel.filter(nonEmptyArrayPredicate))
+]) |> Channel.filter(nonEmptyArrayPredicate)
 
 // Filter arrays to keep only even numbers
 const evenArraysChannel = Channel.filterArray(arrayChannel, (n) => n % 2 === 0)
@@ -1106,7 +1103,7 @@ const oddChannel = Channel.fromIterable([
   Array.make(1, 3, 5),
   Array.make(2, 4),
   Array.make(7, 9)
-]).pipe(Channel.filter(nonEmptyArrayPredicate))
+]) |> Channel.filter(nonEmptyArrayPredicate)
 const filteredOddChannel = Channel.filterArray(oddChannel, (n) => n % 2 === 0)
 runSync(Channel.runCollect(filteredOddChannel)) // => [[2, 4]]
 ```
@@ -1237,9 +1234,8 @@ runSync(Channel.runCollect(recoveredChannel)) // => ["Recovered from failure"]
 **Recovering from a defect**
 
 ```efx
-const channel = Channel.fromEffect(die("boom")).pipe(
-  Channel.catchDefect((defect) => Channel.succeed(`recovered: ${defect}`))
-)
+const channel = Channel.fromEffect(die("boom"))
+  |> Channel.catchDefect((defect) => Channel.succeed(`recovered: ${defect}`))
 
 runSync(Channel.runCollect(channel)) // => ["recovered: boom"]
 ```
@@ -1264,11 +1260,10 @@ class AiError extends Data.TaggedError("AiError")<{
 const reason = new RateLimitError({ retryAfter: 60 })
 const channel = Channel.fail(new AiError({ reason }))
 
-const recovered = channel.pipe(
-  Channel.catchReason("AiError", "RateLimitError", (reason) =>
+const recovered = channel
+  |> Channel.catchReason("AiError", "RateLimitError", (reason) =>
     Channel.succeed(`retry: ${reason.retryAfter}`)
   )
-)
 runSync(Channel.runCollect(recovered)) // => ["retry: 60"]
 ```
 
@@ -1294,7 +1289,7 @@ class AiError extends Data.TaggedError("AiError")<{
 const reason = new RateLimitError({ retryAfter: 60 })
 const channel = Channel.fail(new AiError({ reason }))
 
-const unwrapped = channel.pipe(Channel.unwrapReason("AiError"))
+const unwrapped = channel |> Channel.unwrapReason("AiError")
 runSync(exit(Channel.runCollect(unwrapped))) // => Exit.fail(reason)
 ```
 

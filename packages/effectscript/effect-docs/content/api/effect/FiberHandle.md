@@ -58,7 +58,7 @@ const program = effect {
   await FiberHandle.run(handle, never)
 
   await yieldNow
-  return handle.state._tag === "Open" && handle.state.fiber !== undefined
+  return handle.state is Open && handle.state.fiber !== undefined
 }
   |> scoped // The fiber will be interrupted when the scope is closed
 
@@ -241,7 +241,7 @@ actual // => ["hello", "world"]
 
 ```efx
 service Users {
-  readonly getAll: Effect<Array<unknown>>
+  getAll: Effect<Array<unknown>>
 }
 
 const program = effect {

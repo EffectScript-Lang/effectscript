@@ -5,7 +5,7 @@ describe("reverse: test and describe (Plan 7 Task 5)", () => {
   it("converts describe, tests with modifiers and pipes, and describe with a layer", () => {
     const efx = `service Users {
   effect find(id: string): string
-  layer test = { find: effect (id: string) => \`user-\${id}\` }
+  layer test = { find: effect (id) => \`user-\${id}\` }
 }
 
 describe "Users" {

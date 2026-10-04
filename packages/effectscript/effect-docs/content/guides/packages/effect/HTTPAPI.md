@@ -81,14 +81,13 @@ const GroupLayer = HttpApiBuilder.group(
 )
 
 // Server
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
 // Launch
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 After running the code, open a browser and navigate to http://localhost:3000. The server will respond with:
@@ -182,13 +181,12 @@ const GroupLayer = HttpApiBuilder.group(
   (handlers) => handlers.handle("hello", () => succeed("Hello, World!"))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // Create a program that derives and uses the client
 const program = Effect.gen(function*() {
@@ -375,14 +373,13 @@ const GroupLayer = HttpApiBuilder.group(
       ))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 ## POST
@@ -450,14 +447,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 ## DELETE
@@ -529,14 +525,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 ## PATCH
@@ -623,14 +618,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 ## Parameters
@@ -688,14 +682,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 ## Catch-All Endpoints
@@ -787,14 +780,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 > [!IMPORTANT]
@@ -845,14 +837,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test this endpoint using a GET request. For example:
@@ -915,14 +906,13 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 #### Defining an Array of Values for a Query Parameter
@@ -969,14 +959,13 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test this endpoint by passing an array of values in the query string. For example:
@@ -1040,14 +1029,13 @@ const GroupLayer = HttpApiBuilder.group(
       ))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test the endpoint by sending the headers:
@@ -1102,14 +1090,13 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test this endpoint by sending a multipart request with a file upload. For example:
@@ -1147,7 +1134,7 @@ const Api = HttpApi.make("MyApi")
             name: Schema.String
           })
             // Specify the encoding as form url encoded
-            .pipe(HttpApiSchema.asFormUrlEncoded()),
+             |> HttpApiSchema.asFormUrlEncoded(),
           success: User
         })
       )
@@ -1164,14 +1151,13 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test this endpoint using a URL-encoded request body. For example:
@@ -1223,13 +1209,12 @@ const GroupLayer = HttpApiBuilder.group(
     )
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 ## Validating Request Cookies
@@ -1243,13 +1228,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { Context } from "effect"
 import { HttpRouter } from "effect/http"
 import {
-  HttpApi,
-  HttpApiBuilder,
-  HttpApiEndpoint,
-  HttpApiGroup,
-  HttpApiMiddleware,
-  HttpApiScalar,
-  HttpApiSecurity
+  HttpApi
 } from "effect/http-api"
 import { createServer } from "node:http"
 
@@ -1308,16 +1287,15 @@ const GroupLayer = HttpApiBuilder.group(
         const user = await CurrentUser
         return { id: user.id }
       })
-).pipe(Layer.provide(AuthLayer))
+) |> Layer.provide(AuthLayer)
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // Valid session:
 // curl "http://localhost:3000/me" --cookie "session=valid-session"
@@ -1357,13 +1335,12 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // curl "http://localhost:3000/me" --cookie "lang=it"
 // "Language: it"
@@ -1388,9 +1365,9 @@ const Api = HttpApi.make("myApi").add(
   HttpApiGroup.make("group").add(
     HttpApiEndpoint.post("acceptStream", "/stream", {
       // Define the payload as a Uint8Array with a specific encoding
-      payload: Schema.Uint8Array.pipe(
-        HttpApiSchema.asUint8Array() // default content type: application/octet-stream
-      ),
+      payload: Schema.Uint8Array
+        |> HttpApiSchema.asUint8Array() // default content type: application/octet-stream
+,
       success: Schema.String
     })
   )
@@ -1413,13 +1390,12 @@ const GroupLayer = HttpApiBuilder.group(
       ))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test the streaming request using `curl` or any tool that supports sending binary data. For example:
@@ -1455,7 +1431,7 @@ const Api = HttpApi.make("MyApi")
       .add(
         HttpApiEndpoint.get("getUsers", "/users", {
           success: Schema.Array(User)
-            .pipe(HttpApiSchema.status(206))
+             |> HttpApiSchema.status(206)
         })
       )
   )
@@ -1472,14 +1448,13 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 ## Changing the Response Encoding
@@ -1500,13 +1475,12 @@ const Api = HttpApi.make("MyApi")
     HttpApiGroup.make("Users")
       .add(
         HttpApiEndpoint.get("csv", "/users/csv", {
-          success: Schema.String.pipe(
+          success: Schema.String
             // Set the success response as a string with CSV encoding
-            HttpApiSchema.asText({
+            |> HttpApiSchema.asText({
               // Define the content type as text/csv
               contentType: "text/csv"
             })
-          )
         })
       )
   )
@@ -1521,14 +1495,13 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test this endpoint using a GET request. For example:
@@ -1595,13 +1568,12 @@ const GroupLayer = HttpApiBuilder.group(
       })))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // curl -v "http://localhost:3000/users" 2>&1 | grep -i "x-total-count"
 // < x-total-count: 1
@@ -1690,13 +1662,12 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // curl -v "http://localhost:3000/user/1" 2>&1 | grep -i "x-user-id"
 // < x-user-id: 1
@@ -1740,13 +1711,12 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // curl -v "http://localhost:3000/hello" 2>&1 | grep -i "x-custom"
 // < x-custom: hello
@@ -1790,13 +1760,12 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // curl -v "http://localhost:3000/hello" 2>&1 | grep -i "set-cookie"
 // < set-cookie: my-cookie=my-value; Path=/; HttpOnly; Secure
@@ -1837,14 +1806,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // curl "http://localhost:3000/old" -L
 ```
@@ -1882,10 +1850,9 @@ const Api = HttpApi.make("myApi").add(
 )
 
 // Simulate a stream of data
-const stream = Stream.make("a", "b", "c").pipe(
-  Stream.schedule(Schedule.spaced("500 millis")),
-  Stream.map((s) => new TextEncoder().encode(s))
-)
+const stream = Stream.make("a", "b", "c")
+  |> Stream.schedule(Schedule.spaced("500 millis"))
+  |> Stream.map((s) => new TextEncoder().encode(s))
 
 const GroupLayer = HttpApiBuilder.group(
   Api,
@@ -1898,13 +1865,12 @@ const GroupLayer = HttpApiBuilder.group(
     )
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test the streaming response using `curl` or any similar HTTP client that supports streaming:
@@ -1954,13 +1920,12 @@ const GroupLayer = HttpApiBuilder.group(
       ))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // curl 'http://localhost:3000/events' --no-buffer
 // data: {"text":"one"}
@@ -2035,11 +2000,11 @@ const User = Schema.Struct({
 const UserNotFound = Schema.Struct({
   _tag: Schema.tag("UserNotFound"),
   message: Schema.String
-}).pipe(HttpApiSchema.status(404))
+}) |> HttpApiSchema.status(404)
 
 const Unauthorized = Schema.Struct({
   _tag: Schema.tag("Unauthorized")
-}).pipe(HttpApiSchema.status(401))
+}) |> HttpApiSchema.status(401)
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -2085,14 +2050,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 You can test these endpoints. For example:
@@ -2155,14 +2119,13 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 | Name                  | Status | Description                                                                                        |
@@ -2232,14 +2195,13 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 ## Customizing Schema Error Responses
@@ -2309,15 +2271,14 @@ const GroupLayer = HttpApiBuilder.group(
   (handlers) => handlers.handle("getUser", (ctx) => succeed({ id: ctx.query.id, name: `User ${ctx.query.id}` }))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(SchemaErrorHandlerLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(SchemaErrorHandlerLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // Test:
 // curl "http://localhost:3000/user?id=1"    # 200 OK
@@ -2341,23 +2302,17 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
 import {
-  HttpApi,
-  HttpApiBuilder,
-  HttpApiEndpoint,
-  HttpApiGroup,
-  HttpApiMiddleware,
-  HttpApiScalar,
-  HttpApiSchema
+  HttpApi
 } from "effect/http-api"
 import { createServer } from "node:http"
 
 class Logger extends HttpApiMiddleware.Service<Logger>()("Http/Logger", {
   // default is 500 Internal Server Error with JSON encoding
   error: Schema.String
-    .pipe(
-      HttpApiSchema.status(405), // override default status code
-      HttpApiSchema.asText() // override default encoding
-    )
+    
+      |> HttpApiSchema.status(405) // override default status code
+      |> HttpApiSchema.asText() // override default encoding
+
 }) {}
 
 const User = Schema.Struct({
@@ -2403,15 +2358,14 @@ const LoggerLayer = Layer.effect(
   }
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  Layer.provide(LoggerLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> Layer.provide(LoggerLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // Test this with this curl command:
 // curl "http://localhost:3000/user/1"
@@ -2427,7 +2381,7 @@ When you attach interdependent middleware to an endpoint, group, or API, the mid
 
 ```efx
 service AuthInfo {
-  readonly userId: string
+  userId: string
 }
 
 class LoadAuth extends HttpApiMiddleware.Service<LoadAuth, {
@@ -2599,6 +2553,8 @@ Use `HttpApiSecurity.annotate` to attach metadata — like a description — to 
 **Example** (Adding a Description to a Bearer Token Security Definition)
 
 ```efx
+import { HttpApiMiddleware } from "effect/http-api"
+
 schema User { id: Finite }
 
 class Unauthorized extends Schema.TaggedError<Unauthorized>()(
@@ -2617,10 +2573,9 @@ class Authorization extends HttpApiMiddleware.Service<Authorization, {
   {
     error: Unauthorized,
     security: {
-      myBearer: HttpApiSecurity.bearer.pipe(
+      myBearer: HttpApiSecurity.bearer
         // Add a description to the security definition
-        HttpApiSecurity.annotate(OpenApi.Description, "my description")
-      )
+        |> HttpApiSecurity.annotate(OpenApi.Description, "my description")
     }
   }
 ) {}
@@ -2682,7 +2637,7 @@ const User = Schema.Struct({
 
 // Define the UsersRepository service
 service UsersRepository {
-  readonly findById: (id: number) => Effect<typeof User.Type>
+  findById: (id: number) => Effect<typeof User.Type>
 }
 
 const Api = HttpApi.make("MyApi")
@@ -2713,19 +2668,18 @@ const GroupLayer = HttpApiBuilder.group(
       })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  Layer.provide(
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> Layer.provide(
     Layer.succeed(UsersRepository, {
       findById: (id) => succeed({ id, name: `User ${id}` })
     })
-  ),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+  )
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 # OpenAPI Documentation
@@ -2812,14 +2766,13 @@ const GroupLayer = HttpApiBuilder.group(
     })
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)), // "/docs" is the default path.
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api)) // "/docs" is the default path.
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 ```
 
 After running the server, open your browser and navigate to http://localhost:3000/docs.
@@ -3351,13 +3304,12 @@ const GroupLayer = HttpApiBuilder.group(
   (handlers) => handlers.handle("hello", () => succeed("Hello, World!"))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // Create a program that derives and uses the client
 const program = Effect.gen(function*() {
@@ -3410,13 +3362,12 @@ const GroupLayer = HttpApiBuilder.group(
   (handlers) => handlers.handle("hello", () => succeed("Hello, World!"))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  HttpRouter.serve,
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> HttpRouter.serve
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
-Layer.launch(ApiLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 const program = Effect.gen(function*() {
   const client = yield* HttpApiClient.make(Api, {
@@ -3437,6 +3388,8 @@ If you need to plug your API into an existing HTTP server (instead of using `Nod
 **Example** (Creating and Serving a Web Handler)
 
 ```efx
+import { HttpRouter } from "effect/http"
+import { HttpApi } from "effect/http-api"
 import * as http from "node:http"
 
 const Api = HttpApi.make("myApi").add(
@@ -3453,11 +3406,10 @@ const GroupLayer = HttpApiBuilder.group(
   (handlers) => handlers.handle("get", () => succeed("Hello, world!"))
 )
 
-const ApiLayer = HttpApiBuilder.layer(Api).pipe(
-  Layer.provide(GroupLayer),
-  Layer.provide(HttpApiScalar.layer(Api)),
-  Layer.provide(HttpServer.layerServices)
-)
+const ApiLayer = HttpApiBuilder.layer(Api)
+  |> Layer.provide(GroupLayer)
+  |> Layer.provide(HttpApiScalar.layer(Api))
+  |> Layer.provide(HttpServer.layerServices)
 
 // Convert the API to a web handler
 const { dispose, handler } = HttpRouter.toWebHandler(

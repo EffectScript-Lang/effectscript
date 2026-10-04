@@ -49,25 +49,23 @@ export service Users as "app/Users" {
             entry.completeUnsafe(Exit.fail(new UserNotFound({ id: entry.request.id })))
           }
         }
-      })).pipe(
+      }))
         // Control the delay before the resolver is executed. This allows more
         // requests to be batched together, but also adds latency to the first
         // request.
-        RequestResolver.setDelay("10 millis"),
+        |> RequestResolver.setDelay("10 millis")
         // RequestResolver.withSpan adds a span around the resolver execution,
         // and also sets up span links for each request
-        RequestResolver.withSpan("Users.getUserById.resolver"),
+        |> RequestResolver.withSpan("Users.getUserById.resolver")
         // RequestResolver.withCache adds a simple LRU cache to avoid repeated
         // lookups for the same ID.
-        RequestResolver.withCache({ capacity: 1024 })
-      )
+        |> RequestResolver.withCache({ capacity: 1024 })
 
       // Wrap the resolver in a service method. The resolver batches calls to
       // `getUserById` that occur within the delay window.
       const getUserById = (id: number) =>
-        request(new GetUserById({ id }), resolver).pipe(
-          withSpan("Users.getUserById", { attributes: { userId: id } })
-        )
+        request(new GetUserById({ id }), resolver)
+          |> withSpan("Users.getUserById", { attributes: { userId: id } })
 
       return { getUserById } as const
     }

@@ -234,12 +234,11 @@ import { Getter, Parser, Schema } from "effect/schema"
 
 //      ┌─── Codec<string, unknown>
 //      ▼
-const schema = Schema.Unknown.pipe(
-  Schema.decodeTo(Schema.String, {
+const schema = Schema.Unknown
+  |> Schema.decodeTo(Schema.String, {
     decode: Getter.String(),
     encode: Getter.passthrough()
   })
-)
 
 const parser = Parser.decodeUnknownSync(schema)
 
@@ -575,17 +574,14 @@ type Type = typeof schema.Type
 If an optional field arrives as `undefined`, you may want to omit it from the output entirely rather than keeping it.
 
 ```efx
-import { Option, Predicate, Schema, SchemaGetter } from "effect"
-
 export const schema = Schema.Struct({
-  a: Schema.optional(Schema.FiniteFromString).pipe(
-    Schema.decodeTo(Schema.optionalKey(Schema.Number), {
+  a: Schema.optional(Schema.FiniteFromString)
+    |> Schema.decodeTo(Schema.optionalKey(Schema.Number), {
       decode: SchemaGetter.transformOptional(
         Option.filter(Predicate.isNotUndefined) // omit undefined
       ),
       encode: SchemaGetter.passthrough()
     })
-  )
 })
 
 /*
@@ -660,7 +656,7 @@ The default `"1"` is a **string** (the Encoded type), which is then decoded to `
 const schema = Schema.Struct({
   //                                          ┌─── "1" is a string (Encoded type)
   //                                          ▼
-  a: Schema.FiniteFromString.pipe(Schema.withDecodingDefault(succeed("1")))
+  a: Schema.FiniteFromString |> Schema.withDecodingDefault(succeed("1"))
 })
 
 //     ┌─── { readonly a?: string | undefined; }
@@ -697,7 +693,7 @@ through the `FiniteFromString` decoding transformation.
 const schema = Schema.Struct({
   //                                              ┌─── 1 is a number (Type)
   //                                              ▼
-  a: Schema.FiniteFromString.pipe(Schema.withDecodingDefaultType(succeed(1)))
+  a: Schema.FiniteFromString |> Schema.withDecodingDefaultType(succeed(1))
 })
 
 //     ┌─── { readonly a?: string | undefined; }
@@ -727,8 +723,8 @@ You can also apply decoding defaults within nested structures.
 ```efx
 const schema = Schema.Struct({
   a: Schema.Struct({
-    b: Schema.FiniteFromString.pipe(Schema.withDecodingDefault(succeed("1")))
-  }).pipe(Schema.withDecodingDefault(succeed({})))
+    b: Schema.FiniteFromString |> Schema.withDecodingDefault(succeed("1"))
+  }) |> Schema.withDecodingDefault(succeed({}))
 })
 
 /*
@@ -774,11 +770,9 @@ This is useful when you need to account for values like `null` or other invalid 
 **Example** (Providing a fallback when value is `null` or missing)
 
 ```efx
-import { Option, Predicate, Schema, SchemaGetter } from "effect"
-
 const schema = Schema.Struct({
-  a: Schema.optionalKey(Schema.NullOr(Schema.String)).pipe(
-    Schema.decodeTo(Schema.FiniteFromString, {
+  a: Schema.optionalKey(Schema.NullOr(Schema.String))
+    |> Schema.decodeTo(Schema.FiniteFromString, {
       decode: SchemaGetter.transformOptional((oe) =>
         oe.pipe(
           // remove null values
@@ -789,7 +783,6 @@ const schema = Schema.Struct({
       ),
       encode: SchemaGetter.passthrough()
     })
-  )
 })
 
 //     ┌─── { readonly a?: string | null; }
@@ -816,11 +809,9 @@ console.log(Schema.decodeUnknownSync(schema)({ a: "2" }))
 **Example** (Providing a fallback when value is `null`, `undefined`, or missing)
 
 ```efx
-import { Option, Predicate, Schema, SchemaGetter } from "effect"
-
 const schema = Schema.Struct({
-  a: Schema.optional(Schema.NullOr(Schema.String)).pipe(
-    Schema.decodeTo(Schema.FiniteFromString, {
+  a: Schema.optional(Schema.NullOr(Schema.String))
+    |> Schema.decodeTo(Schema.FiniteFromString, {
       decode: SchemaGetter.transformOptional((oe) =>
         oe.pipe(
           // remove null and undefined
@@ -831,7 +822,6 @@ const schema = Schema.Struct({
       ),
       encode: SchemaGetter.passthrough()
     })
-  )
 })
 
 //     ┌─── { readonly a?: string | null | undefined; }
@@ -928,18 +918,15 @@ console.log(Schema.encodeSync(Product)({ quantity: Option.none() }))
 #### Exact Optional Property with Nullability
 
 ```efx
-import { Option, Predicate, Schema, SchemaTransformation } from "effect"
-
 const Product = Schema.Struct({
-  quantity: Schema.optionalKey(Schema.NullOr(Schema.FiniteFromString)).pipe(
-    Schema.decodeTo(
+  quantity: Schema.optionalKey(Schema.NullOr(Schema.FiniteFromString))
+    |> Schema.decodeTo(
       Schema.Option(Schema.Number),
       SchemaTransformation.transformOptional({
         decode: (oe) => oe.pipe(Option.filter(Predicate.isNotNull), Option.some),
         encode: Option.flatten
       })
     )
-  )
 })
 
 //     ┌─── { readonly quantity?: string | null; }
@@ -1119,17 +1106,14 @@ Unlike `Struct.renameKeys`, this does not rename the struct's own field names. I
 **Example** (Using snake_case keys in the encoded form)
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.Struct({
   userId: Schema.FiniteFromString,
   accountName: Schema.String
-}).pipe(
-  Schema.encodeKeys({
+})
+  |> Schema.encodeKeys({
     userId: "user_id",
     accountName: "account_name"
   })
-)
 
 console.log(Schema.decodeUnknownSync(schema)({ user_id: "1", account_name: "alice" }))
 // { userId: 1, accountName: "alice" }
@@ -1240,8 +1224,6 @@ Use `Struct.assign` to add new fields to an existing struct.
 **Example** (Adding fields to a struct)
 
 ```efx
-import { Schema, Struct } from "effect"
-
 /*
 const schema: Schema.Struct<{
   readonly a: Schema.String;
@@ -1262,7 +1244,7 @@ const schema = Schema.Struct({
 const schema2 = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
-}).pipe(Schema.fieldsAssign({ c: Schema.Boolean }))
+}) |> Schema.fieldsAssign({ c: Schema.Boolean })
 ```
 
 If you want to preserve the checks of the original struct, you can pass `{ unsafePreserveChecks: true }` to the `map` method.
@@ -1795,9 +1777,7 @@ When a key schema has a transformation, dynamic property selection is based on t
 **Example** (Transforming snake_case keys to camelCase)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const SnakeToCamel = Schema.String.pipe(Schema.decode(SchemaTransformation.snakeToCamel()))
+const SnakeToCamel = Schema.String |> Schema.decode(SchemaTransformation.snakeToCamel())
 
 const schema = Schema.Record(SnakeToCamel, Schema.Number)
 
@@ -1813,9 +1793,7 @@ retained.
 **Example** (Keeping the later selected value)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const SnakeToCamel = Schema.String.pipe(Schema.decode(SchemaTransformation.snakeToCamel()))
+const SnakeToCamel = Schema.String |> Schema.decode(SchemaTransformation.snakeToCamel())
 
 const schema = Schema.Record(SnakeToCamel, Schema.Number)
 
@@ -2144,8 +2122,6 @@ You need to specify the name of the tag field used to differentiate between vari
 **Example** (Adding tag-based helpers to a union)
 
 ```efx
-import { Schema } from "effect"
-
 const original = Schema.Union([
   Schema.Struct({ type: Schema.tag("A"), a: Schema.String }),
   Schema.Struct({ type: Schema.tag("B"), b: Schema.Finite }),
@@ -2153,7 +2129,7 @@ const original = Schema.Union([
 ])
 
 // Enrich the union with tag-based utilities
-const tagged = original.pipe(Schema.toTaggedUnion("type"))
+const tagged = original |> Schema.toTaggedUnion("type")
 ```
 
 This helper has some advantages over a dedicated constructor:
@@ -2797,13 +2773,10 @@ Use `Schema.refine` to refine a schema to a more specific type.
 **Example** (Require at least two items in a string array)
 
 ```efx
-import { Schema } from "effect"
-
 //      ┌─── refine<readonly [string, string, ...string[]], Schema.Array$<Schema.String>>
 //      ▼
-const refined = Schema.Array(Schema.String).pipe(
-  Schema.refine((arr): arr is readonly [string, string, ...Array<string>] => arr.length >= 2)
-)
+const refined = Schema.Array(Schema.String)
+  |> Schema.refine((arr): arr is readonly [string, string, ...Array<string>] => arr.length >= 2)
 ```
 
 ## Branding
@@ -2822,11 +2795,9 @@ code when the branded TypeScript type is still required.
 **Example** (Brand a string as a UserId)
 
 ```efx
-import { Schema } from "effect"
-
 //      ┌─── Schema.brand<Schema.String, "UserId">
 //      ▼
-const branded = Schema.String.pipe(Schema.brand("UserId"))
+const branded = Schema.String |> Schema.brand("UserId")
 ```
 
 ### Using Brand constructors
@@ -2841,18 +2812,15 @@ With a string enum brand key, pass the enum member rather than its string value.
 **Example** (Compose checked brands)
 
 ```efx
-import { Brand, Schema } from "effect"
-
-type Int = number & Brand.Brand<"Int">
+type Int = number & Brand<"Int">
 const Int = Brand.check<Int>(Schema.isInt())
 
-type Positive = number & Brand.Brand<"Positive">
+type Positive = number & Brand<"Positive">
 const Positive = Brand.check<Positive>(Schema.isGreaterThan(0))
 
-const PositiveInt = Schema.Number.pipe(
-  Schema.fromBrand("Int", Int),
-  Schema.fromBrand("Positive", Positive)
-)
+const PositiveInt = Schema.Number
+  |> Schema.fromBrand("Int", Int)
+  |> Schema.fromBrand("Positive", Positive)
 ```
 
 ## Structural Filters
@@ -2904,8 +2872,8 @@ const myapi = (userId: number) =>
     return { userId }
   } |> delay(100)
 
-const schema = Schema.Finite.pipe(
-  Schema.decode({
+const schema = Schema.Finite
+  |> Schema.decode({
     decode: SchemaGetter.checkEffect((n, options) =>
       effect {
         // Call the async API and wrap the result in a Result
@@ -2919,7 +2887,6 @@ const schema = Schema.Finite.pipe(
     ),
     encode: SchemaGetter.passthrough()
   })
-)
 ```
 
 ## Filter Factories
@@ -2994,9 +2961,7 @@ schema.make({ b: 1 })
 Branding adds an invisible marker to a type so that values from different domains cannot be accidentally mixed — even when they have the same underlying shape (for example, both are `string`). For branded schemas, the default constructor accepts an unbranded input and returns a branded output.
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.String.pipe(Schema.brand<"a">())
+const schema = Schema.String |> Schema.brand<"a">()
 
 // make(input: string, options?: Schema.MakeOptions): string & Brand<"a">
 schema.make
@@ -3005,10 +2970,8 @@ schema.make
 However, when a branded schema is part of a composite (such as a struct), you must pass a branded value.
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.Struct({
-  a: Schema.String.pipe(Schema.brand<"a">()),
+  a: Schema.String |> Schema.brand<"a">(),
   b: Schema.Number
 })
 
@@ -3029,9 +2992,7 @@ schema.make
 For refined schemas, the constructor accepts the unrefined type and returns the refined one.
 
 ```efx
-import { Option, Schema } from "effect"
-
-const schema = Schema.Option(Schema.String).pipe(Schema.refine(Option.isSome))
+const schema = Schema.Option(Schema.String) |> Schema.refine(Option.isSome)
 
 // make(input: Option.Option<string>, options?: Schema.MakeOptions): Option.Some<string>
 schema.make
@@ -3040,10 +3001,8 @@ schema.make
 As with branding, when used in a composite schema, the refined value must be provided.
 
 ```efx
-import { Option, Schema } from "effect"
-
 const schema = Schema.Struct({
-  a: Schema.Option(Schema.String).pipe(Schema.refine(Option.isSome)),
+  a: Schema.Option(Schema.String) |> Schema.refine(Option.isSome),
   b: Schema.Number
 })
 
@@ -3067,7 +3026,7 @@ You can define a default value for a field using `Schema.withConstructorDefault`
 
 ```efx
 const schema = Schema.Struct({
-  a: Schema.Number.pipe(Schema.withConstructorDefault(succeed(-1)))
+  a: Schema.Number |> Schema.withConstructorDefault(succeed(-1))
 })
 
 console.log(schema.make({ a: 5 }))
@@ -3085,7 +3044,7 @@ The Effect passed to `withConstructorDefault` will be executed each time a defau
 let counter = 0
 
 const schema = Schema.Struct({
-  a: Schema.Date.pipe(Schema.withConstructorDefault(sync(() => new Date(counter++))))
+  a: Schema.Date |> Schema.withConstructorDefault(sync(() => new Date(counter++)))
 })
 
 console.log(schema.make({}))
@@ -3104,8 +3063,8 @@ Default values can be nested inside composed schemas. In this case, inner defaul
 ```efx
 const schema = Schema.Struct({
   a: Schema.Struct({
-    b: Schema.Number.pipe(Schema.withConstructorDefault(succeed(-1)))
-  }).pipe(Schema.withConstructorDefault(succeed({})))
+    b: Schema.Number |> Schema.withConstructorDefault(succeed(-1))
+  }) |> Schema.withConstructorDefault(succeed({}))
 })
 
 console.log(schema.make({}))
@@ -3122,14 +3081,13 @@ Default values can also come from an `Effect`, for example, reading from a confi
 
 ```efx
 const schema = Schema.Struct({
-  a: Schema.Number.pipe(
-    Schema.withConstructorDefault(
+  a: Schema.Number
+    |> Schema.withConstructorDefault(
       effect {
         await sleep(100)
         return -1
       }
     )
-  )
 })
 
 SchemaParser.makeEffect(schema)({}).pipe(runPromise).then(console.log)
@@ -3145,8 +3103,8 @@ class ConstructorService extends Context.Service<ConstructorService, { defaultVa
 ) {}
 
 const schema = Schema.Struct({
-  a: Schema.Number.pipe(
-    Schema.withConstructorDefault(
+  a: Schema.Number
+    |> Schema.withConstructorDefault(
       effect {
         await sleep(100)
         const oservice = await serviceOption(ConstructorService)
@@ -3156,7 +3114,6 @@ const schema = Schema.Struct({
         return await oservice.value.defaultValue
       }
     )
-  )
 })
 
 SchemaParser.makeEffect(schema)({})
@@ -3208,9 +3165,7 @@ You can apply a transformation to any compatible schema. In this example, `trim`
 **Example** (Applying `trim` to a string schema)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(Schema.decode(SchemaTransformation.trim()))
+const schema = Schema.String |> Schema.decode(SchemaTransformation.trim())
 
 console.log(Schema.decodeUnknownSync(schema)("  123"))
 // 123
@@ -3271,14 +3226,12 @@ You can combine transformations using `SchemaTransformation.composeTransformatio
 **Example** (Trim and lowercase a string)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 // Compose two transformations: trim followed by toLowerCase
 const trimToLowerCase = SchemaTransformation.composeTransformation(
   SchemaTransformation.trim(),
   SchemaTransformation.toLowerCase()
 )
-const schema = Schema.String.pipe(Schema.decode(trimToLowerCase))
+const schema = Schema.String |> Schema.decode(trimToLowerCase)
 
 Schema.decodeUnknownSync(schema)("  Abc")
 // "abc"
@@ -3312,16 +3265,13 @@ If no transformation is provided, the operation is called "schema composition" (
 **Example** (Parsing a number from a string)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 const NumberFromString =
   // source schema: String
-  Schema.String.pipe(
-    Schema.decodeTo(
+  Schema.String
+    |> Schema.decodeTo(
       Schema.Number, // target schema: Number
       SchemaTransformation.numberFromString // built-in transformation that coerce a string to a number (and back)
     )
-  )
 
 console.log(Schema.decodeUnknownSync(NumberFromString)("123"))
 // 123
@@ -3338,10 +3288,8 @@ This is a shorter version of `decodeTo`.
 **Example** (Trimming whitespace from a string)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 // Equivalent to decodeTo(Schema.String, Transformation.trim())
-const TrimmedString = Schema.String.pipe(Schema.decode(SchemaTransformation.trim()))
+const TrimmedString = Schema.String |> Schema.decode(SchemaTransformation.trim())
 ```
 
 ### Defining an Inline Transformation
@@ -3353,19 +3301,16 @@ For example, `SchemaTransformation.transform` lets you define a simple transform
 **Example** (Converting meters to kilometers and back)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 // Defines a transformation that converts meters (number) to kilometers (number)
 // 1000 meters -> 1 kilometer (decode)
 // 1 kilometer -> 1000 meters (encode)
-const Kilometers = Schema.Finite.pipe(
-  Schema.decode(
+const Kilometers = Schema.Finite
+  |> Schema.decode(
     SchemaTransformation.transform({
       decode: (meters) => meters / 1000,
       encode: (kilometers) => kilometers * 1000
     })
   )
-)
 ```
 
 You can define transformations that may fail during decoding or encoding using `SchemaTransformation.transformEffect`.
@@ -3375,8 +3320,8 @@ This is useful when you need to validate input or enforce rules that may not alw
 **Example** (Converting a string URL into a `URL` object)
 
 ```efx
-const URLFromString = Schema.String.pipe(
-  Schema.decodeTo(
+const URLFromString = Schema.String
+  |> Schema.decodeTo(
     Schema.instanceOf(URL),
     SchemaTransformation.transformEffect({
       decode: (s, options) =>
@@ -3387,7 +3332,6 @@ const URLFromString = Schema.String.pipe(
       encode: (url) => succeed(url.href)
     })
   )
-)
 ```
 
 ## Schema composition
@@ -3397,25 +3341,21 @@ You can compose transformations, but you can also compose schemas with `Schema.d
 **Example** (Converting meters to miles via kilometers)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const KilometersFromMeters = Schema.Finite.pipe(
-  Schema.decode(
+const KilometersFromMeters = Schema.Finite
+  |> Schema.decode(
     SchemaTransformation.transform({
       decode: (meters) => meters / 1000,
       encode: (kilometers) => kilometers * 1000
     })
   )
-)
 
-const MilesFromKilometers = Schema.Finite.pipe(
-  Schema.decode(
+const MilesFromKilometers = Schema.Finite
+  |> Schema.decode(
     SchemaTransformation.transform({
       decode: (kilometers) => kilometers * 0.621371,
       encode: (miles) => miles / 0.621371
     })
   )
-)
 
 const MilesFromMeters = KilometersFromMeters.pipe(Schema.decodeTo(MilesFromKilometers))
 ```
@@ -3433,8 +3373,6 @@ Use `passthrough` when the encoded output of the target schema matches the type 
 **Example** (When `To.Encoded === From.Type`)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 const From = Schema.Struct({
   a: Schema.String
 })
@@ -3444,7 +3382,7 @@ const To = Schema.Struct({
 })
 
 // To.Encoded (string) = From.Type (string)
-const schema = From.pipe(Schema.decodeTo(To, SchemaTransformation.passthrough()))
+const schema = From |> Schema.decodeTo(To, SchemaTransformation.passthrough())
 ```
 
 ### passthroughSubtype
@@ -3454,14 +3392,12 @@ Use `passthroughSubtype` when the source type is a subtype of the target's encod
 **Example** (When `From.Type` is a subtype of `To.Encoded`)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 const From = Schema.FiniteFromString
 
 const To = Schema.UndefinedOr(Schema.Number)
 
 // From.Type (number) extends To.Encoded (number | undefined)
-const schema = From.pipe(Schema.decodeTo(To, SchemaTransformation.passthroughSubtype()))
+const schema = From |> Schema.decodeTo(To, SchemaTransformation.passthroughSubtype())
 ```
 
 ### passthroughSupertype
@@ -3471,14 +3407,12 @@ Use `passthroughSupertype` when the target's encoded output is a subtype of the 
 **Example** (When `To.Encoded` is a subtype of `From.Type`)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 const From = Schema.UndefinedOr(Schema.String)
 
 const To = Schema.FiniteFromString
 
 // To.Encoded (string) extends From.Type (string | undefined)
-const schema = From.pipe(Schema.decodeTo(To, SchemaTransformation.passthroughSupertype()))
+const schema = From |> Schema.decodeTo(To, SchemaTransformation.passthroughSupertype())
 ```
 
 ### Turning off strict mode
@@ -3488,8 +3422,6 @@ Strict mode ensures that decoding and encoding fully match. You can disable it b
 **Example** (Turning off strict mode)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 const From = Schema.Struct({
   a: Schema.Literals(["a", "b"]),
   b: Schema.Number
@@ -3501,7 +3433,7 @@ const To = Schema.Struct({
 })
 
 // Neither From.Type nor To.Encoded extends the other.
-const schema = From.pipe(Schema.decodeTo(To, SchemaTransformation.passthrough({ strict: false })))
+const schema = From |> Schema.decodeTo(To, SchemaTransformation.passthrough({ strict: false }))
 ```
 
 ## Managing Optional Keys
@@ -3526,10 +3458,8 @@ You control the optionality of the output by returning an `Option`:
 **Example** (Optional string key transformed to `Option<NonEmptyString>`)
 
 ```efx
-import { Option, Schema, SchemaTransformation } from "effect"
-
-const OptionFromNonEmptyString = Schema.optionalKey(Schema.String).pipe(
-  Schema.decodeTo(
+const OptionFromNonEmptyString = Schema.optionalKey(Schema.String)
+  |> Schema.decodeTo(
     Schema.Option(Schema.NonEmptyString),
     SchemaTransformation.transformOptional({
       // Convert empty strings to None, and non-empty strings to Some(value)
@@ -3540,7 +3470,6 @@ const OptionFromNonEmptyString = Schema.optionalKey(Schema.String).pipe(
       encode: (ot) => Option.flatten(ot)
     })
   )
-)
 
 const schema = Schema.Struct({
   foo: OptionFromNonEmptyString
@@ -3577,12 +3506,11 @@ For this to work, the encoded side must be marked as optional with `Schema.optio
 ```efx
 const schema = Schema.Struct({
   a: Schema.FiniteFromString,
-  b: Schema.String.pipe(
-    Schema.encodeTo(Schema.optionalKey(Schema.String), {
+  b: Schema.String
+    |> Schema.encodeTo(Schema.optionalKey(Schema.String), {
       decode: SchemaGetter.withDefault(succeed("default_value")),
       encode: SchemaGetter.omit()
     })
-  )
 })
 
 //     ┌─── { readonly a: string; readonly b?: string; }
@@ -4118,8 +4046,6 @@ class PersonWithEmail extends Person {
 #### Defining a Schema
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 class Person {
   constructor(readonly name: string, readonly age: number) {}
 }
@@ -4137,8 +4063,8 @@ const PersonSchema = Schema.instanceOf(Person, {
     )
 })
   // optional: explicit encoding
-  .pipe(
-    Schema.encodeTo(
+  
+    |> Schema.encodeTo(
       Schema.Struct({
         name: Schema.String,
         age: Schema.Number
@@ -4148,14 +4074,11 @@ const PersonSchema = Schema.instanceOf(Person, {
         encode: (instance) => instance
       })
     )
-  )
 ```
 
 **Example** (Inheritance)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 class Person {
   constructor(readonly name: string, readonly age: number) {}
 }
@@ -4173,8 +4096,8 @@ const PersonSchema = Schema.instanceOf(Person, {
     )
 })
   // optional: explicit encoding
-  .pipe(
-    Schema.encodeTo(
+  
+    |> Schema.encodeTo(
       Schema.Struct({
         name: Schema.String,
         age: Schema.Number
@@ -4184,7 +4107,6 @@ const PersonSchema = Schema.instanceOf(Person, {
         encode: (instance) => instance
       })
     )
-  )
 
 class PersonWithEmail extends Person {
   constructor(name: string, age: number, readonly email: string) {
@@ -4245,7 +4167,7 @@ const schema = Schema.instanceOf(Err, {
   serialization: {
     json: () => Schema.link<Err>()(Props, transformation)
   }
-}).pipe(Schema.encodeTo(Props, transformation))
+}) |> Schema.encodeTo(Props, transformation)
 ```
 
 ### Class API
@@ -4692,14 +4614,11 @@ Schema.decodeUnknownSync(Schema.StringFromBase64)("aGVsbG8=")
 Compose with `fromJsonString` to decode Base64-encoded JSON into a validated struct:
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.Struct({ a: Schema.Number })
 
 // base64 string -> UTF-8 string -> parsed & validated struct
-const schemaFromBase64 = Schema.StringFromBase64.pipe(
-  Schema.decodeTo(Schema.fromJsonString(schema))
-)
+const schemaFromBase64 = Schema.StringFromBase64
+  |> Schema.decodeTo(Schema.fromJsonString(schema))
 ```
 
 #### StringFromBase64Url
@@ -4729,16 +4648,13 @@ Schema.decodeUnknownSync(Schema.StringFromHex)("68656c6c6f")
 Decodes a URI-component-encoded string into a UTF-8 string. Useful for storing structured data in URL query parameters.
 
 ```efx
-import { Schema } from "effect"
-
 const PaginationSchema = Schema.Struct({
   maxItemPerPage: Schema.Number,
   page: Schema.Number
 })
 
-const UrlSchema = Schema.StringFromUriComponent.pipe(
-  Schema.decodeTo(Schema.fromJsonString(PaginationSchema))
-)
+const UrlSchema = Schema.StringFromUriComponent
+  |> Schema.decodeTo(Schema.fromJsonString(PaginationSchema))
 
 console.log(Schema.encodeSync(UrlSchema)({ maxItemPerPage: 10, page: 1 }))
 // %7B%22maxItemPerPage%22%3A10%2C%22page%22%3A1%7D
@@ -5066,18 +4982,15 @@ When this traversal adds a transformation because a node has no direct JSON repr
 **Example** (Custom encoding takes priority over default Date handling)
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 // Custom Date encoding (Date -> number)
-const DateFromEpochMillis = Schema.Date.pipe(
-  Schema.encodeTo(
+const DateFromEpochMillis = Schema.Date
+  |> Schema.encodeTo(
     Schema.Number,
     SchemaTransformation.transform({
       decode: (epochMillis) => new Date(epochMillis),
       encode: (date) => date.getTime()
     })
   )
-)
 
 const schema = Schema.Struct({
   date1: DateFromEpochMillis,
@@ -5418,14 +5331,11 @@ To annotate the encoded side, use `Schema.annotateEncoded`.
 **Example** (Annotating the encoded side of `Trim`)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Trim.pipe(
-  Schema.annotateEncoded({
+const schema = Schema.Trim
+  |> Schema.annotateEncoded({
     description: "my description",
     title: "my title"
   })
-)
 
 console.log(JSON.stringify(Schema.toJsonSchemaDocument(schema), null, 2))
 /*
@@ -5767,12 +5677,10 @@ You can override the derived equivalence for a schema using `overrideToEquivalen
 **Example** (Overriding equivalence for a struct)
 
 ```efx
-import { Equivalence, Schema } from "effect"
-
 const schema = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
-}).pipe(Schema.overrideToEquivalence(() => Equivalence.make((x, y) => x.a === y.a)))
+}) |> Schema.overrideToEquivalence(() => Equivalence.make((x, y) => x.a === y.a))
 
 const equivalence = Schema.toEquivalence(schema)
 ```
@@ -6402,10 +6310,10 @@ option.
 **Example** (Decoding array elements concurrently)
 
 ```efx
-const item = Schema.String.pipe(Schema.decode({
-  decode: SchemaGetter.transformEffect((value) => sleep("10 millis").pipe(as(value))),
+const item = Schema.String |> Schema.decode({
+  decode: SchemaGetter.transformEffect((value) => sleep("10 millis") |> as(value)),
   encode: SchemaGetter.passthrough()
-}))
+})
 
 const program = Schema.decodeUnknownEffect(Schema.Array(item))(
   ["a", "b", "c"],
@@ -6585,7 +6493,6 @@ export function getLogIssues(options?: {
 **Example** (Using hooks to translate common messages)
 
 ```efx
-import { Schema } from "effect"
 import { getLogIssues, t } from "./utils.js"
 
 const Person = Schema.Struct({
@@ -6600,7 +6507,7 @@ const logIssues = getLogIssues({
       case "InvalidType": {
         if (issue.ast._tag === "String") {
           return t("string.mismatch") // Wrong type for a string
-        } else if (issue.ast._tag === "Objects") {
+        } else if (issue.ast is Objects) {
           return t("struct.mismatch") // Value is not an object
         }
         return t("default.mismatch") // Fallback for other types
@@ -6698,8 +6605,6 @@ You can use the `Schema.StandardSchemaV1FailureResult` schema to send a `Standar
 **Example** (Sending a FailureResult over the wire)
 
 ```efx
-import { Schema, SchemaIssue, SchemaParser } from "effect"
-
 const b = Symbol.for("b")
 
 const schema = Schema.Struct({
@@ -6710,7 +6615,7 @@ const schema = Schema.Struct({
 
 const r = SchemaParser.decodeUnknownExit(schema)({ a: "", c: [] }, { errors: "all" })
 
-if (r._tag === "Failure") {
+if (r is Failure) {
   const failures = r.cause.failures
   if (failures[0]?._tag === "Fail") {
     const failureResult = SchemaIssue.makeFormatterStandardSchemaV1()(failures[0].error)
@@ -6745,7 +6650,7 @@ This API uses an Effect without a context. If you need a fallback value that dep
 
 ```efx
 // Provide a fallback string when decoding does not succeed
-const schema = Schema.String.pipe(Schema.catchDecoding(() => succeedSome("b")))
+const schema = Schema.String |> Schema.catchDecoding(() => succeedSome("b"))
 
 console.log(String(Schema.decodeUnknownExit(schema)(null)))
 // Success("b")
@@ -6759,7 +6664,7 @@ This is useful when working with optional fields.
 ```efx
 // Omit the field when decoding does not succeed
 const schema = Schema.Struct({
-  a: Schema.optionalKey(Schema.String).pipe(Schema.catchDecoding(() => succeedNone))
+  a: Schema.optionalKey(Schema.String) |> Schema.catchDecoding(() => succeedNone)
 })
 
 console.log(String(Schema.decodeUnknownExit(schema)({ a: null })))
@@ -6774,7 +6679,7 @@ You can use `Schema.catchDecodingWithContext` to get a fallback value from a ser
 
 ```efx
 // Define a service that provides a fallback value
-service Service { fallback: Effect<string> }
+class Service extends Context.Service<Service, { fallback: Effect<string> }>()("Service") {}
 
 //      ┌─── Codec<string, string, Service, never>
 //      ▼
@@ -7116,12 +7021,11 @@ import React from "react"
 
 // Treat an empty string from the UI as `undefined` for optional fields,
 // and encode `undefined` back to an empty string when showing it.
-const UndefinedFromEmptyString = Schema.Undefined.pipe(
-  Schema.encodeTo(Schema.Literal(""), {
+const UndefinedFromEmptyString = Schema.Undefined
+  |> Schema.encodeTo(Schema.Literal(""), {
     decode: SchemaGetter.transform(() => undefined),
     encode: SchemaGetter.transform(() => "" as const)
   })
-)
 
 // Helper to make any schema "UI-optional":
 // - empty string -> undefined
@@ -7201,7 +7105,7 @@ export default function App() {
       // - on success: stash the typed value for `onSubmit`
       onSubmitAsync: async ({ value }) => {
         const r = await decode(schema)(value)
-        if (r._tag === "Failure") return r.failure
+        if (r is Failure) return r.failure
         parsedRef.current = r.success
       }
     },

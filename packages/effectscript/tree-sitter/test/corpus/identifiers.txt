@@ -83,3 +83,38 @@ activity(workflow.key)
         (member_expression
           (identifier)
           (property_identifier))))))
+
+=====================================
+is, or and not used as identifiers
+=====================================
+
+const is = 1, or = 2, not = 3
+is(x)
+Object.is(a, b)
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (number))
+    (variable_declarator
+      (identifier)
+      (number))
+    (variable_declarator
+      (identifier)
+      (number)))
+  (expression_statement
+    (call_expression
+      (identifier)
+      (arguments
+        (identifier))))
+  (expression_statement
+    (call_expression
+      (member_expression
+        (identifier)
+        (property_identifier))
+      (arguments
+        (identifier)
+        (identifier)))))

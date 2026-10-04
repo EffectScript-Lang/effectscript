@@ -8,6 +8,7 @@ import { children, type Node } from "../ast.ts"
 import { jsdocBefore } from "../transform/command.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
+import { renderChecks } from "./checks.ts"
 import { commentsIn, isCanonicalString, type ReverseCtx, slice, within } from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
 import { inFrame } from "./resources.ts"
@@ -21,7 +22,7 @@ export const fieldsText = (ctx: ReverseCtx, node: Node): string | undefined => {
   if (node.type !== "ObjectExpression" || ctx.schema === undefined) return undefined
   const fields: Array<string> = []
   for (const property of node.properties as Array<Node>) {
-    const field = fieldType(ctx.source, ctx.schema, property)
+    const field = fieldType(ctx.source, ctx.schema, property, renderChecks(ctx))
     if (field === undefined || property.key.type !== "Identifier") return undefined
     fields.push(`${field.key}${field.optional}: ${field.type}`)
   }

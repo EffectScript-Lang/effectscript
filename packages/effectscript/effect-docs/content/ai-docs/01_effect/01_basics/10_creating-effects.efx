@@ -4,7 +4,6 @@
  * Learn how to create effects from various sources, including plain values,
  * synchronous code, Promise APIs, optional values, and callback-based APIs.
  */
-import { Effect } from "effect"
 
 error InvalidPayload {
   input: string
@@ -16,7 +15,7 @@ error UserLookupError {
   cause: Defect
 }
 
-error MissingWorkspaceId {}
+error MissingWorkspaceId
 
 // Some request fields are optional and may be absent.
 const requestHeaders = new Map<string, string>([
@@ -57,9 +56,8 @@ export const fetchUser = Effect.fn("fetchUser")((userId: number) =>
 )
 
 // `Effect.fromNullishOr` turns nullable values into a typed effect.
-export const fromNullishHeader = fromNullishOr(requestHeaders.get("x-workspace-id")).pipe(
-  mapError(() => new MissingWorkspaceId())
-)
+export const fromNullishHeader = fromNullishOr(requestHeaders.get("x-workspace-id"))
+  |> mapError(() => new MissingWorkspaceId())
 
 // `Effect.callback` wraps callback-style asynchronous APIs.
 export const fromCallback = callback<number>((resume) => {

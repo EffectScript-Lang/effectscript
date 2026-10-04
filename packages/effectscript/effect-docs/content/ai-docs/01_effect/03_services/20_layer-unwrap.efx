@@ -3,7 +3,6 @@
  *
  * Build a layer dynamically from an Effect / Config with `Layer.unwrap`.
  */
-import { Config } from "effect"
 
 export error MessageStoreError {
   cause: Defect
@@ -51,9 +50,8 @@ export class MessageStore extends Context.Service<MessageStore, {
   static readonly layer = Layer.unwrap(
     effect {
       // Read config inside an Effect, then choose which concrete layer to use.
-      const useInMemory = await Config.Boolean("MESSAGE_STORE_IN_MEMORY").pipe(
-        Config.withDefault(false)
-      )
+      const useInMemory = await Config.Boolean("MESSAGE_STORE_IN_MEMORY")
+        |> Config.withDefault(false)
 
       if (useInMemory) {
         return MessageStore.layerInMemory

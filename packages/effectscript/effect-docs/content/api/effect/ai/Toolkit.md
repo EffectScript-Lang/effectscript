@@ -30,9 +30,9 @@ const SummarizeText = Tool.make("SummarizeText", {
 
 toolkit AiToolkit { SearchDocs, SummarizeText }
 
-const ready = AiToolkit.pipe(provide(AiToolkit.toLayer({
-  SearchDocs: ({ query }) => succeed([query]),
-  SummarizeText: ({ text }) => succeed(text)
+const ready = AiToolkit.pipe(Effect.provide(AiToolkit.toLayer({
+  SearchDocs: ({ query }) => Effect.succeed([query]),
+  SummarizeText: ({ text }) => Effect.succeed(text)
 })))
 
 Object.keys((await runPromise(ready)).tools) // => ["SearchDocs", "SummarizeText"]
@@ -82,9 +82,9 @@ const GetWeather = Tool.make("get_weather", {
 })
 
 toolkit toolkit { GetCurrentTime, GetWeather }
-const ready = toolkit.pipe(provide(toolkit.toLayer({
-  GetCurrentTime: () => succeed(0),
-  get_weather: () => succeed({ temperature: 20, condition: "clear" })
+const ready = toolkit.pipe(Effect.provide(toolkit.toLayer({
+  GetCurrentTime: () => Effect.succeed(0),
+  get_weather: () => Effect.succeed({ temperature: 20, condition: "clear" })
 })))
 
 Object.keys((await runPromise(ready)).tools) // => ["GetCurrentTime", "get_weather"]
@@ -106,12 +106,12 @@ const utilityToolkit = Toolkit.make(
 )
 
 const combined = Toolkit.merge(mathToolkit, utilityToolkit)
-const ready = combined.pipe(provide(combined.toLayer({
+const ready = combined |> provide(combined.toLayer({
   add: () => succeed(1),
   subtract: () => succeed(0),
   get_time: () => succeed(0),
   get_weather: () => succeed("clear")
-})))
+}))
 
 Object.keys((await runPromise(ready)).tools) // => ["add", "subtract", "get_time", "get_weather"]
 ```

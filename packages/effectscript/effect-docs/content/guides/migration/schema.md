@@ -470,15 +470,12 @@ const schema = Schema.Struct({
 v4
 
 ```efx
-import { Option, Schema, SchemaGetter } from "effect"
-
 const schema = Schema.Struct({
-  a: Schema.optionalKey(Schema.String).pipe(
-    Schema.decodeTo(Schema.NullOr(Schema.String), {
+  a: Schema.optionalKey(Schema.String)
+    |> Schema.decodeTo(Schema.NullOr(Schema.String), {
       decode: SchemaGetter.transformOptional(Option.orElseSome(() => null)),
       encode: SchemaGetter.transformOptional(Option.filter((value) => value !== null))
     })
-  )
 })
 ```
 
@@ -500,15 +497,12 @@ const schema = Schema.Struct({
 v4
 
 ```efx
-import { Option, Schema, SchemaGetter } from "effect"
-
 const schema = Schema.Struct({
-  a: Schema.String.pipe(
-    Schema.decodeTo(Schema.optionalKey(Schema.String), {
+  a: Schema.String
+    |> Schema.decodeTo(Schema.optionalKey(Schema.String), {
       decode: SchemaGetter.transformOptional(Option.filter((value) => value !== "")),
       encode: SchemaGetter.transformOptional(Option.orElseSome(() => ""))
     })
-  )
 })
 ```
 
@@ -574,7 +568,7 @@ v4
 
 ```efx
 const schema = Schema.Struct({
-  a: Schema.String.pipe(Schema.withDecodingDefaultType(succeed("")))
+  a: Schema.String |> Schema.withDecodingDefaultType(succeed(""))
 })
 ```
 
@@ -594,7 +588,7 @@ v4
 
 ```efx
 const schema = Schema.Struct({
-  a: Schema.String.pipe(Schema.withDecodingDefaultTypeKey(succeed("")))
+  a: Schema.String |> Schema.withDecodingDefaultTypeKey(succeed(""))
 })
 ```
 
@@ -613,17 +607,14 @@ const schema = Schema.Struct({
 v4
 
 ```efx
-import { Option, Predicate, Schema, SchemaGetter } from "effect"
-
 const schema = Schema.Struct({
-  a: Schema.optionalKey(Schema.NullOr(Schema.NumberFromString)).pipe(
-    Schema.decodeTo(Schema.Number, {
+  a: Schema.optionalKey(Schema.NullOr(Schema.NumberFromString))
+    |> Schema.decodeTo(Schema.Number, {
       decode: SchemaGetter.transformOptional((o) =>
         o.pipe(Option.filter(Predicate.isNotNull), Option.orElseSome(() => -1))
       ),
       encode: SchemaGetter.required()
     })
-  )
 })
 ```
 
@@ -644,8 +635,6 @@ const schema = Schema.Struct({ a: Schema.String, b: Schema.Number }).pipe(Schema
 v4
 
 ```efx
-import { Schema, SchemaGetter, Struct } from "effect"
-
 function pluck<P extends PropertyKey>(key: P) {
   return <S extends Schema.Top>(
     schema: Schema.Struct<{ [K in P]: S }>
@@ -659,7 +648,7 @@ function pluck<P extends PropertyKey>(key: P) {
   }
 }
 
-const schema = Schema.Struct({ a: Schema.String, b: Schema.Number }).pipe(pluck("a"))
+const schema = Schema.Struct({ a: Schema.String, b: Schema.Number }) |> pluck("a")
 ```
 
 ### extend
@@ -684,8 +673,6 @@ const schema = Schema.Struct({
 v4
 
 ```efx
-import { Schema, Struct } from "effect"
-
 const schema = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
@@ -695,7 +682,7 @@ const schema = Schema.Struct({
 const schema2 = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
-}).pipe(Schema.fieldsAssign({ c: Schema.Number }))
+}) |> Schema.fieldsAssign({ c: Schema.Number })
 ```
 
 #### Union extends Struct
@@ -741,13 +728,11 @@ const b = Schema.Option(Schema.String).pipe(Schema.filter(Option.isSome))
 v4
 
 ```efx
-import { Option, Schema } from "effect"
-
 // inline filter
 const a = Schema.String.check(Schema.makeFilter((s) => s.length > 0))
 
 // refinement
-const b = Schema.Option(Schema.String).pipe(Schema.refine(Option.isSome))
+const b = Schema.Option(Schema.String) |> Schema.refine(Option.isSome)
 ```
 
 In v4, a `makeFilter` predicate can return any of the shapes described by `Schema.FilterOutput`:
@@ -831,14 +816,13 @@ async function validateUsername(username: string) {
   return Promise.resolve(username === "gcanti")
 }
 
-const ValidUsername = Schema.String.pipe(
-  Schema.decode({
+const ValidUsername = Schema.String
+  |> Schema.decode({
     decode: SchemaGetter.checkEffect((username) =>
       promise(() => validateUsername(username).then((valid) => valid || "Invalid username"))
     ),
     encode: SchemaGetter.passthrough()
   })
-)
 ```
 
 ### transform
@@ -862,17 +846,14 @@ const BooleanFromString = Schema.transform(Schema.Literal("on", "off"), Schema.B
 v4
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const BooleanFromString = Schema.Literals(["on", "off"]).pipe(
-  Schema.decodeTo(
+const BooleanFromString = Schema.Literals(["on", "off"])
+  |> Schema.decodeTo(
     Schema.Boolean,
     SchemaTransformation.transform({
       decode: (literal) => literal === "on",
       encode: (bool) => (bool ? "on" : "off")
     })
   )
-)
 ```
 
 ### transformOrFail
@@ -904,8 +885,8 @@ v4
 ```efx
 import { Effect, Number } from "effect"
 
-const NumberFromString = Schema.String.pipe(
-  Schema.decodeTo(Schema.Number, {
+const NumberFromString = Schema.String
+  |> Schema.decodeTo(Schema.Number, {
     decode: SchemaGetter.transformEffect((s) => {
       const n = Number.parse(s)
       if (n === undefined) {
@@ -915,7 +896,6 @@ const NumberFromString = Schema.String.pipe(
     }),
     encode: SchemaGetter.String()
   })
-)
 ```
 
 ### transformLiteral / transformLiterals
@@ -989,7 +969,7 @@ const schema = Schema.String.annotations({
 v4
 
 ```efx
-const schema = Schema.String.pipe(Schema.catchDecoding(() => succeedSome("a")))
+const schema = Schema.String |> Schema.catchDecoding(() => succeedSome("a"))
 ```
 
 ### rename
@@ -1012,13 +992,11 @@ const schema = Schema.Struct({
 v4
 
 ```efx
-import { Schema } from "effect"
-
 // experimental API
 const schema = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
-}).pipe(Schema.encodeKeys({ a: "c" }))
+}) |> Schema.encodeKeys({ a: "c" })
 ```
 
 ### Capitalize / Lowercase / Uppercase / Uncapitalize
@@ -1038,11 +1016,8 @@ const schema = Schema.Capitalize
 v4
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.String.check(Schema.isCapitalized()), SchemaTransformation.capitalize())
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.String.check(Schema.isCapitalized()), SchemaTransformation.capitalize())
 ```
 
 ### NonEmptyTrimmedString
@@ -1082,18 +1057,15 @@ const schema = Schema.split(",")
 v4
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 function split(separator: string) {
-  return Schema.String.pipe(
-    Schema.decodeTo(
+  return Schema.String
+    |> Schema.decodeTo(
       Schema.Array(Schema.String),
       SchemaTransformation.transform({
         decode: (s) => s.split(separator) as ReadonlyArray<string>,
         encode: (as) => as.join(separator)
       })
     )
-  )
 }
 ```
 

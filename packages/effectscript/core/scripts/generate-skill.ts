@@ -20,7 +20,7 @@ const constructs: ReadonlyArray<readonly [dir: string, title: string]> = [
   ["effect", "`effect` functions, blocks, `await` and `throw`"],
   ["resources", "Resources: `defer`, `using … await`, `for await`"],
   ["try", "`try` / `catch` / `finally` inside `effect`"],
-  ["schema", "`schema`: data types that are TypeScript types"],
+  ["schema", "`schema` and `brand`: data types that are TypeScript types"],
   ["error", "`error`"],
   ["service", "`service`"],
   ["layer", "Top-level `layer`"],

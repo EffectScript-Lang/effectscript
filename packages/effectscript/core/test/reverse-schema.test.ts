@@ -17,11 +17,12 @@ describe("reverse: schema forms (Plan 6 Task 7)", () => {
       "error Timeout {\n  _tag: \"RequestTimeout\"\n  ms: number\n  get summary() { return `timed out after ${this.ms}ms` }\n}\n"
     ],
     ["an alias", "export schema Point = { x: number; y: number }\n"],
-    ["a branded alias", "schema UserId = string & Brand<\"UserId\">\n"],
+    ["a brand (ADR-0077)", "brand UserId = string\n"],
+    ["a branded alias whose key isn't its name", "schema UserId = string & Brand<\"users/UserId\">\n"],
     ["an ADT", "export schema Shape =\n  | Circle { radius: number }\n  | Square { side: number }\n"],
     [
-      "a class with a schema field and a getter",
-      "export schema User {\n  name: string\n  age = Int.check(isGreaterThan(0))\n  get label() {\n    return `${this.name}`\n  }\n}\n"
+      "a class with a checked field, a schema field and a getter",
+      "export schema User {\n  name: string\n  age: Int where isGreaterThan(0)\n  joinedAt = DateTimeUtcFromString\n  get label() {\n    return `${this.name}`\n  }\n}\n"
     ]
   ])("%s", (_name, efx) => {
     expect(roundTrip(efx)).toBe(efx)

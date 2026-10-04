@@ -1,0 +1,3 @@
+export group SearchApi {
+  get find "/" (query: { q: string where isNonEmpty; page?: string where isMaxLength(4) }): string[]
+}

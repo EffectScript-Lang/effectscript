@@ -4,6 +4,7 @@
 (interface_declaration "interface" @context name: (_) @name) @item
 (type_alias_declaration "type" @context name: (_) @name) @item
 (schema_declaration "schema" @context name: (_) @name) @item
+(brand_declaration "brand" @context name: (_) @name) @item
 (error_declaration "error" @context name: (_) @name) @item
 (config_declaration "config" @context name: (_) @name) @item
 (service_declaration "service" @context name: (_) @name) @item

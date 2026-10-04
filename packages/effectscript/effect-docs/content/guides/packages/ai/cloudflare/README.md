@@ -43,7 +43,7 @@ const Clef = CloudflareDecisionModel.layer({ model: "clef-flash" }).pipe(
 
 const program = DecisionModel.decide(Triage, {
   input: "Checkout has been failing for every customer for an hour."
-}).pipe(provide(Clef))
+}) |> provide(Clef)
 ```
 
 Use `"clef"` for the larger model. `CloudflareDecisionModel.model` provides a model descriptor with Cloudflare provider metadata. `CloudflareClient.layer` accepts an explicit account ID and redacted API token; `apiUrl` and `transformClient` customize HTTP access.

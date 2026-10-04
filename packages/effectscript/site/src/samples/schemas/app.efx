@@ -1,9 +1,9 @@
-export schema Email = string & Brand<"Email">
+export brand Email = string
 
 export schema Signup {
   email: Email
   name: string
-  age = Int.check(isGreaterThan(17))
+  age: Int where isGreaterThan(17)
   plan: "free" | "pro"
 }
 

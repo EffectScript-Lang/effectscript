@@ -8,7 +8,7 @@ import { children, type Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
 import { fresh, ref } from "../names.ts"
-import { optionalField, typeToSchema } from "../schema/mapping.ts"
+import { fieldSchema, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
 import { jsdocBefore } from "./command.ts"
 import { lineStartsToIndent } from "./effect.ts"
@@ -18,9 +18,7 @@ import type { HandlerGroup } from "./registry.ts"
 export const signatureFields = (ctx: Ctx, line: Node): string =>
   `{ ${
     (line.fields as Array<Node>).map((field) =>
-      `${field.key.name}: ${
-        field.optional === true ? optionalField(ctx, field.annotation) : typeToSchema(ctx, field.annotation)
-      }`
+      `${field.key.name}: ${fieldSchema(ctx, field.annotation, field.optional === true, field.efxWhere)}`
     ).join(", ")
   } }`
 

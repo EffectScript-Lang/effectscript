@@ -9,6 +9,7 @@ import { children, type Node } from "../ast.ts"
 import { defaultIdentifier } from "../transform/httpApi.ts"
 import { blocker, isGenerator } from "./blockers.ts"
 import type { Visit } from "./body.ts"
+import { renderChecks } from "./checks.ts"
 import { commentsIn, isCanonicalString, type ReverseCtx, slice, within } from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
 import { inFrame } from "./resources.ts"
@@ -43,7 +44,7 @@ const sectionType = (ctx: ReverseCtx, value: Node): string | undefined => {
   if (ctx.schema === undefined) return undefined
   const fields: Array<string> = []
   for (const property of value.properties as Array<Node>) {
-    const field = fieldType(ctx.source, ctx.schema, property)
+    const field = fieldType(ctx.source, ctx.schema, property, renderChecks(ctx))
     if (field === undefined || property.key.type !== "Identifier") return undefined
     fields.push(`${field.key}${field.optional}: ${field.type}`)
   }

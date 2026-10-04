@@ -21,9 +21,8 @@ const stringLogger = Logger.make<unknown, void>((options) => {
   messages.push(`[${options.logLevel}] ${options.message}`)
 })
 
-const program = log("Hello World").pipe(
-  provide(Logger.layer([stringLogger]))
-)
+const program = log("Hello World")
+  |> provide(Logger.layer([stringLogger]))
 
 runSync(program)
 messages // => ["[Info] Hello World"]
@@ -43,9 +42,8 @@ const detailedLogger = Logger.make((options) => {
   })
 })
 
-const program = log("Processing request").pipe(
-  provide(Logger.layer([detailedLogger]))
-)
+const program = log("Processing request")
+  |> provide(Logger.layer([detailedLogger]))
 
 runSync(program)
 outputs // => [{ message: ["Processing request"], level: "Info", hasCause: false }]
@@ -76,9 +74,8 @@ const customLogger = Logger.make((options) => {
 })
 const program = effect {
   const currentLoggers = await service(Logger.CurrentLoggers)
-  await log("Hello from custom logger").pipe(
-    provide(Logger.layer([customLogger]))
-  )
+  await log("Hello from custom logger")
+    |> provide(Logger.layer([customLogger]))
   return currentLoggers.has(Logger.defaultLogger)
 }
 
@@ -103,7 +100,7 @@ const uppercaseLogger = Logger.map(
 )
 
 const collector = Logger.make((options) => outputs.push(uppercaseLogger.log(options)))
-const program = log("hello").pipe(provide(Logger.layer([collector])))
+const program = log("hello") |> provide(Logger.layer([collector]))
 runSync(program)
 outputs // => [{ message: "HELLO" }]
 ```
@@ -121,7 +118,7 @@ const customFormatter = Logger.make((options) =>
 const consoleLogger = Logger.withConsoleLog(customFormatter)
 
 const program = effect {
-  await log("Hello World").pipe(provide(Logger.layer([consoleLogger])))
+  await log("Hello World") |> provide(Logger.layer([consoleLogger]))
   return await TestConsole.logLines
 } |> provide(TestConsole.layer)
 
@@ -141,7 +138,7 @@ const errorFormatter = Logger.make((options) =>
 const errorLogger = Logger.withConsoleError(errorFormatter)
 
 const program = effect {
-  await logError("Database connection failed").pipe(provide(Logger.layer([errorLogger])))
+  await logError("Database connection failed") |> provide(Logger.layer([errorLogger]))
   return await TestConsole.errorLines
 } |> provide(TestConsole.layer)
 
@@ -190,9 +187,8 @@ const textLogger = Logger.make((options) =>
 )
 const collector = Logger.make((options) => outputs.push(textLogger.log(options)))
 
-const program = log("Hello World").pipe(
-  provide(Logger.layer([collector]))
-)
+const program = log("Hello World")
+  |> provide(Logger.layer([collector]))
 runSync(program)
 outputs // => ["Info: Hello World"]
 ```
@@ -212,6 +208,8 @@ Logger.isLogger(Logger.defaultLogger) // => true
 **Formatting logs as simple strings**
 
 ```efx
+import { TestConsole } from "effect/testing"
+
 // Use the simple format logger
 const stableSimple = Logger.map(Logger.formatSimple, (output) =>
   output
@@ -219,9 +217,8 @@ const stableSimple = Logger.map(Logger.formatSimple, (output) =>
     .replace(/fiber=#\d+ /, "")
 )
 const program = effect {
-  await log("Application started").pipe(
-    provide(Logger.layer([Logger.withConsoleLog(stableSimple)]))
-  )
+  await log("Application started")
+    |> provide(Logger.layer([Logger.withConsoleLog(stableSimple)]))
   return await TestConsole.logLines
 } |> provide(TestConsole.layer)
 
@@ -233,15 +230,16 @@ await runPromise(program) // => ["level=INFO message=\"Application started\""]
 **Formatting logs as logfmt**
 
 ```efx
+import { TestConsole } from "effect/testing"
+
 const stableLogFmt = Logger.map(Logger.formatLogFmt, (output) =>
   output
     .replace(/timestamp=\S+ /, "")
     .replace(/fiber=#\d+ /, "")
 )
 const program = effect {
-  await log("User login").pipe(
-    provide(Logger.layer([Logger.withConsoleLog(stableLogFmt)]))
-  )
+  await log("User login")
+    |> provide(Logger.layer([Logger.withConsoleLog(stableLogFmt)]))
   return await TestConsole.logLines
 } |> provide(TestConsole.layer)
 
@@ -253,14 +251,15 @@ await runPromise(program) // => ["level=INFO message=\"User login\""]
 **Formatting logs as structured objects**
 
 ```efx
+import { TestConsole } from "effect/testing"
+
 const stableStructured = Logger.map(Logger.formatStructured, (output) => ({
   message: output.message,
   level: output.level
 }))
 const program = effect {
-  await log("User action").pipe(
-    provide(Logger.layer([Logger.withConsoleLog(stableStructured)]))
-  )
+  await log("User action")
+    |> provide(Logger.layer([Logger.withConsoleLog(stableStructured)]))
   return await TestConsole.logLines
 } |> provide(TestConsole.layer)
 
@@ -272,14 +271,15 @@ await runPromise(program) // => [{ message: "User action", level: "INFO" }]
 **Formatting logs as JSON**
 
 ```efx
+import { TestConsole } from "effect/testing"
+
 const stableJson = Logger.map(Logger.formatJson, (json) => {
   const output = JSON.parse(json)
   return Formatter.formatJson({ message: output.message, level: output.level })
 })
 const program = effect {
-  await log("Server started").pipe(
-    provide(Logger.layer([Logger.withConsoleLog(stableJson)]))
-  )
+  await log("Server started")
+    |> provide(Logger.layer([Logger.withConsoleLog(stableJson)]))
   return await TestConsole.logLines
 } |> provide(TestConsole.layer)
 
@@ -303,8 +303,8 @@ const batchedLogger = Logger.batched(messageLogger, {
 
 const program = scoped(effect {
   const logger = await batchedLogger
-  await log("Event 1").pipe(provide(Logger.layer([logger])))
-  await log("Event 2").pipe(provide(Logger.layer([logger])))
+  await log("Event 1") |> provide(Logger.layer([logger]))
+  await log("Event 2") |> provide(Logger.layer([logger]))
 })
 await runPromise(program)
 flushed // => [["Event 1", "Event 2"]]
@@ -317,12 +317,11 @@ flushed // => [["Event 1", "Event 2"]]
 ```efx
 const prettyLogger = Logger.layer([Logger.consolePretty()])
 
-log("hello").pipe(
-  withLogSpan('label'),
-  annotateLogs('key', 'value'),
-  provide(prettyLogger),
-  runSync
-)
+log("hello")
+  |> withLogSpan('label')
+  |> annotateLogs('key', 'value')
+  |> provide(prettyLogger)
+  |> runSync
 ```
 
 **Logging with console.error, when the environment has TTY**
@@ -333,10 +332,9 @@ const prettyLoggerLayer = Layer.merge(
   Layer.succeed(Logger.LogToStderr, true)
 )
 
-log('hello').pipe(
-  provide(prettyLoggerLayer),
-  runSync
-)
+log('hello')
+  |> provide(prettyLoggerLayer)
+  |> runSync
 ```
 
 ## consolePrettyBrowser
@@ -346,12 +344,11 @@ log('hello').pipe(
 ```efx
 const prettyLogger = Logger.layer([Logger.consolePrettyBrowser()])
 
-log("hello").pipe(
-  withLogSpan('label'),
-  annotateLogs('key', 'value'),
-  provide(prettyLogger),
-  runSync
-)
+log("hello")
+  |> withLogSpan('label')
+  |> annotateLogs('key', 'value')
+  |> provide(prettyLogger)
+  |> runSync
 ```
 
 ## consolePrettyTty
@@ -361,12 +358,11 @@ log("hello").pipe(
 ```efx
 const prettyLogger = Logger.layer([Logger.consolePrettyTty()])
 
-log("hello").pipe(
-  withLogSpan('label'),
-  annotateLogs('key', 'value'),
-  provide(prettyLogger),
-  runSync
-)
+log("hello")
+  |> withLogSpan('label')
+  |> annotateLogs('key', 'value')
+  |> provide(prettyLogger)
+  |> runSync
 ```
 
 **Logging with console.error**
@@ -377,10 +373,9 @@ const prettyLoggerLayer = Layer.merge(
   Layer.succeed(Logger.LogToStderr, true)
 )
 
-log('hello').pipe(
-  provide(prettyLoggerLayer),
-  runSync
-)
+log('hello')
+  |> provide(prettyLoggerLayer)
+  |> runSync
 ```
 
 ## consoleLogFmt
@@ -418,10 +413,9 @@ Logger.isLogger(Logger.consoleJson) // => true
 **Recording logs as trace span events**
 
 ```efx
-const program = log("span event").pipe(
-  withSpan("operation"),
-  provide(Logger.layer([Logger.tracerLogger]))
-)
+const program = log("span event")
+  |> withSpan("operation")
+  |> provide(Logger.layer([Logger.tracerLogger]))
 runSync(program)
 ```
 
@@ -436,9 +430,8 @@ const customLogger = Logger.make((options) => {
 })
 const CustomLoggerLayer = Logger.layer([customLogger])
 
-const program = log("Application started").pipe(
-  provide(CustomLoggerLayer)
-)
+const program = log("Application started")
+  |> provide(CustomLoggerLayer)
 runSync(program)
 messages // => [["Application started"]]
 ```
@@ -459,10 +452,10 @@ const messageLogger = Logger.make((options) => String(options.message))
 
 const program = scoped(effect {
   const fileLogger = await Logger.toFile(messageLogger, "/tmp/log.txt")
-  await log("a").pipe(provide(Logger.layer([fileLogger])))
-  await log("b").pipe(provide(Logger.layer([fileLogger])))
-  await log("c").pipe(provide(Logger.layer([fileLogger])))
-}).pipe(provideService(FileSystem.FileSystem, fileSystem))
+  await log("a") |> provide(Logger.layer([fileLogger]))
+  await log("b") |> provide(Logger.layer([fileLogger]))
+  await log("c") |> provide(Logger.layer([fileLogger]))
+}) |> provideService(FileSystem.FileSystem, fileSystem)
 
 await runPromise(program)
 writes // => ["a\nb\nc"]
@@ -484,10 +477,9 @@ const program = scoped(effect {
   const fileLogger = await Logger.toFile(messageLogger, "/tmp/app.log", {
     batchWindow: "1 hour"
   })
-  await log("Application started").pipe(
-    provide(Logger.layer([fileLogger]))
-  )
-}).pipe(provideService(FileSystem.FileSystem, fileSystem))
+  await log("Application started")
+    |> provide(Logger.layer([fileLogger]))
+}) |> provideService(FileSystem.FileSystem, fileSystem)
 
 await runPromise(program)
 writes // => ["Application started"]

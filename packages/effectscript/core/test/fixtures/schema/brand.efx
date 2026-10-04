@@ -1,0 +1,10 @@
+/** A user's id. */
+export brand UserId = string
+
+/** A TCP port. */
+export brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })
+
+/** An administrator's id: a user id, branded again. */
+export brand AdminId = UserId
+
+brand Plan = "free" | "pro"

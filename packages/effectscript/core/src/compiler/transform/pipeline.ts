@@ -9,6 +9,8 @@ import { type Ctx, type Handler, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
 import { ref, unused } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
+import { pipeableCall, pipeableValue } from "../prelude/pipeable.ts"
+import { resolveValue } from "../prelude/resolve.ts"
 import { preludeModules } from "../prelude/tables.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
@@ -52,8 +54,55 @@ const isModuleBinding = (ctx: Ctx, name: string): boolean => {
   return false
 }
 
+/** The prelude module an `effect` import names: `import { Stream } from "effect"`, `import * as Stream from "effect/Stream"`. */
+const importedModule = (ctx: Ctx, local: string): string | undefined => {
+  for (const statement of ctx.analysis.program.body as Array<Node>) {
+    if (statement.type !== "ImportDeclaration" || statement.importKind === "type") continue
+    const source: string = statement.source.value
+    if (source !== "effect" && !source.startsWith("effect/")) continue
+    for (const specifier of statement.specifiers as Array<Node>) {
+      if (specifier.local.name !== local || specifier.importKind === "type") continue
+      const name = specifier.type === "ImportSpecifier"
+        ? (specifier.imported.name ?? specifier.imported.value)
+        : specifier.type === "ImportNamespaceSpecifier"
+        ? source.slice(source.lastIndexOf("/") + 1)
+        : undefined
+      return name !== undefined && preludeModules.has(name) ? name : undefined
+    }
+  }
+  return undefined
+}
+
+/** The Effect module `name` refers to here: a free prelude module, or one imported from `effect`. */
+const effectModule = (ctx: Ctx, name: string): string | undefined => {
+  const resolution = resolveValue(ctx, name)
+  if (resolution !== undefined) return resolution.prefix === "" && preludeModules.has(name) ? name : undefined
+  return isModuleBinding(ctx, name) ? importedModule(ctx, name) : undefined
+}
+
 /**
- * Conservative: only expressions that certainly produce a Pipeable (an Effect).
+ * A call Effect's types say returns a `Pipeable` (ADR-0091 A1): `Stream.make(1)`, `Option.some(x)`,
+ * or a builtin such as `succeed(1)`, by its number of arguments.
+ */
+const pipeableEffectCall = (ctx: Ctx, call: Node): boolean => {
+  const args: Array<Node> = call.arguments
+  if (args.some((a) => a.type === "SpreadElement")) return false
+  const callee: Node = call.callee
+  if (callee.type === "MemberExpression" && !callee.computed && callee.object.type === "Identifier") {
+    const module = effectModule(ctx, callee.object.name)
+    return module !== undefined && pipeableCall(module, callee.property.name, args.length)
+  }
+  if (callee.type === "Identifier") {
+    const resolution = resolveValue(ctx, callee.name)
+    return resolution !== undefined && resolution.prefix !== "" &&
+      pipeableCall(resolution.importName, callee.name, args.length)
+  }
+  return false
+}
+
+/**
+ * Conservative: only expressions that certainly produce a Pipeable: local `effect` code, and Effect's
+ * own constructors as its types declare them.
  *
  * @since 0.1.0
  * @category utils
@@ -66,8 +115,13 @@ export const knownPipeable = (ctx: Ctx, node: Node, seen: ReadonlySet<string> = 
     case "ImplExpression":
       return true
     case "CallExpression":
-      return node.callee.type === "Identifier" && ctx.analysis.localEffects.has(node.callee.name) &&
-        isModuleBinding(ctx, node.callee.name)
+      return (node.callee.type === "Identifier" && ctx.analysis.localEffects.has(node.callee.name) &&
+        isModuleBinding(ctx, node.callee.name)) || pipeableEffectCall(ctx, node)
+    case "MemberExpression": {
+      if (node.computed || node.object.type !== "Identifier") return false
+      const module = effectModule(ctx, node.object.name)
+      return module !== undefined && pipeableValue(module, node.property.name)
+    }
     case "Identifier": {
       if (seen.has(node.name) || !isModuleBinding(ctx, node.name)) return false
       const init = ctx.analysis.constInits.get(node.name)

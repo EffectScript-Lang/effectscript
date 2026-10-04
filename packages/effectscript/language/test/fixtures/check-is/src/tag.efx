@@ -1,0 +1,2 @@
+declare const failure: Cause.TimeoutError | Cause.NoSuchElementError
+export const late = failure is TimeoutErorr

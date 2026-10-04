@@ -416,7 +416,7 @@ type can end with `where` and a comma-separated list of checks. The list compile
 brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })
 
 schema Server {
-  host: string where isNonEmpty()
+  host: string where isNonEmpty
   port: Port
   alias?: string where isMaxLength(20)
   owner: string | null where isMaxLength(64)
@@ -450,7 +450,13 @@ class Server extends Schema.Class<Server>("Server")({
   next line keeps its meaning. The list continues onto the next line after `where` or after a
   comma. It ends at `;`, a closing bracket, a line break that doesn't follow a comma, or a comma
   followed by the next member or parameter: a name (an identifier or a string, optionally after
-  `readonly`) and `:` or `?:`.
+  `readonly`) and `:` or `?:`. A list written over several lines compiles to one `.check(…)` on one
+  line.
+- **A check without arguments drops its `()`** (ADR-0091): `where isTrimmed, isNonEmpty` compiles
+  to `.check(Schema.isTrimmed(), Schema.isNonEmpty())`. That applies to a free name that `Schema`
+  exports (including `isFinite`, which a `where` list reads as Schema's, not JavaScript's); a local
+  binding is used as written. A check that needs arguments, written bare, is TypeScript's error on
+  the call.
 
 **Type → Schema mapping.** This applies in schema positions only. The table is maintained in code
 and tested.
@@ -502,9 +508,11 @@ class DbError extends Schema.TaggedError<DbError>()("DbError", { cause: Schema.D
 ```
 
 The body uses the same rules as the `schema` class form: fields (with `where` checks), `=` fields,
-and methods. A `_tag: "X"` field overrides the tag.
+and methods. A `_tag: "X"` field overrides the tag. An error with no fields needs no body:
+`error Forbidden` is `error Forbidden {}` (ADR-0091 A4).
 
-**HTTP status** (ADR-0064): `error TodoNotFound status 404 { id: string }` adds Effect's own
+**HTTP status** (ADR-0064): `error TodoNotFound status 404 { id: string }` (or `error Unauthorized
+status 401`, without a body) adds Effect's own
 annotation, which `HttpApi` answers with: `Schema.TaggedError<TodoNotFound>()("TodoNotFound", { id:
 Schema.String }, { httpApiStatus: 404 })`. The code is an integer from 100 to 599. `status` is a
 keyword only between an error's name and its body.
@@ -556,12 +564,17 @@ class Users extends Context.Service<Users, {
 Rules:
 
 - **Members.** `effect m(…): A throws E` (a return type is required, error **EFX4001**), property
-  signatures, and plain method signatures form the shape. `layer [name] = expr` members become
+  signatures, and plain method signatures form the shape. Property signatures are `readonly`
+  whether or not they say so: a service's shape is never written to (ADR-0091 A5). `layer [name] = expr` members become
   `static readonly layer[Name]`. Other class members are errors (**EFX4002**).
 - **Layer initializers:**
   - An `effect` block → `Layer.effect(Self, Effect.gen(…))`. Every top-level `return { … }` object
     literal is wrapped in `Self.of(…)`, which gives contextual typing for method parameters.
   - An object literal → `Layer.succeed(Self, Self.of({…}))`.
+  - In those objects (and in a `default`), an `effect` member's untyped parameters take the types
+    its signature declares, by position: `layer test = { find: effect (id) => … }` compiles as
+    `effect (id: string) => …` would (ADR-0091 A2). TypeScript would infer them from `Self.of`; the
+    compiler writes them so the output reads as hand-written Effect.
   - Any other expression is used as-is.
   - `|>` pipes apply to the resulting `Layer`.
 - **Key** (ADR-0014). By default, `"<package>/<dir>/<module>/<Name>"`: `<dir>` is relative to the
@@ -585,11 +598,17 @@ Evaluation order is decided in ADR-0012.
 - **Function style** (Effect style): if the right-hand side contains no topic `%`, `a |> f |> g`
   applies `f`, then `g`, to `a`:
   - If `a` is known to be pipeable → `a.pipe(f, g)`. Known pipeable means an `effect` block, a call
-    to a module-level `effect` declaration that has no declaration pipes, or a module-level `const`
-    initialized with one of those.
-    - The rule is deliberately narrow. Module calls such as `Effect.runSync(…)` or
-      `Option.getOrElse(…)` return plain values, so "rooted at a pipeable module" would produce
-      `.pipe` on non-pipeables.
+    to a module-level `effect` declaration that has no declaration pipes, a module-level `const`
+    initialized with one of those, or one of Effect's own exports that its types declare pipeable
+    (ADR-0091 A1).
+    - Effect's exports are read from `effect`'s types at `pnpm codegen` (`pipeableExports`): a
+      value whose type is a `Pipeable` (`Schema.String`, `Effect.void`), or a call whose every
+      signature taking that many arguments returns one (`Stream.make(1)`, `Option.map(o, f)`,
+      `succeed(1)`). A head counts when it names the module through the prelude or an `effect`
+      import.
+    - Module calls such as `Effect.runSync(…)` or `Option.getOrElse(…)` return plain values, and
+      data-last calls such as `Option.map(f)` return functions: their types say so, and they stay
+      `pipe(…)`.
   - Otherwise → `pipe(a, f, g)`, with `pipe` imported automatically (hygienically, ADR-0009).
   - **Order:** Effect's `pipe` order. The head is evaluated, then every stage expression, then each
     application in turn (`head, make f, make g, apply f, apply g`). This is what Effect code
@@ -1384,8 +1403,15 @@ Unsupported shapes stay TypeScript, with an explanation.
   - `using x = await e` → `const x = await e`.
   - `main` moves to the end of the module.
   - Parentheses the forward compiler restores, such as `(await t) + n`, are dropped.
-  - `ReadonlyArray<T>` in a schema → `Array<T>`.
+  - `ReadonlyArray<T>` and `Array<T>` in a schema → `T[]`, or `Array<T>` where `T` would need
+    parentheses (ADR-0091 A3).
+  - `error X {}` → `error X` (ADR-0091 A4).
+  - In a service, `readonly` on fields is dropped, and an implementation's parameter types that
+    repeat its signature are dropped (ADR-0091 A2, A5).
+  - `.pipe(…)` on a head the forward compiler knows is pipeable → `|>` (ADR-0091 A1).
   - `schema X = T & Brand<"X">` → `brand X = T`, and `x = T.check(c)` → `x: T where c` (ADR-0077).
+    A check called without arguments is written bare: `.check(Schema.isTrimmed())` →
+    `where isTrimmed` (ADR-0091).
   - Class members of a `schema` come after its fields.
   - Explicit `Effect.fn.Return<A, never>` keeps `throws never`.
   - A first Hack step that the forward compiler inlined stays a call.
@@ -1792,8 +1818,8 @@ Details of the parts that carry over from the first page:
      concurrency, resources, pattern matching, HTTP API, CLI, tests (vitest + Effect), and config.
    - The Effect TS pane is generated at build time by `toTypeScript`, so it cannot drift. The
      samples are type-checked in CI.
-3. **Live, real token counts.** A real BPE tokenizer runs in the browser (`gpt-tokenizer`,
-   `o200k_base`, in a Web Worker):
+3. **Real token counts.** Counted at build time with Hugging Face `tokenizers` on the `o200k`
+   vocabulary, checked against a panel of frontier vocabularies (ADR-0092):
    - Each pane shows its token count and the change relative to the others.
    - A **"show tokens"** toggle colors each token boundary.
    - The tokenizer is labeled honestly.

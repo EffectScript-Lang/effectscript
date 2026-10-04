@@ -74,6 +74,8 @@ response.text // => '{"name":"John Doe","email":"john@example.com"}'
 **Generating text with options**
 
 ```efx
+import { LanguageModel } from "effect/ai"
+
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -101,10 +103,9 @@ const FakeLanguageModel = Layer.effect(
 const program = LanguageModel.generateText({
   prompt: "Write a haiku about programming",
   toolChoice: "none"
-}).pipe(
-  map((response) => [response.text, response.usage.inputTokens.total]),
-  provide(FakeLanguageModel)
-)
+})
+  |> map((response) => [response.text, response.usage.inputTokens.total])
+  |> provide(FakeLanguageModel)
 
 await runPromise(program) // => ["Code flows through types / Errors become values / Programs stay composed", 6]
 ```
@@ -114,6 +115,8 @@ await runPromise(program) // => ["Code flows through types / Errors become value
 **Generating an object**
 
 ```efx
+import { LanguageModel } from "effect/ai"
+
 const EventSchema = Schema.Struct({
   title: Schema.String,
   date: Schema.String,
@@ -136,10 +139,9 @@ const program = LanguageModel.generateObject({
   prompt: "Extract event info: Tech Conference on March 15th in San Francisco",
   schema: EventSchema,
   objectName: "event"
-}).pipe(
-  map((response) => response.value),
-  provide(FakeLanguageModel)
-)
+})
+  |> map((response) => response.value)
+  |> provide(FakeLanguageModel)
 
 await runPromise(program) // => { title: "Tech Conference", date: "March 15th", location: "San Francisco" }
 ```
@@ -149,6 +151,8 @@ await runPromise(program) // => { title: "Tech Conference", date: "March 15th", 
 **Streaming text deltas**
 
 ```efx
+import { LanguageModel } from "effect/ai"
+
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -163,10 +167,9 @@ const FakeLanguageModel = Layer.effect(
 
 const program = LanguageModel.streamText({
   prompt: "Write a story about a space explorer"
-}).pipe(
-  Stream.runFold(() => "", (text, part) => part.type === "text-delta" ? text + part.delta : text),
-  provide(FakeLanguageModel)
-)
+})
+  |> Stream.runFold(() => "", (text, part) => part.type === "text-delta" ? text + part.delta : text)
+  |> provide(FakeLanguageModel)
 
 await runPromise(program) // => "The explorer reached orbit. Earth glowed below."
 ```

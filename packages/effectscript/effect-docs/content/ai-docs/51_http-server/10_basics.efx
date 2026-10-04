@@ -32,10 +32,9 @@ const SystemApiHandlers = HttpApiBuilder.group(
 
 const ApiRoutes = HttpApiBuilder.layer(Api, {
   openapiPath: "/openapi.json"
-}).pipe(
+})
   // Provide all the handler Layers for the API.
-  Layer.provide([UsersApiHandlers, SystemApiHandlers])
-)
+  |> Layer.provide([UsersApiHandlers, SystemApiHandlers])
 
 // Define a /docs route that serves scalar documentation
 const DocsRoute = HttpApiScalar.layer(Api, {
@@ -49,14 +48,12 @@ layer AllRoutes = ApiRoutes & DocsRoute
 //
 // Here we are using the NodeHttpServer, but you could also use the
 // BunHttpServer
-export const HttpServerLayer = HttpRouter.serve(AllRoutes).pipe(
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+export const HttpServerLayer = HttpRouter.serve(AllRoutes)
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
 // Then run the server using Layer.launch
-Layer.launch(HttpServerLayer).pipe(
-  NodeRuntime.runMain
-)
+Layer.launch(HttpServerLayer)
+  |> NodeRuntime.runMain
 
 // Or create a web handler, which can be used in serverless environments
 export const { handler, dispose } = HttpRouter.toWebHandler(AllRoutes.pipe(
@@ -96,15 +93,14 @@ export class ApiClient extends Context.Service<ApiClient, HttpApiClient.ForApi<t
           })
         )
     })
-  ).pipe(
+  )
     // Provide the client implementation of the Authorization middleware, which
     // is required.
-    Layer.provide(AuthorizationClient),
+    |> Layer.provide(AuthorizationClient)
     // Supply a HttpClient implementation to use for making requests. Here we
     // use the FetchHttpClient, but you could also use the NodeHttpClient or
     // BunHttpClient.
-    Layer.provide(FetchHttpClient.layer)
-  )
+    |> Layer.provide(FetchHttpClient.layer)
 }
 
 // The generated client mirrors your API definition, so renames and schema

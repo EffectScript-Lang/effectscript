@@ -14,7 +14,7 @@ schema Todo {
 }
 
 export service JsonPlaceholder as "app/JsonPlaceholder" {
-  readonly allTodos: Effect.Effect<ReadonlyArray<Todo>, JsonPlaceholderError>
+  allTodos: Effect.Effect<ReadonlyArray<Todo>, JsonPlaceholderError>
   getTodo(id: number): Effect.Effect<Todo, JsonPlaceholderError>
   createTodo(todo: Omit<Todo, "id">): Effect.Effect<Todo, JsonPlaceholderError>
   layer = effect {
@@ -70,14 +70,13 @@ export service JsonPlaceholder as "app/JsonPlaceholder" {
       effect createTodo(todo: Omit<Todo, "id">) {
         await annotateCurrentSpan({ title: todo.title })
 
-        const createdTodo = await HttpClientRequest.post("/todos").pipe(
+        const createdTodo = await HttpClientRequest.post("/todos")
           // The HttpClientRequest module has many helper functions for building requests.
-          HttpClientRequest.setUrlParams({ format: "json" }),
-          HttpClientRequest.bodyJsonUnsafe(todo),
-          client.execute,
-          flatMap(HttpClientResponse.schemaBodyJson(Todo)),
-          mapError((cause) => new JsonPlaceholderError({ cause }))
-        )
+          |> HttpClientRequest.setUrlParams({ format: "json" })
+          |> HttpClientRequest.bodyJsonUnsafe(todo)
+          |> client.execute
+          |> flatMap(HttpClientResponse.schemaBodyJson(Todo))
+          |> mapError((cause) => new JsonPlaceholderError({ cause }))
 
         return createdTodo
       }

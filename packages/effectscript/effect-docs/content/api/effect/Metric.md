@@ -1794,10 +1794,9 @@ const program = effect {
   await Metric.update(getRequests, 1) // Increments the GET counter
 
   // You can also chain attributes
-  const taggedMetric = requestCounter.pipe(
-    Metric.withAttributes({ service: "user-api" }),
-    Metric.withAttributes({ version: "v1" })
-  )
+  const taggedMetric = requestCounter
+    |> Metric.withAttributes({ service: "user-api" })
+    |> Metric.withAttributes({ version: "v1" })
 
   await Metric.update(taggedMetric, 1) // http_requests_total{service="user-api", version="v1"}
 }

@@ -1,5 +1,5 @@
 export error TodoNotFound status 404 { id: string }
-export error Unauthorized status 401 {}
+export error Unauthorized status 401
 error RateLimited status 429 {
   retryAfter: number
   get message() { return `retry after ${this.retryAfter}s` }

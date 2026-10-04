@@ -19,13 +19,10 @@ The examples in the JSDoc of `packages/effect/src/http-api/HttpApiMiddleware.ts`
 import { Effect, Schema, type Types } from "effect"
 import { HttpRouter } from "effect/http"
 import {
-  HttpApiEndpoint,
-  HttpApiError,
-  HttpApiGroup,
-  HttpApiMiddleware
+  HttpApiEndpoint
 } from "effect/http-api"
 
-error CustomError {}
+error CustomError
 
 class ErrorHandler extends HttpApiMiddleware.Service<ErrorHandler>()("api/ErrorHandler", {
   error: CustomError
@@ -35,9 +32,8 @@ const messages: Array<string> = []
 const ErrorHandlerLayer = HttpApiMiddleware.layerSchemaErrorTransform(
   ErrorHandler,
   (schemaError) =>
-    sync(() => messages.push(`Mapping ${schemaError.kind} schema error`)).pipe(
-      andThen(fail(new CustomError()))
-    )
+    sync(() => messages.push(`Mapping ${schemaError.kind} schema error`))
+      |> andThen(fail(new CustomError()))
 )
 
 const endpoint = HttpApiEndpoint.get("example", "/")
@@ -64,7 +60,7 @@ const Routes = HttpRouter.add(
     )
     return HttpServerResponse.text(result)
   }
-).pipe(HttpRouter.provideRequest(ErrorHandlerLayer))
+) |> HttpRouter.provideRequest(ErrorHandlerLayer)
 
 const program = acquireUseRelease(
   sync(() => HttpRouter.toWebHandler(Routes, { disableLogger: true })),

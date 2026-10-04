@@ -233,7 +233,7 @@ type B = { readonly _tag: "b"; readonly b: number }
 type S = { readonly _tag: "a"; readonly a: string } | B
 
 const _b = Optic.id<S>().refine(
-  (s: S): s is B => s._tag === "b",
+  (s: S): s is B => s is b,
   { expected: `"b" tag` }
 )
 

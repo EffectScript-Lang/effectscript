@@ -17,10 +17,9 @@ The examples in the JSDoc of `packages/effect/src/Pipeable.ts`, in EffectScript 
 
 ```efx
 // The Pipeable interface allows Effect values to be chained using the pipe method
-const program = succeed(1).pipe(
-  map((x) => x + 1),
-  flatMap((x) => succeed(x * 2))
-)
+const program = succeed(1)
+  |> map((x) => x + 1)
+  |> flatMap((x) => succeed(x * 2))
 
 runSync(program) // => 4
 ```

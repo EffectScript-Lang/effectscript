@@ -27,7 +27,7 @@ const result = await runPromise(
 )
 
 result._tag // => "Falsified"
-if (result._tag === "Falsified") {
+if (result is Falsified) {
   result.initialInput // => ["Add", "Add", "Reset", "Stop"]
   result.shrunkInput // => ["Reset", "Stop"]
 }

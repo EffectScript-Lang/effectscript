@@ -6,7 +6,7 @@
 import type { Node } from "../ast.ts"
 import { type Ctx, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
-import { optionalField, typeToSchema } from "../schema/mapping.ts"
+import { checkedParts, lowerChecks, optionalField, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
 
 /**
@@ -75,12 +75,19 @@ export const rewriteField = (ctx: Ctx, field: Node, isLast: boolean): void => {
     withNamespace(ctx, "Schema", () => walk(field.value, field, ctx))
   } else if (field.typeAnnotation !== undefined && field.typeAnnotation !== null) {
     const type: Node = field.typeAnnotation.typeAnnotation
-    const schema = field.optional === true ? optionalField(ctx, type) : typeToSchema(ctx, type)
-    if (field.optional === true) {
+    const optional = field.optional === true
+    if (optional) {
       const question = ctx.source.indexOf("?", field.key.end)
       ctx.s.remove(question, question + 1)
     }
-    ctx.s.update(type.start, type.end, schema)
+    const clause: Node | null | undefined = field.efxWhere
+    if (clause === null || clause === undefined) {
+      ctx.s.update(type.start, type.end, optional ? optionalField(ctx, type) : typeToSchema(ctx, type))
+    } else {
+      // the checks stay in place, so the editor maps them (ADR-0077)
+      const { close, open } = checkedParts(ctx, type, optional, clause)
+      lowerChecks(ctx, type.start, clause, open, close)
+    }
   } else {
     ctx.diagnostics.push(diagnosticError("EFX3004", "A field needs a type or `= <schema>`", field.start, field.end))
   }

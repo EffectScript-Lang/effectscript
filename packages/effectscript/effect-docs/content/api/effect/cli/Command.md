@@ -51,15 +51,15 @@ const deploy: Command<
   never
 > = Command.make("deploy", {
   env: Flag.String("env"),
-  force: Flag.Boolean("force").pipe(Flag.withDefault(false)),
-  files: Argument.String("files").pipe(Argument.variadic())
+  force: Flag.Boolean("force") |> Flag.withDefault(false),
+  files: Argument.String("files") |> Argument.variadic()
 })
 
 // Command with handler
 const output: Array<string> = []
 const greet = Command.make("greet", {
   name: Flag.String("name")
-}, (config) => sync(() => output.push(`Hello, ${config.name}!`)).pipe(asVoid))
+}, (config) => sync(() => output.push(`Hello, ${config.name}!`)) |> asVoid)
 
 await runPromise(
   Command.runWith(greet, { version: "1.0.0" })(["--name", "Alice"]).pipe(provide(CliTestLayer))
@@ -134,6 +134,9 @@ inferred // => { name: "Alice", server: { host: "localhost", port: 8080 } }
 **Accessing parent command context**
 
 ```efx
+import { Command } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -151,12 +154,11 @@ const CliTestLayer = Layer.mergeAll(
   )
 )
 
-const parent = Command.make("app").pipe(
-  Command.withSharedFlags({
-    verbose: Flag.Boolean("verbose").pipe(Flag.withDefault(false)),
+const parent = Command.make("app")
+  |> Command.withSharedFlags({
+    verbose: Flag.Boolean("verbose") |> Flag.withDefault(false),
     config: Flag.String("config")
   })
-)
 
 const output: Array<string> = []
 const child = Command.make("deploy", {
@@ -190,6 +192,9 @@ output // => ["Verbose: true", "Config: prod.json", "Target: staging"]
 **Creating commands**
 
 ```efx
+import { Argument } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -213,30 +218,28 @@ const version = Command.make("version")
 // Command with simple flags
 const greet = Command.make("greet", {
   name: Flag.String("name"),
-  count: Flag.Int("count").pipe(Flag.withDefault(1))
+  count: Flag.Int("count") |> Flag.withDefault(1)
 })
 
 // Command with nested configuration
 const deploy = Command.make("deploy", {
-  environment: Flag.String("env").pipe(
-    Flag.withDescription("Target environment")
-  ),
+  environment: Flag.String("env")
+    |> Flag.withDescription("Target environment"),
   server: {
-    host: Flag.String("host").pipe(Flag.withDefault("localhost")),
-    port: Flag.Int("port").pipe(Flag.withDefault(3000))
+    host: Flag.String("host") |> Flag.withDefault("localhost"),
+    port: Flag.Int("port") |> Flag.withDefault(3000)
   },
-  files: Argument.String("files").pipe(Argument.variadic),
-  force: Flag.Boolean("force").pipe(
-    Flag.withDescription("Force deployment"),
-    Flag.withDefault(false)
-  )
+  files: Argument.String("files") |> Argument.variadic,
+  force: Flag.Boolean("force")
+    |> Flag.withDescription("Force deployment")
+    |> Flag.withDefault(false)
 })
 
 // Command with handler
 const output: Array<string> = []
 const deployWithHandler = Command.make("deploy", {
   environment: Flag.String("env"),
-  force: Flag.Boolean("force").pipe(Flag.withDefault(false))
+  force: Flag.Boolean("force") |> Flag.withDefault(false)
 }, (config) =>
   effect {
     await sync(() => output.push(`Starting deployment to ${config.environment}`))
@@ -263,6 +266,9 @@ output // => ["Starting deployment to staging", "Deployment completed successful
 **Adding command handlers**
 
 ```efx
+import { Command } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -287,11 +293,10 @@ const greet = Command.make("greet", {
 
 // Add handler later
 const output: Array<string> = []
-const greetWithHandler = greet.pipe(
-  Command.withHandler((config: { readonly name: string }) =>
-    sync(() => output.push(`Hello, ${config.name}!`)).pipe(asVoid)
+const greetWithHandler = greet
+  |> Command.withHandler((config: { readonly name: string }) =>
+    sync(() => output.push(`Hello, ${config.name}!`)) |> asVoid
   )
-)
 
 await runPromise(
   Command.runWith(greetWithHandler, { version: "1.0.0" })(["--name", "Alice"]).pipe(
@@ -306,6 +311,9 @@ output // => ["Hello, Alice!"]
 **Adding subcommands**
 
 ```efx
+import { Command } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -324,11 +332,10 @@ const CliTestLayer = Layer.mergeAll(
 )
 
 // Parent command with shared flags
-const git = Command.make("git").pipe(
-  Command.withSharedFlags({
-    verbose: Flag.Boolean("verbose").pipe(Flag.withDefault(false))
+const git = Command.make("git")
+  |> Command.withSharedFlags({
+    verbose: Flag.Boolean("verbose") |> Flag.withDefault(false)
   })
-)
 
 // Subcommand that accesses parent config
 const output: Array<string> = []
@@ -361,6 +368,9 @@ output // => ["Verbose mode enabled", "Cloning github.com/foo/bar"]
 **Setting descriptions**
 
 ```efx
+import { Command } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -384,9 +394,8 @@ const deploy = Command.make("deploy", {
 }, (config) =>
   effect {
     await sync(() => output.push(`Deploying to ${config.environment}`))
-  }).pipe(
-    Command.withDescription("Deploy the application to a specified environment")
-  )
+  })
+    |> Command.withDescription("Deploy the application to a specified environment")
 
 await runPromise(
   Command.runWith(deploy, { version: "1.0.0" })(["--env", "staging"]).pipe(provide(CliTestLayer))
@@ -399,17 +408,13 @@ output // => ["Deploying to staging"]
 **Unlisting a subcommand**
 
 ```efx
-import { Command } from "effect/cli"
-
 // `experimental` still runs when invoked as `mycli experimental`,
 // but it does not appear under SUBCOMMANDS in `mycli --help`.
-const experimental = Command.make("experimental").pipe(
-  Command.unlisted
-)
+const experimental = Command.make("experimental")
+  |> Command.unlisted
 
-const root = Command.make("mycli").pipe(
-  Command.withSubcommands([experimental])
-)
+const root = Command.make("mycli")
+  |> Command.withSubcommands([experimental])
 
 root.subcommands[0].commands[0].unlisted // => true
 ```
@@ -419,14 +424,11 @@ root.subcommands[0].commands[0].unlisted // => true
 **Adding usage examples**
 
 ```efx
-import { Command } from "effect/cli"
-
-const login = Command.make("login").pipe(
-  Command.withExamples([
+const login = Command.make("login")
+  |> Command.withExamples([
     { command: "myapp login", description: "Log in with browser OAuth" },
     { command: "myapp login --token sbp_abc123", description: "Log in with a token" }
   ])
-)
 
 login.examples.map((example) => example.command) // => ["myapp login", "myapp login --token sbp_abc123"]
 ```
@@ -436,6 +438,9 @@ login.examples.map((example) => example.command) // => ["myapp login", "myapp lo
 **Providing command services**
 
 ```efx
+import { Command } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -460,9 +465,9 @@ const deploy = Command.make("deploy", {
   effect {
     const fs = await FileSystem
     await sync(() => output.push(`Using file system for ${config.env}`))
-  }).pipe(
+  })
     // Provide FileSystem based on the --env flag
-    Command.provide((config) =>
+    |> Command.provide((config) =>
       config.env === "local"
         ? FileSystem.layerNoop({})
         : FileSystem.layerNoop({
@@ -475,7 +480,6 @@ const deploy = Command.make("deploy", {
             )
         })
     )
-  )
 
 await runPromise(
   Command.runWith(deploy, { version: "1.0.0" })(["--env", "local"]).pipe(provide(CliTestLayer))
@@ -488,6 +492,9 @@ output // => ["Using file system for local"]
 **Constructing command arguments**
 
 ```efx
+import { Command } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -510,10 +517,9 @@ const silentConsole: Console.Console = Object.assign(Object.create(console), {
   log: () => {}
 })
 
-const program = Command.wizard(command).pipe(
-  provideService(Console.Console, silentConsole),
-  provide(CliTestLayer)
-)
+const program = Command.wizard(command)
+  |> provideService(Console.Console, silentConsole)
+  |> provide(CliTestLayer)
 
 await runPromise(program) // => ["app"]
 ```
@@ -584,7 +590,7 @@ const CliTestLayer = Layer.mergeAll(
 const output: Array<string> = []
 const greet = Command.make("greet", {
   name: Flag.String("name"),
-  count: Flag.Int("count").pipe(Flag.withDefault(1))
+  count: Flag.Int("count") |> Flag.withDefault(1)
 }, (config) =>
   effect {
     for (let i = 0; i < config.count; i++) {

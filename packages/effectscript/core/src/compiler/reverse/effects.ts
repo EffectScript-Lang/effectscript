@@ -41,6 +41,7 @@ import { importedLocal, isMember } from "./origin.ts"
 import { convertPipe, inPosition, isPlainStep } from "./pipes.ts"
 import { hasFinalizer, inFrame } from "./resources.ts"
 import { convertReferenceService } from "./service.ts"
+import { convertTagTest } from "./tags.ts"
 import { convertTestStatement } from "./test.ts"
 
 /**
@@ -551,6 +552,12 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     if (node.type === "ExpressionStatement" && !generator && convertTestStatement(ctx, node, visit)) return
     if (node.type === "ClassDeclaration" && convertClass(node, visit)) return
     if (node.type === "Property" && convertProperty(ctx, node, visit)) return
+    if (
+      (node.type === "BinaryExpression" || node.type === "LogicalExpression" ||
+        node.type === "ArrowFunctionExpression") && convertTagTest(ctx, node, visit, generator)
+    ) {
+      return
+    }
     if (node.type === "CallExpression" && inPosition(node, parent)) {
       const shape = matchShape(ctx, node, false)
       if (shape !== undefined && convertMatch(ctx, shape, [node.start, node.end], visit, generator)) return

@@ -109,6 +109,57 @@ const accessor = (ctx: Ctx, name: string, member: Node): string => {
   }))\n`
 }
 
+/** The `effect` member signatures of a service body, by name. */
+const signaturesOf = (members: ReadonlyArray<Node>): Map<string, Node> =>
+  new Map(members.map((member) => [member.key.name as string, member.value as Node]))
+
+/** The objects an implementation is written as: the value itself, or what its `effect` block returns. */
+const implementationObjects = (value: Node): Array<Node> => {
+  const head = pipelineHead(value)
+  if (head.type === "ObjectExpression") return [head]
+  if (head.type !== "EffectBlock") return []
+  return (head.body.body as Array<Node>).flatMap((statement) =>
+    statement.type === "ReturnStatement" && statement.argument?.type === "ObjectExpression" ? [statement.argument] : []
+  )
+}
+
+const annotationOf = (ctx: Ctx, param: Node): string | undefined => {
+  const node = param.type === "RestElement" && !param.typeAnnotation ? param.argument : param
+  return node?.typeAnnotation ? ctx.s.slice(node.typeAnnotation.start, node.typeAnnotation.end) : undefined
+}
+
+/**
+ * An implementation's `effect` members take the parameter types their signature declares, so they're
+ * written once (ADR-0091 A2): `find: effect (id) => …` compiles as `effect (id: string) => …` did.
+ * Runs after the signatures are transformed, so the copied types are already TypeScript.
+ */
+const typeImplementations = (ctx: Ctx, value: Node, signatures: ReadonlyMap<string, Node>): void => {
+  for (const object of implementationObjects(value)) {
+    for (const property of object.properties as Array<Node>) {
+      if (property.type !== "Property" || property.computed || property.key.type !== "Identifier") continue
+      const fn: Node = property.value
+      const signature = signatures.get(property.key.name)
+      if (fn?.efx === undefined || signature === undefined) continue
+      const declared: Array<Node> = signature.params
+      ;(fn.params as Array<Node>).forEach((param, i) => {
+        const source = declared[i]
+        const annotation = source === undefined ? undefined : annotationOf(ctx, source)
+        // a type fits any parameter, but a rest parameter's only another rest parameter
+        if (annotation === undefined || (source!.type === "RestElement") !== (param.type === "RestElement")) return
+        const target = param.type === "AssignmentPattern" ? param.left : param
+        if (target.typeAnnotation || (param.type === "RestElement" && param.argument.typeAnnotation)) return
+        const optional = param.type === "Identifier" && source!.optional === true ? "?" : ""
+        ctx.s.appendLeft(target.end, `${optional}${annotation}`)
+      })
+    }
+  }
+}
+
+/** A service's shape is never written to: its fields are `readonly` whether or not they say so (ADR-0091 A5). */
+const readonlyField = (ctx: Ctx, member: Node): void => {
+  if (member.type === "PropertyDefinition" && member.readonly !== true) ctx.s.appendLeft(member.key.start, "readonly ")
+}
+
 // a field named `default` without a value is part of the shape (Plan 22 review I1)
 const isDefaultMember = (member: Node): boolean =>
   member.type === "PropertyDefinition" && member.efxLayer === undefined && member.static !== true &&
@@ -179,6 +230,7 @@ const referenceService = (node: Node, parent: Node | undefined, ctx: Ctx, defaul
       (member.type === "PropertyDefinition" && (member.value === null || member.value === undefined) &&
         member.static !== true)
     ) {
+      readonlyField(ctx, member)
       walk(member, node.body, ctx)
     } else {
       ctx.diagnostics.push(
@@ -192,6 +244,8 @@ const referenceService = (node: Node, parent: Node | undefined, ctx: Ctx, defaul
       )
     }
   }
+  const signatures = signaturesOf(effects)
+  for (const member of [defaultMember, ...layers]) typeImplementations(ctx, member.value, signatures)
   // the values are transformed in place first, then moved below the interface with their framing
   const previous = ctx.service
   ctx.service = name
@@ -294,6 +348,7 @@ const service: Handler = (node, parent, ctx) => {
       (member.type === "PropertyDefinition" && (member.value === null || member.value === undefined) &&
         member.static !== true)
     ) {
+      readonlyField(ctx, member)
       walk(member, node.body, ctx)
     } else {
       ctx.diagnostics.push(
@@ -324,6 +379,8 @@ const service: Handler = (node, parent, ctx) => {
     accessors += accessor(ctx, name, member)
   }
   moveMembersAfter(ctx, node.body, layers, `}>()(${JSON.stringify(key)})`, accessors)
+  const signatures = signaturesOf(effects)
+  for (const member of layers) typeImplementations(ctx, member.value, signatures)
   for (const member of layers) rewriteLayer(ctx, member, name)
   return true
 }

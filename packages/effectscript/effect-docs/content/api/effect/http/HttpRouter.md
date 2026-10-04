@@ -73,6 +73,8 @@ Layer.isLayer(Routes) // => true
 **Applying route and global middleware**
 
 ```efx
+import { HttpRouter } from "effect/http"
+
 const RouteMiddleware = HttpRouter.middleware((httpEffect) =>
   map(httpEffect, HttpServerResponse.setHeader("x-route", "route"))
 ).layer
@@ -82,9 +84,8 @@ const GlobalMiddleware = HttpRouter.middleware(
   { global: true }
 )
 
-const Routes = HttpRouter.add("GET", "/hello", HttpServerResponse.text("Hello")).pipe(
-  Layer.provide(RouteMiddleware)
-)
+const Routes = HttpRouter.add("GET", "/hello", HttpServerResponse.text("Hello"))
+  |> Layer.provide(RouteMiddleware)
 layer App = Routes & GlobalMiddleware
 
 const program = acquireUseRelease(
@@ -105,16 +106,14 @@ await runPromise(program) // => ["route", "global"]
 **Disabling route logging**
 
 ```efx
-import { Layer } from "effect"
-import { HttpRouter, HttpServerResponse } from "effect/http"
+import { HttpRouter } from "effect/http"
 
 const Route = HttpRouter.add(
   "GET",
   "/hello",
   HttpServerResponse.text("Hello, World!")
-).pipe(
-  // disable the logger for this route
-  Layer.provide(HttpRouter.disableLogger)
 )
+  // disable the logger for this route
+  |> Layer.provide(HttpRouter.disableLogger)
 Layer.isLayer(Route) // => true
 ```

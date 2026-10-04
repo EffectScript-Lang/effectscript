@@ -16,12 +16,12 @@ The examples in the JSDoc of `packages/effect/src/testing/TestClock.ts`, in Effe
 **Testing timeouts deterministically**
 
 ```efx
-import { TestClock } from "effect/testing"
-
 const program = effect {
-  const fiber = await sleep("5 minutes")
-    |> timeout("1 minute")
-    |> forkChild
+  const fiber = await pipe(
+    sleep("5 minutes"),
+    timeout("1 minute"),
+    forkChild
+  )
   await TestClock.adjust("1 minute")
   const exit = await Fiber.await(fiber)
   Exit.isFailure(exit) // => true

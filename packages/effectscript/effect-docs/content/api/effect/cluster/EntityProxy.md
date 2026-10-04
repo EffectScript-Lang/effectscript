@@ -16,9 +16,8 @@ The examples in the JSDoc of `packages/effect/src/cluster/EntityProxy.ts`, in Ef
 **Deriving RPC endpoints from an entity**
 
 ```efx
-import { Layer, Schema } from "effect"
-import { ClusterSchema, Entity, EntityProxy, EntityProxyServer } from "effect/cluster"
-import { Rpc, RpcServer } from "effect/rpc"
+import { ClusterSchema } from "effect/cluster"
+import { Rpc } from "effect/rpc"
 
 export const Counter = Entity.make("Counter", [
   Rpc.make("Increment", {
@@ -33,9 +32,8 @@ export class MyRpcs extends EntityProxy.toRpcGroup(Counter) {}
 
 // Use EntityProxyServer.layerRpcHandlers to create a layer that implements
 // the rpc handlers
-const RpcServerLayer = RpcServer.layer(MyRpcs).pipe(
-  Layer.provide(EntityProxyServer.layerRpcHandlers(Counter))
-)
+const RpcServerLayer = RpcServer.layer(MyRpcs)
+  |> Layer.provide(EntityProxyServer.layerRpcHandlers(Counter))
 const result = [MyRpcs.requests.size, Layer.isLayer(RpcServerLayer)] // => [2, true]
 ```
 
@@ -63,8 +61,7 @@ export api MyApi "api" { EntityProxy.toHttpApiGroup("counter", Counter)
 
 // Use EntityProxyServer.layerHttpApi to create a layer that implements
 // the handlers for the HttpApiGroup
-const ApiLayer = HttpApiBuilder.layer(MyApi).pipe(
-  Layer.provide(EntityProxyServer.layerHttpApi(MyApi, "counter", Counter))
-)
+const ApiLayer = HttpApiBuilder.layer(MyApi)
+  |> Layer.provide(EntityProxyServer.layerHttpApi(MyApi, "counter", Counter))
 const result = [Object.keys(MyApi.groups.counter.endpoints).length, Layer.isLayer(ApiLayer)] // => [2, true]
 ```

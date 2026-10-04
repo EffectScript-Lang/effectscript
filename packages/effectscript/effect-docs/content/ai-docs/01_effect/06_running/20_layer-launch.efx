@@ -15,9 +15,8 @@ export const HealthRoutes = HttpRouter.use(Effect.fn(function*(router) {
 }))
 
 // Turn the routes into a server layer and provide the Node HTTP server backend.
-export const HttpServerLive = HttpRouter.serve(HealthRoutes).pipe(
-  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
-)
+export const HttpServerLive = HttpRouter.serve(HealthRoutes)
+  |> Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
 
 // `Layer.launch` converts the layer into a long-running Effect<never>.
 export const main = Layer.launch(HttpServerLive)

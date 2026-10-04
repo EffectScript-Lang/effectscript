@@ -19,7 +19,7 @@ The examples in the JSDoc of `packages/effect/src/ManagedRuntime.ts`, in EffectS
 const notifications: Array<string> = []
 
 service Notifications {
-  readonly notify: (message: string) => Effect<void>
+  notify: (message: string) => Effect<void>
   layer = Layer.succeed(this)({
     notify: Effect.fn("Notifications.notify")((message) =>
       Effect.sync(() => notifications.push(message))
@@ -32,7 +32,7 @@ const runtime = ManagedRuntime.make(Notifications.layer)
 const program = flatMap(
   Notifications,
   (_) => _.notify("Hello, world!")
-).pipe(ensuring(runtime.disposeEffect))
+) |> ensuring(runtime.disposeEffect)
 
 await runtime.runPromise(program)
 notifications // => ["Hello, world!"]

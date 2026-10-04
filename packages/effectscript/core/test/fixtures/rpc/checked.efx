@@ -1,0 +1,3 @@
+export rpc PagesRpc {
+  page(id: string where isUUID, size: Int where isGreaterThan(0), isLessThanOrEqualTo(100), after?: string): string[]
+}

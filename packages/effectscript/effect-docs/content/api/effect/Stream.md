@@ -123,12 +123,11 @@ await runPromise(Stream.runCollect(stream)) // => [42]
 
 ```efx
 service Greeter {
-  readonly greet: (name: string) => string
+  greet: (name: string) => string
 }
 
-const stream = Stream.service(Greeter).pipe(
-  Stream.map((greeter) => greeter.greet("World"))
-)
+const stream = Stream.service(Greeter)
+  |> Stream.map((greeter) => greeter.greet("World"))
 
 await runPromise(
   stream.pipe(
@@ -146,17 +145,16 @@ await runPromise(
 
 ```efx
 service Greeter {
-  readonly greet: (name: string) => string
+  greet: (name: string) => string
 }
 
-const stream = Stream.serviceOption(Greeter).pipe(
-  Stream.map((maybeGreeter) =>
+const stream = Stream.serviceOption(Greeter)
+  |> Stream.map((maybeGreeter) =>
     Option.match(maybeGreeter, {
       onNone: () => "No greeter",
       onSome: (greeter) => greeter.greet("World")
     })
   )
-)
 
 await runPromise(
   stream.pipe(
@@ -188,7 +186,7 @@ drained // => true
 
 ```efx
 let n = 0
-const stream = Stream.fromEffectRepeat(sync(() => ++n)).pipe(Stream.take(5))
+const stream = Stream.fromEffectRepeat(sync(() => ++n)) |> Stream.take(5)
 await runPromise(Stream.runCollect(stream)) // => [1, 2, 3, 4, 5]
 ```
 
@@ -357,9 +355,8 @@ await runPromise(Stream.runCollect(stream).pipe(exit)) // => Exit.fail("Uh oh!")
 **Failing with a cause**
 
 ```efx
-const stream = Stream.failCause(Cause.fail("Database connection failed")).pipe(
-  Stream.catchCause(() => Stream.succeed("recovered"))
-)
+const stream = Stream.failCause(Cause.fail("Database connection failed"))
+  |> Stream.catchCause(() => Stream.succeed("recovered"))
 
 await runPromise(Stream.runCollect(stream)) // => ["recovered"]
 ```
@@ -434,22 +431,20 @@ await runPromise(program)
 
 ```efx
 service UserRepo {
-  readonly list: Effect<ReadonlyArray<string>>
+  list: Effect<ReadonlyArray<string>>
 }
 
-const listUsers = service(UserRepo).pipe(
-  andThen((repo) => repo.list)
-)
+const listUsers = service(UserRepo)
+  |> andThen((repo) => repo.list)
 
 const stream = Stream.fromIterableEffect(listUsers)
 
 const program = effect {
-  const users = await stream.pipe(
-    Stream.provideService(UserRepo, {
+  const users = await stream
+    |> Stream.provideService(UserRepo, {
       list: succeed(["user1", "user2"])
-    }),
-    Stream.runCollect
-  )
+    })
+    |> Stream.runCollect
   users // => ["user1", "user2"]
 }
 
@@ -462,9 +457,8 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const stream = Stream.fromIterableEffectRepeat(succeed([1, 2])).pipe(
-    Stream.take(5)
-  )
+  const stream = Stream.fromIterableEffectRepeat(succeed([1, 2]))
+    |> Stream.take(5)
   const values = await Stream.runCollect(stream)
   values // => [1, 2, 1, 2, 1]
 }
@@ -542,11 +536,10 @@ await runPromise(program)
 const program = effect {
   const pubsub = await PubSub.unbounded<number>({ replay: 3 })
 
-  const fiber = await Stream.fromPubSub(pubsub).pipe(
-    Stream.take(3),
-    Stream.runCollect,
-    forkChild
-  )
+  const fiber = await Stream.fromPubSub(pubsub)
+    |> Stream.take(3)
+    |> Stream.runCollect
+    |> forkChild
 
   await PubSub.publish(pubsub, 1)
   await PubSub.publish(pubsub, 2)
@@ -573,7 +566,7 @@ const program = effect {
   await PubSub.publish(pubsub, [2])
   await PubSub.publish(pubsub, Exit.succeed<void>(undefined))
 
-  const values = await Stream.fromPubSubTake(pubsub).pipe(Stream.runCollect)
+  const values = await Stream.fromPubSubTake(pubsub) |> Stream.runCollect
   values // => [1, 2]
 }
 
@@ -681,9 +674,8 @@ class NumberTarget implements Stream.EventListener<number> {
 }
 
 await runPromise(effect {
-  const stream = Stream.fromEventListener(new NumberTarget(), "data").pipe(
-    Stream.take(3)
-  )
+  const stream = Stream.fromEventListener(new NumberTarget(), "data")
+    |> Stream.take(3)
   const values = await Stream.runCollect(stream)
   values // => [1, 2, 3]
 })
@@ -725,7 +717,7 @@ await runPromise(Stream.runCollect(stream)) // => [0, 1, 2, 3]
 **Iterating from a seed value**
 
 ```efx
-const stream = Stream.iterate(1, (n) => n + 1).pipe(Stream.take(3))
+const stream = Stream.iterate(1, (n) => n + 1) |> Stream.take(3)
 
 const program = effect {
   const values = await Stream.runCollect(stream)
@@ -741,7 +733,7 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.range(1, 5).pipe(Stream.runCollect)
+  const values = await Stream.range(1, 5) |> Stream.runCollect
   values // => [ 1, 2, 3, 4, 5 ]
 }
 
@@ -753,10 +745,9 @@ await runPromise(program)
 **Creating a never-ending stream**
 
 ```efx
-const program = Stream.never.pipe(
-  Stream.take(0),
-  Stream.runCollect
-)
+const program = Stream.never
+  |> Stream.take(0)
+  |> Stream.runCollect
 
 await runPromise(program) // => []
 ```
@@ -806,7 +797,7 @@ events // => ["acquire", "release"]
 ```efx
 import { Effect, Option } from "effect"
 
-const stream = Stream.fromArray([1, 2, 3]).pipe(Stream.map((n, i) => n + i))
+const stream = Stream.fromArray([1, 2, 3]) |> Stream.map((n, i) => n + i)
 await runPromise(Stream.runCollect(stream)) // => [1, 3, 5]
 ```
 
@@ -816,10 +807,9 @@ await runPromise(Stream.runCollect(stream)) // => [1, 3, 5]
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.as("x"),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.as("x")
+    |> Stream.runCollect
   values // => [ 'x', 'x', 'x' ]
 }
 
@@ -837,17 +827,15 @@ const mapper = {
 }
 
 const program = effect {
-  const success = await Stream.make(1, 2).pipe(
-    Stream.mapBoth(mapper),
-    Stream.runCollect
-  )
+  const success = await Stream.make(1, 2)
+    |> Stream.mapBoth(mapper)
+    |> Stream.runCollect
   success // => [ 2, 4 ]
 
-  const failure = await Stream.fail("boom").pipe(
-    Stream.mapBoth(mapper),
-    Stream.catch((error: string) => Stream.succeed(error)),
-    Stream.runCollect
-  )
+  const failure = await Stream.fail("boom")
+    |> Stream.mapBoth(mapper)
+    |> Stream.catch((error: string) => Stream.succeed(error))
+    |> Stream.runCollect
   failure // => [ 'error: boom' ]
 }
 
@@ -862,11 +850,10 @@ await runPromise(program)
 import { Array } from "effect"
 
 const program = effect {
-  const result = await Stream.make(1, 2, 3, 4).pipe(
-    Stream.rechunk(2),
-    Stream.mapArray((chunk, index) => Array.map(chunk, (n) => n + index)),
-    Stream.runCollect
-  )
+  const result = await Stream.make(1, 2, 3, 4)
+    |> Stream.rechunk(2)
+    |> Stream.mapArray((chunk, index) => Array.map(chunk, (n) => n + index))
+    |> Stream.runCollect
   result // => [ 1, 2, 4, 5 ]
 }
 
@@ -881,14 +868,13 @@ await runPromise(program)
 const events: Array<string> = []
 const stream = Stream.make(1, 2, 3)
 
-const mappedStream = stream.pipe(
-  Stream.mapEffect((n) =>
+const mappedStream = stream
+  |> Stream.mapEffect((n) =>
     sync(() => {
       events.push(`Processing: ${n}`)
       return n * 2
     })
   )
-)
 
 const program = effect {
   const result = await Stream.runCollect(mappedStream)
@@ -922,13 +908,12 @@ await runPromise(program)
 import { Array } from "effect"
 
 const program = effect {
-  const result = await Stream.fromArray([1, 2, 3, 4]).pipe(
-    Stream.rechunk(2),
-    Stream.mapArrayEffect((chunk, index) =>
+  const result = await Stream.fromArray([1, 2, 3, 4])
+    |> Stream.rechunk(2)
+    |> Stream.mapArrayEffect((chunk, index) =>
       succeed(Array.map(chunk, (n) => n + index * 10))
-    ),
-    Stream.runCollect
-  )
+    )
+    |> Stream.runCollect
   result // => [ 1, 2, 13, 14 ]
 }
 
@@ -941,15 +926,14 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const results = await Stream.make(1, 2).pipe(
-    Stream.concat(Stream.fail("boom")),
-    Stream.result,
-    Stream.map(Result.match({
+  const results = await Stream.make(1, 2)
+    |> Stream.concat(Stream.fail("boom"))
+    |> Stream.result
+    |> Stream.map(Result.match({
       onFailure: (error) => `failure: ${error}`,
       onSuccess: (value) => `success: ${value}`
-    })),
-    Stream.runCollect
-  )
+    }))
+    |> Stream.runCollect
   results // => [ 'success: 1', 'success: 2', 'failure: boom' ]
 }
 
@@ -963,12 +947,11 @@ await runPromise(program)
 ```efx
 const events: Array<string> = []
 const program = effect {
-  const result = await Stream.fromArray([1, 2, 3]).pipe(
-    Stream.tap((n) => sync(() => events.push(`before mapping: ${n}`))),
-    Stream.map((n) => n * 2),
-    Stream.tap((n) => sync(() => events.push(`after mapping: ${n}`))),
-    Stream.runCollect
-  )
+  const result = await Stream.fromArray([1, 2, 3])
+    |> Stream.tap((n) => sync(() => events.push(`before mapping: ${n}`)))
+    |> Stream.map((n) => n * 2)
+    |> Stream.tap((n) => sync(() => events.push(`after mapping: ${n}`)))
+    |> Stream.runCollect
 
   result // => [2, 4, 6]
 }
@@ -984,14 +967,13 @@ events // => ["before mapping: 1", "after mapping: 2", "before mapping: 2", "aft
 ```efx
 const events: Array<string> = []
 const program = effect {
-  const stream = Stream.make(1, 2).pipe(
-    Stream.concat(Stream.fail("boom")),
-    Stream.tapBoth({
+  const stream = Stream.make(1, 2)
+    |> Stream.concat(Stream.fail("boom"))
+    |> Stream.tapBoth({
       onElement: (value) => sync(() => events.push(`seen: ${value}`)),
       onError: (error) => sync(() => events.push(`error: ${error}`))
-    }),
-    Stream.catch(() => Stream.make(3))
-  )
+    })
+    |> Stream.catch(() => Stream.make(3))
   const result = await Stream.runCollect(stream)
   result // => [1, 2, 3]
 }
@@ -1010,10 +992,9 @@ const program = effect {
   const sink = Sink.forEach((value: number) =>
     Ref.update(seen, (items) => [...items, value])
   )
-  const result = await Stream.make(1, 2, 3).pipe(
-    Stream.tapSink(sink),
-    Stream.runCollect
-  )
+  const result = await Stream.make(1, 2, 3)
+    |> Stream.tapSink(sink)
+    |> Stream.runCollect
   const tapped = await Ref.get(seen)
   tapped // => [ 1, 2, 3 ]
   result // => [ 1, 2, 3 ]
@@ -1028,10 +1009,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.flatMap((n) => Stream.make(n, n * 2)),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.flatMap((n) => Stream.make(n, n * 2))
+    |> Stream.runCollect
   values // => [ 1, 2, 2, 4, 3, 6 ]
 }
 
@@ -1043,10 +1023,9 @@ await runPromise(program)
 **Switching to the latest stream**
 
 ```efx
-const program = Stream.make(1, 2, 3).pipe(
-  Stream.switchMap((n) => (n === 3 ? Stream.make(n) : Stream.never)),
-  Stream.runCollect
-)
+const program = Stream.make(1, 2, 3)
+  |> Stream.switchMap((n) => (n === 3 ? Stream.make(n) : Stream.never))
+  |> Stream.runCollect
 
 await runPromise(effect {
   const result = await program
@@ -1096,7 +1075,7 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.range(1, 6).pipe(Stream.drain, Stream.runCollect)
+  const result = await Stream.range(1, 6) |> Stream.drain |> Stream.runCollect
   result // => []
 }
 
@@ -1113,10 +1092,9 @@ const foreground = Stream.make(1, 2)
 const background = Stream.fromEffect(sync(() => events.push("background task")))
 
 const program = effect {
-  const values = await foreground.pipe(
-    Stream.drainFork(background),
-    Stream.runCollect
-  )
+  const values = await foreground
+    |> Stream.drainFork(background)
+    |> Stream.runCollect
   values // => [1, 2]
 }
 
@@ -1130,10 +1108,9 @@ events // => ["background task"]
 
 ```efx
 const program = effect {
-  const result = await Stream.make(1).pipe(
-    Stream.repeat(Schedule.recurs(4)),
-    Stream.runCollect
-  )
+  const result = await Stream.make(1)
+    |> Stream.repeat(Schedule.recurs(4))
+    |> Stream.runCollect
 
   result // => [ 1, 1, 1, 1, 1 ]
 }
@@ -1147,10 +1124,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.make(1, 2, 3).pipe(
-    Stream.schedule(Schedule.recurs(3)),
-    Stream.runCollect
-  )
+  const result = await Stream.make(1, 2, 3)
+    |> Stream.schedule(Schedule.recurs(3))
+    |> Stream.runCollect
 
   result // => [ 1, 2, 3 ]
 }
@@ -1164,11 +1140,10 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1).pipe(
-    Stream.concat(Stream.never),
-    Stream.timeout("1 second"),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1)
+    |> Stream.concat(Stream.never)
+    |> Stream.timeout("1 second")
+    |> Stream.runCollect
   values // => [ 1 ]
 }
 
@@ -1181,10 +1156,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make("A", "B", "C").pipe(
-    Stream.repeatElements(Schedule.recurs(1)),
-    Stream.runCollect
-  )
+  const values = await Stream.make("A", "B", "C")
+    |> Stream.repeatElements(Schedule.recurs(1))
+    |> Stream.runCollect
   values // => [ 'A', 'A', 'B', 'B', 'C', 'C' ]
 }
 
@@ -1196,10 +1170,9 @@ await runPromise(program)
 **Repeating a stream forever**
 
 ```efx
-const stream = Stream.make("A", "B").pipe(
-  Stream.forever,
-  Stream.take(5)
-)
+const stream = Stream.make("A", "B")
+  |> Stream.forever
+  |> Stream.take(5)
 
 const program = effect {
   const output = await Stream.runCollect(stream)
@@ -1215,7 +1188,7 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const stream = Stream.make([1, 2], [3, 4]).pipe(Stream.flattenIterable)
+  const stream = Stream.make([1, 2], [3, 4]) |> Stream.flattenIterable
   const values = await Stream.runCollect(stream)
   values // => [ 1, 2, 3, 4 ]
 }
@@ -1237,7 +1210,7 @@ const program = effect {
     Exit.succeed<void>(undefined)
   )
 
-  const values = await Stream.flattenTake(takes).pipe(Stream.runCollect)
+  const values = await Stream.flattenTake(takes) |> Stream.runCollect
   values // => [ 1, 2, 3 ]
 }
 
@@ -1263,10 +1236,9 @@ await runPromise(effect {
 
 ```efx
 const program = effect {
-  const values = await Stream.make(3, 4).pipe(
-    Stream.prepend([1, 2]),
-    Stream.runCollect
-  )
+  const values = await Stream.make(3, 4)
+    |> Stream.prepend([1, 2])
+    |> Stream.runCollect
 
   values // => [ 1, 2, 3, 4 ]
 }
@@ -1297,10 +1269,9 @@ await runPromise(program)
 ```efx
 const events: Array<string> = []
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.mergeEffect(sync(() => events.push("side task"))),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.mergeEffect(sync(() => events.push("side task")))
+    |> Stream.runCollect
 
   values // => [1, 2, 3]
 }
@@ -1317,15 +1288,14 @@ events // => ["side task"]
 const left = Stream.fromEffect(succeed("left"))
 const right = Stream.fromEffect(delay(succeed("right"), "10 millis"))
 
-const merged = left.pipe(
-  Stream.mergeResult(right),
-  Stream.map(
+const merged = left
+  |> Stream.mergeResult(right)
+  |> Stream.map(
     Result.match({
       onFailure: (value) => `right:${value}`,
       onSuccess: (value) => `left:${value}`
     })
   )
-)
 
 const program = effect {
   const result = await Stream.runCollect(merged)
@@ -1355,9 +1325,8 @@ await runPromise(program)
 **Merging streams while keeping right values**
 
 ```efx
-const left = Stream.make("left-1", "left-2").pipe(
-  Stream.tap(() => sync(() => undefined))
-)
+const left = Stream.make("left-1", "left-2")
+  |> Stream.tap(() => sync(() => undefined))
 const right = Stream.make(1, 2)
 
 const merged = Stream.mergeRight(left, right)
@@ -1381,9 +1350,8 @@ const streams = [
 ]
 
 const program = effect {
-  const values = await Stream.mergeAll(streams, { concurrency: 2 }).pipe(
-    Stream.runCollect
-  )
+  const values = await Stream.mergeAll(streams, { concurrency: 2 })
+    |> Stream.runCollect
   values // => [ 'B', 'A' ]
 }
 
@@ -1491,7 +1459,7 @@ const stream1 = Stream.make(1, 2, 3, 4)
 const stream2 = Stream.make("a", "b")
 
 const program = effect {
-  const result = await Stream.zipLeft(stream1, stream2).pipe(Stream.runCollect)
+  const result = await Stream.zipLeft(stream1, stream2) |> Stream.runCollect
   result // => [ 1, 2 ]
 }
 
@@ -1507,7 +1475,7 @@ const stream1 = Stream.make(1, 2)
 const stream2 = Stream.make("a", "b", "c", "d")
 
 const program = effect {
-  const result = await Stream.zipRight(stream1, stream2).pipe(Stream.runCollect)
+  const result = await Stream.zipRight(stream1, stream2) |> Stream.runCollect
   result // => [ 'a', 'b' ]
 }
 
@@ -1526,7 +1494,7 @@ const program = effect {
     [3, "c"] as const
   )
   const stream2 = Stream.make("x", "y", "z")
-  const result = await Stream.zipFlatten(stream1, stream2).pipe(Stream.runCollect)
+  const result = await Stream.zipFlatten(stream1, stream2) |> Stream.runCollect
 
   result // => [ [ 1, 'a', 'x' ], [ 2, 'b', 'y' ], [ 3, 'c', 'z' ] ]
 }
@@ -1540,10 +1508,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const indexed = await Stream.make("a", "b", "c", "d").pipe(
-    Stream.zipWithIndex,
-    Stream.runCollect
-  )
+  const indexed = await Stream.make("a", "b", "c", "d")
+    |> Stream.zipWithIndex
+    |> Stream.runCollect
   indexed // => [ [ 'a', 0 ], [ 'b', 1 ], [ 'c', 2 ], [ 'd', 3 ] ]
 }
 
@@ -1590,10 +1557,9 @@ await runPromise(program)
 import { Console, Effect, Option } from "effect"
 
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.zipWithPreviousAndNext,
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.zipWithPreviousAndNext
+    |> Stream.runCollect
   values // => [[Option.none(), 1, Option.some(2)], [Option.some(1), 2, Option.some(3)], [Option.some(2), 3, Option.none()]]
 }
 
@@ -1628,7 +1594,7 @@ const program = effect {
   const result = await Stream.zipLatest(
     Stream.make(1),
     Stream.make("a")
-  ).pipe(Stream.runCollect)
+  ) |> Stream.runCollect
 
   result // => [ [ 1, 'a' ] ]
 }
@@ -1641,14 +1607,13 @@ await runPromise(program)
 
 ```efx
 await runPromise(effect {
-  const result = await Stream.make(1, 2, 3).pipe(
-    Stream.rechunk(1),
-    Stream.zipLatestWith(
+  const result = await Stream.make(1, 2, 3)
+    |> Stream.rechunk(1)
+    |> Stream.zipLatestWith(
       Stream.make(10, 20).pipe(Stream.rechunk(1)),
       (n, m) => n + m
-    ),
-    Stream.runCollect
-  )
+    )
+    |> Stream.runCollect
 
   result // => [ 11, 12, 22, 23 ]
 })
@@ -1665,7 +1630,7 @@ const program = effect {
   const result = await Stream.raceAll(
     Stream.empty,
     Stream.make(0, 1, 2)
-  ).pipe(Stream.runCollect)
+  ) |> Stream.runCollect
   result // => [ 0, 1, 2 ]
 }
 
@@ -1696,9 +1661,8 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const stream = Stream.make(1, 2, 3, 4).pipe(
-    Stream.filter((n) => n % 2 === 0)
-  )
+  const stream = Stream.make(1, 2, 3, 4)
+    |> Stream.filter((n) => n % 2 === 0)
   const values = await Stream.runCollect(stream)
   values // => [ 2, 4 ]
 }
@@ -1711,7 +1675,7 @@ await runPromise(program)
 **Effectfully filtering stream values**
 
 ```efx
-const stream = Stream.make(1, 2, 3, 4).pipe(Stream.filterEffect((n) => succeed(n > 2)))
+const stream = Stream.make(1, 2, 3, 4) |> Stream.filterEffect((n) => succeed(n > 2))
 
 const program = effect {
   const result = await Stream.runCollect(stream)
@@ -1727,12 +1691,11 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const [passes, fails] = await Stream.make(1, 2, 3, 4).pipe(
-    Stream.partitionQueue((n) => n % 2 === 0 ? Result.succeed(n) : Result.fail(n))
-  )
+  const [passes, fails] = await Stream.make(1, 2, 3, 4)
+    |> Stream.partitionQueue((n) => n % 2 === 0 ? Result.succeed(n) : Result.fail(n))
 
-  const passValues = await Stream.fromQueue(passes).pipe(Stream.runCollect)
-  const failValues = await Stream.fromQueue(fails).pipe(Stream.runCollect)
+  const passValues = await Stream.fromQueue(passes) |> Stream.runCollect
+  const failValues = await Stream.fromQueue(fails) |> Stream.runCollect
 
   passValues // => [ 2, 4 ]
   failValues // => [ 1, 3 ]
@@ -1799,10 +1762,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.buffer({ capacity: 1 }),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.buffer({ capacity: 1 })
+    |> Stream.runCollect
   values // => [ 1, 2, 3 ]
 }
 
@@ -1815,10 +1777,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.fromArrays([1, 2], [3, 4]).pipe(
-    Stream.bufferArray({ capacity: 2 }),
-    Stream.runCollect
-  )
+  const result = await Stream.fromArrays([1, 2], [3, 4])
+    |> Stream.bufferArray({ capacity: 2 })
+    |> Stream.runCollect
   result // => [ 1, 2, 3, 4 ]
 }
 
@@ -1830,10 +1791,9 @@ await runPromise(program)
 **Catching stream causes**
 
 ```efx
-const stream = Stream.make(1, 2).pipe(
-  Stream.concat(Stream.fail("Oops!")),
-  Stream.concat(Stream.make(3, 4))
-)
+const stream = Stream.make(1, 2)
+  |> Stream.concat(Stream.fail("Oops!"))
+  |> Stream.concat(Stream.make(3, 4))
 
 const recovered = stream.pipe(
   Stream.catchCause(() => Stream.make(999))
@@ -1852,9 +1812,8 @@ await runPromise(program)
 **Recovering from a defect**
 
 ```efx
-const stream = Stream.die("boom").pipe(
-  Stream.catchDefect((defect) => Stream.succeed(`recovered: ${defect}`))
-)
+const stream = Stream.die("boom")
+  |> Stream.catchDefect((defect) => Stream.succeed(`recovered: ${defect}`))
 
 const result = runSync(Stream.runCollect(stream))
 result // => ["recovered: boom"]
@@ -1866,11 +1825,10 @@ result // => ["recovered: boom"]
 
 ```efx
 const observations: Array<boolean> = []
-const stream = Stream.make(1, 2).pipe(
-  Stream.concat(Stream.fail("boom")),
-  Stream.tapCause((cause) => sync(() => observations.push(Cause.isReason(cause)))),
-  Stream.catch(() => Stream.succeed(0))
-)
+const stream = Stream.make(1, 2)
+  |> Stream.concat(Stream.fail("boom"))
+  |> Stream.tapCause((cause) => sync(() => observations.push(Cause.isReason(cause))))
+  |> Stream.catch(() => Stream.succeed(0))
 
 const program = effect {
   const result = await Stream.runCollect(stream)
@@ -1886,10 +1844,9 @@ observations // => [false]
 **Catching stream failures**
 
 ```efx
-const stream = Stream.make(1, 2).pipe(
-  Stream.concat(Stream.fail("Oops!")),
-  Stream.catch(() => Stream.make(999))
-)
+const stream = Stream.make(1, 2)
+  |> Stream.concat(Stream.fail("Oops!"))
+  |> Stream.catch(() => Stream.make(999))
 
 const program = effect {
   const values = await Stream.runCollect(stream)
@@ -1905,11 +1862,10 @@ await runPromise(program)
 
 ```efx
 const errors: Array<string> = []
-const stream = Stream.make(1, 2).pipe(
-  Stream.concat(Stream.fail("boom")),
-  Stream.tapError((error) => sync(() => errors.push(error))),
-  Stream.catch(() => Stream.make(999))
-)
+const stream = Stream.make(1, 2)
+  |> Stream.concat(Stream.fail("boom"))
+  |> Stream.tapError((error) => sync(() => errors.push(error)))
+  |> Stream.catch(() => Stream.make(999))
 
 const program = effect {
   const values = await Stream.runCollect(stream)
@@ -1938,11 +1894,10 @@ const stream: Stream<number, NetworkError | ValidationError> = Stream.fail(
   new NetworkError({ statusCode: 504 })
 )
 
-const program = stream.pipe(
-  Stream.tapErrorTag("NetworkError", (error) => sync(() => seen.push(error.statusCode))),
-  Stream.catch(() => Stream.make(0)),
-  Stream.runCollect
-)
+const program = stream
+  |> Stream.tapErrorTag("NetworkError", (error) => sync(() => seen.push(error.statusCode)))
+  |> Stream.catch(() => Stream.make(0))
+  |> Stream.runCollect
 
 await runPromise(program) // => [ 0 ]
 seen // => [ 504 ]
@@ -1954,11 +1909,10 @@ seen // => [ 504 ]
 
 ```efx
 const defects: Array<unknown> = []
-const stream = Stream.make(1, 2).pipe(
-  Stream.concat(Stream.die("boom")),
-  Stream.tapDefect((defect) => sync(() => defects.push(defect))),
-  Stream.catchCause(() => Stream.make(3))
-)
+const stream = Stream.make(1, 2)
+  |> Stream.concat(Stream.die("boom"))
+  |> Stream.tapDefect((defect) => sync(() => defects.push(defect)))
+  |> Stream.catchCause(() => Stream.make(3))
 
 const program = effect {
   const values = await Stream.runCollect(stream)
@@ -1974,13 +1928,12 @@ defects // => [ 'boom' ]
 **Catching matching failures**
 
 ```efx
-const stream = Stream.make(1, 2).pipe(
-  Stream.concat(Stream.fail(42)),
-  Stream.catchIf(
+const stream = Stream.make(1, 2)
+  |> Stream.concat(Stream.fail(42))
+  |> Stream.catchIf(
     (error): error is 42 => error === 42,
     () => Stream.make(999)
   )
-)
 
 const program = effect {
   const values = await Stream.runCollect(stream)
@@ -2029,13 +1982,12 @@ class Unauthorized {
 const stream = Stream.fail(new NotFound("profile"))
 
 const program = effect {
-  const result = await stream.pipe(
-    Stream.catchTags({
+  const result = await stream
+    |> Stream.catchTags({
       NotFound: () => Stream.succeed("fallback"),
       Unauthorized: () => Stream.succeed("login")
-    }),
-    Stream.runCollect
-  )
+    })
+    |> Stream.runCollect
   result // => [ 'fallback' ]
 }
 
@@ -2064,12 +2016,11 @@ const stream = Stream.fail(
 )
 
 const program = effect {
-  const values = await stream.pipe(
-    Stream.catchReason("AiError", "RateLimitError", (reason) =>
+  const values = await stream
+    |> Stream.catchReason("AiError", "RateLimitError", (reason) =>
       Stream.succeed(`retry: ${reason.retryAfter}`)
-    ),
-    Stream.runCollect
-  )
+    )
+    |> Stream.runCollect
   values // => [ 'retry: 60' ]
 }
 
@@ -2098,13 +2049,12 @@ const stream = Stream.fail(
 )
 
 const program = effect {
-  const values = await stream.pipe(
-    Stream.catchReasons("AiError", {
+  const values = await stream
+    |> Stream.catchReasons("AiError", {
       RateLimitError: (reason) => Stream.succeed(`retry: ${reason.retryAfter}`),
       QuotaExceededError: (reason) => Stream.succeed(`quota: ${reason.limit}`)
-    }),
-    Stream.runCollect
-  )
+    })
+    |> Stream.runCollect
   values // => [ 'retry: 60' ]
 }
 
@@ -2134,7 +2084,7 @@ const stream: Stream<string, AiError> = Stream.fail(
 
 // Before: Stream<string, AiError>
 // After:  Stream<string, RateLimitError | QuotaExceededError>
-const unwrapped = stream.pipe(Stream.unwrapReason("AiError"))
+const unwrapped = stream |> Stream.unwrapReason("AiError")
 
 const program = effect {
   const error = await flip(Stream.runCollect(unwrapped))
@@ -2150,11 +2100,10 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.fail("bad").pipe(
-    Stream.mapError((error) => `mapped: ${error}`),
-    Stream.catch((error) => Stream.make(`recovered from ${error}`)),
-    Stream.runCollect
-  )
+  const result = await Stream.fail("bad")
+    |> Stream.mapError((error) => `mapped: ${error}`)
+    |> Stream.catch((error) => Stream.make(`recovered from ${error}`))
+    |> Stream.runCollect
   result // => [ 'recovered from mapped: bad' ]
 }
 
@@ -2187,10 +2136,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.empty.pipe(
-    Stream.orElseIfEmpty(() => Stream.make(1, 2)),
-    Stream.runCollect
-  )
+  const values = await Stream.empty
+    |> Stream.orElseIfEmpty(() => Stream.make(1, 2))
+    |> Stream.runCollect
   values // => [ 1, 2 ]
 }
 
@@ -2203,9 +2151,8 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const stream = Stream.fail("NetworkError").pipe(
-    Stream.orElseSucceed((error) => `Recovered: ${error}`)
-  )
+  const stream = Stream.fail("NetworkError")
+    |> Stream.orElseSucceed((error) => `Recovered: ${error}`)
 
   const values = await Stream.runCollect(stream)
   values // => [ 'Recovered: NetworkError' ]
@@ -2220,10 +2167,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.orDie,
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.orDie
+    |> Stream.runCollect
 
   values // => [ 1, 2, 3 ]
 }
@@ -2237,11 +2183,10 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.concat(Stream.fail("boom")),
-    Stream.ignore,
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.concat(Stream.fail("boom"))
+    |> Stream.ignore
+    |> Stream.runCollect
   values // => [ 1, 2, 3 ]
 }
 
@@ -2252,10 +2197,9 @@ await runPromise(program)
 
 ```efx
 await runPromise(effect {
-  const values = await Stream.fail("boom").pipe(
-    Stream.ignore({ log: false }),
-    Stream.runCollect
-  )
+  const values = await Stream.fail("boom")
+    |> Stream.ignore({ log: false })
+    |> Stream.runCollect
   values // => []
 })
 
@@ -2267,11 +2211,10 @@ await runPromise(effect {
 
 ```efx
 await runPromise(effect {
-  const values = await Stream.make(1, 2).pipe(
-    Stream.concat(Stream.die("boom")),
-    Stream.ignoreCause({ log: false }),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2)
+    |> Stream.concat(Stream.die("boom"))
+    |> Stream.ignoreCause({ log: false })
+    |> Stream.runCollect
   values // => [1, 2]
 })
 
@@ -2283,12 +2226,11 @@ await runPromise(effect {
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1).pipe(
-    Stream.concat(Stream.fail("boom")),
-    Stream.retry(Schedule.recurs(1)),
-    Stream.take(2),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1)
+    |> Stream.concat(Stream.fail("boom"))
+    |> Stream.retry(Schedule.recurs(1))
+    |> Stream.take(2)
+    |> Stream.runCollect
 
   values // => [ 1, 1 ]
 }
@@ -2318,7 +2260,7 @@ const plan = ExecutionPlan.make(
 const stream = Stream.unwrap(map(Service, (_) => _.stream))
 
 const program = effect {
-  const items = await stream.pipe(Stream.withExecutionPlan(plan), Stream.runCollect)
+  const items = await stream |> Stream.withExecutionPlan(plan) |> Stream.runCollect
   items // => [ 1, 2, 3 ]
 }
 
@@ -2331,10 +2273,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3, 4, 5).pipe(
-    Stream.take(3),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3, 4, 5)
+    |> Stream.take(3)
+    |> Stream.runCollect
   values // => [ 1, 2, 3 ]
 }
 
@@ -2349,11 +2290,10 @@ await runPromise(program)
 const program = Stream.make(
   new Uint8Array([1, 2]),
   new Uint8Array([3, 4, 5])
-).pipe(
-  Stream.limitBytes(ByteSize.bytes(4), () => Stream.empty),
-  Stream.runCollect,
-  map((chunks) => chunks.map((chunk) => [...chunk]))
 )
+  |> Stream.limitBytes(ByteSize.bytes(4), () => Stream.empty)
+  |> Stream.runCollect
+  |> map((chunks) => chunks.map((chunk) => [...chunk]))
 
 await runPromise(program) // => [[1, 2]]
 ```
@@ -2364,10 +2304,9 @@ await runPromise(program) // => [[1, 2]]
 
 ```efx
 const program = effect {
-  const values = await Stream.range(1, 6).pipe(
-    Stream.takeRight(3),
-    Stream.runCollect
-  )
+  const values = await Stream.range(1, 6)
+    |> Stream.takeRight(3)
+    |> Stream.runCollect
   values // => [ 4, 5, 6 ]
 }
 
@@ -2382,16 +2321,14 @@ await runPromise(program)
 const stream = Stream.range(1, 5)
 
 const program = effect {
-  const inclusive = await stream.pipe(
-    Stream.takeUntil((n) => n % 3 === 0),
-    Stream.runCollect
-  )
+  const inclusive = await stream
+    |> Stream.takeUntil((n) => n % 3 === 0)
+    |> Stream.runCollect
   inclusive // => [ 1, 2, 3 ]
 
-  const exclusive = await stream.pipe(
-    Stream.takeUntil((n) => n % 3 === 0, { excludeLast: true }),
-    Stream.runCollect
-  )
+  const exclusive = await stream
+    |> Stream.takeUntil((n) => n % 3 === 0, { excludeLast: true })
+    |> Stream.runCollect
   exclusive // => [ 1, 2 ]
 }
 await runPromise(program)
@@ -2403,10 +2340,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.range(1, 5).pipe(
-    Stream.takeUntilEffect((n) => succeed(n % 3 === 0)),
-    Stream.runCollect
-  )
+  const result = await Stream.range(1, 5)
+    |> Stream.takeUntilEffect((n) => succeed(n % 3 === 0))
+    |> Stream.runCollect
   result // => [ 1, 2, 3 ]
 }
 
@@ -2418,9 +2354,8 @@ await runPromise(program)
 **Taking while a predicate holds**
 
 ```efx
-const stream = Stream.range(1, 5).pipe(
-  Stream.takeWhile((n) => n % 3 !== 0)
-)
+const stream = Stream.range(1, 5)
+  |> Stream.takeWhile((n) => n % 3 !== 0)
 
 const program = effect {
   const result = await Stream.runCollect(stream)
@@ -2436,10 +2371,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.range(1, 5).pipe(
-    Stream.takeWhileEffect((n) => succeed(n % 3 !== 0)),
-    Stream.runCollect
-  )
+  const result = await Stream.range(1, 5)
+    |> Stream.takeWhileEffect((n) => succeed(n % 3 !== 0))
+    |> Stream.runCollect
   result // => [ 1, 2 ]
 }
 
@@ -2482,10 +2416,9 @@ await runPromise(effect {
 
 ```efx
 const program = effect {
-  const result = await Stream.range(1, 5).pipe(
-    Stream.dropUntilEffect((n) => succeed(n % 3 === 0)),
-    Stream.runCollect
-  )
+  const result = await Stream.range(1, 5)
+    |> Stream.dropUntilEffect((n) => succeed(n % 3 === 0))
+    |> Stream.runCollect
   result // => [ 4, 5 ]
 }
 
@@ -2498,10 +2431,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3, 4, 5).pipe(
-    Stream.dropWhile((n) => n < 3),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3, 4, 5)
+    |> Stream.dropWhile((n) => n < 3)
+    |> Stream.runCollect
   values // => [ 3, 4, 5 ]
 }
 
@@ -2514,10 +2446,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.make(1, 2, 3, 4, 5).pipe(
-    Stream.dropWhileEffect((n) => succeed(n < 3)),
-    Stream.runCollect
-  )
+  const result = await Stream.make(1, 2, 3, 4, 5)
+    |> Stream.dropWhileEffect((n) => succeed(n < 3))
+    |> Stream.runCollect
   result // => [ 3, 4, 5 ]
 }
 
@@ -2530,10 +2461,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.make(1, 2, 3, 4, 5).pipe(
-    Stream.dropRight(2),
-    Stream.runCollect
-  )
+  const result = await Stream.make(1, 2, 3, 4, 5)
+    |> Stream.dropRight(2)
+    |> Stream.runCollect
   result // => [ 1, 2, 3 ]
 }
 
@@ -2546,11 +2476,10 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const chunks = await Stream.make(1, 2, 3, 4).pipe(
-    Stream.rechunk(2),
-    Stream.chunks,
-    Stream.runCollect
-  )
+  const chunks = await Stream.make(1, 2, 3, 4)
+    |> Stream.rechunk(2)
+    |> Stream.chunks
+    |> Stream.runCollect
   chunks // => [ [ 1, 2 ], [ 3, 4 ] ]
 }
 
@@ -2563,11 +2492,10 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.make(1, 2, 3, 4, 5).pipe(
-    Stream.rechunk(2),
-    Stream.chunks,
-    Stream.runCollect
-  )
+  const result = await Stream.make(1, 2, 3, 4, 5)
+    |> Stream.rechunk(2)
+    |> Stream.chunks
+    |> Stream.runCollect
   result // => [ [ 1, 2 ], [ 3, 4 ], [ 5 ] ]
 }
 
@@ -2582,9 +2510,11 @@ await runPromise(program)
 import { Effect, pipe } from "effect"
 
 await runPromise(effect {
-  const result = await Stream.make(1, 2, 3, 4, 5)
-    |> Stream.sliding(2)
-    |> Stream.runCollect
+  const result = await pipe(
+    Stream.make(1, 2, 3, 4, 5),
+    Stream.sliding(2),
+    Stream.runCollect
+  )
   result // => [ [ 1, 2 ], [ 2, 3 ], [ 3, 4 ], [ 4, 5 ] ]
 })
 ```
@@ -2595,10 +2525,9 @@ await runPromise(effect {
 
 ```efx
 const program = effect {
-  const chunks = await Stream.make(1, 2, 3, 4, 5).pipe(
-    Stream.slidingSize(3, 2),
-    Stream.runCollect
-  )
+  const chunks = await Stream.make(1, 2, 3, 4, 5)
+    |> Stream.slidingSize(3, 2)
+    |> Stream.runCollect
   chunks // => [ [ 1, 2, 3 ], [ 3, 4, 5 ] ]
 }
 
@@ -2611,10 +2540,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.range(0, 9).pipe(
-    Stream.split((n) => n % 4 === 0),
-    Stream.runCollect
-  )
+  const result = await Stream.range(0, 9)
+    |> Stream.split((n) => n % 4 === 0)
+    |> Stream.runCollect
   result // => [ [ 1, 2, 3 ], [ 5, 6, 7 ], [ 9 ] ]
 }
 
@@ -2649,8 +2577,8 @@ await runPromise(program)
 **Combining stream chunks with state**
 
 ```efx
-const stream = Stream.make(1, 2).pipe(
-  Stream.combineArray(
+const stream = Stream.make(1, 2)
+  |> Stream.combineArray(
     Stream.make(10, 20),
     () => true,
     (useLeft, pullLeft, pullRight) =>
@@ -2659,7 +2587,6 @@ const stream = Stream.make(1, 2).pipe(
         return [array, !useLeft] as const
       }
   )
-)
 
 const program = effect {
   const values = await Stream.runCollect(stream)
@@ -2677,13 +2604,12 @@ await runPromise(program)
 import { Console } from "effect"
 
 const program = effect {
-  const totals = await Stream.make(0, 1, 2, 3, 4, 5, 6).pipe(
-    Stream.mapAccum(() => 0, (total, n) => {
+  const totals = await Stream.make(0, 1, 2, 3, 4, 5, 6)
+    |> Stream.mapAccum(() => 0, (total, n) => {
       const next = total + n
       return [next, [next]] as const
-    }),
-    Stream.runCollect
-  )
+    })
+    |> Stream.runCollect
 
   totals // => [0, 1, 3, 6, 10, 15, 21]
 }
@@ -2697,14 +2623,13 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const output = await Stream.make(1, 2, 3, 4, 5, 6).pipe(
-    Stream.rechunk(2),
-    Stream.mapAccumArray(() => 0, (sum: number, chunk) => {
+  const output = await Stream.make(1, 2, 3, 4, 5, 6)
+    |> Stream.rechunk(2)
+    |> Stream.mapAccumArray(() => 0, (sum: number, chunk) => {
       const next = chunk.reduce((acc, n) => acc + n, sum)
       return [next, [next]]
-    }),
-    Stream.runCollect
-  )
+    })
+    |> Stream.runCollect
   output // => [ 3, 10, 21 ]
 }
 
@@ -2717,12 +2642,11 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.make(1, 1, 1).pipe(
-    Stream.mapAccumEffect(() => 0, (total, n) =>
+  const result = await Stream.make(1, 1, 1)
+    |> Stream.mapAccumEffect(() => 0, (total, n) =>
       succeed([total + n, [total + n]])
-    ),
-    Stream.runCollect
-  )
+    )
+    |> Stream.runCollect
 
   result // => [ 1, 2, 3 ]
 }
@@ -2736,16 +2660,15 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const totals = await Stream.make(1, 2, 3, 4).pipe(
-    Stream.rechunk(2),
-    Stream.mapAccumArrayEffect(() => 0, (total, chunk) =>
+  const totals = await Stream.make(1, 2, 3, 4)
+    |> Stream.rechunk(2)
+    |> Stream.mapAccumArrayEffect(() => 0, (total, chunk) =>
       effect {
         const next = chunk.reduce((sum, value) => sum + value, total)
         return [next, [next]] as const
       }
-    ),
-    Stream.runCollect
-  )
+    )
+    |> Stream.runCollect
   totals // => [ 3, 10 ]
 }
 
@@ -2758,10 +2681,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.scan(() => 0, (acc, n) => acc + n),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.scan(() => 0, (acc, n) => acc + n)
+    |> Stream.runCollect
   values // => [ 0, 1, 3, 6 ]
 }
 
@@ -2774,10 +2696,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const states = await Stream.make(1, 2, 3).pipe(
-    Stream.scanEffect(() => 0, (sum, n) => succeed(sum + n)),
-    Stream.runCollect
-  )
+  const states = await Stream.make(1, 2, 3)
+    |> Stream.scanEffect(() => 0, (sum, n) => succeed(sum + n))
+    |> Stream.runCollect
   states // => [ 0, 1, 3, 6 ]
 }
 await runPromise(program)
@@ -2788,7 +2709,7 @@ await runPromise(program)
 **Debouncing stream elements**
 
 ```efx
-const stream = Stream.make(1, 2, 3).pipe(Stream.debounce(Duration.zero))
+const stream = Stream.make(1, 2, 3) |> Stream.debounce(Duration.zero)
 
 const program = effect {
   const values = await Stream.runCollect(stream)
@@ -2802,15 +2723,14 @@ await runPromise(program)
 **Throttling stream chunks effectfully**
 
 ```efx
-const stream = Stream.range(0, 5).pipe(
-  Stream.rechunk(1),
-  Stream.throttleEffect({
+const stream = Stream.range(0, 5)
+  |> Stream.rechunk(1)
+  |> Stream.throttleEffect({
     cost: (arr) => succeed(arr.length),
     units: 1,
     duration: 0,
     strategy: "shape"
   })
-)
 
 await runPromise(effect {
   const result = await Stream.runCollect(stream)
@@ -2823,15 +2743,14 @@ await runPromise(effect {
 **Throttling stream chunks**
 
 ```efx
-const stream = Stream.range(0, 5).pipe(
-  Stream.rechunk(1),
-  Stream.throttle({
+const stream = Stream.range(0, 5)
+  |> Stream.rechunk(1)
+  |> Stream.throttle({
     cost: (arr) => arr.length,
     units: 1,
     duration: 0,
     strategy: "shape"
   })
-)
 
 const program = effect {
   const values = await Stream.runCollect(stream)
@@ -2846,10 +2765,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const grouped = await Stream.range(1, 8).pipe(
-    Stream.grouped(3),
-    Stream.runCollect
-  )
+  const grouped = await Stream.range(1, 8)
+    |> Stream.grouped(3)
+    |> Stream.runCollect
   grouped // => [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8 ] ]
 }
 
@@ -2862,10 +2780,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.groupedWithin(2, "5 seconds"),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.groupedWithin(2, "5 seconds")
+    |> Stream.runCollect
   values // => [ [ 1, 2 ], [ 3 ] ]
 }
 
@@ -2878,18 +2795,17 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const grouped = await Stream.make(1, 2, 3, 4, 5).pipe(
-    Stream.groupBy((n) =>
+  const grouped = await Stream.make(1, 2, 3, 4, 5)
+    |> Stream.groupBy((n) =>
       succeed([n % 2 === 0 ? "even" : "odd", n] as const)
-    ),
-    Stream.mapEffect(
+    )
+    |> Stream.mapEffect(
       effect ([key, stream]) => {
         return [key, await Stream.runCollect(stream)] as const
       },
       { concurrency: "unbounded" }
-    ),
-    Stream.runCollect
-  )
+    )
+    |> Stream.runCollect
 
   grouped // => [ [ 'odd', [ 1, 3, 5 ] ], [ 'even', [ 2, 4 ] ] ]
 }
@@ -2903,17 +2819,15 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const grouped = await Stream.make(1, 2, 3, 4, 5).pipe(
-    Stream.groupByKey((n) => n % 2 === 0 ? "even" : "odd"),
-    Stream.mapEffect(
+  const grouped = await Stream.make(1, 2, 3, 4, 5)
+    |> Stream.groupByKey((n) => n % 2 === 0 ? "even" : "odd")
+    |> Stream.mapEffect(
       ([key, stream]) =>
-        Stream.runCollect(stream).pipe(
-          map((values) => [key, values] as const)
-        ),
+        Stream.runCollect(stream)
+          |> map((values) => [key, values] as const),
       { concurrency: "unbounded" }
-    ),
-    Stream.runCollect
-  )
+    )
+    |> Stream.runCollect
   grouped // => [ [ 'odd', [ 1, 3, 5 ] ], [ 'even', [ 2, 4 ] ] ]
 }
 
@@ -2926,10 +2840,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const result = await Stream.make(1, 2, 3, 4).pipe(
-    Stream.transduce(Sink.take(2)),
-    Stream.runCollect
-  )
+  const result = await Stream.make(1, 2, 3, 4)
+    |> Stream.transduce(Sink.take(2))
+    |> Stream.runCollect
 
   result // => [ [ 1, 2 ], [ 3, 4 ], [] ]
 }
@@ -2978,9 +2891,8 @@ await runPromise(effect {
 ```efx
 const program = scoped(
   effect {
-    const [left, right] = await Stream.make(1, 2, 3).pipe(
-      Stream.broadcastN({ n: 2, capacity: 8 })
-    )
+    const [left, right] = await Stream.make(1, 2, 3)
+      |> Stream.broadcastN({ n: 2, capacity: 8 })
 
     const values = await [
       Stream.runCollect(left),
@@ -3029,14 +2941,13 @@ const result = await runPromise(
       const firstReady = await Deferred.make<void>()
       const secondReady = await Deferred.make<void>()
       const acquisitions = await Ref.make(0)
-      const source = Stream.fromEffect(Ref.update(acquisitions, (n) => n + 1)).pipe(
-        Stream.drain,
-        Stream.concat(Stream.make(0)),
-        Stream.concat(
+      const source = Stream.fromEffect(Ref.update(acquisitions, (n) => n + 1))
+        |> Stream.drain
+        |> Stream.concat(Stream.make(0))
+        |> Stream.concat(
           Stream.fromEffect(all([Deferred.await(firstReady), Deferred.await(secondReady)])).pipe(Stream.drain)
-        ),
-        Stream.concat(Stream.make(1, 2, 3))
-      )
+        )
+        |> Stream.concat(Stream.make(1, 2, 3))
       const shared = await Stream.share(source, { capacity: 16, replay: 1 })
       const consume = (ready: Deferred<void>) =>
         shared.pipe(
@@ -3062,16 +2973,14 @@ import { Array } from "effect"
 
 type NumberChunk = readonly [number, ...Array<number>]
 
-const doubleChunks = Channel.identity<NumberChunk, never, unknown>().pipe(
-  Channel.map((chunk) => Array.map(chunk, (n) => n * 2))
-)
+const doubleChunks = Channel.identity<NumberChunk, never, unknown>()
+  |> Channel.map((chunk) => Array.map(chunk, (n) => n * 2))
 
 const program = effect {
-  const result = await Stream.fromArray([1, 2, 3]).pipe(
-    Stream.rechunk(2),
-    Stream.pipeThroughChannel(doubleChunks),
-    Stream.runCollect
-  )
+  const result = await Stream.fromArray([1, 2, 3])
+    |> Stream.rechunk(2)
+    |> Stream.pipeThroughChannel(doubleChunks)
+    |> Stream.runCollect
   result // => [ 2, 4, 6 ]
 }
 
@@ -3087,16 +2996,14 @@ import { Array } from "effect"
 
 type NumberChunk = readonly [number, ...Array<number>]
 
-const stringifyChunks = Channel.identity<NumberChunk, "StreamError", unknown>().pipe(
-  Channel.map((chunk) => Array.map(chunk, String))
-)
+const stringifyChunks = Channel.identity<NumberChunk, "StreamError", unknown>()
+  |> Channel.map((chunk) => Array.map(chunk, String))
 
 await runPromise(effect {
-  const result = await Stream.make(1, 2, 3).pipe(
-    Stream.rechunk(2),
-    Stream.pipeThroughChannelOrFail(stringifyChunks),
-    Stream.runCollect
-  )
+  const result = await Stream.make(1, 2, 3)
+    |> Stream.rechunk(2)
+    |> Stream.pipeThroughChannelOrFail(stringifyChunks)
+    |> Stream.runCollect
 
   result // => ["1", "2", "3"]
 })
@@ -3108,10 +3015,9 @@ await runPromise(effect {
 
 ```efx
 const program = effect {
-  const leftovers = await Stream.make(1, 2, 3, 4).pipe(
-    Stream.pipeThrough(Sink.take(2)),
-    Stream.runCollect
-  )
+  const leftovers = await Stream.make(1, 2, 3, 4)
+    |> Stream.pipeThrough(Sink.take(2))
+    |> Stream.runCollect
 
   leftovers // => [ 3, 4 ]
 }
@@ -3127,7 +3033,7 @@ await runPromise(program)
 const stream = Stream.make(1, 2, 3)
 
 const program = effect {
-  const collected = await stream.pipe(Stream.collect, Stream.runCollect)
+  const collected = await stream |> Stream.collect |> Stream.runCollect
   collected[0] // => [ 1, 2, 3 ]
 }
 
@@ -3158,10 +3064,9 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const values = await Stream.fromIterable([1, 1, 2, 2, 3]).pipe(
-    Stream.changes,
-    Stream.runCollect
-  )
+  const values = await Stream.fromIterable([1, 1, 2, 2, 3])
+    |> Stream.changes
+    |> Stream.runCollect
 
   values // => [ 1, 2, 3 ]
 }
@@ -3174,9 +3079,8 @@ await runPromise(program)
 **Emitting values that changed by equivalence**
 
 ```efx
-const stream = Stream.make("A", "a", "B", "b", "b").pipe(
-  Stream.changesWith((left, right) => left.toLowerCase() === right.toLowerCase())
-)
+const stream = Stream.make("A", "a", "B", "b", "b")
+  |> Stream.changesWith((left, right) => left.toLowerCase() === right.toLowerCase())
 
 await runPromise(
   effect {
@@ -3192,9 +3096,8 @@ await runPromise(
 
 ```efx
 const program = effect {
-  const stream = Stream.make(1, 1, 2, 2, 3, 3).pipe(
-    Stream.changesWithEffect((a, b) => succeed(a === b))
-  )
+  const stream = Stream.make(1, 1, 2, 2, 3, 3)
+    |> Stream.changesWithEffect((a, b) => succeed(a === b))
   const result = await Stream.runCollect(stream)
   result // => [ 1, 2, 3 ]
 }
@@ -3214,10 +3117,9 @@ const stream = Stream.make(
 )
 
 const program = effect {
-  const decoded = await stream.pipe(
-    Stream.decodeText,
-    Stream.runCollect
-  )
+  const decoded = await stream
+    |> Stream.decodeText
+    |> Stream.runCollect
   decoded // => [ 'Hello', ' World' ]
 }
 
@@ -3261,7 +3163,7 @@ await runPromise(effect {
 import { Console } from "effect"
 
 const program = effect {
-  const stream = Stream.make(1, 2, 3, 4).pipe(Stream.intersperse(0))
+  const stream = Stream.make(1, 2, 3, 4) |> Stream.intersperse(0)
   const result = await Stream.runCollect(stream)
   result // => [1, 0, 2, 0, 3, 0, 4]
 }
@@ -3276,9 +3178,8 @@ await runPromise(program)
 ```efx
 import { Console } from "effect"
 
-const stream = Stream.make("a", "b", "c").pipe(
-  Stream.intersperseAffixes({ start: "[", middle: ",", end: "]" })
-)
+const stream = Stream.make("a", "b", "c")
+  |> Stream.intersperseAffixes({ start: "[", middle: ",", end: "]" })
 
 const program = effect {
   const result = await Stream.runCollect(stream)
@@ -3333,14 +3234,13 @@ await runPromise(program)
 ```efx
 const program = effect {
   const interrupt = await Deferred.make<void>()
-  const stream = Stream.make(1, 2, 3).pipe(
-    Stream.tap((value) =>
+  const stream = Stream.make(1, 2, 3)
+    |> Stream.tap((value) =>
       value === 2
         ? Deferred.succeed(interrupt, void 0)
         : Effect.void
-    ),
-    Stream.interruptWhen(Deferred.await(interrupt))
-  )
+    )
+    |> Stream.interruptWhen(Deferred.await(interrupt))
 
   const result = await Stream.runCollect(stream)
   result // => [ 1 ]
@@ -3356,11 +3256,10 @@ await runPromise(program)
 ```efx
 const program = effect {
   const halt = await Deferred.make<void>()
-  const values = await Stream.fromArray([1, 2, 3]).pipe(
-    Stream.tap((value) => value === 2 ? Deferred.succeed(halt, void 0) : Effect.void),
-    Stream.haltWhen(Deferred.await(halt)),
-    Stream.runCollect
-  )
+  const values = await Stream.fromArray([1, 2, 3])
+    |> Stream.tap((value) => value === 2 ? Deferred.succeed(halt, void 0) : Effect.void)
+    |> Stream.haltWhen(Deferred.await(halt))
+    |> Stream.runCollect
   values // => [ 1, 2 ]
 }
 
@@ -3373,13 +3272,12 @@ await runPromise(program)
 
 ```efx
 const exits: Array<string> = []
-const stream = Stream.make(1, 2, 3).pipe(
-  Stream.onExit((exit) =>
+const stream = Stream.make(1, 2, 3)
+  |> Stream.onExit((exit) =>
     Exit.isSuccess(exit)
       ? sync(() => exits.push("success"))
       : sync(() => exits.push("failure"))
   )
-)
 
 await runPromise(effect {
   await Stream.runCollect(stream)
@@ -3394,10 +3292,9 @@ exits // => ["success"]
 ```efx
 const errors: Array<string> = []
 const program = effect {
-  const stream = Stream.make(1, 2, 3).pipe(
-    Stream.concat(Stream.fail("boom")),
-    Stream.onError((cause) => sync(() => errors.push(String(Cause.squash(cause)))))
-  )
+  const stream = Stream.make(1, 2, 3)
+    |> Stream.concat(Stream.fail("boom"))
+    |> Stream.onError((cause) => sync(() => errors.push(String(Cause.squash(cause)))))
 
   await Stream.runCollect(stream)
 }
@@ -3413,9 +3310,8 @@ errors // => ["boom"]
 ```efx
 const events: Array<string> = []
 const program = effect {
-  const stream = Stream.fromArray([1, 2, 3]).pipe(
-    Stream.onStart(sync(() => events.push("started")))
-  )
+  const stream = Stream.fromArray([1, 2, 3])
+    |> Stream.onStart(sync(() => events.push("started")))
 
   const values = await Stream.runCollect(stream)
   values // => [1, 2, 3]
@@ -3432,10 +3328,9 @@ events // => ["started"]
 ```efx
 const first: Array<number> = []
 await runPromise(effect {
-  await Stream.fromArray([1, 2, 3]).pipe(
-    Stream.onFirst((value) => sync(() => first.push(value))),
-    Stream.runDrain
-  )
+  await Stream.fromArray([1, 2, 3])
+    |> Stream.onFirst((value) => sync(() => first.push(value)))
+    |> Stream.runDrain
 })
 first // => [1]
 ```
@@ -3447,10 +3342,9 @@ first // => [1]
 ```efx
 const events: Array<string> = []
 const program = effect {
-  const values = await Stream.make(1, 2, 3).pipe(
-    Stream.onEnd(sync(() => events.push("ended"))),
-    Stream.runCollect
-  )
+  const values = await Stream.make(1, 2, 3)
+    |> Stream.onEnd(sync(() => events.push("ended")))
+    |> Stream.runCollect
   values // => [1, 2, 3]
 }
 
@@ -3464,9 +3358,8 @@ events // => ["ended"]
 
 ```efx
 const events: Array<string> = []
-const stream = Stream.fromArray([1, 2]).pipe(
-  Stream.ensuring(sync(() => events.push("cleanup")))
-)
+const stream = Stream.fromArray([1, 2])
+  |> Stream.ensuring(sync(() => events.push("cleanup")))
 
 const program = effect {
   const collected = await Stream.runCollect(stream)
@@ -3484,7 +3377,7 @@ events // => ["cleanup"]
 ```efx
 import { Console } from "effect"
 
-service Env { readonly name: string }
+service Env { name: string }
 
 const layer = Layer.succeed(Env)({ name: "Ada" })
 
@@ -3495,7 +3388,7 @@ const stream = Stream.fromEffect(
   }
 )
 
-const withEnv = stream.pipe(Stream.provide(layer))
+const withEnv = stream |> Stream.provide(layer)
 
 await runPromise(Stream.runCollect(withEnv)) // => ["Hello, Ada"]
 ```
@@ -3505,12 +3398,11 @@ await runPromise(Stream.runCollect(withEnv)) // => ["Hello, Ada"]
 **Providing multiple services to the stream using a context**
 
 ```efx
-service Config { readonly prefix: string }
-service Greeter { greet: (name: string) => string }
+service Config { prefix: string }
+class Greeter extends Context.Service<Greeter, { greet: (name: string) => string }>()("Greeter") {}
 
-const context = Context.make(Config, { prefix: "Hello" }).pipe(
-  Context.add(Greeter, { greet: (name: string) => `${name}!` })
-)
+const context = Context.make(Config, { prefix: "Hello" })
+  |> Context.add(Greeter, { greet: (name: string) => `${name}!` })
 
 const stream = Stream.fromEffect(
   effect {
@@ -3533,9 +3425,9 @@ await runPromise(program)
 **Providing a stream service**
 
 ```efx
-service Greeter {
+class Greeter extends Context.Service<Greeter, {
   greet: (name: string) => string
-}
+}>()("Greeter") {}
 
 const stream = Stream.fromEffect(
   service(Greeter).pipe(
@@ -3562,7 +3454,7 @@ await runPromise(program)
 **Providing a stream service effectfully**
 
 ```efx
-service ApiConfig { readonly baseUrl: string }
+service ApiConfig { baseUrl: string }
 
 const stream = Stream.fromEffect(
   effect {
@@ -3572,14 +3464,13 @@ const stream = Stream.fromEffect(
 )
 
 const events: Array<string> = []
-const withConfig = stream.pipe(
-  Stream.provideServiceEffect(
+const withConfig = stream
+  |> Stream.provideServiceEffect(
     ApiConfig,
     succeed({ baseUrl: "https://example.com" }).pipe(
       tap(() => sync(() => events.push("loading")))
     )
   )
-)
 
 await runPromise(Stream.runCollect(withConfig)) // => ["https://example.com"]
 events // => ["loading"]
@@ -3590,8 +3481,8 @@ events // => ["loading"]
 **Updating the stream context**
 
 ```efx
-service Logger { prefix: string }
-service Config { name: string }
+class Logger extends Context.Service<Logger, { prefix: string }>()("Logger") {}
+class Config extends Context.Service<Config, { name: string }>()("Config") {}
 
 const stream = Stream.fromEffect(
   effect {
@@ -3601,11 +3492,10 @@ const stream = Stream.fromEffect(
   }
 )
 
-const updated = stream.pipe(
-  Stream.updateContext((context: Context<Logger>) =>
+const updated = stream
+  |> Stream.updateContext((context: Context<Logger>) =>
     Context.add(context, Config, { name: "World" })
   )
-)
 
 const program = effect {
   const values = await Stream.runCollect(updated)
@@ -3622,11 +3512,10 @@ await runPromise(
 **Updating a stream service**
 
 ```efx
-service Counter { count: number }
+class Counter extends Context.Service<Counter, { count: number }>()("Counter") {}
 
-const stream = Stream.fromEffect(service(Counter)).pipe(
-  Stream.updateService(Counter, (counter) => ({ count: counter.count + 1 }))
-)
+const stream = Stream.fromEffect(service(Counter))
+  |> Stream.updateService(Counter, (counter) => ({ count: counter.count + 1 }))
 
 const program = effect {
   const counters = await Stream.runCollect(stream)
@@ -3641,7 +3530,7 @@ await runPromise(provideService(program, Counter, { count: 0 }))
 **Wrapping a stream in a span**
 
 ```efx
-const stream = Stream.fromArray([1, 2, 3]).pipe(Stream.withSpan("numbers"))
+const stream = Stream.fromArray([1, 2, 3]) |> Stream.withSpan("numbers")
 
 await runPromise(
   effect {
@@ -3658,9 +3547,11 @@ await runPromise(
 ```efx
 import { Effect, pipe } from "effect"
 
-const program = Stream.Do
-  |> Stream.bind("value", () => Stream.fromArray([1, 2]))
-  |> Stream.let("next", ({ value }) => value + 1)
+const program = pipe(
+  Stream.Do,
+  Stream.bind("value", () => Stream.fromArray([1, 2])),
+  Stream.let("next", ({ value }) => value + 1)
+)
 
 const effect = effect {
   const collected = await Stream.runCollect(program)
@@ -3675,10 +3566,9 @@ await runPromise(effect)
 **Adding a computed field**
 
 ```efx
-const stream = Stream.Do.pipe(
-  Stream.let("x", () => 2),
-  Stream.let("y", ({ x }) => x * 3)
-)
+const stream = Stream.Do
+  |> Stream.let("x", () => 2)
+  |> Stream.let("y", ({ x }) => x * 3)
 
 const program = effect {
   const records = await Stream.runCollect(stream)
@@ -3693,10 +3583,9 @@ await runPromise(program)
 **Binding a stream value**
 
 ```efx
-const program = Stream.Do.pipe(
-  Stream.bind("a", () => Stream.make(1, 2)),
-  Stream.bind("b", ({ a }) => Stream.succeed(a + 1))
-)
+const program = Stream.Do
+  |> Stream.bind("a", () => Stream.make(1, 2))
+  |> Stream.bind("b", ({ a }) => Stream.succeed(a + 1))
 
 const result = Stream.runCollect(program)
 
@@ -3708,10 +3597,9 @@ await runPromise(result) // => [{ a: 1, b: 2 }, { a: 2, b: 3 }]
 **Binding an effect value**
 
 ```efx
-const stream = Stream.Do.pipe(
-  Stream.bind("value", () => Stream.make(1, 2)),
-  Stream.bindEffect("double", ({ value }) => succeed(value * 2))
-)
+const stream = Stream.Do
+  |> Stream.bind("value", () => Stream.make(1, 2))
+  |> Stream.bindEffect("double", ({ value }) => succeed(value * 2))
 
 const program = effect {
   const result = await Stream.runCollect(stream)
@@ -3726,7 +3614,7 @@ await runPromise(program)
 **Binding values to a record key**
 
 ```efx
-const stream = Stream.make(1, 2, 3).pipe(Stream.bindTo("value"))
+const stream = Stream.make(1, 2, 3) |> Stream.bindTo("value")
 
 await runPromise(Stream.runCollect(stream)) // => [{ value: 1 }, { value: 2 }, { value: 3 }]
 ```
@@ -3893,9 +3781,8 @@ chunks // => ["1, 2, 3, 4, 5"]
 ```efx
 const values: Array<number> = []
 const program = effect {
-  const stream = Stream.make(1, 2, 3).pipe(
-    Stream.mapEffect((n) => sync(() => values.push(n)))
-  )
+  const stream = Stream.make(1, 2, 3)
+    |> Stream.mapEffect((n) => sync(() => values.push(n)))
 
   await Stream.runDrain(stream)
 }
@@ -3944,10 +3831,9 @@ await runPromise(program)
 const program = Stream.make(
   new Uint8Array([1, 2]),
   new Uint8Array([3, 4])
-).pipe(
-  Stream.mkArrayBuffer,
-  map((buffer) => [...new Uint8Array(buffer)])
 )
+  |> Stream.mkArrayBuffer
+  |> map((buffer) => [...new Uint8Array(buffer)])
 
 await runPromise(program) // => [1, 2, 3, 4]
 ```
@@ -4073,9 +3959,8 @@ await runPromise(program)
 
 ```efx
 const program = scoped(effect {
-  const pubsub = await Stream.fromArray([1, 2]).pipe(
-    Stream.toPubSub({ capacity: 8 })
-  )
+  const pubsub = await Stream.fromArray([1, 2])
+    |> Stream.toPubSub({ capacity: 8 })
   const subscription = await PubSub.subscribe(pubsub)
   const first = await PubSub.take(subscription)
 
@@ -4090,9 +3975,8 @@ await runPromise(program)
 
 ```efx
 const program = effect {
-  const pubsub = await Stream.fromArray([1, 2, 3]).pipe(
-    Stream.toPubSubTake({ capacity: 8 })
-  )
+  const pubsub = await Stream.fromArray([1, 2, 3])
+    |> Stream.toPubSubTake({ capacity: 8 })
   const subscription = await PubSub.subscribe(pubsub)
   const take = await PubSub.take(subscription)
 
@@ -4136,7 +4020,7 @@ const program = effect {
   const done = await flip(Queue.take(queue))
 
   values // => [ 1, 2, 3 ]
-  done._tag === "Done" // => true
+  done is Done // => true
 }
 await runPromise(program)
 ```

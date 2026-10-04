@@ -20,7 +20,7 @@ error TodoNotFound {
 }
 
 export service TodoRepo as "app/TodoRepo" {
-  readonly getAll: Effect<ReadonlyArray<Todo>>
+  getAll: Effect<ReadonlyArray<Todo>>
   getById(id: number): Effect<Todo, TodoNotFound>
   create(payload: CreateTodoPayload): Effect<Todo>
   layer = effect {

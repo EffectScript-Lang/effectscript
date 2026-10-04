@@ -191,7 +191,7 @@ Chunk.get(chunk, 10) // => Option.none()
 Chunk.get(chunk, -1) // => Option.none()
 
 // Using pipe syntax
-chunk.pipe(Chunk.get(2)) // => Option.some("c")
+chunk |> Chunk.get(2) // => Option.some("c")
 ```
 
 ## fromArrayUnsafe
@@ -320,12 +320,9 @@ Chunk.toArray(Chunk.dropWhile(chunk, (n) => n < 3)) // => [3, 4, 5]
 **Prepending all elements**
 
 ```efx
-import { Chunk } from "effect"
-
-Chunk.make(1, 2).pipe(
-  Chunk.prependAll(Chunk.make("a", "b")),
-  Chunk.toArray
-) // => ["a", "b", 1, 2]
+Chunk.make(1, 2)
+  |> Chunk.prependAll(Chunk.make("a", "b"))
+  |> Chunk.toArray // => ["a", "b", 1, 2]
 ```
 
 ## appendAll
@@ -333,12 +330,9 @@ Chunk.make(1, 2).pipe(
 **Appending all elements**
 
 ```efx
-import { Chunk } from "effect"
-
-Chunk.make(1, 2).pipe(
-  Chunk.appendAll(Chunk.make("a", "b")),
-  Chunk.toArray
-) // => [1, 2, "a", "b"]
+Chunk.make(1, 2)
+  |> Chunk.appendAll(Chunk.make("a", "b"))
+  |> Chunk.toArray // => [1, 2, "a", "b"]
 ```
 
 ## filterMap
@@ -1147,10 +1141,10 @@ const chunk = Chunk.make(1, 2, 3, 4)
 Chunk.modify(chunk, 1, (n) => n * 10) // => Option.some(Chunk.make(1, 20, 3, 4))
 
 // Index out of bounds returns None
-chunk.pipe(Chunk.modify(10, (n) => n * 10)) // => Option.none()
+chunk |> Chunk.modify(10, (n) => n * 10) // => Option.none()
 
 // Negative index returns None
-chunk.pipe(Chunk.modify(-1, (n) => n * 10)) // => Option.none()
+chunk |> Chunk.modify(-1, (n) => n * 10) // => Option.none()
 ```
 
 ## replace
@@ -1164,10 +1158,10 @@ const chunk = Chunk.make("a", "b", "c", "d")
 Chunk.replace(chunk, 1, "X") // => Option.some(Chunk.make("a", "X", "c", "d"))
 
 // Index out of bounds returns None
-chunk.pipe(Chunk.replace(10, "Y")) // => Option.none()
+chunk |> Chunk.replace(10, "Y") // => Option.none()
 
 // Negative index returns None
-chunk.pipe(Chunk.replace(-1, "Z")) // => Option.none()
+chunk |> Chunk.replace(-1, "Z") // => Option.none()
 ```
 
 ## makeBy

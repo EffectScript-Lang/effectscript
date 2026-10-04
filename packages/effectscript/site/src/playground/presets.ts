@@ -65,17 +65,16 @@ export effect withFallback(id: string) {
   {
     id: "brands",
     path: "language/brands.efx",
-    title: "Brands and where checks (next)",
+    title: "Brands and where checks",
     code: `// \`brand\` takes its key from its name; \`where\` adds checks to a type or a field.
-// Accepted in ADR-0077, not built yet: the TypeScript is the lowering it specifies.
 // Checks run on decode and in \`make\`, reach JSON Schema, shape generated tests.
 export brand Email = string where isPattern(/^[^@\\s]+@[^@\\s]+$/)
-export brand UserId = string where isUUID()
+export brand UserId = string where isUUID
 
 export schema Signup {
   id: UserId
   email: Email
-  name: string where isTrimmed(), isNonEmpty(), isMaxLength(64)
+  name: string where isTrimmed, isNonEmpty, isMaxLength(64)
   nickname?: string where isMaxLength(20)
 }
 
@@ -88,37 +87,7 @@ export effect register(input: unknown): Signup throws InvalidSignup {
   console.log(\`welcome, \${signup.name}\`)
   return signup
 }
-`,
-    proposal: {
-      adr: "ADR-0077",
-      status: "accepted, not built yet",
-      lowering: `import { Effect, Schema, pipe } from "effect"
-// \`brand\` takes its key from its name; \`where\` adds checks to a type or a field.
-// Accepted in ADR-0077, not built yet: the TypeScript is the lowering it specifies.
-// Checks run on decode and in \`make\`, reach JSON Schema, shape generated tests.
-export const Email = Schema.String.check(Schema.isPattern(/^[^@\\s]+@[^@\\s]+$/)).pipe(Schema.brand("Email"))
-export type Email = typeof Email.Type
-export const UserId = Schema.String.check(Schema.isUUID()).pipe(Schema.brand("UserId"))
-export type UserId = typeof UserId.Type
-
-export class Signup extends Schema.Class<Signup>("Signup")({
-  id: UserId,
-  email: Email,
-  name: Schema.String.check(Schema.isTrimmed(), Schema.isNonEmpty(), Schema.isMaxLength(64)),
-  nickname: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(20)))
-}) {}
-
-export class InvalidSignup extends Schema.TaggedError<InvalidSignup>()("InvalidSignup", { reason: Schema.String }) {}
-
-// decoding runs every check, then hands back typed data or a typed error
-export const register = Effect.fn("register")(function*(input: unknown): Effect.fn.Return<Signup, InvalidSignup> {
-  const signup = yield* pipe(Schema.decodeUnknownEffect(Signup)(input),
-    Effect.mapError((e) => new InvalidSignup({ reason: e.message })))
-  yield* Effect.log(\`welcome, \${signup.name}\`)
-  return signup
-})
 `
-    }
   },
   {
     id: "observability",

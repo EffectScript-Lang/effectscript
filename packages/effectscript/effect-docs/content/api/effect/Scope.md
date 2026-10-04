@@ -92,7 +92,7 @@ const scope = Scope.makeUnsafe()
 
 runSync(Scope.addFinalizer(scope, Effect.void))
 const state = scope.state
-if (state._tag !== "Open") throw new Error("unexpected state")
+if (state is not Open) throw new Error("unexpected state")
 
 state._tag // => "Open"
 state.finalizer !== undefined // => true
@@ -107,7 +107,7 @@ const program = effect {
   const scope = await Scope.make()
 
   await Scope.close(scope, Exit.succeed("Done"))
-  if (scope.state._tag === "Closed") {
+  if (scope.state is Closed) {
     return scope.state.exit
   }
   return Exit.die("unexpected state")

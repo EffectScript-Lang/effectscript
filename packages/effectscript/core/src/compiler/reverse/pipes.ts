@@ -5,11 +5,12 @@
  * @since 4.0.0
  */
 import { children, type Node } from "../ast.ts"
+import { pipeableCall, pipeableValue } from "../prelude/pipeable.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
 import { commaToPipe, commentsIn, removeKeepingComments, type ReverseCtx, separatorComma, within } from "./context.ts"
 import { implShape } from "./httpApi.ts"
-import { importedLocal } from "./origin.ts"
+import { importedLocal, importedModule } from "./origin.ts"
 
 /**
  * Mirrors the forward `knownPipeable` on the EffectScript this conversion produces.
@@ -24,8 +25,24 @@ export const pipeableInEfx = (ctx: ReverseCtx, node: Node, seen: ReadonlySet<str
       if (implShape(ctx, node) !== undefined) return true
       const shape = genShape(ctx, node, undefined)
       if (shape !== undefined) return "fn" in shape
-      return node.callee.type === "Identifier" && ctx.effects.has(node.callee.name) &&
-        !ctx.analysis.innerBound.has(node.callee.name)
+      if (node.callee.type === "Identifier") {
+        return ctx.effects.has(node.callee.name) && !ctx.analysis.innerBound.has(node.callee.name)
+      }
+      // Effect's own constructors, as its types declare them (the forward `pipeableEffectCall`, ADR-0091 A1)
+      const callee: Node = node.callee
+      if (
+        callee.type !== "MemberExpression" || callee.computed || callee.object.type !== "Identifier" ||
+        (node.arguments as Array<Node>).some((a) => a.type === "SpreadElement")
+      ) {
+        return false
+      }
+      const module = importedModule(ctx.analysis, callee.object.name)
+      return module !== undefined && pipeableCall(module, callee.property.name, node.arguments.length)
+    }
+    case "MemberExpression": {
+      if (node.computed || node.object.type !== "Identifier") return false
+      const module = importedModule(ctx.analysis, node.object.name)
+      return module !== undefined && pipeableValue(module, node.property.name)
     }
     case "Identifier": {
       if (seen.has(node.name) || ctx.analysis.innerBound.has(node.name)) return false

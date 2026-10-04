@@ -37,7 +37,12 @@ const keywords = [
   "entity",
   "workflow",
   "activity",
-  "key"
+  "key",
+  "is",
+  "or",
+  "not",
+  "brand",
+  "where"
 ]
 
 /** One or more `rule`, separated by `separator`. */
@@ -48,6 +53,19 @@ export default grammar(TypeScript, {
 
   conflicts: ($, previous) =>
     previous.concat([
+      // a `where` check may continue across `(`, `[`, `!`…; a `,` starts another check or the
+      // next member, and the reading that can't continue dies (ADR-0077)
+      [$.update_expression, $.where_clause],
+      [$.call_expression, $.binary_expression, $.instantiation_expression, $.where_clause],
+      [$.binary_expression, $.where_clause],
+      [$.subscript_expression, $.where_clause],
+      [$.call_expression, $.where_clause],
+      [$.non_null_expression, $.where_clause],
+      [$.is_expression, $.where_clause],
+      [$.where_clause],
+      // `impl where { … }` could be an `impl` of a group named `where`
+      [$._keyword_identifier, $.impl_expression],
+      [$.primary_type, $.impl_expression],
       [$.primary_expression, $.effect_arrow_function],
       [$.schema_variant, $.primary_type],
       [$.primary_expression, $.test_statement],
@@ -77,6 +95,15 @@ export default grammar(TypeScript, {
       [$.method_definition, $.service_body],
       [$._pipe_tail, $.pipeline_expression],
       [$.primary_expression, $._keyword_identifier],
+      // `is` stays a name where TypeScript has one (ADR-0087)
+      [$.primary_expression, $.type_alias_declaration],
+      [$.primary_expression, $.is_predicate],
+      [$.asserts, $.type_predicate],
+      [$.primary_type, $.type_predicate],
+      [$.primary_expression, $.arrow_function, $.method_definition],
+      [],
+      [$.module, $.primary_expression],
+      [$.primary_expression, $._keyword_identifier, $.is_predicate],
       [$.primary_expression, $.generic_type, $.effect_arrow_function],
       [$.primary_expression, $.primary_type, $.impl_expression],
       [$.primary_expression, $.generic_type, $.impl_expression],
@@ -257,6 +284,7 @@ export default grammar(TypeScript, {
         $.effect_declaration,
         $.error_declaration,
         $.schema_declaration,
+        $.brand_declaration,
         $.service_declaration,
         $.layer_declaration,
         $.config_declaration,
@@ -281,7 +309,7 @@ export default grammar(TypeScript, {
         $.defer_statement
       ),
 
-    expression: ($, previous) => choice(previous, $.pipeline_expression, $.throw_expression),
+    expression: ($, previous) => choice(previous, $.pipeline_expression, $.throw_expression, $.is_expression),
 
     binary_expression: ($) =>
       choice(
@@ -349,7 +377,8 @@ export default grammar(TypeScript, {
         $.match_expression,
         $.impl_expression,
         $.activity_expression,
-        $.topic_reference
+        $.topic_reference,
+        $.is_predicate
       ),
 
     method_definition: ($, previous) => choice(previous, $.effect_method),
@@ -429,7 +458,13 @@ export default grammar(TypeScript, {
           optional(field("type_parameters", $.type_parameters)),
           choice(
             field("body", $.schema_body),
-            seq("=", field("value", choice($.schema_variants, $.type)))
+            seq(
+              "=",
+              choice(
+                field("value", $.schema_variants),
+                seq(field("value", $.type), optional(field("checks", $.where_clause)))
+              )
+            )
           ),
           optional($._semicolon)
         )
@@ -442,7 +477,7 @@ export default grammar(TypeScript, {
     schema_body: ($) =>
       seq(
         "{",
-        repeat(choice(seq($.schema_field, optional(choice(";", ","))), $.method_definition, ";")),
+        repeat(choice(seq($.schema_field, optional(choice($._semicolon, ","))), $.method_definition, ";")),
         "}"
       ),
 
@@ -452,9 +487,54 @@ export default grammar(TypeScript, {
           optional("readonly"),
           field("name", $._property_name),
           optional("?"),
-          optional(field("type", $.type_annotation)),
+          optional(seq(field("type", $.type_annotation), optional(field("checks", $.where_clause)))),
           optional(seq("=", field("value", $.expression)))
         )
+      ),
+
+    // `brand Name = Type [where …]`: a schema branded with its own name (ADR-0077)
+    brand_declaration: ($) =>
+      prec.right(
+        seq(
+          "brand",
+          field("name", $.identifier),
+          "=",
+          field("value", $.type),
+          optional(field("checks", $.where_clause)),
+          optional($._semicolon)
+        )
+      ),
+
+    // `where check, …` ends a field's or a declaration's type (ADR-0077)
+    where_clause: ($) =>
+      seq("where", field("check", $.expression), repeat(prec.right(seq(",", field("check", $.expression))))),
+
+    // a type literal's member in a schema position is a field, so it takes checks (ADR-0077)
+    property_signature: ($) =>
+      seq(
+        optional($.accessibility_modifier),
+        optional("static"),
+        optional($.override_modifier),
+        optional("readonly"),
+        field("name", $._property_name),
+        optional("?"),
+        optional(seq(field("type", $.type_annotation), optional(field("checks", $.where_clause))))
+      ),
+
+    // a signature line's or an endpoint section's parameters are fields (ADR-0077)
+    required_parameter: ($) =>
+      seq(
+        $._parameter_name,
+        optional(seq(field("type", $.type_annotation), optional(field("checks", $.where_clause)))),
+        optional($._initializer)
+      ),
+
+    optional_parameter: ($) =>
+      seq(
+        $._parameter_name,
+        "?",
+        optional(seq(field("type", $.type_annotation), optional(field("checks", $.where_clause)))),
+        optional($._initializer)
       ),
 
     error_declaration: ($) =>
@@ -728,6 +808,24 @@ export default grammar(TypeScript, {
 
     throw_expression: ($) => prec.right(-1, seq("throw", field("value", $.expression))),
 
-    do_expression: ($) => seq("do", field("body", $.statement_block))
+    do_expression: ($) => seq("do", field("body", $.statement_block)),
+
+    // `subject is pattern` binds like `instanceof`; `is pattern` alone is a predicate (ADR-0087)
+    is_expression: ($) =>
+      prec.left("binary_relation", seq(field("subject", $.expression), "is", field("pattern", $.is_pattern))),
+
+    // `is (` stays a call to a function named `is`: a predicate's group needs `not`
+    is_predicate: ($) => prec.right(seq("is", field("pattern", alias($._is_predicate_pattern, $.is_pattern)))),
+
+    _is_predicate_pattern: ($) =>
+      prec.left(choice(seq("not", choice(seq("(", $._is_tags, ")"), $._is_tags)), $._is_tags)),
+
+    is_pattern: ($) => prec.left(seq(optional("not"), choice(seq("(", $._is_tags, ")"), $._is_tags))),
+
+    _is_tags: ($) =>
+      prec.left(sep1(field("tag", choice($.identifier, alias($._is_dotted_tag, $.nested_identifier))), "or")),
+
+    // a dotted tag (`Cause.TimeoutError`) is one name, not a member access on the test
+    _is_dotted_tag: ($) => prec(100, seq($.identifier, repeat1(seq(".", alias($.identifier, $.property_identifier)))))
   }
 })

@@ -20,12 +20,11 @@ const program = effect {
   const ref = await SubscriptionRef.make(0)
   const ready = await Deferred.make<void>()
 
-  const fiber = await SubscriptionRef.changes(ref).pipe(
-    Stream.tap(() => Deferred.succeed(ready, void 0)),
-    Stream.take(3),
-    Stream.runCollect,
-    forkChild
-  )
+  const fiber = await SubscriptionRef.changes(ref)
+    |> Stream.tap(() => Deferred.succeed(ready, void 0))
+    |> Stream.take(3)
+    |> Stream.runCollect
+    |> forkChild
 
   await Deferred.await(ready)
   await SubscriptionRef.set(ref, 1)

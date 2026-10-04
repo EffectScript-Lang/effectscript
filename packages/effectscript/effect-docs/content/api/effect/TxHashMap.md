@@ -30,7 +30,7 @@ const program = effect {
   await tx(
     effect {
       const currentUser = await TxHashMap.get(txMap, "user1")
-      if (currentUser._tag === "Some") {
+      if (currentUser is Some) {
         await TxHashMap.set(txMap, "user1", currentUser.value + "_updated")
         await TxHashMap.remove(txMap, "user2")
       }
@@ -517,7 +517,7 @@ const program = effect {
   const assignments: Array<string> = []
   for (const username of usernames) {
     const role = await TxHashMap.get(userRoles, username)
-    if (role._tag === "Some") {
+    if (role is Some) {
       assignments.push(`${username}: ${role.value}`)
     }
   }

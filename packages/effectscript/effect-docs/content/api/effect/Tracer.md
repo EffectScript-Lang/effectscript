@@ -114,9 +114,8 @@ const options: Tracer.SpanOptions = {
   captureStackTrace: true
 }
 
-const program = succeed("Hello World").pipe(
-  withSpan("my-operation", options)
-)
+const program = succeed("Hello World")
+  |> withSpan("my-operation", options)
 
 const spans: Array<Tracer.NativeSpan> = []
 const tracer = Tracer.make({
@@ -138,11 +137,10 @@ spans[0]?.status._tag // => "Ended"
 
 ```efx
 // Different span kinds for different operations
-const program = succeed("handled").pipe(
-  withSpan("handle-request", {
+const program = succeed("handled")
+  |> withSpan("handle-request", {
     kind: "server" as Tracer.SpanKind
   })
-)
 
 const spans: Array<Tracer.NativeSpan> = []
 const tracer = Tracer.make({
@@ -227,9 +225,8 @@ const link: Tracer.SpanLink = {
   attributes: { "link.type": "follows-from", "service": "external-api" }
 }
 
-const program = succeed("result").pipe(
-  withSpan("linked-operation", { links: [link] })
-)
+const program = succeed("result")
+  |> withSpan("linked-operation", { links: [link] })
 
 const spans: Array<Tracer.NativeSpan> = []
 const tracer = Tracer.make({
@@ -258,9 +255,8 @@ const span = Tracer.externalSpan({
 })
 
 // Use the external span as a parent
-const program = succeed("Hello").pipe(
-  withSpan("child-operation", { parent: span })
-)
+const program = succeed("Hello")
+  |> withSpan("child-operation", { parent: span })
 
 const spans: Array<Tracer.NativeSpan> = []
 const tracer = Tracer.make({
@@ -282,9 +278,8 @@ spans.map((span) => Option.getOrUndefined(span.parent)?.spanId) // => ["span-abc
 
 ```efx
 // Disable span propagation for a specific effect
-const program = Tracer.DisablePropagation.pipe(
-  provideService(Tracer.DisablePropagation, true)
-)
+const program = Tracer.DisablePropagation
+  |> provideService(Tracer.DisablePropagation, true)
 
 await runPromise(program) // => true
 ```

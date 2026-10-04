@@ -16,8 +16,6 @@ The examples in the JSDoc of `packages/effect/src/DateTime.ts`, in EffectScript 
 **Resolving ambiguous local times**
 
 ```efx
-import { DateTime, Option } from "effect"
-
 // Fall-back example: 01:30 on Nov 2, 2025 in New York happens twice
 const ambiguousTime = { year: 2025, month: 11, day: 2, hour: 1, minute: 30 }
 const timeZone = DateTime.zoneMakeNamedUnsafe("America/New_York")
@@ -53,10 +51,10 @@ const afterGap = DateTime.makeZoned(gapTime, {
 })
 // Time after gap: 2025-03-09T07:30:00.000Z (03:30 EDT)
 
-earlier.pipe(Option.getOrThrow, DateTime.formatIso) // => "2025-11-02T05:30:00.000Z"
-later.pipe(Option.getOrThrow, DateTime.formatIso) // => "2025-11-02T06:30:00.000Z"
-beforeGap.pipe(Option.getOrThrow, DateTime.formatIso) // => "2025-03-09T06:30:00.000Z"
-afterGap.pipe(Option.getOrThrow, DateTime.formatIso) // => "2025-03-09T07:30:00.000Z"
+earlier |> Option.getOrThrow |> DateTime.formatIso // => "2025-11-02T05:30:00.000Z"
+later |> Option.getOrThrow |> DateTime.formatIso // => "2025-11-02T06:30:00.000Z"
+beforeGap |> Option.getOrThrow |> DateTime.formatIso // => "2025-03-09T06:30:00.000Z"
+afterGap |> Option.getOrThrow |> DateTime.formatIso // => "2025-03-09T07:30:00.000Z"
 ```
 
 ## Equivalence
@@ -160,13 +158,11 @@ DateTime.formatIsoZoned(zoned) // => "2024-06-15T15:30:00.000+01:00[Europe/Londo
 **Creating optional zoned DateTime values**
 
 ```efx
-import { DateTime, Option } from "effect"
-
 const result = DateTime.makeZoned("2024-06-15T14:30:00Z", {
   timeZone: "Europe/London"
 })
 
-result.pipe(Option.map(DateTime.formatIsoZoned)) // => Option.some("2024-06-15T15:30:00.000+01:00[Europe/London]")
+result |> Option.map(DateTime.formatIsoZoned) // => Option.some("2024-06-15T15:30:00.000+01:00[Europe/London]")
 ```
 
 ## make
@@ -193,11 +189,9 @@ DateTime.make("not a date") // => Option.none()
 **Parsing zoned DateTime strings**
 
 ```efx
-import { DateTime, Option } from "effect"
-
 DateTime.makeZonedFromString(
   "2024-01-01T12:00:00+02:00[Europe/Berlin]"
-).pipe(Option.map(DateTime.formatIsoZoned)) // => Option.some("2024-01-01T11:00:00.000+01:00[Europe/Berlin]")
+) |> Option.map(DateTime.formatIsoZoned) // => Option.some("2024-01-01T11:00:00.000+01:00[Europe/Berlin]")
 
 DateTime.makeZonedFromString("2024-01-01T12:00:00Z") // => Option.none()
 DateTime.makeZonedFromString("invalid") // => Option.none()
@@ -310,9 +304,7 @@ DateTime.formatIsoZoned(dt) // => "2024-01-01T15:00:00.000+03:00"
 **Creating optional named time zones**
 
 ```efx
-import { DateTime, Option } from "effect"
-
-DateTime.zoneMakeNamed("Europe/London").pipe(Option.map(DateTime.zoneToString)) // => Option.some("Europe/London")
+DateTime.zoneMakeNamed("Europe/London") |> Option.map(DateTime.zoneToString) // => Option.some("Europe/London")
 DateTime.zoneMakeNamed("Invalid/Zone") // => Option.none()
 ```
 
@@ -345,10 +337,8 @@ DateTime.isTimeZoneNamed(DateTime.zoneMakeLocal()) // => true
 **Parsing time zones**
 
 ```efx
-import { DateTime, Option } from "effect"
-
-DateTime.zoneFromString("Europe/London").pipe(Option.map(DateTime.zoneToString)) // => Option.some("Europe/London")
-DateTime.zoneFromString("+03:00").pipe(Option.map(DateTime.zoneToString)) // => Option.some("+03:00")
+DateTime.zoneFromString("Europe/London") |> Option.map(DateTime.zoneToString) // => Option.some("Europe/London")
+DateTime.zoneFromString("+03:00") |> Option.map(DateTime.zoneToString) // => Option.some("+03:00")
 DateTime.zoneFromString("invalid") // => Option.none()
 ```
 
@@ -627,16 +617,13 @@ DateTime.toEpochSeconds(dt) // => 1704067200
 **Removing time components**
 
 ```efx
-import { DateTime } from "effect"
-
 // returns "2024-01-01T00:00:00Z"
 DateTime.makeZonedUnsafe("2024-01-01T05:00:00Z", {
   timeZone: "Pacific/Auckland",
   adjustForTimeZone: true
-}).pipe(
-  DateTime.removeTime,
-  DateTime.formatIso
-) // => "2024-01-01T00:00:00.000Z"
+})
+  |> DateTime.removeTime
+  |> DateTime.formatIso // => "2024-01-01T00:00:00.000Z"
 ```
 
 ## toParts
@@ -843,12 +830,9 @@ modified // => DateTime.makeZonedUnsafe("2024-01-01T18:00:00Z", { timeZone: "Eur
 **Mapping epoch milliseconds**
 
 ```efx
-import { DateTime } from "effect"
-
 // add 10 milliseconds
-const result = DateTime.makeUnsafe(0).pipe(
-  DateTime.mapEpochMillis((millis) => millis + 10)
-)
+const result = DateTime.makeUnsafe(0)
+  |> DateTime.mapEpochMillis((millis) => millis + 10)
 result // => DateTime.makeUnsafe(10)
 ```
 
@@ -857,12 +841,9 @@ result // => DateTime.makeUnsafe(10)
 **Applying time zone adjusted Dates**
 
 ```efx
-import { DateTime } from "effect"
-
 // get the time zone adjusted date in milliseconds
-DateTime.makeZonedUnsafe(0, { timeZone: "Europe/London" }).pipe(
-  DateTime.withDate((date) => date.getTime())
-) // => 3600000
+DateTime.makeZonedUnsafe(0, { timeZone: "Europe/London" })
+  |> DateTime.withDate((date) => date.getTime()) // => 3600000
 ```
 
 ## withDateUtc
@@ -870,12 +851,9 @@ DateTime.makeZonedUnsafe(0, { timeZone: "Europe/London" }).pipe(
 **Applying UTC Dates**
 
 ```efx
-import { DateTime } from "effect"
-
 // get the date in milliseconds
-DateTime.makeUnsafe(0).pipe(
-  DateTime.withDateUtc((date) => date.getTime())
-) // => 0
+DateTime.makeUnsafe(0)
+  |> DateTime.withDateUtc((date) => date.getTime()) // => 0
 ```
 
 ## match
@@ -909,12 +887,9 @@ result2 // => "Zoned: 2024-06-15T15:30:00.000+01:00[Europe/London]"
 **Adding durations**
 
 ```efx
-import { DateTime } from "effect"
-
 // add 5 minutes
-DateTime.makeUnsafe(0).pipe(
-  DateTime.addDuration("5 minutes")
-) // => DateTime.makeUnsafe(300000)
+DateTime.makeUnsafe(0)
+  |> DateTime.addDuration("5 minutes") // => DateTime.makeUnsafe(300000)
 ```
 
 ## subtractDuration
@@ -922,12 +897,9 @@ DateTime.makeUnsafe(0).pipe(
 **Subtracting durations**
 
 ```efx
-import { DateTime } from "effect"
-
 // subtract 5 minutes
-DateTime.makeUnsafe(0).pipe(
-  DateTime.subtractDuration("5 minutes")
-) // => DateTime.makeUnsafe(-300000)
+DateTime.makeUnsafe(0)
+  |> DateTime.subtractDuration("5 minutes") // => DateTime.makeUnsafe(-300000)
 ```
 
 ## add
@@ -935,12 +907,9 @@ DateTime.makeUnsafe(0).pipe(
 **Adding date and time parts**
 
 ```efx
-import { DateTime } from "effect"
-
 // add 5 minutes
-DateTime.makeUnsafe(0).pipe(
-  DateTime.add({ minutes: 5 })
-) // => DateTime.makeUnsafe(300000)
+DateTime.makeUnsafe(0)
+  |> DateTime.add({ minutes: 5 }) // => DateTime.makeUnsafe(300000)
 ```
 
 ## subtract
@@ -948,12 +917,9 @@ DateTime.makeUnsafe(0).pipe(
 **Subtracting date and time parts**
 
 ```efx
-import { DateTime } from "effect"
-
 // subtract 5 minutes
-DateTime.makeUnsafe(0).pipe(
-  DateTime.subtract({ minutes: 5 })
-) // => DateTime.makeUnsafe(-300000)
+DateTime.makeUnsafe(0)
+  |> DateTime.subtract({ minutes: 5 }) // => DateTime.makeUnsafe(-300000)
 ```
 
 ## startOf
@@ -961,12 +927,9 @@ DateTime.makeUnsafe(0).pipe(
 **Rounding down DateTime values**
 
 ```efx
-import { DateTime } from "effect"
-
 // returns "2024-01-01T00:00:00Z"
-DateTime.makeUnsafe("2024-01-01T12:00:00Z").pipe(
-  DateTime.startOf("day"),
-) // => DateTime.makeUnsafe("2024-01-01T00:00:00Z")
+DateTime.makeUnsafe("2024-01-01T12:00:00Z")
+  |> DateTime.startOf("day") // => DateTime.makeUnsafe("2024-01-01T00:00:00Z")
 ```
 
 ## endOf
@@ -974,12 +937,9 @@ DateTime.makeUnsafe("2024-01-01T12:00:00Z").pipe(
 **Rounding up DateTime values**
 
 ```efx
-import { DateTime } from "effect"
-
 // returns "2024-01-01T23:59:59.999Z"
-DateTime.makeUnsafe("2024-01-01T12:00:00Z").pipe(
-  DateTime.endOf("day"),
-) // => DateTime.makeUnsafe("2024-01-01T23:59:59.999Z")
+DateTime.makeUnsafe("2024-01-01T12:00:00Z")
+  |> DateTime.endOf("day") // => DateTime.makeUnsafe("2024-01-01T23:59:59.999Z")
 ```
 
 ## nearest
@@ -987,12 +947,9 @@ DateTime.makeUnsafe("2024-01-01T12:00:00Z").pipe(
 **Rounding DateTime values to nearest units**
 
 ```efx
-import { DateTime } from "effect"
-
 // returns "2024-01-02T00:00:00Z"
-DateTime.makeUnsafe("2024-01-01T12:01:00Z").pipe(
-  DateTime.nearest("day"),
-) // => DateTime.makeUnsafe("2024-01-02T00:00:00Z")
+DateTime.makeUnsafe("2024-01-01T12:01:00Z")
+  |> DateTime.nearest("day") // => DateTime.makeUnsafe("2024-01-02T00:00:00Z")
 ```
 
 ## format

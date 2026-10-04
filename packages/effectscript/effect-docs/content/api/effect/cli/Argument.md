@@ -166,9 +166,7 @@ noArg.kind // => "argument"
 **Making an argument optional**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const optionalVersion = Argument.String("version").pipe(Argument.optional)
+const optionalVersion = Argument.String("version") |> Argument.optional
 optionalVersion.kind // => "argument"
 ```
 
@@ -177,11 +175,8 @@ optionalVersion.kind // => "argument"
 **Adding an argument description**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const filename = Argument.String("filename").pipe(
-  Argument.withDescription("The input file to process")
-)
+const filename = Argument.String("filename")
+  |> Argument.withDescription("The input file to process")
 filename.kind // => "argument"
 ```
 
@@ -190,9 +185,7 @@ filename.kind // => "argument"
 **Providing a default value**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const port = Argument.Int("port").pipe(Argument.withDefault(8080))
+const port = Argument.Int("port") |> Argument.withDefault(8080)
 port.kind // => "argument"
 ```
 
@@ -201,12 +194,10 @@ port.kind // => "argument"
 **Loading a fallback config**
 
 ```efx
-import { Config } from "effect"
 import { Argument } from "effect/cli"
 
-const repository = Argument.String("repository").pipe(
-  Argument.withFallbackConfig(Config.String("REPOSITORY"))
-)
+const repository = Argument.String("repository")
+  |> Argument.withFallbackConfig(Config.String("REPOSITORY"))
 repository.kind // => "argument"
 ```
 
@@ -217,9 +208,8 @@ repository.kind // => "argument"
 ```efx
 import { Argument, Prompt } from "effect/cli"
 
-const filename = Argument.String("filename").pipe(
-  Argument.withFallbackPrompt(Prompt.String({ message: "Filename" }))
-)
+const filename = Argument.String("filename")
+  |> Argument.withFallbackPrompt(Prompt.String({ message: "Filename" }))
 filename.kind // => "argument"
 ```
 
@@ -228,20 +218,16 @@ filename.kind // => "argument"
 **Accepting multiple values**
 
 ```efx
-import { Argument } from "effect/cli"
-
 // Accept any number of files
-const anyFiles = Argument.String("files").pipe(Argument.variadic)
+const anyFiles = Argument.String("files") |> Argument.variadic
 
 // Accept at least 1 file
-const atLeastOneFile = Argument.String("files").pipe(
-  Argument.variadic({ min: 1 })
-)
+const atLeastOneFile = Argument.String("files")
+  |> Argument.variadic({ min: 1 })
 
 // Accept between 1 and 5 files
-const limitedFiles = Argument.String("files").pipe(
-  Argument.variadic({ min: 1, max: 5 })
-)
+const limitedFiles = Argument.String("files")
+  |> Argument.variadic({ min: 1, max: 5 })
 
 const kinds = [anyFiles.kind, atLeastOneFile.kind, limitedFiles.kind] // => ["argument", "argument", "argument"]
 ```
@@ -251,11 +237,8 @@ const kinds = [anyFiles.kind, atLeastOneFile.kind, limitedFiles.kind] // => ["ar
 **Mapping parsed values**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const port = Argument.Int("port").pipe(
-  Argument.map((p) => ({ port: p, url: `http://localhost:${p}` }))
-)
+const port = Argument.Int("port")
+  |> Argument.map((p) => ({ port: p, url: `http://localhost:${p}` }))
 port.kind // => "argument"
 ```
 
@@ -264,6 +247,9 @@ port.kind // => "argument"
 **Validating values effectfully**
 
 ```efx
+import { Argument } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -281,8 +267,8 @@ const CliTestLayer = Layer.mergeAll(
   )
 )
 
-const files = Argument.String("files").pipe(
-  Argument.mapEffect((file) =>
+const files = Argument.String("files")
+  |> Argument.mapEffect((file) =>
     file.endsWith(".txt")
       ? succeed(file)
       : fail(
@@ -292,7 +278,6 @@ const files = Argument.String("files").pipe(
         })
       )
   )
-)
 
 const [, value] = await runPromise(
   files.parse({ arguments: ["notes.txt"], flags: {} }).pipe(provide(CliTestLayer))
@@ -305,6 +290,9 @@ value // => "notes.txt"
 **Mapping values that may throw**
 
 ```efx
+import { Argument } from "effect/cli"
+import { ChildProcessSpawner } from "effect/process"
+
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -322,13 +310,12 @@ const CliTestLayer = Layer.mergeAll(
   )
 )
 
-const json = Argument.String("data").pipe(
-  Argument.mapTryCatch(
+const json = Argument.String("data")
+  |> Argument.mapTryCatch(
     (str) => JSON.parse(str),
     (error) =>
       `Invalid JSON: ${error instanceof Error ? error.message : String(error)}`
   )
-)
 
 const [, value] = await runPromise(
   json.parse({ arguments: ['{"enabled":true}'], flags: {} }).pipe(provide(CliTestLayer))
@@ -341,9 +328,7 @@ value // => { enabled: true }
 **Requiring a minimum number of values**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const files = Argument.String("files").pipe(Argument.atLeast(1))
+const files = Argument.String("files") |> Argument.atLeast(1)
 files.kind // => "argument"
 ```
 
@@ -352,9 +337,7 @@ files.kind // => "argument"
 **Limiting the maximum number of values**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const files = Argument.String("files").pipe(Argument.atMost(5))
+const files = Argument.String("files") |> Argument.atMost(5)
 files.kind // => "argument"
 ```
 
@@ -363,9 +346,7 @@ files.kind // => "argument"
 **Requiring a range of values**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const files = Argument.String("files").pipe(Argument.between(1, 5))
+const files = Argument.String("files") |> Argument.between(1, 5)
 files.kind // => "argument"
 ```
 
@@ -374,12 +355,10 @@ files.kind // => "argument"
 **Validating parsed values with a schema**
 
 ```efx
-import { Schema } from "effect"
 import { Argument } from "effect/cli"
 
-const input = Argument.String("input").pipe(
-  Argument.withSchema(Schema.NonEmptyString)
-)
+const input = Argument.String("input")
+  |> Argument.withSchema(Schema.NonEmptyString)
 input.kind // => "argument"
 ```
 
@@ -404,11 +383,8 @@ logLevel.kind // => "argument"
 **Setting a metavar**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const port = Argument.Int("port").pipe(
-  Argument.withMetavar("PORT")
-)
+const port = Argument.Int("port")
+  |> Argument.withMetavar("PORT")
 port.kind // => "argument"
 ```
 
@@ -417,14 +393,11 @@ port.kind // => "argument"
 **Filtering parsed values**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const positiveInt = Argument.Int("count").pipe(
-  Argument.filter(
+const positiveInt = Argument.Int("count")
+  |> Argument.filter(
     (n) => n > 0,
     (n) => `Expected positive integer, got ${n}`
   )
-)
 positiveInt.kind // => "argument"
 ```
 
@@ -433,15 +406,13 @@ positiveInt.kind // => "argument"
 **Filtering and mapping parsed values**
 
 ```efx
-import { Option } from "effect"
 import { Argument } from "effect/cli"
 
-const positiveInt = Argument.Int("count").pipe(
-  Argument.filterMap(
+const positiveInt = Argument.Int("count")
+  |> Argument.filterMap(
     (n) => n > 0 ? Option.some(n) : Option.none(),
     (n) => `Expected positive integer, got ${n}`
   )
-)
 positiveInt.kind // => "argument"
 ```
 
@@ -450,11 +421,8 @@ positiveInt.kind // => "argument"
 **Providing a fallback argument**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const value = Argument.Int("value").pipe(
-  Argument.orElse(() => Argument.String("value"))
-)
+const value = Argument.Int("value")
+  |> Argument.orElse(() => Argument.String("value"))
 value.kind // => "argument"
 ```
 
@@ -463,11 +431,8 @@ value.kind // => "argument"
 **Returning which fallback succeeded**
 
 ```efx
-import { Argument } from "effect/cli"
-
-const source = Argument.File("source").pipe(
-  Argument.orElseResult(() => Argument.String("url"))
-)
+const source = Argument.File("source")
+  |> Argument.orElseResult(() => Argument.String("url"))
 // Returns Result<string, string>
 source.kind // => "argument"
 ```

@@ -5,6 +5,20 @@
 > recorded in `docs/adr/`. Commit with explicit, gated paths (other sessions share the branch):
 > `pnpm check && pnpm lint && git commit <paths>`.
 
+> **Amended by ADR-0091 (one form per intent).** A check with no arguments drops its `()` in a
+> `where` list: `name: string where isTrimmed, isNonEmpty`. Add it to the task that parses `where`
+> lists and the task that compiles them:
+>
+> - **Forward:** a bare identifier in a `where` list that resolves to a Schema export compiles to
+>   the call, `Schema.isTrimmed()`. A check that needs arguments, written bare, is TypeScript's
+>   error on that call ("Expected 1 argument").
+> - **Reverse:** `.check(Schema.isTrimmed())` becomes `where isTrimmed`. A call with arguments
+>   stays a call.
+> - **Examples, fixtures, skill and docs** write the short form: `where isTrimmed, isNonEmpty`,
+>   `where isFinite`.
+> - **Tests:** both spellings compile to the same TypeScript, and the reverse compiler writes the
+>   short one.
+
 **Goal:** `brand UserId = string` declares a schema branded with its own name, and `where` attaches
 Schema checks to a declaration's or a field's type, through the whole toolchain: parser, compiler,
 reverse compiler, tree-sitter, TextMate, `efx docs`, the skill, the site and the docs corpus.
@@ -266,7 +280,7 @@ describe("brand: compiling (ADR-0077)", () => {
   })
 
   it("maps a brand's name to its const, so hover and go to definition work", () => {
-    const source = "brand UserId = string where isNonEmpty()\n"
+    const source = "brand UserId = string where isNonEmpty\n"
     const result = compile(source)
     const name = source.indexOf("UserId")
     const mapping = result.mappings.find((m) =>
@@ -721,8 +735,8 @@ describe("where: parsing class fields and aliases (ADR-0077)", () => {
   it("reads checks after a field's type, and leaves a member named `where` alone", () => {
     const source = [
       "schema Server {",
-      "  host: string where isNonEmpty()",
-      "  alias?: string where isTrimmed(), isMaxLength(20)",
+      "  host: string where isNonEmpty",
+      "  alias?: string where isTrimmed, isMaxLength(20)",
       "  where: string",
       "  c: number",
       "  where(x: number) { return x }",
@@ -731,8 +745,8 @@ describe("where: parsing class fields and aliases (ADR-0077)", () => {
     ].join("\n")
     const members = program(source).body[0].body.body
     expect(members.map((m: any) => [m.type, m.key.name, checks(source, m.efxWhere)])).toEqual([
-      ["PropertyDefinition", "host", ["isNonEmpty()"]],
-      ["PropertyDefinition", "alias", ["isTrimmed()", "isMaxLength(20)"]],
+      ["PropertyDefinition", "host", ["isNonEmpty"]],
+      ["PropertyDefinition", "alias", ["isTrimmed", "isMaxLength(20)"]],
       ["PropertyDefinition", "where", null],
       ["PropertyDefinition", "c", null],
       ["MethodDefinition", "where", null]
@@ -745,7 +759,7 @@ describe("where: parsing class fields and aliases (ADR-0077)", () => {
   })
 
   it("refuses checks where they can't go, each with its own message", () => {
-    expect(failure("schema X { tags: Array<string where isNonEmpty()> }\n")).toMatchObject({
+    expect(failure("schema X { tags: Array<string where isNonEmpty> }\n")).toMatchObject({
       code: "EFX3005",
       message: "`where` checks a field or a declaration, not a nested type",
       hint: "write the field as `name = <Schema expression>`"
@@ -816,7 +830,7 @@ describe("where: compiling class fields and aliases (ADR-0077)", () => {
     const out = code([
       "const isUUID = Schema.isUUID(4)",
       "schema S {",
-      "  id: string where isUUID, isNonEmpty()",
+      "  id: string where isUUID, isNonEmpty",
       "  email: string where makeFilter((check: string) => check.includes(\"@\"))",
       "}",
       ""
@@ -826,7 +840,7 @@ describe("where: compiling class fields and aliases (ADR-0077)", () => {
   })
 
   it("refuses checks on null alone", () => {
-    expect(compile("schema S { a: null where isFinite() }\n").diagnostics).toContainEqual(expect.objectContaining({
+    expect(compile("schema S { a: null where isFinite }\n").diagnostics).toContainEqual(expect.objectContaining({
       code: "EFX3005",
       message: "`where` needs a type to check besides `null` and `undefined`"
     }))
@@ -841,7 +855,7 @@ describe("where: compiling class fields and aliases (ADR-0077)", () => {
     const mod = await runCompiled(`
       import { Schema } from "effect"
       export schema Signup {
-        name: string where isTrimmed(), isNonEmpty()
+        name: string where isTrimmed, isNonEmpty
         nickname?: string where isMaxLength(3)
         manager: string | null where isMaxLength(2)
       }
@@ -860,9 +874,9 @@ Golden fixture `core/test/fixtures/schema/where.efx`:
 ```efx
 export schema Signup {
   email: string where isPattern(/^[^@\s]+@[^@\s]+$/)
-  name: string where isTrimmed(), isNonEmpty()
+  name: string where isTrimmed, isNonEmpty
   nickname?: string where isMaxLength(20)
-  referrer?: string | undefined where isNonEmpty()
+  referrer?: string | undefined where isNonEmpty
   manager: string | null where isMaxLength(64)
   age: Int where
     isGreaterThan(17),
@@ -1087,16 +1101,16 @@ pnpm check && pnpm lint && git commit packages/effectscript/core/src/compiler/pa
 ```ts
 describe("where: fields written out whole (ADR-0077)", () => {
   it("splits a type literal's members and a signature's fields at the next name", () => {
-    const literal = "schema Mixed = { a: number where isFinite(); b: string; c?: Int where isGreaterThan(0), isLessThan(9), d: string; \"x-id\": string where isUUID(), readonly e: number }\n"
+    const literal = "schema Mixed = { a: number where isFinite; b: string; c?: Int where isGreaterThan(0), isLessThan(9), d: string; \"x-id\": string where isUUID, readonly e: number }\n"
     expect(program(literal).body[0].typeAnnotation.members.map((m: any) => [literal.slice(m.key.start, m.key.end), checks(literal, m.efxWhere)]))
-      .toEqual([["a", ["isFinite()"]], ["b", null], ["c", ["isGreaterThan(0)", "isLessThan(9)"]], ["d", null], ["\"x-id\"", ["isUUID()"]], ["e", null]])
-    const rpc = "rpc Users {\n  get(id: string where isUUID(), limit?: Int where isGreaterThan(0), isLessThan(100), page: Int): User\n}\n"
+      .toEqual([["a", ["isFinite"]], ["b", null], ["c", ["isGreaterThan(0)", "isLessThan(9)"]], ["d", null], ["\"x-id\"", ["isUUID"]], ["e", null]])
+    const rpc = "rpc Users {\n  get(id: string where isUUID, limit?: Int where isGreaterThan(0), isLessThan(100), page: Int): User\n}\n"
     expect(program(rpc).body[0].lines[0].fields.map((f: any) => [f.key.name, checks(rpc, f.efxWhere)]))
-      .toEqual([["id", ["isUUID()"]], ["limit", ["isGreaterThan(0)", "isLessThan(100)"]], ["page", null]])
+      .toEqual([["id", ["isUUID"]], ["limit", ["isGreaterThan(0)", "isLessThan(100)"]], ["page", null]])
   })
 
   it("qualifies a check once when a commented struct alias is rendered twice", () => {
-    const out = code("schema Point = {\n  // across\n  x: number where isFinite()\n  y: number\n}\n")
+    const out = code("schema Point = {\n  // across\n  x: number where isFinite\n  y: number\n}\n")
     expect(out).toContain("x: Schema.Number.check(Schema.isFinite())")
     expect(out).not.toContain("Schema.Schema.")
   })
@@ -1105,7 +1119,7 @@ describe("where: fields written out whole (ADR-0077)", () => {
     const { Tool } = await import("effect/ai")
     const mod = await runCompiled(`
       /** Searches the catalog. */
-      export tool Search(query: string where isNonEmpty(), limit?: Int where isBetween({ minimum: 1, maximum: 50 })): Array<string>
+      export tool Search(query: string where isNonEmpty, limit?: Int where isBetween({ minimum: 1, maximum: 50 })): Array<string>
     `)
     expect(Tool.getJsonSchema(mod.Search)).toMatchObject({
       properties: {
@@ -1124,7 +1138,7 @@ plan.
 `core/test/fixtures/schema/where-members.efx`:
 
 ```efx
-export schema Point = { x: number where isFinite(); y: number where isFinite() }
+export schema Point = { x: number where isFinite; y: number where isFinite }
 
 export schema Address {
   geo: { lat: number where isBetween({ minimum: -90, maximum: 90 }); lng: number }
@@ -1156,7 +1170,7 @@ export type Shape = typeof Shape.Type
 
 ```efx
 /** Searches the catalog. */
-export tool Search(query: string where isNonEmpty(), limit?: Int where isBetween({ minimum: 1, maximum: 50 })): Array<string>
+export tool Search(query: string where isNonEmpty, limit?: Int where isBetween({ minimum: 1, maximum: 50 })): string[]
 ```
 
 `core/test/fixtures/ai/checked.ts`:
@@ -1172,7 +1186,7 @@ export const Search = Tool.make("Search", { description: "Searches the catalog."
 
 ```efx
 export rpc PagesRpc {
-  page(id: string where isUUID(), size: Int where isGreaterThan(0), isLessThanOrEqualTo(100), after?: string): Array<string>
+  page(id: string where isUUID, size: Int where isGreaterThan(0), isLessThanOrEqualTo(100), after?: string): string[]
 }
 ```
 
@@ -1190,7 +1204,7 @@ export const PagesRpc = RpcGroup.make(
 
 ```efx
 export group SearchApi {
-  get find "/" (query: { q: string where isNonEmpty(); page?: string where isMaxLength(4) }): Array<string>
+  get find "/" (query: { q: string where isNonEmpty; page?: string where isMaxLength(4) }): string[]
 }
 ```
 
@@ -1381,10 +1395,10 @@ describe("brand and where: the reverse compiler (ADR-0077)", () => {
     ].join("\n"))
     expect(efx).toContain("a?: string where isMaxLength(2)")
     expect(efx).toContain("b?: string | undefined where isMaxLength(2)")
-    expect(efx).toContain("c: string | null where isMaxLength(2), isTrimmed()")
+    expect(efx).toContain("c: string | null where isMaxLength(2), isTrimmed")
     // a check on the nullable union, and two chained checks, aren't what `where` writes
-    expect(efx).toContain("d = NullOr(String).check(isNonEmpty())")
-    expect(efx).toContain("e = String.check(isTrimmed()).check(isNonEmpty())")
+    expect(efx).toContain("d = NullOr(Schema.String).check(isNonEmpty())")
+    expect(efx).toContain("e = Schema.String.check(isTrimmed()).check(isNonEmpty())")
   })
 
   it("keeps `Schema.` on a builtin whose name the module binds", () => {
@@ -1702,11 +1716,11 @@ Brands and where checks (ADR-0077)
 export brand UserId = string
 brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })
 schema Server {
-  host: string where isNonEmpty(), isMaxLength(255)
+  host: string where isNonEmpty, isMaxLength(255)
   owner: string | null where isMaxLength(64)
   where: string
 }
-schema Point = { x: number where isFinite(), y: number }
+schema Point = { x: number where isFinite, y: number }
 tool Search(query: string where isNonEmpty(), limit: Int): Products
 
 ---
@@ -1738,9 +1752,7 @@ tool Search(query: string where isNonEmpty(), limit: Int): Products
         (type_annotation
           (predefined_type))
         (where_clause
-          (call_expression
-            (identifier)
-            (arguments))
+          (identifier)
           (call_expression
             (identifier)
             (arguments
@@ -1769,9 +1781,7 @@ tool Search(query: string where isNonEmpty(), limit: Int): Products
         (type_annotation
           (predefined_type))
         (where_clause
-          (call_expression
-            (identifier)
-            (arguments))))
+          (identifier)))
       (property_signature
         (property_identifier)
         (type_annotation
@@ -1802,7 +1812,7 @@ Append to `core/test/blume-grammar.test.ts`:
 describe("efx brand and where scopes (ADR-0077)", () => {
   it("scopes `brand` as a declaration and `where` as a keyword", async () => {
     const s = await scopesOf(
-      "export brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })\nschema S {\n  name: string where isNonEmpty()\n}"
+      "export brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })\nschema S {\n  name: string where isNonEmpty\n}"
     )
     expect(s.get("brand")).toContain("storage.type.efx")
     expect(s.get("where")).toContain("keyword.other.where.efx")
@@ -1863,6 +1873,7 @@ existing corpus passed 32/32, and the corpus entry above was produced from it.
 +      [$.subscript_expression, $.where_clause],
 +      [$.call_expression, $.where_clause],
 +      [$.non_null_expression, $.where_clause],
++      [$.is_expression, $.where_clause],
 +      [$.where_clause],
 +      [$._keyword_identifier, $.impl_expression],
 +      [$.primary_type, $.impl_expression],
@@ -2057,7 +2068,7 @@ pnpm check && pnpm lint && git commit packages/effectscript/tree-sitter/grammar.
 
     export schema Signup {
       email: Email
-      name: string where isTrimmed(), isNonEmpty()
+      name: string where isTrimmed, isNonEmpty
       age: Int where isGreaterThan(17)
       plan: "free" | "pro"
       referrer?: string
@@ -2104,3 +2115,89 @@ Expected: PASS. Report any command that couldn't be run.
 ```bash
 pnpm check && pnpm lint && git commit packages/effectscript/core/test/fixtures/schema/basic.efx packages/effectscript/core/scripts/generate-skill.ts packages/effectscript/core/skills packages/effectscript/site/src/samples/schemas/app.efx packages/effectscript/effect-docs/content docs/superpowers/specs/2026-10-02-effectscript-design.md -m "docs(effectscript): brand and where in the skill, the site, the docs corpus and the spec (Plan 30 Task 6, ADR-0077)"
 ```
+
+## Execution record
+
+Executed on 2026-10-05 in the `effectscript-intent-compression` worktree, on top of the
+uncommitted Plan 29 (`is`) and ADR-0091 A1–A6 work. No commits were made: each task's commit step
+was skipped and the work stays in the worktree. The plan's examples above now use the ADR-0091
+short form (`where isTrimmed, isNonEmpty`), and its expectations match the shipped tests.
+
+- **Task 1:** as planned, plus three changes:
+  - `efxParseWhere` also clears `inType` while it reads the checks. A type literal's member reads
+    its `where` from `tsParseTypeMemberSemicolon`, inside the type, and the checks are expressions.
+  - `efxParseBrand` declares the brand's name in acorn's scope (`checkLValSimple`, as a class
+    does), so `export { UserId }` after `brand UserId = …` parses. Without it the reverse
+    compiler's new brand conversion of `reverse-review.test.ts`'s "C4 brand on a union" fell back
+    to TypeScript ("Export 'X' is not defined"). `schema X = T` has the same gap; it's left as it
+    was.
+  - `raise` returns `super.raise(…) as never`, which `pnpm check` needs.
+- **ADR-0091 amendment (in `checksText`):** a check that is a bare identifier, or a call whose
+  callee is one, is looked up before the walk.
+  - A free name that the `Schema` namespace resolves (the prelude's `resolveValue`) is qualified by
+    the prelude as before. When the check is the bare identifier itself, `()` follows it.
+  - **Ruling:** `isFinite` is a JavaScript global, so the prelude excludes it and `Schema`'s
+    builtins table doesn't list it. ADR-0091 writes `where isFinite`, so a `where` list reads a
+    free `Schema` check named like a global as `Schema`'s, but only as the check itself or its
+    callee: inside a check, `(isFinite: number) => isFinite > 0` keeps JavaScript's meaning. The
+    names come from a new generated table, `schemaGlobalChecks` (`generate-prelude.ts`: `Schema`
+    value exports that are globals and named `is…`; today only `isFinite`). The reverse compiler
+    writes `where isFinite` under the same rule. Recorded in the spec (§4.6); no separate ADR,
+    since ADR-0091 already decided the spelling.
+  - A local binding stays as written, uncalled (`where isShort`). A bare check that needs
+    arguments compiles to the empty call, and TypeScript reports it ("Expected 1-2 arguments, but
+    got 0"), which a type-checking test asserts.
+- **Task 2:** as planned. The `brands` preset compiled byte for byte to its hand-written lowering
+  (the temporary test passed on the first run and was removed). The live preset now writes
+  `where isUUID` and `where isTrimmed, isNonEmpty, isMaxLength(64)`.
+- **Task 3:** as planned. The four goldens matched the plan's text. Their success types are
+  `string[]`, not `Array<string>`: ADR-0091 A3 makes the reverse compiler write `string[]`, and a
+  fixture's source should equal its reverse golden.
+- **Task 4:** as planned, with these differences:
+  - `checks.ts` renders each check with `checkText`: `Schema.isTrimmed()` (no arguments, written
+    `()` with nothing between) becomes `isTrimmed`. A call with arguments keeps its call, with
+    `Schema.` dropped from its own name and from the bare-able references in its arguments
+    (`textFrom`).
+  - `isNullable` also refuses `Schema.Null`/`Schema.Undefined`, a `Union` or `Literals` with a
+    `null` member, so a brand never converts to an EFX3006 error.
+  - `brandOf` and `checkedOf` refuse optional calls (`?.`).
+  - The plan's expectations `d = NullOr(String)…` and `e = String.check(…)…` were wrong: `String`
+    is a JavaScript global, so the reverse compiler keeps `Schema.String` (as it did before).
+  - A1 doesn't get in the way: `convertSchemaRun` runs before any pipe conversion, so
+    `S.pipe(Schema.brand("X"))` + its type become `brand X = …`. A brand whose key isn't its name
+    on a union, and `S.pipe(Schema.check(…))`, stay TypeScript and A1 turns their `.pipe` into
+    `|>`.
+  - `reverse-schema.test.ts`'s round trips "a branded alias" and "a class with a schema field"
+    asserted the old canonical forms. They now assert `brand UserId = string`, a key that isn't the
+    name (`Brand<"users/UserId">`), and a checked field beside an `=` field.
+  - Snapshot changes were the ones the plan listed. `where.reverse.efx` differs from `where.efx`
+    only in `age`'s one-line list. `schema/where-members` failed its round trip before this task:
+    the reverse wrote its variants as `schema Circle { _tag: "Circle"; radius = … }`, which compiles
+    back with two spaces after `{` (`removeLine` on a `_tag` field that shares its line). That is a
+    pre-existing bug this task now avoids, not fixes.
+- **Task 5:** as planned, plus a `[$.is_expression, $.where_clause]` conflict that Plan 29's
+  `is_expression` needs (added to the diff above). `tree-sitter generate` also warns that Plan 29's
+  `[primary_expression, _keyword_identifier, is_predicate]` conflict is unnecessary. The corpus
+  entry covers bare checks (`(identifier)` in a `where_clause`) beside calls.
+- **Task 6:** as planned. `patterns.md` also says that a check without arguments drops its `()`.
+  The spec gains the amendment's rules in §4.6 and the reverse normalization. The docs corpus
+  changed in one example: `GroupId` in `ai-docs/40_sql/10_basics.efx` is a `brand`. Re-sugared
+  examples stay at 1,951, and o200k EffectScript tokens go from 237,169 to 237,163. The HTTP
+  fixtures' `UserId` that Step 2 expected isn't a `const` + `type` pair in the corpus, so it
+  stays as it was.
+- **TDD gaps:**
+  - Task 5's tree-sitter corpus entry and TextMate tests were written after the grammar changes,
+    so they weren't seen failing. The corpus tree was read from `tree-sitter parse` and checked by
+    hand against the plan's prototype tree.
+  - The amendment's alias cases (`schema Ratio = number where isFinite`) were written in Task 1 and
+    passed once Task 2 made aliases take `where`.
+- **Not run as written:** `core/test/roundtrip.test.ts` doesn't exist. `pnpm lint-fix` was not run,
+  because it would reformat other sessions' uncommitted files. `dprint fmt` ran on this plan's files
+  only. `pnpm lint` still reports 38 files: the 33 under `brand/web/lp` and `DESIGN.md`, plus five
+  from earlier uncommitted work in this worktree (`is.test.ts`, `reverse/tags.ts`,
+  `transform/registry.ts`, `transform/is.ts`, and Plan 29's `is_*` rules in `grammar.js`).
+- **Deferred:**
+  - The playground's `law` preset (Plan 24, proposed) still writes `schema Money = Int & Brand<"Money">`.
+    ADR-0091 moves Plans 24–27 to `brand Money = Int`; that belongs to those plans.
+  - `export { X }` after `schema X = T`.
+  - The `_tag` double space.

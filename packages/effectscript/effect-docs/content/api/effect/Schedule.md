@@ -16,11 +16,12 @@ The examples in the JSDoc of `packages/effect/src/Schedule.ts`, in EffectScript 
 **Defining retry and repeat schedules**
 
 ```efx
+import { TestClock } from "effect/testing"
+
 const executions: Array<number> = []
-const program = sync(() => executions.push(executions.length + 1)).pipe(
-  repeat(Schedule.recurs(2)),
-  as(executions)
-)
+const program = sync(() => executions.push(executions.length + 1))
+  |> repeat(Schedule.recurs(2))
+  |> as(executions)
 
 await runPromise(provide(program, TestClock.layer())) // => [1, 2, 3]
 ```
@@ -110,7 +111,7 @@ await runPromise(program) // => "attempt 1: input"
 import { Duration } from "effect"
 
 // Extract step function from an existing schedule
-const schedule = Schedule.exponential("100 millis").pipe(Schedule.upTo({ times: 3 }))
+const schedule = Schedule.exponential("100 millis") |> Schedule.upTo({ times: 3 })
 
 const program = effect {
   const stepFn = await Schedule.toStep(schedule)
@@ -147,9 +148,8 @@ await runPromise(provide(program, TestClock.layer())) // => [0, 1]
 ```efx
 import { Duration } from "effect"
 
-const schedule = Schedule.recurs(1).pipe(
-  Schedule.addDelay(() => succeed("25 millis"))
-)
+const schedule = Schedule.recurs(1)
+  |> Schedule.addDelay(() => succeed("25 millis"))
 const program = effect {
   const step = await Schedule.toStep(schedule)
   const [, delay] = await step(0, undefined)
@@ -284,9 +284,8 @@ await runPromise(program) // => [0, Duration.seconds(1)]
 **Mapping schedule outputs**
 
 ```efx
-const countSchedule = Schedule.recurs(5).pipe(
-  Schedule.map(({ output: count }) => succeed(`Execution #${count + 1}`))
-)
+const countSchedule = Schedule.recurs(5)
+  |> Schedule.map(({ output: count }) => succeed(`Execution #${count + 1}`))
 const program = effect {
   const step = await Schedule.toStep(countSchedule)
   const [output] = await step(0, undefined)
@@ -301,9 +300,8 @@ await runPromise(program) // => "Execution #1"
 **Modifying delays from schedule metadata**
 
 ```efx
-const schedule = Schedule.spaced("10 millis").pipe(
-  Schedule.modifyDelay(({ duration }) => succeed(Duration.times(duration, 2)))
-)
+const schedule = Schedule.spaced("10 millis")
+  |> Schedule.modifyDelay(({ duration }) => succeed(Duration.times(duration, 2)))
 const program = effect {
   const step = await Schedule.toStep(schedule)
   const [, delay] = await step(0, undefined)
@@ -335,11 +333,12 @@ await runPromise(program) // => "input"
 **Limiting recurrences**
 
 ```efx
+import { TestClock } from "effect/testing"
+
 const executions: Array<number> = []
-const program = sync(() => executions.push(executions.length + 1)).pipe(
-  repeat(Schedule.recurs(3)),
-  as(executions)
-)
+const program = sync(() => executions.push(executions.length + 1))
+  |> repeat(Schedule.recurs(3))
+  |> as(executions)
 
 await runPromise(provide(program, TestClock.layer())) // => [1, 2, 3, 4]
 ```
@@ -365,9 +364,8 @@ await runPromise(program) // => [0, Duration.seconds(2)]
 
 ```efx
 const attempts: Array<number> = []
-const monitoredSchedule = Schedule.recurs(2).pipe(
-  Schedule.tap((metadata) => sync(() => attempts.push(metadata.attempt)))
-)
+const monitoredSchedule = Schedule.recurs(2)
+  |> Schedule.tap((metadata) => sync(() => attempts.push(metadata.attempt)))
 const program = effect {
   const step = await Schedule.toStep(monitoredSchedule)
   const [output] = await step(0, undefined)
@@ -382,12 +380,13 @@ await runPromise(program) // => { attempts: [1], output: 0 }
 **Limiting by duration and recurrence count**
 
 ```efx
+import { TestClock } from "effect/testing"
+
 const executions: Array<number> = []
-const schedule = Schedule.forever.pipe(Schedule.upTo({ times: 2 }))
-const program = sync(() => executions.push(executions.length + 1)).pipe(
-  repeat(schedule),
-  as(executions)
-)
+const schedule = Schedule.forever |> Schedule.upTo({ times: 2 })
+const program = sync(() => executions.push(executions.length + 1))
+  |> repeat(schedule)
+  |> as(executions)
 
 await runPromise(provide(program, TestClock.layer())) // => [1, 2, 3]
 ```
@@ -412,12 +411,13 @@ await runPromise(program) // => [0, Duration.seconds(5)]
 **Repeating forever**
 
 ```efx
+import { TestClock } from "effect/testing"
+
 const executions: Array<number> = []
-const schedule = Schedule.forever.pipe(Schedule.upTo({ times: 2 }))
-const program = sync(() => executions.push(executions.length + 1)).pipe(
-  repeat(schedule),
-  as(executions)
-)
+const schedule = Schedule.forever |> Schedule.upTo({ times: 2 })
+const program = sync(() => executions.push(executions.length + 1))
+  |> repeat(schedule)
+  |> as(executions)
 
 await runPromise(provide(program, TestClock.layer())) // => [1, 2, 3]
 ```
@@ -427,10 +427,7 @@ await runPromise(provide(program, TestClock.layer())) // => [1, 2, 3]
 **Setting a schedule input type**
 
 ```efx
-import { Schedule } from "effect"
-
-const schedule = Schedule.recurs(3).pipe(
-  Schedule.setInputType<string>()
-)
+const schedule = Schedule.recurs(3)
+  |> Schedule.setInputType<string>()
 Schedule.isSchedule(schedule) // => true
 ```

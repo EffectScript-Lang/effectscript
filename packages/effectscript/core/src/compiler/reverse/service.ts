@@ -6,7 +6,7 @@
  *
  * @since 4.0.0
  */
-import type { Node } from "../ast.ts"
+import { children, type Node } from "../ast.ts"
 import { serviceKey } from "../serviceKey.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
@@ -99,6 +99,98 @@ const layerHead = (key: string): string | undefined => {
 
 const lineStart = (ctx: ReverseCtx, offset: number): number => ctx.source.lastIndexOf("\n", offset - 1) + 1
 
+/** The generator an implementation member compiles to: `Effect.fn("…")(function*…)` or `Effect.fnUntraced(function*…)`. */
+const implementationFunction = (ctx: ReverseCtx, value: Node): Node | undefined => {
+  if (value?.type !== "CallExpression" || value.arguments.length !== 1) return undefined
+  const fn: Node = value.arguments[0]
+  if (fn.type !== "FunctionExpression" || fn.generator !== true) return undefined
+  const callee: Node = value.callee
+  if (isMember(callee, ctx.effect, "fnUntraced")) return fn
+  return callee.type === "CallExpression" && isMember(callee.callee, ctx.effect, "fn") ? fn : undefined
+}
+
+const paramsOf = (signature: Node): Array<Node> => signature.params ?? signature.parameters ?? []
+
+/**
+ * Drops the parameter types an implementation repeats from its signature (ADR-0091 A2): exactly the
+ * text the forward compiler writes back, the declared annotation (with `?` for an optional name).
+ */
+const untypeImplementations = (
+  ctx: ReverseCtx,
+  value: Node,
+  signatures: ReadonlyMap<string, Node>,
+  of: string | undefined
+): void => {
+  const objects: Array<Node> = []
+  const find = (node: Node): void => {
+    if (
+      node.type === "CallExpression" && node.callee.type === "MemberExpression" && !node.callee.computed &&
+      node.callee.object.type === "Identifier" && node.callee.object.name === of &&
+      node.callee.property.name === "of" && node.arguments[0]?.type === "ObjectExpression"
+    ) {
+      objects.push(node.arguments[0])
+    }
+    for (const child of children(node)) find(child)
+  }
+  if (of === undefined) {
+    if (value.type === "ObjectExpression") objects.push(value)
+  } else find(value)
+  const annotation = (node: Node): string => (node.typeAnnotation ? slice(ctx, node.typeAnnotation) : "")
+  for (const object of objects) {
+    for (const property of object.properties as Array<Node>) {
+      if (property.type !== "Property" || property.computed || property.key.type !== "Identifier") continue
+      const fn = implementationFunction(ctx, property.value)
+      const signature = signatures.get(property.key.name)
+      if (fn === undefined || signature === undefined) continue
+      const declared = paramsOf(signature)
+      ;(fn.params as Array<Node>).forEach((param, i) => {
+        const source = declared[i]
+        if (source === undefined || (source.type === "RestElement") !== (param.type === "RestElement")) return
+        const declaredText = source.type === "RestElement"
+          ? `${annotation(source.argument)}${annotation(source)}`
+          : annotation(source)
+        if (declaredText === "") return
+        if (param.type === "Identifier" || (param.type === "AssignmentPattern" && param.left.type === "Identifier")) {
+          const name: Node = param.type === "Identifier" ? param : param.left
+          if (!name.typeAnnotation) return
+          const from = name.start + (name.name as string).length
+          const optional = param.type === "Identifier" && source.optional === true ? "?" : ""
+          if (ctx.source.slice(from, name.typeAnnotation.end) === `${optional}${declaredText}`) {
+            ctx.s.remove(from, name.typeAnnotation.end)
+          }
+        } else {
+          const typed: Node | undefined = param.typeAnnotation
+            ? param
+            : param.argument?.typeAnnotation
+            ? param.argument
+            : undefined
+          if (typed !== undefined && typed.typeAnnotation.end === param.end && annotation(typed) === declaredText) {
+            ctx.s.remove(typed.typeAnnotation.start, typed.typeAnnotation.end)
+          }
+        }
+      })
+    }
+  }
+}
+
+const signatureMap = (members: Iterable<Node>): Map<string, Node> =>
+  new Map([...members].map((signature) => [signature.key.name as string, signature]))
+
+/**
+ * A service's fields are `readonly` in its shape and written without the modifier (ADR-0091 A5): the
+ * field that isn't, or `undefined` when they all are.
+ */
+const mutableField = (members: ReadonlyArray<Node>): Node | undefined =>
+  members.find((m) => m.type === "TSPropertySignature" && m.readonly !== true)
+
+const dropReadonly = (ctx: ReverseCtx, members: ReadonlyArray<Node>): void => {
+  for (const m of members) {
+    if (m.type === "TSPropertySignature" && /^readonly\s/.test(ctx.source.slice(m.start, m.key.start))) {
+      ctx.s.remove(m.start, m.key.start)
+    }
+  }
+}
+
 /**
  * @since 4.0.0
  * @category reverse
@@ -132,6 +224,8 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
       return explain("its members are separated by commas")
     }
   }
+  const mutable = mutableField(members)
+  if (mutable !== undefined) return explain(`its \`${slice(ctx, mutable.key)}\` field isn't readonly`)
   // class body: `static readonly layer…` members, then the generated accessors
   const statics: Array<Node> = cls.body.body
   const accessors = new Map<string, Node>()
@@ -199,6 +293,7 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
   const as = key.value === serviceKey(ctx.options, name) ? "" : ` as ${keyText}`
   ctx.s.update(cls.start, shape.start, `service ${name}${as} `)
   // members
+  dropReadonly(ctx, members)
   for (const signature of effects) {
     ctx.s.appendLeft(signature.start, "effect ")
     convertReturnType(ctx, returnTypeOf(signature), "Effect")
@@ -212,6 +307,8 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
     ctx.s.remove(literalClose, opensLine ? bodyOpen + 2 : bodyOpen + 1)
   }
   for (const accessor of accessorNodes) ctx.s.remove(lineStart(ctx, accessor.start), accessor.end + 1)
+  const signatures = signatureMap(effects)
+  for (const layer of layers) untypeImplementations(ctx, layer.member.value, signatures, name)
   layers.forEach((layer, i) => {
     replaceKeepingComments(ctx, layer.member.start, layer.member.value.start, `${layer.head} = `)
     layerPlans[i]!(visit)
@@ -400,6 +497,7 @@ export const convertReferenceService = (
     else accessors.set(property.key.name, property)
   }
   const members: Array<Node> = iface.body.body
+  if (mutableField(members) !== undefined) return 0
   const effects: Array<Node> = []
   for (const signature of members) {
     if (
@@ -430,6 +528,10 @@ export const convertReferenceService = (
   const keyword = ctx.source.indexOf("interface", iface.start)
   const as = key.value === serviceKey(ctx.options, name) ? "" : ` as ${JSON.stringify(key.value)}`
   ctx.s.update(keyword, iface.id.end, `service ${name}${as}`)
+  dropReadonly(ctx, members)
+  const signatures = signatureMap(effects)
+  untypeImplementations(ctx, value, signatures, undefined)
+  for (const layer of layers) untypeImplementations(ctx, layer.member.value, signatures, reference)
   for (const signature of effects) {
     ctx.s.appendLeft(signature.start, "effect ")
     convertReturnType(ctx, returnTypeOf(signature), "Effect")

@@ -382,6 +382,8 @@ const result = [error._tag, error.isRetryable] // => ["InvalidUserInputError", f
 **Handling an AI error by tag**
 
 ```efx
+import { AiError } from "effect/ai"
+
 const aiOperation = fail(new AiError.AiError({
   module: "OpenAI",
   method: "generateText",
@@ -389,14 +391,13 @@ const aiOperation = fail(new AiError.AiError({
 }))
 
 // Handle specific reason types
-const handled = aiOperation.pipe(
-  catchTag("AiError", (error) => {
-    if (error.reason._tag === "RateLimitError") {
+const handled = aiOperation
+  |> catchTag("AiError", (error) => {
+    if (error.reason is RateLimitError) {
       return succeed(`Retry after ${error.retryAfter}`)
     }
     return fail(error)
   })
-)
 
 await runPromise(handled) // => "Retry after 30000 millis"
 ```

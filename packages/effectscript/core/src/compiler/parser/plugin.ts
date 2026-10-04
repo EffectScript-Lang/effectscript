@@ -24,6 +24,8 @@ const lineBreak = /[\n\r\u2028\u2029]/
 
 /** Words that follow an expression as operators, so they can't be a construct's name. */
 const typeOperators = new Set(["as", "satisfies", "in", "instanceof", "of"])
+/** acorn's precedence for `<`, `instanceof` and `in`: a test binds like them (ADR-0087). */
+const relationalPrecedence = 7
 
 /** The first `await` in an expression, for refusing one in a guard. */
 const efxFindAwait = (node: any): any => {
@@ -45,6 +47,10 @@ interface EfxState {
   readonly classKinds: Array<string>
   /** The classes being parsed, innermost last: an `effect` method's span names its class. */
   readonly classNodes: Array<any>
+  /** Above 0 while parsing a field's or a declaration's type, where `where` may follow (ADR-0077). */
+  schemaTypes: number
+  /** The type members being parsed, innermost last: a member's `where` attaches to it. */
+  readonly members: Array<any>
 }
 
 /**
@@ -53,7 +59,14 @@ interface EfxState {
 export const efxPlugin = (Base: any): any =>
   class EfxParser extends Base {
     efxState(): EfxState {
-      return (this.efx ??= { pipeDepth: 0, arrowStarts: new Set<number>(), classKinds: [], classNodes: [] })
+      return (this.efx ??= {
+        pipeDepth: 0,
+        arrowStarts: new Set<number>(),
+        classKinds: [],
+        classNodes: [],
+        schemaTypes: 0,
+        members: []
+      })
     }
 
     // --- token helpers ---------------------------------------------------------------------------
@@ -91,6 +104,15 @@ export const efxPlugin = (Base: any): any =>
     // --- pipeline --------------------------------------------------------------------------------
 
     parseExprOp(left: any, leftStartPos: number, leftStartLoc: any, minPrec: number, forInit: boolean): any {
+      if (relationalPrecedence > minPrec && this.efxIsTestAhead()) {
+        const node = this.startNodeAt(leftStartPos, leftStartLoc)
+        node.subject = left
+        node.keyword = { start: this.start, end: this.end }
+        this.next()
+        node.pattern = this.efxParseIsPattern()
+        this.finishNode(node, "IsExpression")
+        return this.parseExprOp(node, leftStartPos, leftStartLoc, minPrec, forInit)
+      }
       if (this.type === pipelineToken && pipelineToken.binop > minPrec) {
         const op = { start: this.start, end: this.end }
         this.next()
@@ -211,6 +233,7 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsEffectDeclarationStart()) return this.efxParseEffectDeclaration(false)
       if (this.efxDeferFollows()) return this.efxParseDefer()
       if (this.efxIsMainStart()) return this.efxParseMain()
+      if (this.efxIsBrandStart()) return this.efxParseBrand()
       if (this.efxIsWord("schema") && this.efxNextIsNameSameLine()) return this.efxParseSchema()
       if (this.efxIsClassLikeStart()) return this.efxParseClassLike(this.value)
       if (this.efxIsBindingDeclarationStart("layer")) return this.efxParseBindingDeclaration("LayerDeclaration")
@@ -230,7 +253,7 @@ export const efxPlugin = (Base: any): any =>
     }
 
     shouldParseExportStatement(): any {
-      return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() ||
+      return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() || this.efxIsBrandStart() ||
         this.efxIsBindingDeclarationStart("layer") || this.efxIsBindingDeclarationStart("atom") ||
         this.efxIsHttpApiStart("group") || this.efxIsHttpApiStart("api") || this.efxIsCommandStart() ||
         this.efxIsSignatureBlockStart("rpc") || this.efxIsSignatureBlockStart("entity") || this.efxIsWorkflowStart() ||
@@ -310,6 +333,14 @@ export const efxPlugin = (Base: any): any =>
     }
 
     parseExprAtom(refDestructuringErrors: unknown, forInit: unknown, forNew: unknown): any {
+      if (this.efxIsPredicateAhead()) {
+        const node = this.startNode()
+        node.subject = null
+        node.keyword = { start: this.start, end: this.end }
+        this.next()
+        node.pattern = this.efxParseIsPattern()
+        return this.finishNode(node, "IsExpression")
+      }
       if (this.efxIsMatchAhead()) return this.efxParseMatch()
       if (this.efxIsImplAhead()) return this.efxParseImpl()
       if (this.efxIsActivityAhead()) return this.efxParseActivity()
@@ -398,6 +429,58 @@ export const efxPlugin = (Base: any): any =>
         return element
       }
       return super.parseClassElement(constructorAllowsSuper)
+    }
+
+    /** A field of a `schema`, `error` or variant body may end with `where` checks (ADR-0077). */
+    parseClassPropertyAnnotation(node: any): any {
+      const kinds = this.efxState().classKinds
+      const kind = kinds[kinds.length - 1]
+      if (kind !== "schema" && kind !== "error" && kind !== "variant" && kind !== "config") {
+        return super.parseClassPropertyAnnotation(node)
+      }
+      this.efxInSchemaType(() => super.parseClassPropertyAnnotation(node))
+      if (node.typeAnnotation === undefined || !this.efxIsWord("where") || this.hasPrecedingLineBreak()) return
+      if (kind === "config") {
+        this.efxRaise(
+          this.start,
+          "EFX3005",
+          "`where` isn't available on `config` fields",
+          "give the field a `brand` or alias type that carries the checks"
+        )
+      }
+      node.efxWhere = this.efxParseWhere()
+      if (this.type === tt.eq) {
+        this.efxRaise(
+          this.start,
+          "EFX3005",
+          "A field with `where` checks can't also have `= <schema>`",
+          "put the checks in the expression: `name = T.check(…)`"
+        )
+      }
+    }
+
+    tsParsePropertyOrMethodSignature(node: any, readonly: boolean): any {
+      const members = this.efxState().members
+      members.push(node)
+      try {
+        return super.tsParsePropertyOrMethodSignature(node, readonly)
+      } finally {
+        members.pop()
+      }
+    }
+
+    /** A type literal's member in a schema position is a field: `where` may follow its type (ADR-0077). */
+    tsParseTypeMemberSemicolon(): any {
+      const state = this.efxState()
+      const member = state.members.at(-1)
+      if (
+        state.schemaTypes > 0 && member?.typeAnnotation !== undefined && member.parameters === undefined &&
+        member.efxWhere === undefined
+      ) {
+        const clause = this.efxParseWhere()
+        if (clause !== null) member.efxWhere = clause
+      }
+      return super.tsParseTypeMemberSemicolon()
     }
 
     // --- throws / needs ------------------------------------------------------------------------
@@ -501,7 +584,28 @@ export const efxPlugin = (Base: any): any =>
       const node = this.startNode()
       node.efxKind = kind
       node.efxKeyword = { start: this.start, end: this.end }
+      if (kind === "error" && this.efxIsBodilessError()) return this.efxParseBodilessError(node)
       return this.parseClass(node, true)
+    }
+
+    /** `error Forbidden` / `error Unauthorized status 401`: no `{` follows the header (ADR-0091 A4). */
+    efxIsBodilessError(): boolean {
+      let i = skipSpace(this.input, this.lookahead().end)
+      const status = /^status\s+\d+/.exec(this.input.slice(i))
+      if (status !== null) i = skipSpace(this.input, i + status[0].length)
+      return this.input[i] !== "{" && this.input[i] !== "<" && !/^(?:extends|implements)\b/.test(this.input.slice(i))
+    }
+
+    efxParseBodilessError(node: any): any {
+      this.next()
+      this.parseClassId(node, true)
+      this.parseClassSuper(node)
+      const body = this.startNodeAt(this.lastTokEnd, this.lastTokEndLoc)
+      body.body = []
+      node.body = this.finishNodeAt(body, "ClassBody", this.lastTokEnd, this.lastTokEndLoc)
+      node.efxBodyless = true
+      this.semicolon()
+      return this.finishNode(node, "ClassDeclaration")
     }
 
     parseClass(node: any, isStatement: unknown): any {
@@ -556,9 +660,112 @@ export const efxPlugin = (Base: any): any =>
         this.semicolon()
         return this.finishNode(node, "SchemaAdtDeclaration")
       }
-      node.typeAnnotation = this.tsInType(() => this.tsParseType())
+      node.typeAnnotation = this.efxInSchemaType(() => this.tsInType(() => this.tsParseType()))
+      node.efxWhere = this.efxParseWhere()
       this.semicolon()
       return this.finishNode(node, "SchemaAliasDeclaration")
+    }
+
+    /** A parse error with its own code (ADR-0077); other parse errors are EFX1001. */
+    efxRaise(pos: number, code: string, message: string, hint?: string): never {
+      try {
+        super.raise(pos, message)
+      } catch (error) {
+        Object.assign(error as object, { efxCode: code, efxHint: hint })
+        throw error
+      }
+      throw new Error("unreachable")
+    }
+
+    // `Array<string where c>`: checks belong to a field or a declaration (ADR-0077)
+    raise(pos: number, message: string): never {
+      if (this.efxState().schemaTypes > 0 && pos === this.start && this.efxIsWord("where")) {
+        return this.efxRaise(
+          pos,
+          "EFX3005",
+          "`where` checks a field or a declaration, not a nested type",
+          "write the field as `name = <Schema expression>`"
+        )
+      }
+      return super.raise(pos, message) as never
+    }
+
+    /** Parses `f()` as a field's or a declaration's type, which `where` may follow (ADR-0077). */
+    efxInSchemaType<A>(f: () => A): A {
+      const state = this.efxState()
+      state.schemaTypes++
+      try {
+        return f()
+      } finally {
+        state.schemaTypes--
+      }
+    }
+
+    /** After a `,`: the next member or parameter (`name:`, `name?:`, `"name":`, `readonly name:`). */
+    efxMemberAfterComma(): boolean {
+      return /^\s*(?:readonly\s+)?(?:[A-Za-z_$][\w$]*|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')\s*\??\s*:/.test(
+        this.input.slice(this.end)
+      )
+    }
+
+    /**
+     * `where check, …` after a field's or a declaration's type, on the type's line (ADR-0077), or
+     * `null`. A comma that starts the next member or parameter ends the list. A check without
+     * arguments may be written bare, `where isTrimmed` (ADR-0091).
+     */
+    efxParseWhere(): any {
+      if (!this.efxIsWord("where") || this.hasPrecedingLineBreak()) return null
+      const state = this.efxState()
+      const outer = state.schemaTypes
+      const inType = this.inType
+      // the checks are expressions: a `where` inside one is a name, and a type literal's member
+      // ends its checks while the type is still being read
+      state.schemaTypes = 0
+      this.inType = false
+      try {
+        const clause = this.startNode()
+        clause.keyword = { start: this.start, end: this.end }
+        this.next()
+        clause.checks = []
+        for (;;) {
+          const check = this.parseMaybeConditional(false, null)
+          // `string where c | null`: the `| null` was meant for the type
+          if (check.type === "BinaryExpression" && check.operator === "|") {
+            this.efxRaise(check.start, "EFX3005", "`where` comes after the whole type", "write `T | null where …`")
+          }
+          clause.checks.push(check)
+          if (this.type !== tt.comma || this.efxMemberAfterComma()) break
+          this.next()
+        }
+        return this.finishNode(clause, "WhereClause")
+      } finally {
+        state.schemaTypes = outer
+        this.inType = inType
+      }
+    }
+
+    /** `brand Name = Type [where …]` (ADR-0077), and `brand Name<…>` so its type parameters are refused. */
+    efxIsBrandStart(): boolean {
+      if (!this.efxIsWord("brand") || !this.efxNextIsNameSameLine()) return false
+      const name = this.lookahead()
+      const after = skipSpace(this.input, name.end)
+      return (this.input[after] === "=" && this.input[after + 1] !== "=" && this.input[after + 1] !== ">") ||
+        this.input[after] === "<"
+    }
+
+    efxParseBrand(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.id = this.parseIdent()
+      // a brand declares a value, so `export { Name }` finds it
+      this.checkLValSimple(node.id, 2 /* BIND_LEXICAL */)
+      if (this.input[this.start] === "<") this.efxRaise(this.start, "EFX3002", "A brand can't have type parameters")
+      this.expect(tt.eq)
+      node.typeAnnotation = this.efxInSchemaType(() => this.tsInType(() => this.tsParseType()))
+      node.efxWhere = this.efxParseWhere()
+      this.semicolon()
+      return this.finishNode(node, "BrandDeclaration")
     }
 
     parseClassSuper(node: any): any {
@@ -619,7 +826,7 @@ export const efxPlugin = (Base: any): any =>
             const section = this.startNode()
             section.key = this.parseIdent()
             this.expect(tt.colon)
-            section.annotation = this.tsInType(() => this.tsParseType())
+            section.annotation = this.efxInSchemaType(() => this.tsInType(() => this.tsParseType()))
             line.sections.push(this.finishNode(section, "EndpointSection"))
             if (this.type !== tt.parenR) this.expect(tt.comma)
           }
@@ -650,7 +857,8 @@ export const efxPlugin = (Base: any): any =>
         field.key = this.parseIdent(true)
         field.optional = this.eat(tt.question)
         this.expect(tt.colon)
-        field.annotation = this.tsInType(() => this.tsParseType())
+        field.annotation = this.efxInSchemaType(() => this.tsInType(() => this.tsParseType()))
+        field.efxWhere = this.efxParseWhere()
         line.fields.push(this.finishNode(field, "SignatureField"))
         if (this.type !== tt.parenR) this.expect(tt.comma)
       }
@@ -796,6 +1004,14 @@ export const efxPlugin = (Base: any): any =>
         param.optional = this.eat(tt.question)
         this.expect(tt.colon)
         param.annotation = this.tsInType(() => this.tsParseType())
+        if (this.efxIsWord("where") && !this.hasPrecedingLineBreak()) {
+          this.efxRaise(
+            this.start,
+            "EFX3005",
+            "`where` isn't available on `command` parameters",
+            "check the value in the command's body"
+          )
+        }
         param.value = this.eat(tt.eq) ? this.parseMaybeAssign() : null
         node.params.push(this.finishNode(param, "CommandParameter"))
         if (this.type !== tt.parenR) this.expect(tt.comma)
@@ -1004,6 +1220,68 @@ export const efxPlugin = (Base: any): any =>
         this.expect(tt.parenR)
       }
       return this.finishNode(node, "TagPattern")
+    }
+
+    // --- is (ADR-0087) ---------------------------------------------------------------------------
+
+    /** `subject is pattern`: `is` on the line where its subject ends, the pattern on the same line. */
+    efxIsTestAhead(): boolean {
+      if (!this.efxIsWord("is") || lineBreak.test(this.input.slice(this.lastTokEnd, this.start))) return false
+      return this.efxSameLine(this.lookahead())
+    }
+
+    /** `is pattern` where an expression starts. `is (`, `is as`, `is satisfies`, `is of` stay TypeScript. */
+    efxIsPredicateAhead(): boolean {
+      if (!this.efxIsWord("is")) return false
+      const next = this.lookahead()
+      return next.type === tt.name && this.efxSameLine(next) && !typeOperators.has(next.value)
+    }
+
+    /** `Tag`, `Tag or Tag …`, `not Tag`, `(…)`, `not (…)`. */
+    efxParseIsPattern(): any {
+      const node = this.startNode()
+      node.negated = false
+      node.parenthesized = false
+      if (this.efxIsWord("not")) {
+        const next = this.lookahead()
+        if (this.efxSameLine(next) && (next.type === tt.name || next.type === tt.parenL)) {
+          node.negated = true
+          this.next()
+        }
+      }
+      if (this.eat(tt.parenL)) {
+        node.parenthesized = true
+        node.tags = this.efxParseIsTags()
+        this.expect(tt.parenR)
+      } else {
+        node.tags = this.efxParseIsTags()
+      }
+      return this.finishNode(node, "IsPattern")
+    }
+
+    /** Tags joined by `or`. `or` stays on the line of the tag before it; the next tag may wrap. */
+    efxParseIsTags(): Array<any> {
+      const tags = [this.efxParseIsTag()]
+      while (this.efxIsWord("or") && !lineBreak.test(this.input.slice(this.lastTokEnd, this.start))) {
+        this.next()
+        tags.push(this.efxParseIsTag())
+      }
+      return tags
+    }
+
+    /** A name or a dotted name; anything else is kept as an expression atom for EFX7004. */
+    efxParseIsTag(): any {
+      if (this.type !== tt.name) return this.parseExprAtom(null, false, false)
+      let tag = this.parseIdent()
+      while (this.eat(tt.dot)) {
+        const member = this.startNodeAt(tag.start, tag.loc.start)
+        member.object = tag
+        member.property = this.parseIdent(true)
+        member.computed = false
+        member.optional = false
+        tag = this.finishNode(member, "MemberExpression")
+      }
+      return tag
     }
 
     efxParseMatch(): any {

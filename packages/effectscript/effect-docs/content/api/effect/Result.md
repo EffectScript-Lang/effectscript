@@ -235,13 +235,15 @@ eq(Result.succeed(1), Result.fail("x")) // => false
 **Mapping both channels**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.succeed(1)
-  |> Result.mapBoth({
+pipe(
+  Result.succeed(1),
+  Result.mapBoth({
     onSuccess: (n) => n + 1,
     onFailure: (e) => `Error: ${e}`
-  }) // => Result.succeed(2)
+  })
+) // => Result.succeed(2)
 ```
 
 ## mapError
@@ -249,10 +251,12 @@ Result.succeed(1)
 **Adding context to an error**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.fail("not found")
-  |> Result.mapError((e) => `Error: ${e}`) // => Result.fail("Error: not found")
+pipe(
+  Result.fail("not found"),
+  Result.mapError((e) => `Error: ${e}`)
+) // => Result.fail("Error: not found")
 ```
 
 ## map
@@ -260,10 +264,12 @@ Result.fail("not found")
 **Doubling the success value**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.succeed(3)
-  |> Result.map((n) => n * 2) // => Result.succeed(6)
+pipe(
+  Result.succeed(3),
+  Result.map((n) => n * 2)
+) // => Result.succeed(6)
 ```
 
 ## match
@@ -302,13 +308,15 @@ import { pipe } from "effect"
 **Filtering a success value**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.succeed(0)
-  |> Result.filterOrFail(
+pipe(
+  Result.succeed(0),
+  Result.filterOrFail(
     (n) => n > 0,
     (n) => `${n} is not positive`
-  ) // => Result.fail("0 is not positive")
+  )
+) // => Result.fail("0 is not positive")
 ```
 
 ## merge
@@ -396,10 +404,12 @@ Result.merge(failure) // => "error"
 **Recovering from a failure**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.fail("primary failed")
-  |> Result.orElse(() => Result.succeed(99)) // => Result.succeed(99)
+pipe(
+  Result.fail("primary failed"),
+  Result.orElse(() => Result.succeed(99))
+) // => Result.succeed(99)
 ```
 
 ## flatMap
@@ -407,12 +417,14 @@ Result.fail("primary failed")
 **Validating sequentially**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.succeed(5)
-  |> Result.flatMap((n) =>
+pipe(
+  Result.succeed(5),
+  Result.flatMap((n) =>
     n > 0 ? Result.succeed(n * 2) : Result.fail("not positive")
-  ) // => Result.succeed(10)
+  )
+) // => Result.succeed(10)
 ```
 
 ## andThen
@@ -420,18 +432,22 @@ Result.succeed(5)
 **Chaining Result values with different argument types**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
 // With a function returning a Result
-const a = Result.succeed(1)
-  |> Result.andThen((n) => Result.succeed(n + 1)) // => Result.succeed(2)
+const a = pipe(
+  Result.succeed(1),
+  Result.andThen((n) => Result.succeed(n + 1))
+) // => Result.succeed(2)
 
 // With a plain mapping function
-const b = Result.succeed(1)
-  |> Result.andThen((n) => n + 1) // => Result.succeed(2)
+const b = pipe(
+  Result.succeed(1),
+  Result.andThen((n) => n + 1)
+) // => Result.succeed(2)
 
 // With a constant value
-const c = Result.succeed(1) |> Result.andThen("done") // => Result.succeed("done")
+const c = pipe(Result.succeed(1), Result.andThen("done")) // => Result.succeed("done")
 ```
 
 ## all
@@ -479,12 +495,14 @@ Result.gen(function*() {
 **Building an object step by step**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.Do
-  |> Result.bind("x", () => Result.succeed(2))
-  |> Result.bind("y", () => Result.succeed(3))
-  |> Result.let("sum", ({ x, y }) => x + y) // => Result.succeed({ x: 2, y: 3, sum: 5 })
+pipe(
+  Result.Do,
+  Result.bind("x", () => Result.succeed(2)),
+  Result.bind("y", () => Result.succeed(3)),
+  Result.let("sum", ({ x, y }) => x + y)
+) // => Result.succeed({ x: 2, y: 3, sum: 5 })
 ```
 
 ## bind
@@ -492,11 +510,13 @@ Result.Do
 **Binding Result values**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.Do
-  |> Result.bind("x", () => Result.succeed(2))
-  |> Result.bind("y", ({ x }) => Result.succeed(x + 3)) // => Result.succeed({ x: 2, y: 5 })
+pipe(
+  Result.Do,
+  Result.bind("x", () => Result.succeed(2)),
+  Result.bind("y", ({ x }) => Result.succeed(x + 3))
+) // => Result.succeed({ x: 2, y: 5 })
 ```
 
 ## bindTo
@@ -504,10 +524,12 @@ Result.Do
 **Wrapping a value into a named field**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.succeed(42)
-  |> Result.bindTo("answer") // => Result.succeed({ answer: 42 })
+pipe(
+  Result.succeed(42),
+  Result.bindTo("answer")
+) // => Result.succeed({ answer: 42 })
 ```
 
 ## let
@@ -515,12 +537,14 @@ Result.succeed(42)
 **Adding a computed field**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
-Result.Do
-  |> Result.bind("x", () => Result.succeed(2))
-  |> Result.bind("y", () => Result.succeed(3))
-  |> Result.let("sum", ({ x, y }) => x + y) // => Result.succeed({ x: 2, y: 3, sum: 5 })
+pipe(
+  Result.Do,
+  Result.bind("x", () => Result.succeed(2)),
+  Result.bind("y", () => Result.succeed(3)),
+  Result.let("sum", ({ x, y }) => x + y)
+) // => Result.succeed({ x: 2, y: 3, sum: 5 })
 ```
 
 ## transposeOption
@@ -577,11 +601,13 @@ Result.succeedSome(42) // => Result.succeed(Option.some(42))
 **Logging a success value**
 
 ```efx
-import { pipe } from "effect"
+import { pipe, Result } from "effect"
 
 const values: Array<number> = []
-const result = Result.succeed(42)
-  |> Result.tap((n) => values.push(n))
+const result = pipe(
+  Result.succeed(42),
+  Result.tap((n) => values.push(n))
+)
 
 values // => [42]
 result // => Result.succeed(42)

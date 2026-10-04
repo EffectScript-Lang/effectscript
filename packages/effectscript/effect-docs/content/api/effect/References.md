@@ -69,9 +69,8 @@ const logger = Logger.make<unknown, void>(({ logLevel }) => {
 
 const program = effect {
   console.log("uses the default level")
-  await log("uses the provided level").pipe(
-    provideService(References.CurrentLogLevel, "Error")
-  )
+  await log("uses the provided level")
+    |> provideService(References.CurrentLogLevel, "Error")
 }
 
 await runPromise(program.pipe(provide(Logger.layer([logger]))))

@@ -10,6 +10,7 @@ import { configHandlers } from "./config.ts"
 import { effectHandlers } from "./effect.ts"
 import { httpApiHandlers } from "./httpApi.ts"
 import { importRewriteHandlers } from "./imports.ts"
+import { isHandlers } from "./is.ts"
 import { layerHandlers } from "./layer.ts"
 import { libraryHandlers } from "./library.ts"
 import { mainHandlers } from "./main.ts"
@@ -72,6 +73,7 @@ export const handlers = registry(
   proposalHandlers,
   pipelineHandlers,
   matchHandlers,
+  isHandlers,
   ambientHandlers,
   awaitHandlers,
   returnTypeHandlers,

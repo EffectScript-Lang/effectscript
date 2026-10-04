@@ -7,7 +7,7 @@ import { NodeRuntime, NodeServices } from "@effect/platform-node"
  *
  * @since 4.0.0
  */
-import { Effect, pipe, Runtime, Schema } from "effect"
+import { Effect, Runtime, Schema } from "effect"
 import { Argument, Command, Flag } from "effect/cli"
 import { homedir } from "node:os"
 import { convertProject } from "../convert/project.ts"
@@ -75,160 +75,145 @@ export const print = Command.make(
 // `check` and `run` forward arguments after `--`: the `command` construct has no variadic form yet
 
 /** Type-check the project, .efx files included */
-export const check = pipe(
-  Command.make(
-    "check",
-    {
-      project: Flag.String("project").pipe(
-        Flag.withAlias("p"),
-        Flag.optional,
-        Flag.withDescription("The tsconfig.json to check")
-      ),
-      args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("More tsc arguments (after --)"))
-    },
-    Effect.fnUntraced(function*({ project, args }) {
-      const projectArgs = project._tag === "Some" ? ["-p", project.value] : []
-      yield* exitWith(checkProject([...projectArgs, ...args]))
-    })
-  ),
-  Command.withDescription("Type-check the project, .efx files included")
-)
+export const check = Command.make(
+  "check",
+  {
+    project: Flag.String("project").pipe(
+      Flag.withAlias("p"),
+      Flag.optional,
+      Flag.withDescription("The tsconfig.json to check")
+    ),
+    args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("More tsc arguments (after --)"))
+  },
+  Effect.fnUntraced(function*({ project, args }) {
+    const projectArgs = project._tag === "Some" ? ["-p", project.value] : []
+    yield* exitWith(checkProject([...projectArgs, ...args]))
+  })
+).pipe(Command.withDescription("Type-check the project, .efx files included"))
 
 /** Run a .efx or .ts file */
-export const run = pipe(
-  Command.make(
-    "run",
-    {
-      runtime: Flag.Literals("runtime", ["node", "bun"]).pipe(
-        Flag.optional,
-        Flag.withDescription("node or bun (default: bun when the project has @effect/platform-bun)")
-      ),
-      file: Argument.String("file").pipe(Argument.withDescription("The entry file")),
-      args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("Arguments for the program"))
-    },
-    Effect.fnUntraced(function*({ runtime, file, args }) {
-      yield* exitWith(runFile([file, ...args], runtime._tag === "Some" ? runtime.value : undefined))
-    })
-  ),
-  Command.withDescription("Run a .efx or .ts file")
-)
+export const run = Command.make(
+  "run",
+  {
+    runtime: Flag.Literals("runtime", ["node", "bun"]).pipe(
+      Flag.optional,
+      Flag.withDescription("node or bun (default: bun when the project has @effect/platform-bun)")
+    ),
+    file: Argument.String("file").pipe(Argument.withDescription("The entry file")),
+    args: Argument.String("args").pipe(Argument.variadic(), Argument.withDescription("Arguments for the program"))
+  },
+  Effect.fnUntraced(function*({ runtime, file, args }) {
+    yield* exitWith(runFile([file, ...args], runtime._tag === "Some" ? runtime.value : undefined))
+  })
+).pipe(Command.withDescription("Run a .efx or .ts file"))
 
 /** Convert TypeScript files with Effect to EffectScript (spec §7.5) */
-export const convert = pipe(
-  Command.make(
-    "convert",
-    {
-      paths: Argument.String("paths").pipe(
-        Argument.variadic(),
-        Argument.withDescription("Files or directories (default: the whole project)")
-      ),
-      write: Flag.Boolean("write").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Convert on a new branch, effectscript/convert (default: only report)")
-      ),
-      explain: Flag.Boolean("explain").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Show what stays TypeScript, and why")
-      ),
-      force: Flag.Boolean("force").pipe(Flag.withDefault(false), Flag.withDescription("Allow uncommitted changes")),
-      noVerify: Flag.Boolean("no-verify").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Skip efx check and the tests after converting")
-      ),
-      test: Flag.String("test").pipe(
-        Flag.optional,
-        Flag.withDescription("The test command (default: npm test, when there is a test script)")
-      ),
-      ai: Flag.Boolean("ai").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription(
-          "Then let your coding agent convert what was left as TypeScript, keeping only edits that verify"
-        )
-      ),
-      agent: Flag.String("agent").pipe(
-        Flag.optional,
-        Flag.withDescription("The agent for --ai: claude, codex, gemini or opencode (default: the first installed)")
-      ),
-      timeout: Flag.Int("timeout").pipe(Flag.withDefault(300), Flag.withDescription("Seconds the agent gets per file"))
-    },
-    Effect.fnUntraced(function*({ paths, write, explain, force, noVerify, test, ai, agent, timeout }) {
-      const code = yield* Effect.promise(() =>
-        convertProject(process.cwd(), {
-          paths,
-          write,
-          explain,
-          force,
-          verify: !noVerify,
-          test: test._tag === "Some" ? test.value : undefined,
-          ai,
-          agent: agent._tag === "Some" ? agent.value : undefined,
-          timeout
-        }, {
-          out: (line) => process.stdout.write(`${line}\n`),
-          err: (line) => process.stderr.write(`${line}\n`)
-        })
+export const convert = Command.make(
+  "convert",
+  {
+    paths: Argument.String("paths").pipe(
+      Argument.variadic(),
+      Argument.withDescription("Files or directories (default: the whole project)")
+    ),
+    write: Flag.Boolean("write").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Convert on a new branch, effectscript/convert (default: only report)")
+    ),
+    explain: Flag.Boolean("explain").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Show what stays TypeScript, and why")
+    ),
+    force: Flag.Boolean("force").pipe(Flag.withDefault(false), Flag.withDescription("Allow uncommitted changes")),
+    noVerify: Flag.Boolean("no-verify").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Skip efx check and the tests after converting")
+    ),
+    test: Flag.String("test").pipe(
+      Flag.optional,
+      Flag.withDescription("The test command (default: npm test, when there is a test script)")
+    ),
+    ai: Flag.Boolean("ai").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription(
+        "Then let your coding agent convert what was left as TypeScript, keeping only edits that verify"
       )
-      yield* exitWith(code)
-    })
-  ),
-  Command.withDescription("Convert TypeScript files with Effect to EffectScript")
-)
+    ),
+    agent: Flag.String("agent").pipe(
+      Flag.optional,
+      Flag.withDescription("The agent for --ai: claude, codex, gemini or opencode (default: the first installed)")
+    ),
+    timeout: Flag.Int("timeout").pipe(Flag.withDefault(300), Flag.withDescription("Seconds the agent gets per file"))
+  },
+  Effect.fnUntraced(function*({ paths, write, explain, force, noVerify, test, ai, agent, timeout }) {
+    const code = yield* Effect.promise(() =>
+      convertProject(process.cwd(), {
+        paths,
+        write,
+        explain,
+        force,
+        verify: !noVerify,
+        test: test._tag === "Some" ? test.value : undefined,
+        ai,
+        agent: agent._tag === "Some" ? agent.value : undefined,
+        timeout
+      }, {
+        out: (line) => process.stdout.write(`${line}\n`),
+        err: (line) => process.stderr.write(`${line}\n`)
+      })
+    )
+    yield* exitWith(code)
+  })
+).pipe(Command.withDescription("Convert TypeScript files with Effect to EffectScript"))
 
 /** Generate API docs (Markdown for Blume) from doc comments (docs spec §3) */
-export const docs = pipe(
-  Command.make(
-    "docs",
-    {
-      paths: Argument.String("paths").pipe(
-        Argument.variadic(),
-        Argument.withDescription("Files or directories (default: src)")
-      ),
-      out: Flag.String("out").pipe(
-        Flag.withDefault("docs/api"),
-        Flag.withDescription("Where to write the pages (replaced on each run)")
-      ),
-      check: Flag.Boolean("check").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Only report problems; write nothing")
-      ),
-      strict: Flag.Boolean("strict").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Fail on warnings, and flag tags that repeat the signature")
-      )
-    },
-    Effect.fnUntraced(function*({ paths, out, check, strict }) {
-      yield* exitWith(docsProject(process.cwd(), { paths, out, check, strict }, {
-        out: (line) => process.stdout.write(`${line}\n`),
-        err: (line) => process.stderr.write(`${line}\n`)
-      }))
-    })
-  ),
-  Command.withDescription("Generate API docs from doc comments")
-)
+export const docs = Command.make(
+  "docs",
+  {
+    paths: Argument.String("paths").pipe(
+      Argument.variadic(),
+      Argument.withDescription("Files or directories (default: src)")
+    ),
+    out: Flag.String("out").pipe(
+      Flag.withDefault("docs/api"),
+      Flag.withDescription("Where to write the pages (replaced on each run)")
+    ),
+    check: Flag.Boolean("check").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Only report problems; write nothing")
+    ),
+    strict: Flag.Boolean("strict").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Fail on warnings, and flag tags that repeat the signature")
+    )
+  },
+  Effect.fnUntraced(function*({ paths, out, check, strict }) {
+    yield* exitWith(docsProject(process.cwd(), { paths, out, check, strict }, {
+      out: (line) => process.stdout.write(`${line}\n`),
+      err: (line) => process.stderr.write(`${line}\n`)
+    }))
+  })
+).pipe(Command.withDescription("Generate API docs from doc comments"))
 
 /** Rewrite the Effect TypeScript in .efx files as EffectScript (ADR-0056) */
-export const fix = pipe(
-  Command.make(
-    "fix",
-    {
-      paths: Argument.String("paths").pipe(
-        Argument.variadic(),
-        Argument.withDescription("Files or directories (default: the project)")
-      ),
-      check: Flag.Boolean("check").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Only report what would change; write nothing")
-      )
-    },
-    Effect.fnUntraced(function*({ paths, check }) {
-      yield* exitWith(fixProject(process.cwd(), { paths, check }, {
-        out: (line) => process.stdout.write(`${line}\n`),
-        err: (line) => process.stderr.write(`${line}\n`)
-      }))
-    })
-  ),
-  Command.withDescription("Rewrite the Effect TypeScript in .efx files as EffectScript")
-)
+export const fix = Command.make(
+  "fix",
+  {
+    paths: Argument.String("paths").pipe(
+      Argument.variadic(),
+      Argument.withDescription("Files or directories (default: the project)")
+    ),
+    check: Flag.Boolean("check").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Only report what would change; write nothing")
+    )
+  },
+  Effect.fnUntraced(function*({ paths, check }) {
+    yield* exitWith(fixProject(process.cwd(), { paths, check }, {
+      out: (line) => process.stdout.write(`${line}\n`),
+      err: (line) => process.stderr.write(`${line}\n`)
+    }))
+  })
+).pipe(Command.withDescription("Rewrite the Effect TypeScript in .efx files as EffectScript"))
 
 /** Set up this project for EffectScript */
 export const init = Command.make(
@@ -249,104 +234,89 @@ export const doctor = Command.make(
 ).pipe(Command.withDescription("Report what is installed and configured for EffectScript, and what is missing"))
 
 /** Run the EffectScript language server (for Neovim, Helix, Zed and other LSP editors) */
-export const lsp = pipe(
-  Command.make(
-    "lsp",
-    {
-      stdio: Flag.Boolean("stdio").pipe(
-        Flag.withDefault(true),
-        Flag.withDescription("Talk LSP over stdin and stdout (the default)")
-      )
-    },
-    Effect.fnUntraced(function*() {
-      yield* exitWith(runLanguageServer(process.cwd()))
-    })
-  ),
-  Command.withDescription("Run the EffectScript language server over stdio")
-)
+export const lsp = Command.make(
+  "lsp",
+  {
+    stdio: Flag.Boolean("stdio").pipe(
+      Flag.withDefault(true),
+      Flag.withDescription("Talk LSP over stdin and stdout (the default)")
+    )
+  },
+  Effect.fnUntraced(function*() {
+    yield* exitWith(runLanguageServer(process.cwd()))
+  })
+).pipe(Command.withDescription("Run the EffectScript language server over stdio"))
 
 /** Install the EffectScript skill for coding agents */
-export const skill = pipe(
-  Command.make(
-    "skill",
-    {
-      global: Flag.Boolean("global").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Install for every project (~/.claude/skills)")
-      ),
-      dir: Flag.String("dir").pipe(Flag.optional, Flag.withDescription("Install into this directory instead")),
-      force: Flag.Boolean("force").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Replace a directory that isn't the EffectScript skill")
+export const skill = Command.make(
+  "skill",
+  {
+    global: Flag.Boolean("global").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Install for every project (~/.claude/skills)")
+    ),
+    dir: Flag.String("dir").pipe(Flag.optional, Flag.withDescription("Install into this directory instead")),
+    force: Flag.Boolean("force").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Replace a directory that isn't the EffectScript skill")
+    )
+  },
+  Effect.fnUntraced(function*({ global, dir, force }) {
+    const code = installSkill(
+      { cwd: process.cwd(), home: homedir(), global, dir: dir._tag === "Some" ? dir.value : undefined, force },
+      (line) => process.stdout.write(`${line}\n`),
+      (line) => process.stderr.write(`${line}\n`)
+    )
+    yield* exitWith(code)
+  })
+).pipe(Command.withDescription("Install the EffectScript skill for coding agents"))
+
+/** Set up the editors and coding agents on this machine for EffectScript */
+export const setup = Command.make(
+  "setup",
+  {
+    yes: Flag.Boolean("yes").pipe(
+      Flag.withAlias("y"),
+      Flag.withDefault(false),
+      Flag.withDescription("Apply everything without asking")
+    ),
+    dryRun: Flag.Boolean("dry-run").pipe(Flag.withDefault(false), Flag.withDescription("Only list what would be done")),
+    project: Flag.Boolean("project").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Install the agent skill into this project (.claude/skills, .agents/skills)")
+    ),
+    only: Flag.String("only").pipe(
+      Flag.optional,
+      Flag.withDescription(
+        "Only these, comma-separated: claude,codex,cursor-agent,gemini,opencode,vscode,cursor,windsurf,vscodium,neovim,helix,zed,jetbrains"
       )
-    },
-    Effect.fnUntraced(function*({ global, dir, force }) {
-      const code = installSkill(
-        { cwd: process.cwd(), home: homedir(), global, dir: dir._tag === "Some" ? dir.value : undefined, force },
+    ),
+    vsix: Flag.String("vsix").pipe(
+      Flag.optional,
+      Flag.withDescription("The EffectScript .vsix to install in VS Code-family editors")
+    )
+  },
+  Effect.fnUntraced(function*({ yes, dryRun, project, only, vsix }) {
+    const code = yield* Effect.promise(() =>
+      runSetup(
+        {
+          cwd: process.cwd(),
+          home: homedir(),
+          yes,
+          dryRun,
+          project,
+          only: only._tag === "Some" ? only.value.split(",").map((s) => s.trim()) : undefined,
+          vsix: vsix._tag === "Some" ? vsix.value : undefined
+        },
         (line) => process.stdout.write(`${line}\n`),
         (line) => process.stderr.write(`${line}\n`)
       )
-      yield* exitWith(code)
-    })
-  ),
-  Command.withDescription("Install the EffectScript skill for coding agents")
-)
+    )
+    yield* exitWith(code)
+  })
+).pipe(Command.withDescription("Set up the editors and coding agents on this machine for EffectScript"))
 
-/** Set up the editors and coding agents on this machine for EffectScript */
-export const setup = pipe(
-  Command.make(
-    "setup",
-    {
-      yes: Flag.Boolean("yes").pipe(
-        Flag.withAlias("y"),
-        Flag.withDefault(false),
-        Flag.withDescription("Apply everything without asking")
-      ),
-      dryRun: Flag.Boolean("dry-run").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Only list what would be done")
-      ),
-      project: Flag.Boolean("project").pipe(
-        Flag.withDefault(false),
-        Flag.withDescription("Install the agent skill into this project (.claude/skills, .agents/skills)")
-      ),
-      only: Flag.String("only").pipe(
-        Flag.optional,
-        Flag.withDescription(
-          "Only these, comma-separated: claude,codex,cursor-agent,gemini,opencode,vscode,cursor,windsurf,vscodium,neovim,helix,zed,jetbrains"
-        )
-      ),
-      vsix: Flag.String("vsix").pipe(
-        Flag.optional,
-        Flag.withDescription("The EffectScript .vsix to install in VS Code-family editors")
-      )
-    },
-    Effect.fnUntraced(function*({ yes, dryRun, project, only, vsix }) {
-      const code = yield* Effect.promise(() =>
-        runSetup(
-          {
-            cwd: process.cwd(),
-            home: homedir(),
-            yes,
-            dryRun,
-            project,
-            only: only._tag === "Some"
-              ? only.value.split(",").map((s) => s.trim())
-              : undefined,
-            vsix: vsix._tag === "Some" ? vsix.value : undefined
-          },
-          (line) => process.stdout.write(`${line}\n`),
-          (line) => process.stderr.write(`${line}\n`)
-        )
-      )
-      yield* exitWith(code)
-    })
-  ),
-  Command.withDescription("Set up the editors and coding agents on this machine for EffectScript")
-)
-
-export const efx = pipe(
-  Command.make("efx"),
+export const efx = Command.make("efx").pipe(
   Command.withDescription("EffectScript: TypeScript with Effect as native syntax"),
   Command.withSubcommands([build, check, run, print, convert, fix, docs, init, doctor, lsp, skill, setup])
 )

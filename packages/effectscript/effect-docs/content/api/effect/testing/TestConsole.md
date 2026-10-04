@@ -90,7 +90,7 @@ const program = TestConsole.testConsoleWith((testConsole) =>
     logs // => ["Test message"]
     errors // => ["Test error"]
   }
-).pipe(provide(TestConsole.layer))
+) |> provide(TestConsole.layer)
 
 await runPromise(program)
 ```

@@ -46,3 +46,25 @@ export const isMember = (node: Node | null | undefined, local: string | undefine
   local !== undefined && node?.type === "MemberExpression" && !node.computed &&
   node.object.type === "Identifier" && node.object.name === local &&
   (member === undefined || node.property.name === member)
+
+/**
+ * The Effect module a local name is imported as (`import { Stream } from "effect"`,
+ * `import * as Stream from "effect/Stream"`), when no inner scope rebinds it.
+ *
+ * @since 4.0.0
+ * @category origin
+ */
+export const importedModule = (analysis: ScopeAnalysis, local: string): string | undefined => {
+  if (analysis.innerBound.has(local)) return undefined
+  for (const statement of analysis.program.body as Array<Node>) {
+    if (statement.type !== "ImportDeclaration" || statement.importKind === "type") continue
+    const source: string = statement.source.value
+    if (source !== "effect" && !source.startsWith("effect/")) continue
+    for (const specifier of statement.specifiers as Array<Node>) {
+      if (specifier.local.name !== local || specifier.importKind === "type") continue
+      if (specifier.type === "ImportSpecifier") return importedName(specifier)
+      if (specifier.type === "ImportNamespaceSpecifier") return source.slice(source.lastIndexOf("/") + 1)
+    }
+  }
+  return undefined
+}

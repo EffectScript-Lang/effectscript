@@ -10,11 +10,10 @@ export const productionRetrySchedule = Schedule.min([
   Schedule.exponential("250 millis"),
   // Cap the delay at 10 seconds to avoid excessively long waits.
   Schedule.spaced("10 seconds")
-]).pipe(
-  Schedule.jittered,
-  Schedule.setInputType<HttpError>(),
-  Schedule.while(({ input }) => input.retryable)
-)
+])
+  |> Schedule.jittered
+  |> Schedule.setInputType<HttpError>()
+  |> Schedule.while(({ input }) => input.retryable)
 
 export effect fetchUserProfile(userId: string) {
     const random = Math.random()
@@ -87,12 +86,11 @@ export const keepTryingUpToTwoSeconds = Schedule.min([
 
 // Use `Schedule.while` to continue only for retryable failures.
 // This lets non-retryable errors fail fast, even if attempts remain.
-export const retryableOnly = Schedule.exponential("200 millis").pipe(
+export const retryableOnly = Schedule.exponential("200 millis")
   // You can use `setInputType` to specify the type of input the schedule will
   // receive.
-  Schedule.setInputType<HttpError>(),
-  Schedule.while(({ input }) => input.retryable)
-)
+  |> Schedule.setInputType<HttpError>()
+  |> Schedule.while(({ input }) => input.retryable)
 
 // `tap` is useful for performing side effects like logging or metrics.
 export const instrumentedRetrySchedule = retryableOnly.pipe(

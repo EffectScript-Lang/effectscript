@@ -12,7 +12,7 @@ import { SqlClient } from "effect/sql"
 
 // Use a branded string for the group id, so it cannot be mixed up with other
 // string ids in the application.
-export schema GroupId = string & Brand<"GroupId">
+export brand GroupId = string
 
 // `Model.Class` defines a domain model with variants for the database and JSON
 // boundaries. The single field declaration is the source of truth, and each
@@ -27,10 +27,10 @@ export class Group extends Model.Class<Group>("Group")({
   // `Model.FieldExcept` removes a field from the given variants. The slug is
   // chosen when the group is created and is immutable afterwards, so it is
   // removed from the update variants.
-  slug: Schema.NonEmptyString.pipe(Model.FieldExcept(["update", "jsonUpdate"])),
+  slug: Schema.NonEmptyString |> Model.FieldExcept(["update", "jsonUpdate"]),
   // `Model.FieldOnly` keeps a field in only the given variants. Internal notes
   // live in the database and are never exposed through the JSON variants.
-  notes: Schema.NullOr(Schema.String).pipe(Model.FieldOnly(["select", "insert"])),
+  notes: Schema.NullOr(Schema.String) |> Model.FieldOnly(["select", "insert"]),
   // `Model.Field` gives full control over the individual variants. The member
   // count is maintained by the database, so the application can read it but
   // never writes it.
@@ -85,7 +85,7 @@ export service Groups as "app/Groups" {
   create(name: string, slug: string): Effect<Group>
   rename(id: GroupId, name: string): Effect<Group, GroupNotFound>
   findById(id: GroupId): Effect<Group, GroupNotFound>
-  readonly list: Effect<Array<Group>>
+  list: Effect<Array<Group>>
   layer = effect {
       const sql = await SqlClient.SqlClient
 

@@ -41,12 +41,10 @@ if (Result.isFailure(result) && SchemaIssue.hasInput(result.failure.issue)) {
 **Matching a Filter issue**
 
 ```efx
-import { SchemaAST, SchemaIssue } from "effect"
-
 const formatIssue = SchemaIssue.makeFormatterDefault()
 
 function describe(issue: SchemaIssue.Issue): string {
-  if (issue._tag === "Filter") {
+  if (issue is Filter) {
     return `Filter failed: ${formatIssue(issue.issue)}`
   }
   return formatIssue(issue)

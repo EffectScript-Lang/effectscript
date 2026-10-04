@@ -4,6 +4,7 @@
  */
 import * as fs from "node:fs"
 import * as path from "node:path"
+import ts from "typescript"
 
 const packageDir = path.resolve(import.meta.dirname, "..")
 const effectDir = path.resolve(packageDir, "../../effect")
@@ -12,14 +13,30 @@ const read = (file: string): string => fs.readFileSync(file, "utf8")
 const namespaceReexports = (indexFile: string): Array<string> =>
   [...read(indexFile).matchAll(/^export \* as (\w+) from "\.\/\w+\.ts"/gm)].map((m) => m[1]!)
 
+/** The specifiers of each `export { … }` block, without the comments documenting them. */
+const exportBlocks = (text: string): Array<string> => {
+  const blocks: Array<string> = []
+  for (const m of text.matchAll(/^export \{/gm)) {
+    let i = m.index + m[0].length
+    let block = ""
+    while (i < text.length && text[i] !== "}") {
+      if (text.startsWith("/*", i)) i = text.indexOf("*/", i) + 2
+      else if (text.startsWith("//", i)) i = text.indexOf("\n", i)
+      else block += text[i++]
+    }
+    blocks.push(block)
+  }
+  return blocks
+}
+
 const valueExports = (file: string): Set<string> => {
   const text = read(file)
   const names = new Set<string>()
   for (const m of text.matchAll(/^export (?:declare )?(?:const|let|function\*?|class|abstract class) (\w+)/gm)) {
     names.add(m[1]!)
   }
-  for (const block of text.matchAll(/^export \{([^}]*)\}/gm)) {
-    for (const raw of block[1]!.split(",")) {
+  for (const block of exportBlocks(text)) {
+    for (const raw of block.split(",")) {
       const spec = raw.trim()
       if (spec === "" || spec.startsWith("type ")) continue
       const parts = spec.split(/\s+as\s+/)
@@ -238,6 +255,61 @@ const serviceTags = modules.map(([name]) => name).filter((name) => {
   return index !== -1 && /Context\.|Service</.test(text.slice(index, index + 400))
 })
 
+// --- pipeable exports (ADR-0091 A1) ---------------------------------------------------------------
+
+/**
+ * Which exports produce a `Pipeable`, from `effect`'s types: `v` when the value is one, and each
+ * argument count (0–9, 9 standing for 9 or more) at which every signature that accepts that many
+ * arguments returns one. `|>` compiles to `.pipe(…)` on exactly these heads.
+ */
+const pipeable = (() => {
+  const files = new Map(modules.map(([name]) => [name, moduleFiles.get(name)!]))
+  const program = ts.createProgram([...files.values()], {
+    strict: true,
+    exactOptionalPropertyTypes: true,
+    noEmit: true,
+    target: ts.ScriptTarget.ES2022,
+    module: ts.ModuleKind.NodeNext,
+    moduleResolution: ts.ModuleResolutionKind.NodeNext,
+    allowImportingTsExtensions: true,
+    skipLibCheck: true,
+    types: []
+  })
+  const checker = program.getTypeChecker()
+  const isPipeable = (type: ts.Type): boolean => {
+    const apparent = checker.getApparentType(type)
+    if (apparent.isUnion()) return apparent.types.every(isPipeable)
+    const pipe = checker.getPropertyOfType(apparent, "pipe")
+    return pipe !== undefined && checker.getTypeOfSymbol(pipe).getCallSignatures().length > 0
+  }
+  const accepts = (signature: ts.Signature, n: number): boolean => {
+    const declaration = signature.getDeclaration() as ts.SignatureDeclaration | undefined
+    const rest = declaration?.parameters.some((p) => p.dotDotDotToken !== undefined) ?? false
+    return signature.minArgumentCount <= n && (rest || n <= signature.getParameters().length)
+  }
+  const table = new Map<string, string>()
+  for (const [name, file] of files) {
+    const source = program.getSourceFile(file)
+    const symbol = source === undefined ? undefined : checker.getSymbolAtLocation(source)
+    if (symbol === undefined) continue
+    const entries: Array<string> = []
+    for (const exported of checker.getExportsOfModule(symbol)) {
+      const target = exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported
+      if (!(target.flags & ts.SymbolFlags.Value)) continue
+      const type = checker.getTypeOfSymbolAtLocation(target, source!)
+      let spec = isPipeable(type) ? "v" : ""
+      const signatures = type.getCallSignatures()
+      for (let n = 0; n <= 9; n++) {
+        const applicable = signatures.filter((s) => accepts(s, n))
+        if (applicable.length > 0 && applicable.every((s) => isPipeable(s.getReturnType()))) spec += String(n)
+      }
+      if (spec !== "") entries.push(`${exported.name}:${spec}`)
+    }
+    if (entries.length > 0) table.set(name, entries.sort().join(" "))
+  }
+  return table
+})()
+
 const out: Array<string> = []
 const doc = (text: string) => out.push("/**", ` * ${text}`, " *", " * @since 0.1.0", " */")
 const list = (values: ReadonlyArray<string>) => values.map((v) => `  ${v}`).join(",\n")
@@ -273,6 +345,16 @@ for (const [namespace, file] of Object.entries(namespaces)) {
     ""
   )
 }
+{
+  const names = [...valueExports(namespaces.Schema!)].filter((n) => globals.has(n) && /^is[A-Z]/.test(n)).sort()
+  doc("Schema checks named like a JavaScript global (`isFinite`): in a `where` list they mean the check (ADR-0077).")
+  out.push(
+    `export const schemaGlobalChecks: ReadonlySet<string> = new Set([\n${
+      list(names.map((n) => JSON.stringify(n)))
+    }\n])`,
+    ""
+  )
+}
 doc("Namespace → builtin names.")
 out.push(
   `export const namespaceExports: ReadonlyMap<string, ReadonlySet<string>> = new Map([\n${
@@ -288,6 +370,15 @@ out.push(
 doc("Modules whose same-named export is a service tag (`await FileSystem` → `yield* FileSystem.FileSystem`).")
 out.push(
   `export const serviceTags: ReadonlySet<string> = new Set([\n${list(serviceTags.map((n) => JSON.stringify(n)))}\n])`,
+  ""
+)
+doc(
+  "Exports that produce a `Pipeable` (ADR-0091 A1): `name:spec`, where `v` is the value and digits are argument counts."
+)
+out.push(
+  `export const pipeableExports: ReadonlyMap<string, string> = new Map([\n${
+    list([...pipeable].map(([n, spec]) => `[${JSON.stringify(n)}, ${JSON.stringify(spec)}]`))
+  }\n])`,
   ""
 )
 doc("Names that always keep their JavaScript meaning.")

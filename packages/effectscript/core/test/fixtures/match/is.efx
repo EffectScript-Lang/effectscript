@@ -1,0 +1,13 @@
+error RateLimited { retryAfter: number }
+
+declare const fetchUser: (id: string) => Effect<string, RateLimited>
+declare const failure: RateLimited | Cause.TimeoutError | Cause.NoSuchElementError
+declare const failures: Array<RateLimited | Cause.TimeoutError>
+
+export const user = (id: string) =>
+  fetchUser(id) |> timeout("2 seconds") |> retry({ times: 2, while: is TimeoutError or RateLimited })
+
+export const transient = failure is TimeoutError or RateLimited
+export const permanent = failure is not (TimeoutError or RateLimited)
+export const limited: Array<RateLimited> = failures.filter(is RateLimited)
+export const waitFor = failure is RateLimited ? failure.retryAfter : 0

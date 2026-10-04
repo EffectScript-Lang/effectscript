@@ -43,13 +43,11 @@ trimAndLower._tag // => "Transformation"
 **Trimming and lowercasing a string**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
 const transformation = SchemaTransformation.composeTransformation(
   SchemaTransformation.trim(),
   SchemaTransformation.toLowerCase()
 )
-const schema = Schema.String.pipe(Schema.decode(transformation))
+const schema = Schema.String |> Schema.decode(transformation)
 
 Schema.decodeUnknownSync(schema)("  HELLO  ") // => "hello"
 ```
@@ -86,8 +84,8 @@ t._tag // => "Transformation"
 ```efx
 import { Effect, Option } from "effect"
 
-const DateFromString = Schema.String.pipe(
-  Schema.decodeTo(
+const DateFromString = Schema.String
+  |> Schema.decodeTo(
     Schema.Date,
     SchemaTransformation.transformEffect({
       decode: (s, options) => {
@@ -99,7 +97,6 @@ const DateFromString = Schema.String.pipe(
       encode: (d) => succeed(d.toISOString())
     })
   )
-)
 Schema.decodeSync(DateFromString)("2024-01-01").toISOString() // => "2024-01-01T00:00:00.000Z"
 ```
 
@@ -108,17 +105,14 @@ Schema.decodeSync(DateFromString)("2024-01-01").toISOString() // => "2024-01-01T
 **Converting between cents and dollars**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const CentsFromDollars = Schema.Number.pipe(
-  Schema.decodeTo(
+const CentsFromDollars = Schema.Number
+  |> Schema.decodeTo(
     Schema.Number,
     SchemaTransformation.transform({
       decode: (dollars) => dollars * 100,
       encode: (cents) => cents / 100
     })
   )
-)
 Schema.decodeSync(CentsFromDollars)(2.5) // => 250
 ```
 
@@ -127,18 +121,15 @@ Schema.decodeSync(CentsFromDollars)(2.5) // => 250
 **Converting an optional key to Option**
 
 ```efx
-import { Option, Schema, SchemaTransformation } from "effect"
-
 const schema = Schema.Struct({
-  a: Schema.optionalKey(Schema.Number).pipe(
-    Schema.decodeTo(
+  a: Schema.optionalKey(Schema.Number)
+    |> Schema.decodeTo(
       Schema.Option(Schema.Number),
       SchemaTransformation.transformOptional({
         decode: Option.some,
         encode: Option.flatten
       })
     )
-  )
 })
 Schema.decodeSync(schema)({}).a // => Option.none()
 ```
@@ -148,11 +139,8 @@ Schema.decodeSync(schema)({}).a // => Option.none()
 **Trimming on decode**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const Trimmed = Schema.String.pipe(
-  Schema.decode(SchemaTransformation.trim())
-)
+const Trimmed = Schema.String
+  |> Schema.decode(SchemaTransformation.trim())
 Schema.decodeSync(Trimmed)("  hello  ") // => "hello"
 ```
 
@@ -161,11 +149,8 @@ Schema.decodeSync(Trimmed)("  hello  ") // => "hello"
 **Converting snake case to camel case**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const SnakeToCamel = Schema.String.pipe(
-  Schema.decode(SchemaTransformation.snakeToCamel())
-)
+const SnakeToCamel = Schema.String
+  |> Schema.decode(SchemaTransformation.snakeToCamel())
 Schema.decodeSync(SnakeToCamel)("user_name") // => "userName"
 ```
 
@@ -174,11 +159,8 @@ Schema.decodeSync(SnakeToCamel)("user_name") // => "userName"
 **Lowercasing on decode**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const Lowered = Schema.String.pipe(
-  Schema.decode(SchemaTransformation.toLowerCase())
-)
+const Lowered = Schema.String
+  |> Schema.decode(SchemaTransformation.toLowerCase())
 Schema.decodeSync(Lowered)("HELLO") // => "hello"
 ```
 
@@ -187,11 +169,8 @@ Schema.decodeSync(Lowered)("HELLO") // => "hello"
 **Uppercasing on decode**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const Uppered = Schema.String.pipe(
-  Schema.decode(SchemaTransformation.toUpperCase())
-)
+const Uppered = Schema.String
+  |> Schema.decode(SchemaTransformation.toUpperCase())
 Schema.decodeSync(Uppered)("hello") // => "HELLO"
 ```
 
@@ -200,11 +179,8 @@ Schema.decodeSync(Uppered)("hello") // => "HELLO"
 **Capitalizing on decode**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const Capitalized = Schema.String.pipe(
-  Schema.decode(SchemaTransformation.capitalize())
-)
+const Capitalized = Schema.String
+  |> Schema.decode(SchemaTransformation.capitalize())
 Schema.decodeSync(Capitalized)("hello") // => "Hello"
 ```
 
@@ -213,11 +189,8 @@ Schema.decodeSync(Capitalized)("hello") // => "Hello"
 **Uncapitalizing on decode**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const Uncapitalized = Schema.String.pipe(
-  Schema.decode(SchemaTransformation.uncapitalize())
-)
+const Uncapitalized = Schema.String
+  |> Schema.decode(SchemaTransformation.uncapitalize())
 Schema.decodeSync(Uncapitalized)("Hello") // => "hello"
 ```
 
@@ -226,14 +199,11 @@ Schema.decodeSync(Uncapitalized)("Hello") // => "hello"
 **Parsing key-value pairs**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const Config = Schema.String.pipe(
-  Schema.decodeTo(
+const Config = Schema.String
+  |> Schema.decodeTo(
     Schema.Record(Schema.String, Schema.String),
     SchemaTransformation.splitKeyValue({ separator: ";", keyValueSeparator: ":" })
   )
-)
 Schema.decodeSync(Config)("host:localhost;port:3000") // => { host: "localhost", port: "3000" }
 ```
 
@@ -242,11 +212,8 @@ Schema.decodeSync(Config)("host:localhost;port:3000") // => { host: "localhost",
 **Chaining schemas with no conversion**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.Trim.pipe(
-  Schema.decodeTo(Schema.FiniteFromString, SchemaTransformation.passthrough())
-)
+const schema = Schema.Trim
+  |> Schema.decodeTo(Schema.FiniteFromString, SchemaTransformation.passthrough())
 Schema.decodeSync(schema)("1") // => 1
 ```
 
@@ -277,11 +244,8 @@ const t: SchemaTransformation.Transformation<string, "a" | "b"> =
 **Converting a string to a number**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.Number, SchemaTransformation.numberFromString)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.Number, SchemaTransformation.numberFromString)
 Schema.decodeSync(schema)("42") // => 42
 ```
 
@@ -290,11 +254,8 @@ Schema.decodeSync(schema)("42") // => 42
 **Converting a string to a BigInt**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.BigInt, SchemaTransformation.bigintFromString)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.BigInt, SchemaTransformation.bigintFromString)
 Schema.decodeSync(schema)("42") // => 42n
 ```
 
@@ -303,11 +264,8 @@ Schema.decodeSync(schema)("42") // => 42n
 **Converting a string to a Date**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.Date, SchemaTransformation.dateFromString)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.Date, SchemaTransformation.dateFromString)
 Schema.decodeSync(schema)("2024-01-01").toISOString() // => "2024-01-01T00:00:00.000Z"
 ```
 
@@ -316,11 +274,8 @@ Schema.decodeSync(schema)("2024-01-01").toISOString() // => "2024-01-01T00:00:00
 **Converting milliseconds to a Date**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.Number.pipe(
-  Schema.decodeTo(Schema.Date, SchemaTransformation.dateFromMillis)
-)
+const schema = Schema.Number
+  |> Schema.decodeTo(Schema.Date, SchemaTransformation.dateFromMillis)
 Schema.decodeSync(schema)(0).toISOString() // => "1970-01-01T00:00:00.000Z"
 ```
 
@@ -329,11 +284,8 @@ Schema.decodeSync(schema)(0).toISOString() // => "1970-01-01T00:00:00.000Z"
 **Converting a string to a Duration**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.Duration, SchemaTransformation.durationFromString)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.Duration, SchemaTransformation.durationFromString)
 String(Schema.decodeSync(schema)("5 seconds")) // => "5000 millis"
 ```
 
@@ -342,11 +294,8 @@ String(Schema.decodeSync(schema)("5 seconds")) // => "5000 millis"
 **Converting nanoseconds to a Duration**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.BigInt.pipe(
-  Schema.decodeTo(Schema.Duration, SchemaTransformation.durationFromNanos)
-)
+const schema = Schema.BigInt
+  |> Schema.decodeTo(Schema.Duration, SchemaTransformation.durationFromNanos)
 String(Schema.decodeSync(schema)(5n)) // => "5 nanos"
 ```
 
@@ -355,11 +304,8 @@ String(Schema.decodeSync(schema)(5n)) // => "5 nanos"
 **Converting milliseconds to a Duration**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.Number.pipe(
-  Schema.decodeTo(Schema.Duration, SchemaTransformation.durationFromMillis)
-)
+const schema = Schema.Number
+  |> Schema.decodeTo(Schema.Duration, SchemaTransformation.durationFromMillis)
 String(Schema.decodeSync(schema)(5000)) // => "5000 millis"
 ```
 
@@ -368,14 +314,13 @@ String(Schema.decodeSync(schema)(5000)) // => "5000 millis"
 **Converting nullable values to an Option**
 
 ```efx
-import { Option, Schema, SchemaTransformation } from "effect"
+import { Option } from "effect"
 
-const schema = Schema.NullOr(Schema.String).pipe(
-  Schema.decodeTo(
+const schema = Schema.NullOr(Schema.String)
+  |> Schema.decodeTo(
     Schema.Option(Schema.String),
     SchemaTransformation.optionFromNullOr()
   )
-)
 Schema.decodeSync(schema)(null) // => Option.none()
 ```
 
@@ -384,14 +329,13 @@ Schema.decodeSync(schema)(null) // => Option.none()
 **Converting undefined-or values to an Option**
 
 ```efx
-import { Option, Schema, SchemaTransformation } from "effect"
+import { Option } from "effect"
 
-const schema = Schema.UndefinedOr(Schema.String).pipe(
-  Schema.decodeTo(
+const schema = Schema.UndefinedOr(Schema.String)
+  |> Schema.decodeTo(
     Schema.Option(Schema.String),
     SchemaTransformation.optionFromUndefinedOr()
   )
-)
 Schema.decodeSync(schema)(undefined) // => Option.none()
 ```
 
@@ -400,14 +344,11 @@ Schema.decodeSync(schema)(undefined) // => Option.none()
 **Converting nullish values to an Option and encoding None as null**
 
 ```efx
-import { Option, Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.NullishOr(Schema.String).pipe(
-  Schema.decodeTo(
+const schema = Schema.NullishOr(Schema.String)
+  |> Schema.decodeTo(
     Schema.Option(Schema.String),
     SchemaTransformation.optionFromNullishOr({ onNoneEncoding: null })
   )
-)
 Schema.encodeSync(schema)(Option.none()) // => null
 ```
 
@@ -416,15 +357,14 @@ Schema.encodeSync(schema)(Option.none()) // => null
 **Converting an optional key to an Option**
 
 ```efx
-import { Option, Schema, SchemaTransformation } from "effect"
+import { Option } from "effect"
 
 const schema = Schema.Struct({
-  name: Schema.optionalKey(Schema.String).pipe(
-    Schema.decodeTo(
+  name: Schema.optionalKey(Schema.String)
+    |> Schema.decodeTo(
       Schema.Option(Schema.String),
       SchemaTransformation.optionFromOptionalKey()
     )
-  )
 })
 Schema.decodeSync(schema)({}).name // => Option.none()
 ```
@@ -434,15 +374,14 @@ Schema.decodeSync(schema)({}).name // => Option.none()
 **Converting an optional value to an Option**
 
 ```efx
-import { Option, Schema, SchemaTransformation } from "effect"
+import { Option } from "effect"
 
 const schema = Schema.Struct({
-  age: Schema.optional(Schema.Number).pipe(
-    Schema.decodeTo(
+  age: Schema.optional(Schema.Number)
+    |> Schema.decodeTo(
       Schema.Option(Schema.Number),
       SchemaTransformation.optionFromOptional()
     )
-  )
 })
 Schema.decodeSync(schema)({ age: undefined }).age // => Option.none()
 ```
@@ -452,11 +391,8 @@ Schema.decodeSync(schema)({ age: undefined }).age // => Option.none()
 **Converting a string to a URL**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.URL, SchemaTransformation.urlFromString)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.URL, SchemaTransformation.urlFromString)
 Schema.decodeSync(schema)("https://example.com/path").href // => "https://example.com/path"
 ```
 
@@ -465,11 +401,8 @@ Schema.decodeSync(schema)("https://example.com/path").href // => "https://exampl
 **Converting Base64 to a Uint8Array**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.Uint8Array, SchemaTransformation.uint8ArrayFromBase64String)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.Uint8Array, SchemaTransformation.uint8ArrayFromBase64String)
 Array.from(Schema.decodeSync(schema)("AQID")) // => [1, 2, 3]
 ```
 
@@ -478,11 +411,8 @@ Array.from(Schema.decodeSync(schema)("AQID")) // => [1, 2, 3]
 **Converting Base64 to a string**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.String, SchemaTransformation.stringFromBase64String)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.String, SchemaTransformation.stringFromBase64String)
 Schema.decodeSync(schema)("aGVsbG8=") // => "hello"
 ```
 
@@ -491,11 +421,8 @@ Schema.decodeSync(schema)("aGVsbG8=") // => "hello"
 **Converting Base64Url to a string**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.String, SchemaTransformation.stringFromBase64UrlString)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.String, SchemaTransformation.stringFromBase64UrlString)
 Schema.decodeSync(schema)("aGVsbG8") // => "hello"
 ```
 
@@ -504,11 +431,8 @@ Schema.decodeSync(schema)("aGVsbG8") // => "hello"
 **Converting hex to a string**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.String, SchemaTransformation.stringFromHexString)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.String, SchemaTransformation.stringFromHexString)
 Schema.decodeSync(schema)("68656c6c6f") // => "hello"
 ```
 
@@ -517,11 +441,8 @@ Schema.decodeSync(schema)("68656c6c6f") // => "hello"
 **Defining a URI component schema**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.String, SchemaTransformation.stringFromUriComponent)
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.String, SchemaTransformation.stringFromUriComponent)
 Schema.decodeSync(schema)("hello%20world") // => "hello world"
 ```
 
@@ -530,11 +451,8 @@ Schema.decodeSync(schema)("hello%20world") // => "hello world"
 **Parsing JSON**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.String.pipe(
-  Schema.decodeTo(Schema.Unknown, SchemaTransformation.fromJsonString())
-)
+const schema = Schema.String
+  |> Schema.decodeTo(Schema.Unknown, SchemaTransformation.fromJsonString())
 Schema.decodeSync(schema)("{\"ok\":true}") // => { ok: true }
 ```
 
@@ -543,11 +461,8 @@ Schema.decodeSync(schema)("{\"ok\":true}") // => { ok: true }
 **Decoding FormData**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.instanceOf(FormData).pipe(
-  Schema.decodeTo(Schema.Unknown, SchemaTransformation.fromFormData)
-)
+const schema = Schema.instanceOf(FormData)
+  |> Schema.decodeTo(Schema.Unknown, SchemaTransformation.fromFormData)
 const formData = new FormData()
 formData.append("user[name]", "Alice")
 Schema.decodeSync(schema)(formData) // => { user: { name: "Alice" } }
@@ -558,10 +473,7 @@ Schema.decodeSync(schema)(formData) // => { user: { name: "Alice" } }
 **Decoding URLSearchParams**
 
 ```efx
-import { Schema, SchemaTransformation } from "effect"
-
-const schema = Schema.instanceOf(URLSearchParams).pipe(
-  Schema.decodeTo(Schema.Unknown, SchemaTransformation.fromURLSearchParams)
-)
+const schema = Schema.instanceOf(URLSearchParams)
+  |> Schema.decodeTo(Schema.Unknown, SchemaTransformation.fromURLSearchParams)
 Schema.decodeSync(schema)(new URLSearchParams("user[name]=Alice")) // => { user: { name: "Alice" } }
 ```

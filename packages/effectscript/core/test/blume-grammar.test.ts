@@ -59,3 +59,39 @@ describe("efx signature scopes (ADR-0081)", () => {
     expect(s.get("User")).toContain("meta.return-type.efx")
   })
 })
+
+describe("efx is scopes (ADR-0087)", () => {
+  it("scopes is, not and or as operators and each tag as a type", async () => {
+    const s = await scopesOf("const ok = error is not (RateLimited or Cause.TimeoutError)")
+    expect(s.get("is")).toContain("keyword.operator.expression.is.efx")
+    expect(s.get("not")).toContain("keyword.operator.expression.is.efx")
+    expect(s.get("or")).toContain("keyword.operator.expression.is.efx")
+    expect(s.get("RateLimited")).toContain("entity.name.type.efx")
+    expect(s.get("Cause.TimeoutError")).toContain("entity.name.type.efx")
+    const p = await scopesOf("retry({ times: 2, while: is TimeoutError })")
+    expect(p.get("is")).toContain("keyword.operator.expression.is.efx")
+    expect(p.get("TimeoutError")).toContain("entity.name.type.efx")
+  })
+
+  it.each(["const same = Object.is(a, b)", "const is = 1", "const g = is as Guard", "for (is of list) {}"])(
+    "leaves is alone in %s",
+    async (code) => {
+      expect((await scopesOf(code)).get("is") ?? "").not.toContain("keyword.operator.expression.is.efx")
+    }
+  )
+})
+
+describe("efx brand and where scopes (ADR-0077)", () => {
+  it("scopes `brand` as a declaration and `where` as a keyword", async () => {
+    const s = await scopesOf(
+      "export brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })\nschema S {\n  name: string where isNonEmpty\n}"
+    )
+    expect(s.get("brand")).toContain("storage.type.efx")
+    expect(s.get("where")).toContain("keyword.other.where.efx")
+  })
+
+  it("leaves a variable named `where` alone", async () => {
+    const s = await scopesOf("const where = 1\nconsole.log(where)\nexport const f = (where: number) => where")
+    expect(s.get("where") ?? "").not.toContain("keyword.other.where.efx")
+  })
+})

@@ -21,11 +21,10 @@ const reporter = ErrorReporter.make(({ error, severity, attributes }) => {
   reports.push({ message: error.message, severity, attributes })
 })
 
-const program = fail(new Error("boom")).pipe(
-  withErrorReporting,
-  provide(ErrorReporter.layer([reporter])),
-  exit
-)
+const program = fail(new Error("boom"))
+  |> withErrorReporting
+  |> provide(ErrorReporter.layer([reporter]))
+  |> exit
 
 await runPromise(program)
 reports // => [{ message: "boom", severity: "Info", attributes: {} }]
@@ -56,11 +55,10 @@ const ReporterMerged = ErrorReporter.layer(
   { mergeWithExisting: true }
 )
 
-const program = fail("boom").pipe(
-  withErrorReporting,
-  provide(ReporterLayer),
-  exit
-)
+const program = fail("boom")
+  |> withErrorReporting
+  |> provide(ReporterLayer)
+  |> exit
 
 await runPromise(program)
 reports // => ["[Info] boom", "Info: boom"]

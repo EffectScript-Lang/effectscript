@@ -122,19 +122,16 @@ Use:
 - `filterMap` to transform a value when the transformation may reject it.
 
 ```efx
-import { Result, Schema } from "effect"
 import * as Arbitrary from "effect/Arbitrary"
 
 const integers = Arbitrary.schema(Schema.Int)
 
-const integerOrZero = Arbitrary.schema(Schema.Boolean).pipe(
-  Arbitrary.flatMap((useFallback) => useFallback ? Arbitrary.Constant(0) : integers)
-)
+const integerOrZero = Arbitrary.schema(Schema.Boolean)
+  |> Arbitrary.flatMap((useFallback) => useFallback ? Arbitrary.Constant(0) : integers)
 
-const nonNegativeLabels = integers.pipe(
-  Arbitrary.filter((value) => value >= 0),
-  Arbitrary.map((value) => `integer:${value}`)
-)
+const nonNegativeLabels = integers
+  |> Arbitrary.filter((value) => value >= 0)
+  |> Arbitrary.map((value) => `integer:${value}`)
 
 const positiveLabels = Arbitrary.filterMap(
   integers,
@@ -190,7 +187,6 @@ Use `flatMap` when one generated value decides what can be generated next. Creat
 callback when you can, because creating a Schema inside the callback repeats that work each time it runs:
 
 ```efx
-import { Schema } from "effect"
 import * as Arbitrary from "effect/Arbitrary"
 
 const Length = Arbitrary.schema(
@@ -204,9 +200,8 @@ const StringsByLength = globalThis.Array.from({ length: 4 }, (_, index) => {
   )
 })
 
-const SizedString = Length.pipe(
-  Arbitrary.flatMap((length) => StringsByLength[length - 1])
-)
+const SizedString = Length
+  |> Arbitrary.flatMap((length) => StringsByLength[length - 1])
 ```
 
 After a failure, Effect first tries simpler values from the first generator and rebuilds the dependent value. It then
@@ -228,7 +223,6 @@ Keep a general property over all command types, then add a focused property whos
 important transition:
 
 ```efx
-import { Schema } from "effect"
 import * as Arbitrary from "effect/Arbitrary"
 
 const Key = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 20 }))
@@ -260,14 +254,13 @@ const RemoveExistingScenario = Schema.Struct({
   after: Schema.Array(Command).check(Schema.isMaxLength(20))
 })
 
-const historyContainingRemoveExisting = Arbitrary.schema(RemoveExistingScenario).pipe(
-  Arbitrary.map(({ before, key, after }) => [
+const historyContainingRemoveExisting = Arbitrary.schema(RemoveExistingScenario)
+  |> Arbitrary.map(({ before, key, after }) => [
     ...before,
     { _tag: "Insert" as const, value: key },
     { _tag: "Remove" as const, value: key },
     ...after
   ])
-)
 ```
 
 Use `arbitraryHistory` to explore interactions that were not anticipated. Use `historyContainingRemoveExisting` in a
@@ -530,16 +523,14 @@ const nonEmptyItems = Arbitrary.schema(NonEmptyItems)
 const queue = Arbitrary.all({
   front: items,
   rear: items
-}).pipe(
-  Arbitrary.map(({ front, rear }) => balance(front, rear))
-)
+})
+  |> Arbitrary.map(({ front, rear }) => balance(front, rear))
 
 const nonEmptyQueue = Arbitrary.all({
   front: nonEmptyItems,
   rear: items
-}).pipe(
-  Arbitrary.map(({ front, rear }) => balance(front, rear))
-)
+})
+  |> Arbitrary.map(({ front, rear }) => balance(front, rear))
 ```
 
 The queue is intended to satisfy these equations:
@@ -698,7 +689,7 @@ const program = effect {
     seed: "integer-bound"
   })
 
-  if (first._tag === "Falsified") {
+  if (first is Falsified) {
     const replayed = await Arbitrary.checkEffect(
       arbitrary,
       (value) => value < 10,

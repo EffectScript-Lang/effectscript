@@ -3,7 +3,6 @@
  *
  * How to transform and consume streams using operators like `map`, `flatMap`, `filter`, `mapEffect`, and various `run*` methods.
  */
-import { Effect } from "effect"
 
 interface Order {
   readonly id: string
@@ -35,12 +34,11 @@ export const orderEvents = Stream.succeed<Order>({
 })
 
 // Use `Stream.map` for pure per-element transforms.
-export const normalizedOrders = orderEvents.pipe(
-  Stream.map((order): NormalizedOrder => ({
+export const normalizedOrders = orderEvents
+  |> Stream.map((order): NormalizedOrder => ({
     ...order,
     totalCents: order.subtotalCents + order.shippingCents
   }))
-)
 
 // `Stream.filter` lets you exclude elements that don't match a predicate.
 export const paidOrders = normalizedOrders.pipe(
@@ -49,23 +47,21 @@ export const paidOrders = normalizedOrders.pipe(
 
 // Use `Stream.flatMap` to transform each element into a stream, and flatten the
 // results.
-export const allOrders = Stream.make("US", "CA", "NZ").pipe(
-  Stream.flatMap(
+export const allOrders = Stream.make("US", "CA", "NZ")
+  |> Stream.flatMap(
     (country) =>
-      Stream.range(1, 50).pipe(
-        Stream.map((i): Order => ({
+      Stream.range(1, 50)
+        |> Stream.map((i): Order => ({
           id: `ord_${country}_${i}`,
           customerId: `cus_${i}`,
           status: i % 10 === 0 ? "refunded" : "paid",
           subtotalCents: Math.round(Math.random() * 100_000),
           shippingCents: Math.round(Math.random() * 10_000),
           country
-        }))
-      ),
+        })),
     // Optionally control the concurrency of the flatMap with the second argument.
     { concurrency: 2 }
   )
-)
 
 const enrichOrder = Effect.fn(function*(order: NormalizedOrder): Effect.fn.Return<EnrichedOrder> {
   // Simulate effectful enrichment (for example, tax/risk lookup).

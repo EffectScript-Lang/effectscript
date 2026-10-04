@@ -15,9 +15,8 @@ export const WarnAndAbove = Layer.succeed(References.MinimumLogLevel, "Warn")
 // There is a built-in logger for writing to a file
 export const FileLoggerLayer = Logger.layer([
   Logger.toFile(Logger.formatSimple, "app.log")
-]).pipe(
-  Layer.provide(NodeFileSystem.layer)
-)
+])
+  |> Layer.provide(NodeFileSystem.layer)
 
 // Define a custom logger for app-specific formatting and routing.
 export const appLogger = effect {
@@ -34,14 +33,14 @@ export const appLogger = effect {
   })
 }
 
-export const AppLoggerLayer = Logger.layer([appLogger]).pipe(
-  Layer.provideMerge(WarnAndAbove) // Start with "Warn" level for the app logger.
-)
+export const AppLoggerLayer = Logger.layer([appLogger])
+  |> Layer.provideMerge(WarnAndAbove) // Start with "Warn" level for the app logger.
+
 
 // Create a logger layer that uses the default logger for development, and the
 // custom logger for production
 export const LoggerLayer = Layer.unwrap(effect {
-  const env = await Config.String("NODE_ENV").pipe(Config.withDefault("development"))
+  const env = await Config.String("NODE_ENV") |> Config.withDefault("development")
   if (env === "production") {
     return AppLoggerLayer
   }

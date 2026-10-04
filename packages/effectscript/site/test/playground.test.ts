@@ -232,7 +232,6 @@ describe("the playground's presets", async () => {
   it("keeps a preset proposed only while the compiler refuses it", () => {
     const proposed = presets.filter((p) => p.proposal !== undefined)
     expect(proposed.map((p) => p.id)).toEqual([
-      "brands",
       "law",
       "laws",
       "infra",
@@ -260,11 +259,9 @@ describe("the playground's presets", async () => {
     code.slice(code.indexOf(from), to === undefined ? undefined : code.indexOf(to))
 
   it("writes what today's syntax already says the way the compiler does", () => {
-    // the law file before its laws, the brands file after its brands, the API the worker serves
+    // the law file before its laws, the API the worker serves
     const law = source("law")
     expect(body(lowering("law")).startsWith(body(compiled(law.slice(0, law.indexOf("/** Withdrawing"))).code)))
-      .toBe(true)
-    expect(body(lowering("brands")).endsWith(body(compiled(between(source("brands"), "export error")).code)))
       .toBe(true)
     // the infra sketch's API and handlers, with its binding written the way it lowers today
     const handlers = between(source("infra"), "export error", "// a Worker")

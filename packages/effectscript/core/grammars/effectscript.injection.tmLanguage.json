@@ -16,10 +16,16 @@
       "include": "#return-clauses"
     },
     {
+      "include": "#where"
+    },
+    {
       "include": "#control"
     },
     {
       "include": "#pipeline"
+    },
+    {
+      "include": "#is"
     }
   ],
   "repository": {
@@ -32,7 +38,7 @@
       }
     },
     "declaration": {
-      "match": "(?:^|(?<=\\bexport\\s))\\s*\\b(schema|error|service|layer|config|atom|command|api|group)\\b(?=\\s+[A-Za-z_$])",
+      "match": "(?:^|(?<=\\bexport\\s))\\s*\\b(schema|brand|error|service|layer|config|atom|command|api|group)\\b(?=\\s+[A-Za-z_$])",
       "captures": {
         "1": {
           "name": "storage.type.efx"
@@ -118,9 +124,40 @@
         }
       }
     },
+    "where": {
+      "match": "(?<=[\\w$>\\])\"'])\\s+(where)\\b(?=\\s+[A-Za-z_$])",
+      "captures": {
+        "1": {
+          "name": "keyword.other.where.efx"
+        }
+      }
+    },
     "pipeline": {
       "match": "\\|>",
       "name": "keyword.operator.pipeline.efx"
+    },
+    "is": {
+      "match": "(?<![.$\\w])(is)\\s+(?!(?:as|satisfies|of)\\b)(?:(not)\\s+)?(\\(?\\s*[A-Za-z_$][\\w$.]*(?:\\s+or\\s+[A-Za-z_$][\\w$.]*)*\\s*\\)?)",
+      "captures": {
+        "1": {
+          "name": "keyword.operator.expression.is.efx"
+        },
+        "2": {
+          "name": "keyword.operator.expression.is.efx"
+        },
+        "3": {
+          "patterns": [
+            {
+              "match": "\\bor\\b",
+              "name": "keyword.operator.expression.is.efx"
+            },
+            {
+              "match": "[A-Za-z_$][\\w$.]*",
+              "name": "entity.name.type.efx"
+            }
+          ]
+        }
+      }
     }
   }
 }

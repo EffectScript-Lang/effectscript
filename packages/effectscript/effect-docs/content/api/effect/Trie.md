@@ -92,11 +92,8 @@ trie // => Trie.fromIterable([["ca", 0], ["me", 1]])
 **Inserting entries**
 
 ```efx
-import { Trie } from "effect"
-
-const trie1 = Trie.empty<number>().pipe(
-  Trie.insert("call", 0)
-)
+const trie1 = Trie.empty<number>()
+  |> Trie.insert("call", 0)
 const trie2 = trie1.pipe(Trie.insert("me", 1))
 const trie3 = trie2.pipe(Trie.insert("mind", 2))
 const trie4 = trie3.pipe(Trie.insert("mid", 3))
@@ -112,13 +109,10 @@ Array.from(trie4) // => [["call", 0], ["me", 1], ["mid", 3], ["mind", 2]]
 **Reading keys in alphabetical order**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("cab", 0),
-  Trie.insert("abc", 1),
-  Trie.insert("bca", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("cab", 0)
+  |> Trie.insert("abc", 1)
+  |> Trie.insert("bca", 2)
 
 Array.from(Trie.keys(trie)) // => ["abc", "bca", "cab"]
 ```
@@ -128,13 +122,10 @@ Array.from(Trie.keys(trie)) // => ["abc", "bca", "cab"]
 **Reading values by key order**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1),
-  Trie.insert("and", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("call", 0)
+  |> Trie.insert("me", 1)
+  |> Trie.insert("and", 2)
 
 Array.from(Trie.values(trie)) // => [2, 0, 1]
 ```
@@ -144,12 +135,9 @@ Array.from(Trie.values(trie)) // => [2, 0, 1]
 **Reading entries in alphabetical order**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("call", 0)
+  |> Trie.insert("me", 1)
 
 Array.from(Trie.entries(trie)) // => [["call", 0], ["me", 1]]
 ```
@@ -159,12 +147,9 @@ Array.from(Trie.entries(trie)) // => [["call", 0], ["me", 1]]
 **Converting entries to an array**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("call", 0)
+  |> Trie.insert("me", 1)
 Trie.toEntries(trie) // => [["call", 0], ["me", 1]]
 ```
 
@@ -173,14 +158,11 @@ Trie.toEntries(trie) // => [["call", 0], ["me", 1]]
 **Finding keys with a prefix**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("she", 0),
-  Trie.insert("shells", 1),
-  Trie.insert("sea", 2),
-  Trie.insert("shore", 3)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("she", 0)
+  |> Trie.insert("shells", 1)
+  |> Trie.insert("sea", 2)
+  |> Trie.insert("shore", 3)
 
 Array.from(Trie.keysWithPrefix(trie, "she")) // => ["she", "shells"]
 ```
@@ -190,14 +172,11 @@ Array.from(Trie.keysWithPrefix(trie, "she")) // => ["she", "shells"]
 **Finding values with a prefix**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("she", 0),
-  Trie.insert("shells", 1),
-  Trie.insert("sea", 2),
-  Trie.insert("shore", 3)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("she", 0)
+  |> Trie.insert("shells", 1)
+  |> Trie.insert("sea", 2)
+  |> Trie.insert("shore", 3)
 
 Array.from(Trie.valuesWithPrefix(trie, "she")) // => [0, 1]
 ```
@@ -207,14 +186,11 @@ Array.from(Trie.valuesWithPrefix(trie, "she")) // => [0, 1]
 **Finding entries with a prefix**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("she", 0),
-  Trie.insert("shells", 1),
-  Trie.insert("sea", 2),
-  Trie.insert("shore", 3)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("she", 0)
+  |> Trie.insert("shells", 1)
+  |> Trie.insert("sea", 2)
+  |> Trie.insert("shore", 3)
 
 Array.from(Trie.entriesWithPrefix(trie, "she")) // => [["she", 0], ["shells", 1]]
 ```
@@ -224,14 +200,11 @@ Array.from(Trie.entriesWithPrefix(trie, "she")) // => [["she", 0], ["shells", 1]
 **Converting prefixed entries to an array**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("sea", 2),
-  Trie.insert("she", 3)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("sea", 2)
+  |> Trie.insert("she", 3)
 
 Trie.toEntriesWithPrefix(trie, "she") // => [["she", 3], ["shells", 0]]
 ```
@@ -241,13 +214,12 @@ Trie.toEntriesWithPrefix(trie, "she") // => [["she", 3], ["shells", 0]]
 **Finding the longest prefix**
 
 ```efx
-import { Option, Trie } from "effect"
+import { Option } from "effect"
 
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("she", 2)
 
 Trie.longestPrefixOf(trie, "sell") // => Option.none()
 Trie.longestPrefixOf(trie, "sells") // => Option.some(["sells", 1])
@@ -258,12 +230,9 @@ Trie.longestPrefixOf(trie, "sells") // => Option.some(["sells", 1])
 **Getting the size**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("a", 0),
-  Trie.insert("b", 1)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("a", 0)
+  |> Trie.insert("b", 1)
 
 Trie.size(trie) // => 2
 ```
@@ -273,14 +242,13 @@ Trie.size(trie) // => 2
 **Looking up values safely**
 
 ```efx
-import { Option, Trie } from "effect"
+import { Option } from "effect"
 
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1),
-  Trie.insert("mind", 2),
-  Trie.insert("mid", 3)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("call", 0)
+  |> Trie.insert("me", 1)
+  |> Trie.insert("mind", 2)
+  |> Trie.insert("mid", 3)
 
 Trie.get(trie, "call") // => Option.some(0)
 Trie.get(trie, "me") // => Option.some(1)
@@ -297,14 +265,11 @@ Trie.get(trie, "mea") // => Option.none()
 **Checking key membership**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1),
-  Trie.insert("mind", 2),
-  Trie.insert("mid", 3)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("call", 0)
+  |> Trie.insert("me", 1)
+  |> Trie.insert("mind", 2)
+  |> Trie.insert("mid", 3)
 
 Trie.has(trie, "call") // => true
 Trie.has(trie, "me") // => true
@@ -321,10 +286,8 @@ Trie.has(trie, "mea") // => false
 **Checking whether a trie is empty**
 
 ```efx
-import { Trie } from "effect"
-
 const trie = Trie.empty<number>()
-const trie1 = trie.pipe(Trie.insert("ma", 0))
+const trie1 = trie |> Trie.insert("ma", 0)
 
 Trie.isEmpty(trie) // => true
 Trie.isEmpty(trie1) // => false
@@ -335,12 +298,9 @@ Trie.isEmpty(trie1) // => false
 **Looking up values unsafely**
 
 ```efx
-import { Result, Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("call", 0)
+  |> Trie.insert("me", 1)
 
 Result.try({
   try: () => Trie.getUnsafe(trie, "mae"),
@@ -353,14 +313,13 @@ Result.try({
 **Removing entries**
 
 ```efx
-import { Option, Trie } from "effect"
+import { Option } from "effect"
 
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1),
-  Trie.insert("mind", 2),
-  Trie.insert("mid", 3)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("call", 0)
+  |> Trie.insert("me", 1)
+  |> Trie.insert("mind", 2)
+  |> Trie.insert("mid", 3)
 
 const trie1 = trie.pipe(Trie.remove("call"))
 const trie2 = trie1.pipe(Trie.remove("mea"))
@@ -375,13 +334,10 @@ Trie.get(trie2, "call") // => Option.none()
 **Reducing entries**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("she", 2)
 
 trie.pipe(Trie.reduce(0, (acc, n) => acc + n)) // => 3
 trie.pipe(Trie.reduce(10, (acc, n) => acc + n)) // => 13
@@ -393,13 +349,10 @@ trie.pipe(Trie.reduce("", (acc, _, key) => acc + key)) // => "sellssheshells"
 **Mapping entries**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("she", 2)
 
 Trie.map(trie, (v) => v + 1) // => Trie.make(["shells", 1], ["sells", 2], ["she", 3])
 Trie.map(trie, (_, k) => k.length) // => Trie.make(["shells", 6], ["sells", 5], ["she", 3])
@@ -410,13 +363,10 @@ Trie.map(trie, (_, k) => k.length) // => Trie.make(["shells", 6], ["sells", 5], 
 **Filtering entries**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("she", 2)
 
 Trie.filter(trie, (v) => v > 1) // => Trie.make(["she", 2])
 Trie.filter(trie, (_, k) => k.length > 3) // => Trie.make(["shells", 0], ["sells", 1])
@@ -427,13 +377,10 @@ Trie.filter(trie, (_, k) => k.length > 3) // => Trie.make(["shells", 0], ["sells
 **Filtering and mapping entries**
 
 ```efx
-import { Result, Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("she", 2)
 
 Trie.filterMap(trie, (v) => v > 1 ? Result.succeed(v) : Result.failVoid) // => Trie.make(["she", 2])
 Trie.filterMap(
@@ -447,13 +394,10 @@ Trie.filterMap(
 **Compacting optional values**
 
 ```efx
-import { Option, Trie } from "effect"
-
-const trie = Trie.empty<Option.Option<number>>().pipe(
-  Trie.insert("shells", Option.some(0)),
-  Trie.insert("sells", Option.none()),
-  Trie.insert("she", Option.some(2))
-)
+const trie = Trie.empty<Option<number>>()
+  |> Trie.insert("shells", Option.some(0))
+  |> Trie.insert("sells", Option.none())
+  |> Trie.insert("she", Option.some(2))
 
 Trie.compact(trie) // => Trie.make(["shells", 0], ["she", 2])
 ```
@@ -463,18 +407,15 @@ Trie.compact(trie) // => Trie.make(["shells", 0], ["she", 2])
 **Iterating over entries**
 
 ```efx
-import { Trie } from "effect"
-
 let value = 0
 
-Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2),
-  Trie.forEach((n, key) => {
+Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("she", 2)
+  |> Trie.forEach((n, key) => {
     value += n + key.length
   })
-)
 
 value // => 17
 ```
@@ -484,13 +425,12 @@ value // => 17
 **Modifying an existing value**
 
 ```efx
-import { Option, Trie } from "effect"
+import { Option } from "effect"
 
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("she", 2)
 
 trie.pipe(Trie.modify("she", (v) => v + 10), Trie.get("she")) // => Option.some(12)
 trie.pipe(Trie.modify("me", (v) => v)) // => trie
@@ -501,13 +441,10 @@ trie.pipe(Trie.modify("me", (v) => v)) // => trie
 **Removing multiple entries**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
+  |> Trie.insert("sells", 1)
+  |> Trie.insert("she", 2)
 
 trie.pipe(Trie.removeMany(["she", "sells"])) // => Trie.make(["shells", 0])
 ```
@@ -517,11 +454,8 @@ trie.pipe(Trie.removeMany(["she", "sells"])) // => Trie.make(["shells", 0])
 **Inserting multiple entries**
 
 ```efx
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0)
-)
+const trie = Trie.empty<number>()
+  |> Trie.insert("shells", 0)
 
 trie.pipe(
   Trie.insertMany([["sells", 1], ["she", 2]])

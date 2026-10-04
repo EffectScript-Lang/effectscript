@@ -14,7 +14,7 @@ describe("reverse: service (Plan 6 Task 8)", () => {
   it.each([
     [
       "signatures, a layer with defer and pipes, a test layer",
-      "declare const SqlLive: Layer<never>\n\nexport service Users {\n  effect find(id: string): string throws Error\n  effect list(): ReadonlyArray<string>\n  readonly size: number\n\n  layer = effect {\n    const cache = new Map<string, string>()\n    defer log(\"released\")\n    return {\n      size: 0,\n      effect find(id: string) {\n        return cache.get(id) ?? throw new Error(id)\n      },\n      list: effect () => [...cache.values()]\n    }\n  } |> provide(SqlLive)\n\n  layer test = {\n    size: 1,\n    find: effect (id: string) => id,\n    list: effect () => []\n  }\n}\n"
+      "declare const SqlLive: Layer<never>\n\nexport service Users {\n  effect find(id: string): string throws Error\n  effect list(): ReadonlyArray<string>\n  size: number\n\n  layer = effect {\n    const cache = new Map<string, string>()\n    defer log(\"released\")\n    return {\n      size: 0,\n      effect find(id) {\n        return cache.get(id) ?? throw new Error(id)\n      },\n      list: effect () => [...cache.values()]\n    }\n  } |> provide(SqlLive)\n\n  layer test = {\n    size: 1,\n    find: effect (id) => id,\n    list: effect () => []\n  }\n}\n"
     ],
     ["signatures only", "service Clock {\n  effect now(): number\n}\n"],
     ["a custom key", "service Clock as \"my/clock\" {\n  effect now(): number\n}\n"],

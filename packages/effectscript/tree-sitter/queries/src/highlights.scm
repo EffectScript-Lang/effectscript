@@ -30,9 +30,16 @@
   "entity"
   "workflow"
   "activity"
+  "brand"
+  "where"
 ] @keyword
 
 (match_arm "default" @keyword)
+(is_expression "is" @keyword.operator)
+(is_predicate "is" @keyword.operator)
+(is_pattern ["not" "or"] @keyword.operator)
+(is_pattern tag: (identifier) @type)
+(is_pattern tag: (nested_identifier (property_identifier) @type))
 
 "|>" @operator
 
@@ -56,6 +63,9 @@
   name: (identifier) @type)
 
 (schema_variant
+  name: (identifier) @type)
+
+(brand_declaration
   name: (identifier) @type)
 
 (error_declaration

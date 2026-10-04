@@ -11,8 +11,8 @@ export effect loadUser(id: string): User throws UserNotFound {
   try {
     return await fetchUser(id)
       |> timeout("2 seconds")
-      |> retry({ times: 2, while: (e) => e._tag === "TimeoutError" })
-  } catch (e: Cause.TimeoutError) {
+      |> retry({ times: 2, while: is TimeoutError })
+  } catch (e: TimeoutError) {
     console.warn("gave up after 3 timeouts")
     return new User({ id, name: "guest" })
   }

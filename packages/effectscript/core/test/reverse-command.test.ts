@@ -5,7 +5,7 @@ describe("reverse: command (Plan 7 Task 8)", () => {
   it.each([
     [
       "flags, arguments, docs and a description",
-      "import { Schema } from \"effect\"\n\nconst Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))\n\n/** Create a task */\nexport command create(\n  /** Task title */ title: NonEmptyString,\n  /** Priority */ --priority: \"low\" | \"normal\" | \"high\" = \"normal\",\n  /** Assignee email @alias a */ --assignee?: Email,\n  --dryRun: boolean = false,\n  --count: Int,\n) {\n  console.log(`Created \"${title}\" with ${priority} priority`)\n}\n"
+      "import { Schema } from \"effect\"\n\nconst Email = Schema.String |> Schema.check(Schema.isPattern(/@/))\n\n/** Create a task */\nexport command create(\n  /** Task title */ title: NonEmptyString,\n  /** Priority */ --priority: \"low\" | \"normal\" | \"high\" = \"normal\",\n  /** Assignee email @alias a */ --assignee?: Email,\n  --dryRun: boolean = false,\n  --count: Int,\n) {\n  console.log(`Created \"${title}\" with ${priority} priority`)\n}\n"
     ],
     ["no parameters, a pipe", "command ping() {\n  console.log(\"pong\")\n} |> withDescription(\"Ping\")\n"],
     [

@@ -53,9 +53,8 @@ runSync(SchemaGetter.run(getter, Option.some("-1"), {})) // => Option.some(0)
 **Mapping a getter result**
 
 ```efx
-const getter = SchemaGetter.transform<number, string>(Number).pipe(
-  SchemaGetter.map((n) => n * 2)
-)
+const getter = SchemaGetter.transform<number, string>(Number)
+  |> SchemaGetter.map((n) => n * 2)
 
 runSync(SchemaGetter.run(getter, Option.some("21"), {})) // => Option.some(42)
 ```
@@ -113,15 +112,12 @@ issue._tag // => "Forbidden"
 **Passing through identity transformations**
 
 ```efx
-import { Schema, SchemaGetter } from "effect"
-
 // No transformation needed — types already match
-const StringToString = Schema.String.pipe(
-  Schema.decodeTo(Schema.String, {
+const StringToString = Schema.String
+  |> Schema.decodeTo(Schema.String, {
     decode: SchemaGetter.passthrough(),
     encode: SchemaGetter.passthrough()
   })
-)
 Schema.decodeSync(StringToString)("hello") // => "hello"
 ```
 
@@ -173,14 +169,11 @@ await runPromise(SchemaGetter.run(nonNegative, Option.some(1), {})) // => Option
 **Transforming strings to numbers**
 
 ```efx
-import { Schema, SchemaGetter } from "effect"
-
-const NumberFromString = Schema.String.pipe(
-  Schema.decodeTo(Schema.Number, {
+const NumberFromString = Schema.String
+  |> Schema.decodeTo(Schema.Number, {
     decode: SchemaGetter.transform((s) => Number(s)),
     encode: SchemaGetter.transform((n) => String(n))
   })
-)
 Schema.decodeSync(NumberFromString)("42") // => 42
 ```
 

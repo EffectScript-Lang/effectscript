@@ -24,10 +24,9 @@ export const numbers = Stream.fromIterable<number>([1, 2, 3, 4, 5])
 export const samples = Stream.fromEffectSchedule(
   succeed(3),
   Schedule.spaced("30 seconds")
-).pipe(
-  // Stream.take limits the number of elements emitted by the stream.
-  Stream.take(3)
 )
+  // Stream.take limits the number of elements emitted by the stream.
+  |> Stream.take(3)
 
 // Use `Stream.paginate` when reading APIs that return one page at a time.
 // The function returns the current page of values and optionally the next

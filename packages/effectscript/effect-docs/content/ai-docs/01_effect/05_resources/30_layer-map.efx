@@ -18,9 +18,9 @@ type UserRecord = {
 let nextConnectionId = 0
 
 export service DatabasePool as "app/DatabasePool" {
-  readonly tenantId: string
-  readonly connectionId: number
-  readonly query: (sql: string) => Effect<ReadonlyArray<UserRecord>, DatabaseQueryError>
+  tenantId: string
+  connectionId: number
+  query: (sql: string) => Effect<ReadonlyArray<UserRecord>, DatabaseQueryError>
   // A layer factory that builds one pool per tenant.
   layer = (tenantId: string) =>
     Layer.effect(

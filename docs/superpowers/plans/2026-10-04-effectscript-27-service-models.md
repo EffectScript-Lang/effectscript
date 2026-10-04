@@ -6,6 +6,19 @@
 > `pnpm check && pnpm lint && git commit <paths>`. Plans 24–26 must be done first. Bend at the
 > pinned version is needed.
 
+> **Amended by ADR-0091 (one form per intent).** Before a task writes an `.efx` example, fixture or
+> doc, apply these to its EffectScript, and update the expected TypeScript to match:
+>
+> - `await exit(e)`, not `await Effect.exit(e)`. Name the result `result`, not `exit`:
+>   `const exit = await exit(…)` reads the local in its own initializer (TDZ).
+> - `result is Failure` / `result is Success`, not `Exit.isFailure(result)` / `Exit.isSuccess(result)`
+>   (ADR-0087). The output becomes `result._tag === "Failure"`, which narrows the same way.
+> - `found is None` / `found is Some`, not `Option.isNone(found)` / `Option.isSome(found)`.
+> - `brand Money = Int`, not `schema Money = Int & Brand<"Money">` (ADR-0077).
+>
+> The `is` forms need Plan 29, and `brand` needs Plan 30. If either hasn't shipped when this plan
+> runs, keep the old form for that construct and note it in the task.
+
 **Goal:** laws can talk about effectful code that uses services:
 
 - a `service` declares a `model`, its reference behavior as pure state;

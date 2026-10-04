@@ -43,10 +43,9 @@ Sink.isSink(notStream) // => false
 **Using channel completion as the sink result**
 
 ```efx
-const channel = Channel.identity<readonly [number, ...Array<number>], never, void>().pipe(
-  Channel.drain,
-  Channel.mapDone(() => ["consumed"] as const)
-)
+const channel = Channel.identity<readonly [number, ...Array<number>], never, void>()
+  |> Channel.drain
+  |> Channel.mapDone(() => ["consumed"] as const)
 const sink = Sink.fromChannel(channel)
 
 await runPromise(Stream.run(Stream.make(1, 2, 3), sink)) // => "consumed"
@@ -76,9 +75,8 @@ written // => [1, 2, 3]
 **Running a sink as a channel**
 
 ```efx
-const channel = Stream.toChannel(Stream.make(1, 2, 3)).pipe(
-  Channel.pipeTo(Sink.toChannel(Sink.sum))
-)
+const channel = Stream.toChannel(Stream.make(1, 2, 3))
+  |> Channel.pipeTo(Sink.toChannel(Sink.sum))
 
 await runPromise(Channel.runDrain(channel)) // => [6]
 ```

@@ -36,14 +36,13 @@ export const CounterEntityLayer = Counter.toLayer(
     return Counter.of({
       Increment: ({ payload }) => Ref.updateAndGet(count, (current) => current + payload.amount),
       GetCount: () =>
-        Ref.get(count).pipe(
+        Ref.get(count)
           // Add Rpc.fork to allow the GetCount handler to run concurrently with
           // Increment handlers.
           //
           // This opts-out of the default behavior where all handlers for a
           // given entity run sequentially.
-          Rpc.fork
-        )
+          |> Rpc.fork
     })
   },
   { maxIdleTime: "5 minutes" }
@@ -81,17 +80,14 @@ const EntitiesLayer = Layer.mergeAll(
   CounterEntityLayer
 )
 
-const ProductionLayer = EntitiesLayer.pipe(
-  Layer.provide(ClusterLayer)
-)
+const ProductionLayer = EntitiesLayer
+  |> Layer.provide(ClusterLayer)
 
-export const TestLayer = EntitiesLayer.pipe(
+export const TestLayer = EntitiesLayer
   // For testing, we can use `Layer.provideMerge` to tests can access storage
   // and other cluster services directly.
-  Layer.provideMerge(ClusterLayerTest)
-)
+  |> Layer.provideMerge(ClusterLayerTest)
 
 // Finally, run your app with the entities layer.
-Layer.launch(ProductionLayer).pipe(
-  NodeRuntime.runMain
-)
+Layer.launch(ProductionLayer)
+  |> NodeRuntime.runMain

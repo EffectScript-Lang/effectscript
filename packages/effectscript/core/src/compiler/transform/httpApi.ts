@@ -7,7 +7,7 @@ import { children, type Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
 import { ref, unused } from "../names.ts"
-import { optionalField, typeToSchema } from "../schema/mapping.ts"
+import { fieldSchema, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
 import { genericImpl } from "./library.ts"
 import type { HandlerGroup } from "./registry.ts"
@@ -52,7 +52,7 @@ const sectionSchema = (ctx: Ctx, type: Node): string => {
     }
     const key = member.key.type === "Identifier" ? member.key.name : ctx.source.slice(member.key.start, member.key.end)
     const fieldType: Node = member.typeAnnotation.typeAnnotation
-    return `${key}: ${member.optional === true ? optionalField(ctx, fieldType) : typeToSchema(ctx, fieldType)}`
+    return `${key}: ${fieldSchema(ctx, fieldType, member.optional === true, member.efxWhere)}`
   })
   return `{ ${fields.join(", ")} }`
 }

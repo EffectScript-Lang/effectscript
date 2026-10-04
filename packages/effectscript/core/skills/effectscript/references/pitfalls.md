@@ -191,6 +191,23 @@ A scoped resource must live as long as the whole `effect`. Inside a nested block
 `Effect.runPromise` and its siblings inside `effect` code are errors (EFX8003). Use `await`, and
 keep a single `main` (or the framework's runtime) at the edge.
 
+## `is` stays on the line of the value it tests
+
+`error is RateLimited` tests a tag, and `is RateLimited` alone is a predicate. A line that starts
+with `is` is a predicate, so `const ok = error` followed by `is RateLimited` on the next line is
+two statements; the compiler reports it (EFX7005). Wrap after `or` instead:
+
+```efx
+error RateLimited { retryAfter: number }
+
+declare const error: RateLimited | Cause.TimeoutError
+
+export const transient = error is RateLimited or
+  TimeoutError
+```
+
+The value must have a `_tag`: test `x !== null && x is A` for a value that may be `null`.
+
 ## Free names become Effect builtins
 
 A free identifier that names an Effect combinator (`retry`, `timeout`, `succeed`, `sleep`, …) is

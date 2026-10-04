@@ -45,9 +45,12 @@ describe("reverse: match (Plan 6 Task 9)", () => {
     expect(roundTrip(efx)).toBe(efx)
   })
 
-  it("keeps a predicate arm as TypeScript", () => {
+  it("keeps a predicate arm as a `Match` pipeline, not a `match`", () => {
     const ts =
       "import { Match } from \"effect\"\ndeclare const n: number\nexport const sign = Match.value(n).pipe(Match.when((x: number) => x > 0, () => \"+\"), Match.orElse(() => \"-\"))\n"
-    expect(toEffectScript(ts).code).toBe(ts)
+    // `Match.value(n)` is pipeable, so its `.pipe(…)` is a pipeline (ADR-0091 A1)
+    expect(toEffectScript(ts).code).toBe(
+      "declare const n: number\nexport const sign = Match.value(n) |> Match.when((x: number) => x > 0, () => \"+\") |> Match.orElse(() => \"-\")\n"
+    )
   })
 })

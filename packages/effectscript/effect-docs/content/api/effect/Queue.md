@@ -419,7 +419,7 @@ const program = effect {
   const message2 = await Queue.take(queue)
 
   // After all messages are consumed, queue is done
-  const isDone = queue.state._tag === "Done"
+  const isDone = queue.state is Done
   return { interrupted, offerResult, messages: [message1, message2], isDone }
 }
 
@@ -671,7 +671,7 @@ await runPromise(program) // => [Exit.succeed(1), Exit.succeed(2), undefined]
 ```efx
 const program = effect {
   const queue = await Queue.unbounded<number>()
-  const taker = await Queue.take(queue).pipe(forkChild)
+  const taker = await Queue.take(queue) |> forkChild
   await yieldNow
 
   Queue.offerUnsafe(queue, 1)
@@ -690,7 +690,7 @@ await runPromise(program) // => 1
 ```efx
 const program = effect {
   const queue = await Queue.unbounded<number>()
-  const taker = await Queue.take(queue).pipe(forkChild)
+  const taker = await Queue.take(queue) |> forkChild
   await yieldNow
 
   Queue.offerUnsafe(queue, 1)

@@ -1,0 +1,9 @@
+export schema Point = { x: number where isFinite; y: number where isFinite }
+
+export schema Address {
+  geo: { lat: number where isBetween({ minimum: -90, maximum: 90 }); lng: number }
+}
+
+export schema Shape =
+  | Circle { radius: number where isGreaterThan(0) }
+  | Square { side?: number where isGreaterThan(0) }

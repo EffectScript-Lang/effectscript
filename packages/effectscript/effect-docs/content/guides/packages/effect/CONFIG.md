@@ -121,7 +121,7 @@ The same rule applies when a `Config` is yielded as an `Effect`: the config uses
 Triggers when the config is absent. For `Config.all`, any absent child makes the group absent unless another child fails. A group default replaces the entire group; apply defaults to individual children to keep other supplied values. Validation and source errors still propagate.
 
 ```efx
-const port = Config.Int("port").pipe(Config.withDefault(3000))
+const port = Config.Int("port") |> Config.withDefault(3000)
 
 const provider = ConfigProvider.fromUnknown({})
 runSync(port.parse(provider)) // 3000
@@ -141,11 +141,8 @@ runSync(maybePort.parse(provider)) // { _tag: "None" }
 ### `Config.map` — Transform a Value
 
 ```efx
-import { Config } from "effect"
-
-const upperHost = Config.String("HOST").pipe(
-  Config.map((s) => s.toUpperCase())
-)
+const upperHost = Config.String("HOST")
+  |> Config.map((s) => s.toUpperCase())
 ```
 
 ### `Config.orElse` — Fallback on Any Error
@@ -153,11 +150,8 @@ const upperHost = Config.String("HOST").pipe(
 Unlike `withDefault`, this handles absence and **all** `ConfigError`s. The fallback's result replaces the original failure. If the fallback is absent, a later `withDefault` or `option` can recover it. If the fallback fails, only its error propagates:
 
 ```efx
-import { Config } from "effect"
-
-const host = Config.String("HOST").pipe(
-  Config.orElse(() => Config.succeed("localhost"))
-)
+const host = Config.String("HOST")
+  |> Config.orElse(() => Config.succeed("localhost"))
 ```
 
 ### `Config.nested` — Scope a Config Under a Prefix
@@ -168,7 +162,7 @@ Prepends a logical path segment to every key the inner config reads. The prefix 
 const dbConfig = Config.all({
   host: Config.String("host"),
   port: Config.Int("port")
-}).pipe(Config.nested("database"))
+}) |> Config.nested("database")
 
 const provider = ConfigProvider.fromUnknown({
   database: { host: "localhost", port: 5432 }
@@ -181,7 +175,7 @@ runSync(dbConfig.parse(provider))
 With environment variables, nesting uses `_` as separator:
 
 ```efx
-const host = Config.String("host").pipe(Config.nested("database"))
+const host = Config.String("host") |> Config.nested("database")
 
 const provider = ConfigProvider.fromEnv({
   env: { database_host: "localhost" }
@@ -193,10 +187,9 @@ runSync(host.parse(provider)) // "localhost"
 Multiple `Config.nested` calls compose with the outermost prefix first:
 
 ```efx
-const config = Config.String("host").pipe(
-  Config.nested("database"),
-  Config.nested("production")
-)
+const config = Config.String("host")
+  |> Config.nested("database")
+  |> Config.nested("production")
 
 const provider = ConfigProvider.fromUnknown({
   production: {
@@ -230,14 +223,11 @@ const pair = Config.all([Config.String("a"), Config.Int("b")])
 For example, providing only `host` selects the default for the entire group here:
 
 ```efx
-import { Config } from "effect"
-
 const database = Config.all({
   host: Config.String("host"),
   port: Config.Int("port")
-}).pipe(
-  Config.withDefault({ host: "localhost", port: 5432 })
-)
+})
+  |> Config.withDefault({ host: "localhost", port: 5432 })
 ```
 
 If the provider contains `{ host: "db.internal" }`, the result is `{ host: "localhost", port: 5432 }`. To keep the supplied host and default only the port, put `Config.withDefault(5432)` on the `port` child instead.
@@ -484,15 +474,13 @@ const combined = ConfigProvider.orElse(envProvider, defaults)
 Each side keeps its own path transformations. If you combine providers that were already scoped or mapped, those transformations remain local to that side:
 
 ```efx
-import { ConfigProvider } from "effect"
-
 const envProvider = ConfigProvider.fromEnv({
   env: { DATABASE_HOST: "localhost" }
-}).pipe(ConfigProvider.constantCase)
+}) |> ConfigProvider.constantCase
 
 const defaults = ConfigProvider.fromEnv({
   env: { APP_PORT: "3000" }
-}).pipe(ConfigProvider.nested("APP"))
+}) |> ConfigProvider.nested("APP")
 
 const combined = envProvider.pipe(ConfigProvider.orElse(defaults))
 ```
@@ -517,14 +505,11 @@ Accepts a single string or a full `Path` array.
 Provider transformations compose in application order. A later `nested` becomes the outer prefix:
 
 ```efx
-import { ConfigProvider } from "effect"
-
 const provider = ConfigProvider.fromEnv({
   env: { B_A_KEY: "value" }
-}).pipe(
-  ConfigProvider.nested("A"),
-  ConfigProvider.nested("B")
-)
+})
+  |> ConfigProvider.nested("A")
+  |> ConfigProvider.nested("B")
 
 // path ["KEY"] resolves to ["B", "A", "KEY"]
 ```
@@ -536,11 +521,9 @@ When `nested` is applied to a provider built with `ConfigProvider.orElse`, the p
 Bridges camelCase schema keys to environment variable naming:
 
 ```efx
-import { ConfigProvider } from "effect"
-
 const provider = ConfigProvider.fromEnv({
   env: { DATABASE_HOST: "localhost" }
-}).pipe(ConfigProvider.constantCase)
+}) |> ConfigProvider.constantCase
 
 // path ["databaseHost"] now resolves to ["DATABASE_HOST"]
 ```
@@ -548,23 +531,19 @@ const provider = ConfigProvider.fromEnv({
 Ordering matters with `nested`. `constantCase` is a path transform, so it only converts the path it receives at that point in the pipeline:
 
 ```efx
-import { ConfigProvider } from "effect"
-
 const convertedPrefix = ConfigProvider.fromEnv({
   env: { APP_HOST: "localhost" }
-}).pipe(
-  ConfigProvider.nested("app"),
-  ConfigProvider.constantCase
-)
+})
+  |> ConfigProvider.nested("app")
+  |> ConfigProvider.constantCase
 
 // path ["host"] resolves to ["APP", "HOST"]
 
 const literalPrefix = ConfigProvider.fromEnv({
   env: { app_HOST: "localhost" }
-}).pipe(
-  ConfigProvider.constantCase,
-  ConfigProvider.nested("app")
-)
+})
+  |> ConfigProvider.constantCase
+  |> ConfigProvider.nested("app")
 
 // path ["host"] resolves to ["app", "HOST"]
 ```
@@ -599,16 +578,13 @@ which implements this capability automatically.
 `mapInput` runs after earlier provider transformations, so it sees the full path produced so far:
 
 ```efx
-import { ConfigProvider } from "effect"
-
 const appendLeaf = ConfigProvider.mapInput((path) => [...path, "leaf"])
 
 const provider = ConfigProvider.fromEnv({
   env: { APP_KEY_leaf: "value" }
-}).pipe(
-  ConfigProvider.nested("APP"),
-  appendLeaf
-)
+})
+  |> ConfigProvider.nested("APP")
+  |> appendLeaf
 
 // path ["KEY"] resolves to ["APP", "KEY", "leaf"]
 ```
@@ -700,7 +676,7 @@ const program = Config.Int("PORT").parse(
 ).pipe(
   tapError((error) =>
     sync(() => {
-      if (error.cause._tag === "SchemaError") {
+      if (error.cause is SchemaError) {
         console.log("Validation failed:", error.message)
       } else {
         console.log("Source error:", error.message)
@@ -736,7 +712,7 @@ const DbConfig = Config.schema(
 const AppConfig = Config.all({
   server: ServerConfig,
   db: DbConfig,
-  debug: Config.Boolean("debug").pipe(Config.withDefault(false))
+  debug: Config.Boolean("debug") |> Config.withDefault(false)
 })
 
 // In production, just yield it — reads from process.env

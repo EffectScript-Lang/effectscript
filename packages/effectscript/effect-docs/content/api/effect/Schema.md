@@ -84,14 +84,11 @@ type E = typeof bottom["Encoded"]  // string
 **Adding a title and description**
 
 ```efx
-import { Schema } from "effect"
-
-const Age = Schema.Natural.pipe(
-  Schema.annotate({
+const Age = Schema.Natural
+  |> Schema.annotate({
     title: "Age",
     description: "A non-negative integer representing age in years"
   })
-)
 Schema.resolveAnnotations(Age)?.title // => "Age"
 ```
 
@@ -100,13 +97,10 @@ Schema.resolveAnnotations(Age)?.title // => "Age"
 **Adding a title to the encoded representation**
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.NumberFromString.pipe(
-  Schema.annotateEncoded({
+const schema = Schema.NumberFromString
+  |> Schema.annotateEncoded({
     title: "my title"
   })
-)
 
 Schema.toEncoded(schema).ast.annotations?.title // => "my title"
 ```
@@ -116,15 +110,12 @@ Schema.toEncoded(schema).ast.annotations?.title // => "my title"
 **Customizing the missing-key message for a required field**
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.Struct({
-  username: Schema.String.pipe(
-    Schema.annotateKey({
+  username: Schema.String
+    |> Schema.annotateKey({
       description: "The username used to log in",
       messageMissingKey: "Username is required"
     })
-  )
 })
 schema.fields.username.ast.context?.annotations?.messageMissingKey // => "Username is required"
 ```
@@ -545,10 +536,8 @@ Schema.decodeSync(schema)({ a: "a", c: 1 }) // => { a: "a", c: 1 }
 **Renaming `name` to `full_name` in the encoded form**
 
 ```efx
-import { Schema } from "effect"
-
 const Person = Schema.Struct({ name: Schema.String, age: Schema.Number })
-const Encoded = Person.pipe(Schema.encodeKeys({ name: "full_name" }))
+const Encoded = Person |> Schema.encodeKeys({ name: "full_name" })
 
 // Decodes { full_name: "Alice", age: 30 } → { name: "Alice", age: 30 }
 Schema.decodeUnknownSync(Encoded)({ full_name: "Alice", age: 30 }) // => { name: "Alice", age: 30 }
@@ -559,15 +548,12 @@ Schema.decodeUnknownSync(Encoded)({ full_name: "Alice", age: 30 }) // => { name:
 **Adding a computed `fullName` field**
 
 ```efx
-import { Option, Schema } from "effect"
-
 const Person = Schema.Struct({ first: Schema.String, last: Schema.String })
-const Extended = Person.pipe(
-  Schema.extendTo(
+const Extended = Person
+  |> Schema.extendTo(
     { fullName: Schema.String },
     { fullName: (p) => Option.some(`${p.first} ${p.last}`) }
   )
-)
 
 const alice = Schema.decodeUnknownSync(Extended)({ first: "Alice", last: "Smith" })
 alice.fullName // => "Alice Smith"
@@ -744,11 +730,8 @@ Schema.decodeSync(Tree)({ value: 1, children: [] }) // => { value: 1, children: 
 **Adding checks to a schema**
 
 ```efx
-import { Schema } from "effect"
-
-const AgeSchema = Schema.Finite.pipe(
-  Schema.check(Schema.isGreaterThanOrEqualTo(0), Schema.isLessThanOrEqualTo(120))
-)
+const AgeSchema = Schema.Finite
+  |> Schema.check(Schema.isGreaterThanOrEqualTo(0), Schema.isLessThanOrEqualTo(120))
 Schema.is(AgeSchema)(42) // => true
 Schema.is(AgeSchema)(121) // => false
 ```
@@ -759,11 +742,10 @@ Schema.is(AgeSchema)(121) // => false
 
 ```efx
 const events: Array<string> = []
-const Logged = Schema.String.pipe(
-  Schema.middlewareDecoding((effect) =>
+const Logged = Schema.String
+  |> Schema.middlewareDecoding((effect) =>
     tapError(effect, () => sync(() => events.push("decode failed")))
   )
-)
 runSync(result(Schema.decodeUnknownEffect(Logged)(42)))
 events // => ["decode failed"]
 ```
@@ -774,11 +756,10 @@ events // => ["decode failed"]
 
 ```efx
 const events: Array<string> = []
-const Logged = Schema.String.pipe(
-  Schema.middlewareEncoding((effect) =>
+const Logged = Schema.String
+  |> Schema.middlewareEncoding((effect) =>
     tapError(effect, () => sync(() => events.push("encode failed")))
   )
-)
 runSync(result(Schema.encodeUnknownEffect(Logged)(42)))
 events // => ["encode failed"]
 ```
@@ -788,9 +769,8 @@ events // => ["encode failed"]
 **Returning a default on decode failure**
 
 ```efx
-const schema = Schema.Number.pipe(
-  Schema.catchDecoding((_issue) => succeed(Option.some(0)))
-)
+const schema = Schema.Number
+  |> Schema.catchDecoding((_issue) => succeed(Option.some(0)))
 runSync(Schema.decodeUnknownEffect(schema)("invalid")) // => 0
 ```
 
@@ -799,17 +779,14 @@ runSync(Schema.decodeUnknownEffect(schema)("invalid")) // => 0
 **Transforming strings to numbers with a schema transformation**
 
 ```efx
-import { Schema, SchemaGetter } from "effect"
-
-const NumberFromString = Schema.String.pipe(
-  Schema.decodeTo(
+const NumberFromString = Schema.String
+  |> Schema.decodeTo(
     Schema.Number,
     {
       decode: SchemaGetter.transform((s) => Number(s)),
       encode: SchemaGetter.transform((n) => String(n))
     }
   )
-)
 
 Schema.decodeUnknownSync(NumberFromString)("123") // => 123
 ```
@@ -819,14 +796,11 @@ Schema.decodeUnknownSync(NumberFromString)("123") // => 123
 **Trimming string values during encoding/decoding**
 
 ```efx
-import { Schema, SchemaGetter } from "effect"
-
-const Trimmed = Schema.String.pipe(
-  Schema.decode({
+const Trimmed = Schema.String
+  |> Schema.decode({
     decode: SchemaGetter.transform((s) => s.trim()),
     encode: SchemaGetter.transform((s) => s.trim())
   })
-)
 
 Schema.decodeUnknownSync(Trimmed)("  hello  ") // => "hello"
 ```
@@ -836,14 +810,11 @@ Schema.decodeUnknownSync(Trimmed)("  hello  ") // => "hello"
 **Encoding a number back to a string**
 
 ```efx
-import { Schema, SchemaGetter } from "effect"
-
-const NumberFromString = Schema.Number.pipe(
-  Schema.encodeTo(Schema.String, {
+const NumberFromString = Schema.Number
+  |> Schema.encodeTo(Schema.String, {
     decode: SchemaGetter.transform((s: string) => Number(s)),
     encode: SchemaGetter.transform((n: number) => String(n))
   })
-)
 Schema.decodeSync(NumberFromString)("42") // => 42
 ```
 
@@ -852,14 +823,11 @@ Schema.decodeSync(NumberFromString)("42") // => 42
 **Upper-casing encoded strings**
 
 ```efx
-import { Schema, SchemaGetter } from "effect"
-
-const UpperFromLower = Schema.String.pipe(
-  Schema.encode({
+const UpperFromLower = Schema.String
+  |> Schema.encode({
     decode: SchemaGetter.transform((s: string) => s.toLowerCase()),
     encode: SchemaGetter.transform((s: string) => s.toUpperCase())
   })
-)
 Schema.encodeSync(UpperFromLower)("hello") // => "HELLO"
 ```
 
@@ -869,10 +837,9 @@ Schema.encodeSync(UpperFromLower)("hello") // => "HELLO"
 
 ```efx
 const MySchema = Schema.Struct({
-  name: Schema.String.pipe(
-    Schema.optionalKey,
-    Schema.withConstructorDefault(succeed("anonymous"))
-  )
+  name: Schema.String
+    |> Schema.optionalKey
+    |> Schema.withConstructorDefault(succeed("anonymous"))
 })
 
 MySchema.make({}).name // => "anonymous"
@@ -884,7 +851,7 @@ MySchema.make({}).name // => "anonymous"
 
 ```efx
 const MySchema = Schema.Struct({
-  name: Schema.String.pipe(Schema.withDecodingDefaultKey(succeed("anonymous")))
+  name: Schema.String |> Schema.withDecodingDefaultKey(succeed("anonymous"))
 })
 
 Schema.decodeUnknownSync(MySchema)({}).name // => "anonymous"
@@ -896,7 +863,7 @@ Schema.decodeUnknownSync(MySchema)({}).name // => "anonymous"
 
 ```efx
 const MySchema = Schema.Struct({
-  name: Schema.String.pipe(Schema.optional, Schema.withDecodingDefault(succeed("anonymous")))
+  name: Schema.String |> Schema.optional |> Schema.withDecodingDefault(succeed("anonymous"))
 })
 
 Schema.decodeUnknownSync(MySchema)({ name: undefined }).name // => "anonymous"
@@ -970,12 +937,10 @@ tagged.fields._tag.schema.literal // => "A"
 **Adding tagged-union utilities to an existing union**
 
 ```efx
-import { Schema } from "effect"
-
 const A = Schema.TaggedStruct("A", { value: Schema.Number })
 const B = Schema.TaggedStruct("B", { name: Schema.String })
 
-const MyUnion = Schema.Union([A, B]).pipe(Schema.toTaggedUnion("_tag"))
+const MyUnion = Schema.Union([A, B]) |> Schema.toTaggedUnion("_tag")
 
 // Pattern-match on the union
 const result = MyUnion.match({ _tag: "A", value: 1 }, {
@@ -1041,8 +1006,6 @@ decoded.toISOString() // => "2024-01-01T00:00:00.000Z"
 **Reporting failure at a nested path**
 
 ```efx
-import { Result, Schema } from "effect"
-
 const schema = Schema.Struct({ password: Schema.String, confirmPassword: Schema.String }).check(
   Schema.makeFilter((o) =>
     o.password === o.confirmPassword
@@ -1052,7 +1015,7 @@ const schema = Schema.Struct({ password: Schema.String, confirmPassword: Schema.
 )
 
 const result = Schema.decodeUnknownResult(schema)({ password: "123456", confirmPassword: "1234567" })
-if (Result.isFailure(result) && result.failure.issue._tag === "Filter" && result.failure.issue.issue._tag === "Pointer") {
+if (Result.isFailure(result) && result.failure.issue is Filter && result.failure.issue.issue is Pointer) {
   result.failure.issue.issue.path // => ["password"]
 }
 ```
@@ -1060,8 +1023,6 @@ if (Result.isFailure(result) && result.failure.issue._tag === "Filter" && result
 **Reporting multiple failures at once**
 
 ```efx
-import { Result, Schema } from "effect"
-
 const schema = Schema.Struct({ a: Schema.Finite, b: Schema.Finite, c: Schema.Finite }).check(
   Schema.makeFilter((o) => {
     const issues: Array<Schema.FilterIssue> = []
@@ -1074,8 +1035,8 @@ const schema = Schema.Struct({ a: Schema.Finite, b: Schema.Finite, c: Schema.Fin
 )
 
 const result = Schema.decodeUnknownResult(schema)({ a: 1, b: 0, c: 0 })
-if (Result.isFailure(result) && result.failure.issue._tag === "Filter" && result.failure.issue.issue._tag === "Composite") {
-  result.failure.issue.issue.issues.map((issue) => issue._tag === "Pointer" ? issue.path : []) // => [["b"], ["c"]]
+if (Result.isFailure(result) && result.failure.issue is Filter && result.failure.issue.issue is Composite) {
+  result.failure.issue.issue.issues.map((issue) => issue is Pointer ? issue.path : []) // => [["b"], ["c"]]
 }
 ```
 
@@ -1239,16 +1200,13 @@ Schema.decodeUnknownSync(schema)(urlSearchParams) // => { a: 1 }
 **Decoding URI component strings**
 
 ```efx
-import { Schema } from "effect"
-
 const PaginationSchema = Schema.Struct({
   maxItemPerPage: Schema.Number,
   page: Schema.Number
 })
 
-const UrlSchema = Schema.StringFromUriComponent.pipe(
-  Schema.decodeTo(Schema.fromJsonString(PaginationSchema))
-)
+const UrlSchema = Schema.StringFromUriComponent
+  |> Schema.decodeTo(Schema.fromJsonString(PaginationSchema))
 
 Schema.encodeSync(UrlSchema)({ maxItemPerPage: 10, page: 1 }) // => "%7B%22maxItemPerPage%22%3A10%2C%22page%22%3A1%7D"
 ```
@@ -1302,15 +1260,13 @@ encoded.edges // => [{ index: 0, source: 0, target: 1, data: 1 }]
 **Decoding a JSON parameter field**
 
 ```efx
-import { Schema } from "effect"
 import { UrlParams } from "effect/http"
 
-const extractFoo = Schema.JsonFromUrlParamsField("foo").pipe(
-  Schema.decodeTo(Schema.Struct({
+const extractFoo = Schema.JsonFromUrlParamsField("foo")
+  |> Schema.decodeTo(Schema.Struct({
     some: Schema.String,
     number: Schema.Number
   }))
-)
 
 const decoded = Schema.decodeSync(extractFoo)(UrlParams.fromInput({
   foo: `{"some":"bar","number":42}`,
@@ -1324,15 +1280,13 @@ const result = [decoded.some, decoded.number] // => ["bar", 42]
 **Decoding URL parameters to a record**
 
 ```efx
-import { Schema } from "effect"
 import { UrlParams } from "effect/http"
 
-const toStruct = Schema.RecordFromUrlParams.pipe(
-  Schema.decodeTo(Schema.Struct({
+const toStruct = Schema.RecordFromUrlParams
+  |> Schema.decodeTo(Schema.Struct({
     some: Schema.String,
     number: Schema.FiniteFromString
   }))
-)
 
 const decoded = Schema.decodeSync(toStruct)(UrlParams.fromInput({
   some: "value",

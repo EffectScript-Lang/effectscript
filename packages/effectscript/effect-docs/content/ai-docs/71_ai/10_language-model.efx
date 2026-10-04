@@ -116,13 +116,12 @@ export service AiWriter as "docs/AiWriter" {
       const streamReleaseHighlights = (version: string) =>
         LanguageModel.streamText({
           prompt: `Write release highlights for version ${version} as a short bulleted list.`
-        }).pipe(
-          Stream.filter((part): part is Response.TextDeltaPart => part.type === "text-delta"),
-          Stream.map((part) => part.delta),
-          Stream.provide(launchPlanModel),
+        })
+          |> Stream.filter((part): part is Response.TextDeltaPart => part.type === "text-delta")
+          |> Stream.map((part) => part.delta)
+          |> Stream.provide(launchPlanModel)
           // Map AiError into our custom error type
-          Stream.mapError((error) => AiWriterError.fromAiError(error))
-        )
+          |> Stream.mapError((error) => AiWriterError.fromAiError(error))
 
       return {
         draftAnnouncement,

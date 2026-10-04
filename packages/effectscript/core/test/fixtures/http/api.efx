@@ -9,7 +9,7 @@ export schema NewUser {
 
 export error UserNotFound { id: string }
 
-export error Forbidden {}
+export error Forbidden
 
 export group UsersApi {
   get list "/" (query: { search?: string }): User[]
@@ -27,7 +27,7 @@ export api Api { UsersApi, SystemApi }
 export service Users {
   effect find(id: string): User throws UserNotFound
   layer = {
-    find: effect (id: string) => id === "1" ? new User({ id, name: "Ada" }) : throw new UserNotFound({ id })
+    find: effect (id) => id === "1" ? new User({ id, name: "Ada" }) : throw new UserNotFound({ id })
   }
 }
 

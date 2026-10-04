@@ -69,10 +69,9 @@ const program = effect {
 
   // will only acquire the resource once, and release it
   // when the scope is closed
-  await RcRef.get(ref).pipe(
-    andThen(RcRef.get(ref)),
-    scoped
-  )
+  await RcRef.get(ref)
+    |> andThen(RcRef.get(ref))
+    |> scoped
 }
 
 await runPromise(scoped(program))

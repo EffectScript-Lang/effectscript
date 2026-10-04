@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "paths": {
+      "effect": ["../../../../effect/src/index.ts"],
+      "effect/*": ["../../../../effect/src/*/index.ts", "../../../../effect/src/*.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.efx"]
+}

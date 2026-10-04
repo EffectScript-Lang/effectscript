@@ -153,10 +153,8 @@ Option.getFailure(Result.fail("err")) // => Option.some("err")
 **Unwrapping with a fallback**
 
 ```efx
-import { Option } from "effect"
-
-Option.some(1).pipe(Option.getOrElse(() => 0)) // => 1
-Option.none().pipe(Option.getOrElse(() => 0)) // => 0
+Option.some(1) |> Option.getOrElse(() => 0) // => 1
+Option.none() |> Option.getOrElse(() => 0) // => 0
 ```
 
 ## orElse
@@ -164,10 +162,8 @@ Option.none().pipe(Option.getOrElse(() => 0)) // => 0
 **Providing a fallback Option**
 
 ```efx
-import { Option } from "effect"
-
-Option.none().pipe(Option.orElse(() => Option.some("b"))) // => Option.some("b")
-Option.some("a").pipe(Option.orElse(() => Option.some("b"))) // => Option.some("a")
+Option.none() |> Option.orElse(() => Option.some("b")) // => Option.some("b")
+Option.some("a") |> Option.orElse(() => Option.some("b")) // => Option.some("a")
 ```
 
 ## orElseSome
@@ -175,10 +171,8 @@ Option.some("a").pipe(Option.orElse(() => Option.some("b"))) // => Option.some("
 **Providing a fallback value**
 
 ```efx
-import { Option } from "effect"
-
-Option.none().pipe(Option.orElseSome(() => "b")) // => Option.some("b")
-Option.some("a").pipe(Option.orElseSome(() => "b")) // => Option.some("a")
+Option.none() |> Option.orElseSome(() => "b") // => Option.some("b")
+Option.some("a") |> Option.orElseSome(() => "b") // => Option.some("a")
 ```
 
 ## orElseResult
@@ -302,15 +296,13 @@ parse("") // => Option.none()
 **Throwing a custom error**
 
 ```efx
-import { Option, Result } from "effect"
-
 Option.getOrThrowWith(Option.some(1), () => new Error("missing")) // => 1
 
 const failure = Result.try({
   try: () => Option.getOrThrowWith(Option.none(), () => new Error("missing")),
   catch: (error) => (error as Error).message
 })
-Result.getFailure(failure).pipe(Option.getOrElse(() => "no error")) // => "missing"
+Result.getFailure(failure) |> Option.getOrElse(() => "no error") // => "missing"
 ```
 
 ## getOrThrow
@@ -318,15 +310,13 @@ Result.getFailure(failure).pipe(Option.getOrElse(() => "no error")) // => "missi
 **Throwing a default error**
 
 ```efx
-import { Option, Result } from "effect"
-
 Option.getOrThrow(Option.some(1)) // => 1
 
 const failure = Result.try({
   try: () => Option.getOrThrow(Option.none()),
   catch: (error) => (error as Error).message
 })
-Result.getFailure(failure).pipe(Option.getOrElse(() => "no error")) // => "getOrThrow called on a None"
+Result.getFailure(failure) |> Option.getOrElse(() => "no error") // => "getOrThrow called on a None"
 ```
 
 ## map
@@ -416,8 +406,6 @@ Option.andThen(Option.none(), (x) => Option.some(x * 2)) // => Option.none()
 **Navigating optional properties**
 
 ```efx
-import { Option } from "effect"
-
 interface Employee {
   company?: { address?: { street?: { name?: string } } }
 }
@@ -426,9 +414,8 @@ const emp: Employee = {
   company: { address: { street: { name: "high street" } } }
 }
 
-Option.some(emp).pipe(
-  Option.flatMapNullishOr((e) => e.company?.address?.street?.name)
-) // => Option.some("high street")
+Option.some(emp)
+  |> Option.flatMapNullishOr((e) => e.company?.address?.street?.name) // => Option.some("high street")
 ```
 
 ## flatten
@@ -680,13 +667,11 @@ parsePositive(-1) // => Option.none()
 **Checking with custom equivalence**
 
 ```efx
-import { Equivalence, Option } from "effect"
-
 const check = Option.containsWith(Equivalence.strictEqual<number>())
 
-Option.some(2).pipe(check(2)) // => true
-Option.some(1).pipe(check(2)) // => false
-Option.none().pipe(check(2)) // => false
+Option.some(2) |> check(2) // => true
+Option.some(1) |> check(2) // => false
+Option.none() |> check(2) // => false
 ```
 
 ## contains
@@ -694,11 +679,9 @@ Option.none().pipe(check(2)) // => false
 **Checking containment**
 
 ```efx
-import { Option } from "effect"
-
-Option.some(2).pipe(Option.contains(2)) // => true
-Option.some(1).pipe(Option.contains(2)) // => false
-Option.none().pipe(Option.contains(2)) // => false
+Option.some(2) |> Option.contains(2) // => true
+Option.some(1) |> Option.contains(2) // => false
+Option.none() |> Option.contains(2) // => false
 ```
 
 ## exists
@@ -706,13 +689,11 @@ Option.none().pipe(Option.contains(2)) // => false
 **Testing a condition**
 
 ```efx
-import { Option } from "effect"
-
 const isEven = (n: number) => n % 2 === 0
 
-Option.some(2).pipe(Option.exists(isEven)) // => true
-Option.some(1).pipe(Option.exists(isEven)) // => false
-Option.none().pipe(Option.exists(isEven)) // => false
+Option.some(2) |> Option.exists(isEven) // => true
+Option.some(1) |> Option.exists(isEven) // => false
+Option.none() |> Option.exists(isEven) // => false
 ```
 
 ## bindTo
@@ -720,10 +701,14 @@ Option.none().pipe(Option.exists(isEven)) // => false
 **Starting do notation**
 
 ```efx
-Option.some(2)
-  |> Option.bindTo("x")
-  |> Option.bind("y", () => Option.some(3))
-  |> Option.let("sum", ({ x, y }) => x + y) // => Option.some({ x: 2, y: 3, sum: 5 })
+import { Option, pipe } from "effect"
+
+pipe(
+  Option.some(2),
+  Option.bindTo("x"),
+  Option.bind("y", () => Option.some(3)),
+  Option.let("sum", ({ x, y }) => x + y)
+) // => Option.some({ x: 2, y: 3, sum: 5 })
 ```
 
 ## let
@@ -731,10 +716,14 @@ Option.some(2)
 **Adding a computed value**
 
 ```efx
-Option.Do
-  |> Option.bind("x", () => Option.some(2))
-  |> Option.bind("y", () => Option.some(3))
-  |> Option.let("sum", ({ x, y }) => x + y) // => Option.some({ x: 2, y: 3, sum: 5 })
+import { Option, pipe } from "effect"
+
+pipe(
+  Option.Do,
+  Option.bind("x", () => Option.some(2)),
+  Option.bind("y", () => Option.some(3)),
+  Option.let("sum", ({ x, y }) => x + y)
+) // => Option.some({ x: 2, y: 3, sum: 5 })
 ```
 
 ## bind
@@ -742,11 +731,15 @@ Option.Do
 **Binding Option values**
 
 ```efx
-Option.Do
-  |> Option.bind("x", () => Option.some(2))
-  |> Option.bind("y", () => Option.some(3))
-  |> Option.let("sum", ({ x, y }) => x + y)
-  |> Option.filter(({ x, y }) => x * y > 5) // => Option.some({ x: 2, y: 3, sum: 5 })
+import { Option, pipe } from "effect"
+
+pipe(
+  Option.Do,
+  Option.bind("x", () => Option.some(2)),
+  Option.bind("y", () => Option.some(3)),
+  Option.let("sum", ({ x, y }) => x + y),
+  Option.filter(({ x, y }) => x * y > 5)
+) // => Option.some({ x: 2, y: 3, sum: 5 })
 ```
 
 ## Do
@@ -754,11 +747,15 @@ Option.Do
 **Building Option pipelines with do notation**
 
 ```efx
-Option.Do
-  |> Option.bind("x", () => Option.some(2))
-  |> Option.bind("y", () => Option.some(3))
-  |> Option.let("sum", ({ x, y }) => x + y)
-  |> Option.filter(({ x, y }) => x * y > 5) // => Option.some({ x: 2, y: 3, sum: 5 })
+import { Option, pipe } from "effect"
+
+pipe(
+  Option.Do,
+  Option.bind("x", () => Option.some(2)),
+  Option.bind("y", () => Option.some(3)),
+  Option.let("sum", ({ x, y }) => x + y),
+  Option.filter(({ x, y }) => x * y > 5)
+) // => Option.some({ x: 2, y: 3, sum: 5 })
 ```
 
 ## gen

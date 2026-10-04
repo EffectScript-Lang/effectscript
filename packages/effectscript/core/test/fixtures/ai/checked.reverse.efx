@@ -1,0 +1,2 @@
+/** Searches the catalog. */
+export tool Search(query: string where isNonEmpty, limit?: Int where isBetween({ minimum: 1, maximum: 50 })): string[]

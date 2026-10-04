@@ -7,7 +7,7 @@ describe("ADR-0023: reverse compiler subset", () => {
   it.each([
     "export effect double(n: number): number {\n  const x = await succeed(n)\n  return x * 2\n}\n",
     "error NotFound { id: string }\n\nexport effect find(id: string): string throws NotFound {\n  if (id === \"\") throw new NotFound({ id })\n  return id\n}\n",
-    "export schema User {\n  name: string\n  email?: string\n  tags: Array<string>\n}\n",
+    "export schema User {\n  name: string\n  email?: string\n  tags: string[]\n}\n",
     "schema Point { x: number; y: number | null }\n",
     "export effect retried(n: number): number {\n  return n\n} |> retry({ times: 3 })\n",
     "export schema User {\n  name: string // display name, may change\n  email?: string // optional, may be absent\n}\n"

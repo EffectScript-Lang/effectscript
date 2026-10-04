@@ -618,23 +618,23 @@ const plain = Effect.fn("plain")(function*(json: string) {
 })
 ```
 
-## `schema`: data types that are TypeScript types
+## `schema` and `brand`: data types that are TypeScript types
 
 <!-- fixtures/schema -->
 
 ### Basic
 
 ```efx
-schema UserId = string & Brand<"UserId">
+brand UserId = string
 
 export schema User {
   id: UserId
   name: string
   email?: string
-  tags: ReadonlyArray<string>
+  tags: string[]
   role: "admin" | "member"
   manager: UserId | null
-  age = Int.check(isGreaterThan(0))
+  age: Int where isGreaterThan(0)
   get label() {
     return `${this.name} <${this.email ?? "?"}>`
   }
@@ -686,6 +686,41 @@ class Event extends Schema.TaggedClass<Event>()("Event", {
   at: Schema.Date,
   payload: Schema.Record(Schema.String, Schema.Unknown)
 }) {}
+```
+
+### Brand
+
+```efx
+/** A user's id. */
+export brand UserId = string
+
+/** A TCP port. */
+export brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })
+
+/** An administrator's id: a user id, branded again. */
+export brand AdminId = UserId
+
+brand Plan = "free" | "pro"
+```
+
+Compiles to:
+
+```ts
+import { Schema } from "effect"
+/** A user's id. */
+export const UserId = Schema.String.pipe(Schema.brand("UserId"))
+export type UserId = typeof UserId.Type
+
+/** A TCP port. */
+export const Port = Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 65535 })).pipe(Schema.brand("Port"))
+export type Port = typeof Port.Type
+
+/** An administrator's id: a user id, branded again. */
+export const AdminId = UserId.pipe(Schema.brand("AdminId"))
+export type AdminId = typeof AdminId.Type
+
+const Plan = Schema.Literals(["free", "pro"]).pipe(Schema.brand("Plan"))
+type Plan = typeof Plan.Type
 ```
 
 ### Comments
@@ -758,6 +793,91 @@ export class User extends Schema.Class<User>("User")({
 }
 ```
 
+### Where members
+
+```efx
+export schema Point = { x: number where isFinite; y: number where isFinite }
+
+export schema Address {
+  geo: { lat: number where isBetween({ minimum: -90, maximum: 90 }); lng: number }
+}
+
+export schema Shape =
+  | Circle { radius: number where isGreaterThan(0) }
+  | Square { side?: number where isGreaterThan(0) }
+```
+
+Compiles to:
+
+```ts
+import { Schema } from "effect"
+export const Point = Schema.Struct({
+  x: Schema.Number.check(Schema.isFinite()),
+  y: Schema.Number.check(Schema.isFinite())
+})
+export type Point = typeof Point.Type
+
+export class Address extends Schema.Class<Address>("Address")({
+  geo: Schema.Struct({ lat: Schema.Number.check(Schema.isBetween({ minimum: -90, maximum: 90 })), lng: Schema.Number })
+}) {}
+
+export class Circle
+  extends Schema.TaggedClass<Circle>()("Circle", { radius: Schema.Number.check(Schema.isGreaterThan(0)) })
+{}
+export class Square extends Schema.TaggedClass<Square>()("Square", {
+  side: Schema.optionalKey(Schema.Number.check(Schema.isGreaterThan(0)))
+}) {}
+export const Shape = Schema.Union([Circle, Square])
+export type Shape = typeof Shape.Type
+```
+
+### Where
+
+```efx
+export schema Signup {
+  email: string where isPattern(/^[^@\s]+@[^@\s]+$/)
+  name: string where isTrimmed, isNonEmpty
+  nickname?: string where isMaxLength(20)
+  referrer?: string | undefined where isNonEmpty
+  manager: string | null where isMaxLength(64)
+  age: Int where
+    isGreaterThan(17),
+    isLessThan(150)
+  joinedAt = DateTimeUtcFromString
+}
+
+export error TooYoung { age: Int where isLessThanOrEqualTo(17) }
+
+export schema Percent = number where isBetween({ minimum: 0, maximum: 100 })
+
+schema Note = string | null where isMaxLength(280)
+```
+
+Compiles to:
+
+```ts
+import { Schema } from "effect"
+export class Signup extends Schema.Class<Signup>("Signup")({
+  email: Schema.String.check(Schema.isPattern(/^[^@\s]+@[^@\s]+$/)),
+  name: Schema.String.check(Schema.isTrimmed(), Schema.isNonEmpty()),
+  nickname: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(20))),
+  referrer: Schema.optional(Schema.String.check(Schema.isNonEmpty())),
+  manager: Schema.NullOr(Schema.String.check(Schema.isMaxLength(64))),
+  age: Schema.Int.check(Schema.isGreaterThan(17), Schema.isLessThan(150)),
+  joinedAt: Schema.DateTimeUtcFromString
+}) {}
+
+export class TooYoung
+  extends Schema.TaggedError<TooYoung>()("TooYoung", { age: Schema.Int.check(Schema.isLessThanOrEqualTo(17)) })
+{}
+
+export const Percent = Schema.Number.check(Schema.isBetween({ minimum: 0, maximum: 100 }))
+export type Percent = typeof Percent.Type
+
+const Note = Schema.NullOr(Schema.String.check(Schema.isMaxLength(280)))
+type Note = typeof Note.Type
+```
+
 ## `error`
 
 <!-- fixtures/error -->
@@ -805,7 +925,7 @@ const find = Effect.fn("find")(function*(id: string): Effect.fn.Return<string, U
 
 ```efx
 export error TodoNotFound status 404 { id: string }
-export error Unauthorized status 401 {}
+export error Unauthorized status 401
 error RateLimited status 429 {
   retryAfter: number
   get message() { return `retry after ${this.retryAfter}s` }
@@ -856,14 +976,14 @@ declare const SqlLive: Layer<never>
 export service Users {
   effect find(id: string): User throws UserNotFound
   effect list(): ReadonlyArray<User>
-  readonly size: number
+  size: number
 
   layer = effect {
     const cache = new Map<string, User>()
     defer Effect.log("users layer released")
     return {
       size: 0,
-      effect find(id: string) {
+      effect find(id) {
         return cache.get(id) ?? throw new UserNotFound({ id })
       },
       list: effect () => [...cache.values()]
@@ -872,7 +992,7 @@ export service Users {
 
   layer test = {
     size: 1,
-    find: effect (id: string) => new User({ id, name: "Test" }),
+    find: effect (id) => new User({ id, name: "Test" }),
     list: effect () => []
   }
 }
@@ -945,14 +1065,14 @@ export const firstName = Effect.fn("firstName")(function*(id: string) {
 ```efx
 export service Greeter {
   effect greet(name: string): string
-  readonly punctuation: string
+  punctuation: string
 
   default = {
     punctuation: "!",
-    greet: effect (name: string) => `Hello, ${name}!`
+    greet: effect (name) => `Hello, ${name}!`
   }
 
-  layer test = { punctuation: ".", greet: effect (name: string) => `Hi, ${name}.` }
+  layer test = { punctuation: ".", greet: effect (name) => `Hi, ${name}.` }
 }
 
 export effect welcome(name: string) {
@@ -1257,6 +1377,47 @@ export const label = Match.value(status).pipe(
 )
 ```
 
+### Is
+
+```efx
+error RateLimited { retryAfter: number }
+
+declare const fetchUser: (id: string) => Effect<string, RateLimited>
+declare const failure: RateLimited | Cause.TimeoutError | Cause.NoSuchElementError
+declare const failures: Array<RateLimited | Cause.TimeoutError>
+
+export const user = (id: string) =>
+  fetchUser(id) |> timeout("2 seconds") |> retry({ times: 2, while: is TimeoutError or RateLimited })
+
+export const transient = failure is TimeoutError or RateLimited
+export const permanent = failure is not (TimeoutError or RateLimited)
+export const limited: Array<RateLimited> = failures.filter(is RateLimited)
+export const waitFor = failure is RateLimited ? failure.retryAfter : 0
+```
+
+Compiles to:
+
+```ts
+import { Cause, Effect, pipe, Schema } from "effect"
+class RateLimited extends Schema.TaggedError<RateLimited>()("RateLimited", { retryAfter: Schema.Number }) {}
+
+declare const fetchUser: (id: string) => Effect.Effect<string, RateLimited>
+declare const failure: RateLimited | Cause.TimeoutError | Cause.NoSuchElementError
+declare const failures: Array<RateLimited | Cause.TimeoutError>
+
+export const user = (id: string) =>
+  pipe(
+    fetchUser(id),
+    Effect.timeout("2 seconds"),
+    Effect.retry({ times: 2, while: (e) => e._tag === "TimeoutError" || e._tag === "RateLimited" })
+  )
+
+export const transient = failure._tag === "TimeoutError" || failure._tag === "RateLimited"
+export const permanent = failure._tag !== "TimeoutError" && failure._tag !== "RateLimited"
+export const limited: Array<RateLimited> = failures.filter((e) => e._tag === "RateLimited")
+export const waitFor = failure._tag === "RateLimited" ? failure.retryAfter : 0
+```
+
 ### Match
 
 ```efx
@@ -1539,7 +1700,7 @@ export const AppConfig = Config.all({
 ```efx
 service Users {
   effect find(id: string): string
-  layer test = { find: effect (id: string) => `user-${id}` }
+  layer test = { find: effect (id) => `user-${id}` }
 }
 
 describe "Users" {
@@ -1638,7 +1799,7 @@ export schema NewUser {
 
 export error UserNotFound { id: string }
 
-export error Forbidden {}
+export error Forbidden
 
 export group UsersApi {
   get list "/" (query: { search?: string }): User[]
@@ -1656,7 +1817,7 @@ export api Api { UsersApi, SystemApi }
 export service Users {
   effect find(id: string): User throws UserNotFound
   layer = {
-    find: effect (id: string) => id === "1" ? new User({ id, name: "Ada" }) : throw new UserNotFound({ id })
+    find: effect (id) => id === "1" ? new User({ id, name: "Ada" }) : throw new UserNotFound({ id })
   }
 }
 
@@ -1742,6 +1903,30 @@ export const UsersHandlers = HttpApiBuilder.group(
 ).pipe(Layer.provide(Users.layer))
 ```
 
+### Checked
+
+```efx
+export group SearchApi {
+  get find "/" (query: { q: string where isNonEmpty; page?: string where isMaxLength(4) }): string[]
+}
+```
+
+Compiles to:
+
+```ts
+import { Schema } from "effect"
+import { HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
+export class SearchApi extends HttpApiGroup.make("search").add(
+  HttpApiEndpoint.get("find", "/", {
+    query: {
+      q: Schema.String.check(Schema.isNonEmpty()),
+      page: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(4)))
+    },
+    success: Schema.Array(Schema.String)
+  })
+) {}
+```
+
 ## `command`: CLIs on `effect/cli`
 
 <!-- fixtures/cli -->
@@ -1751,7 +1936,7 @@ export const UsersHandlers = HttpApiBuilder.group(
 ```efx
 import { Schema } from "effect"
 
-const Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))
+const Email = Schema.String |> Schema.check(Schema.isPattern(/@/))
 
 /** Create a task */
 export command create(
@@ -1802,6 +1987,31 @@ export const create = Command.make(
 
 <!-- fixtures/rpc -->
 
+### Checked
+
+```efx
+export rpc PagesRpc {
+  page(id: string where isUUID, size: Int where isGreaterThan(0), isLessThanOrEqualTo(100), after?: string): string[]
+}
+```
+
+Compiles to:
+
+```ts
+import { Schema } from "effect"
+import { Rpc, RpcGroup } from "effect/rpc"
+export const PagesRpc = RpcGroup.make(
+  Rpc.make("page", {
+    payload: {
+      id: Schema.String.check(Schema.isUUID()),
+      size: Schema.Int.check(Schema.isGreaterThan(0), Schema.isLessThanOrEqualTo(100)),
+      after: Schema.optionalKey(Schema.String)
+    },
+    success: Schema.Array(Schema.String)
+  })
+)
+```
+
 ### Users
 
 ```efx
@@ -1811,7 +2021,7 @@ export schema User {
 }
 
 export error UserNotFound { id: string }
-export error Forbidden {}
+export error Forbidden
 
 export rpc UsersRpc {
   getUser(id: string): User throws UserNotFound
@@ -1958,6 +2168,29 @@ export const AssistantLive = Assistant.toLayer(Effect.gen(function*() {
     Ping: Effect.fnUntraced(function*() {})
   })
 }))
+```
+
+### Checked
+
+```efx
+/** Searches the catalog. */
+export tool Search(query: string where isNonEmpty, limit?: Int where isBetween({ minimum: 1, maximum: 50 })): string[]
+```
+
+Compiles to:
+
+```ts
+import { Schema } from "effect"
+import { Tool } from "effect/ai"
+/** Searches the catalog. */
+export const Search = Tool.make("Search", {
+  description: "Searches the catalog.",
+  parameters: Schema.Struct({
+    query: Schema.String.check(Schema.isNonEmpty()),
+    limit: Schema.optionalKey(Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 50 })))
+  }),
+  success: Schema.Array(Schema.String)
+})
 ```
 
 ## `entity`: cluster entities on `effect/cluster`

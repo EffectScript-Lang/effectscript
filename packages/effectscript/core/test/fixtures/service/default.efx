@@ -1,13 +1,13 @@
 export service Greeter {
   effect greet(name: string): string
-  readonly punctuation: string
+  punctuation: string
 
   default = {
     punctuation: "!",
-    greet: effect (name: string) => `Hello, ${name}!`
+    greet: effect (name) => `Hello, ${name}!`
   }
 
-  layer test = { punctuation: ".", greet: effect (name: string) => `Hi, ${name}.` }
+  layer test = { punctuation: ".", greet: effect (name) => `Hi, ${name}.` }
 }
 
 export effect welcome(name: string) {

@@ -168,6 +168,12 @@ export const analyze = (program: Node): ScopeAnalysis => {
     for (const child of children(node)) visit(child, scope)
   }
 
+  /** `where` checks under a declaration whose fields aren't visited otherwise (ADR-0077). */
+  const visitChecks = (node: Node, scope: Scope): void => {
+    if (node.type === "WhereClause") return visitChildren(node, scope)
+    for (const child of children(node)) visitChecks(child, scope)
+  }
+
   const visitFunction = (node: Node, scope: Scope): void => {
     if (node.type === "FunctionDeclaration" || node.type === "TSDeclareFunction") {
       if (node.id) {
@@ -273,6 +279,8 @@ export const analyze = (program: Node): ScopeAnalysis => {
         return visitChildren(node, scope)
       }
       case "WorkflowDeclaration": {
+        // a check runs at module level, not inside the workflow's scope (ADR-0077)
+        visitChecks(node.line, scope)
         scope.values.add(node.id.name)
         bindings.add(node.id)
         // the payload's fields are in scope for the key and the body (ADR-0072)
@@ -313,7 +321,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
         scope.values.add(node.id.name)
         scope.types.add(node.id.name)
         bindings.add(node.id)
-        return
+        return visitChecks(node, scope)
       }
       // a library construct declares a constant (ADR-0069…0072)
       case "RpcDeclaration":
@@ -322,7 +330,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
       case "ToolkitDeclaration": {
         scope.values.add(node.id.name)
         bindings.add(node.id)
-        return
+        return visitChecks(node, scope)
       }
       case "AtomDeclaration":
       case "LayerDeclaration": {
@@ -330,11 +338,12 @@ export const analyze = (program: Node): ScopeAnalysis => {
         bindings.add(node.id)
         return visit(node.init, scope)
       }
+      case "BrandDeclaration":
       case "SchemaAliasDeclaration": {
         scope.values.add(node.id.name)
         scope.types.add(node.id.name)
         bindings.add(node.id)
-        return
+        return visitChecks(node, scope)
       }
       case "SchemaAdtDeclaration": {
         if (scope === module) { for (const variant of node.variants) localTags.set(variant.id.name, variant.id.name) }
@@ -343,7 +352,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
           scope.types.add(named.id.name)
           bindings.add(named.id)
         }
-        return
+        return visitChecks(node, scope)
       }
       case "MatchExpression": {
         visit(node.discriminant, scope)

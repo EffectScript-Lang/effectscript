@@ -61,20 +61,19 @@ const ServerLayer = Layer.mergeAll(
       })
     )
   )
-).pipe(
-  Layer.provide(
+)
+  |> Layer.provide(
     McpServer.layerStdio({
       name: "Demo MCP Server",
       version: "1.0.0",
       protocols: [McpProtocol.v2025_06_18]
     })
-  ),
-  Layer.provide(NodeStdio.layer),
-  Layer.provide(Logger.layer([Logger.consolePretty()])),
-  Layer.provideMerge(Layer.succeed(Logger.LogToStderr, true))
-)
+  )
+  |> Layer.provide(NodeStdio.layer)
+  |> Layer.provide(Logger.layer([Logger.consolePretty()]))
+  |> Layer.provideMerge(Layer.succeed(Logger.LogToStderr, true))
 
-Layer.launch(ServerLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ServerLayer) |> NodeRuntime.runMain
 ```
 
 The server exposes three main parts:
@@ -169,6 +168,8 @@ contract while the actual logic is provided separately through an implementation
 grouped into toolkits, which can be combined and converted into layers.
 
 ```efx
+import { McpServer } from "effect/ai"
+
 const DemoTool = Tool.make("DemoTool", {
   description: "This is a demo tool for the documentation",
   parameters: Schema.Struct({
@@ -188,14 +189,13 @@ const OtherDemoTool = Tool.make("OtherDemoTool", {
 
 toolkit MyToolkit { DemoTool, OtherDemoTool }
 
-const ToolkitLayer = McpServer.toolkit(MyToolkit).pipe(
-  Layer.provideMerge(
+const ToolkitLayer = McpServer.toolkit(MyToolkit)
+  |> Layer.provideMerge(
     MyToolkit.toLayer({
       DemoTool: ({ demoId, demoName }) => succeed(`Processed ${demoName} with ID ${demoId}`),
       OtherDemoTool: ({ value }) => succeed(`Other tool result: ${value * 2}`)
     })
   )
-)
 ```
 
 In this example, `Tool.make` defines new tools with typed parameters and result schemas for success
@@ -213,16 +213,17 @@ defines both the message shown to the user and the expected response schema, ens
 validated user input.
 
 ```efx
+import { McpServer } from "effect/ai"
+
 const DemoElicitation = McpServer.elicit({
   message: `Please answer the question ("yes" | "no") (default "no"):`,
   schema: Schema.Struct({
     answer: Schema.Union([Schema.Literal("yes"), Schema.Literal("no")])
   })
-}).pipe(
-  catchTag("ElicitationDeclined", (_error) => {
+})
+  |> catchTag("ElicitationDeclined", (_error) => {
     return succeed({ answer: "no" })
   })
-)
 ```
 
 In this example, the server poses a simple yes/no question to the user. The input is validated
@@ -352,18 +353,17 @@ const ServerLayer = Layer.mergeAll(
       })
     )
   )
-).pipe(
-  Layer.provide(
+)
+  |> Layer.provide(
     McpServer.layerStdio({
       name: "Demo MCP Server",
       version: "1.0.0",
       protocols: [McpProtocol.v2025_06_18]
     })
-  ),
-  Layer.provide(NodeStdio.layer),
-  Layer.provideMerge(Layer.succeed(Logger.LogToStderr, true))
-)
+  )
+  |> Layer.provide(NodeStdio.layer)
+  |> Layer.provideMerge(Layer.succeed(Logger.LogToStderr, true))
 
 // Run the server
-Layer.launch(ServerLayer).pipe(NodeRuntime.runMain)
+Layer.launch(ServerLayer) |> NodeRuntime.runMain
 ```

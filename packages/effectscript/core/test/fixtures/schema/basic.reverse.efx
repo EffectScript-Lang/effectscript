@@ -1,13 +1,13 @@
-schema UserId = string & Brand<"UserId">
+brand UserId = string
 
 export schema User {
   id: UserId
   name: string
   email?: string
-  tags: Array<string>
+  tags: string[]
   role: "admin" | "member"
   manager: UserId | null
-  age = Int.check(isGreaterThan(0))
+  age: Int where isGreaterThan(0)
   get label() {
     return `${this.name} <${this.email ?? "?"}>`
   }

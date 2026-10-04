@@ -238,7 +238,7 @@ const deployCommand = effect {
 
 // In error handling
 const handleError = (error: CliError): Effect<number> => {
-  if (error._tag === "UserError") {
+  if (error is UserError) {
     return succeed(1) // Exit code 1
   }
   return succeed(0)

@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest"
 import { expectSafe, roundTrip } from "./utils/reverse.ts"
 
 const schemas =
-  "export schema User {\n  id: string\n}\n\nexport error UserNotFound { id: string }\n\nexport error Forbidden {}\n\n"
+  "export schema User {\n  id: string\n}\n\nexport error UserNotFound { id: string }\n\nexport error Forbidden\n\n"
 
 describe("reverse: group and api (Plan 7 Task 6)", () => {
   it.each([
     [
       "endpoints of every kind",
-      "export group UsersApi {\n  get list \"/\" (query: { search?: string }): Array<User>\n  get getById \"/:id\" (params: { id: string }): User throws UserNotFound | Forbidden\n  post create \"/\" (payload: User): User\n  del remove \"/:id\" (params: { id: string }, headers: { token: string })\n}\n"
+      "export group UsersApi {\n  get list \"/\" (query: { search?: string }): User[]\n  get getById \"/:id\" (params: { id: string }): User throws UserNotFound | Forbidden\n  post create \"/\" (payload: User): User\n  del remove \"/:id\" (params: { id: string }, headers: { token: string })\n}\n"
     ],
     [
       "a custom identifier and a middleware",

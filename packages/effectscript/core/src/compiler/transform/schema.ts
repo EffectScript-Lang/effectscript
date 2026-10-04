@@ -4,9 +4,9 @@
  * @since 0.1.0
  */
 import type { Node } from "../ast.ts"
-import type { Handler } from "../context.ts"
+import type { Ctx, Handler } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
-import { optionalField, schemaRef, typeToSchema } from "../schema/mapping.ts"
+import { checkedParts, fieldSchema, lowerChecks, schemaRef, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
 import { fieldsOf, moveMembersAfter, removeLine, rewriteField } from "./classLike.ts"
 import type { HandlerGroup } from "./registry.ts"
@@ -33,13 +33,17 @@ const schemaClass: Handler = (node, _parent, ctx) => {
     : tagName !== undefined
     ? `${schemaRef(ctx, "TaggedClass")}<${name}>()(${JSON.stringify(tagName)}, `
     : `${schemaRef(ctx, "Class")}<${name}>(${JSON.stringify(name)})(`
-  ctx.s.update(node.id.end, node.body.start, ` extends ${header}`)
+  if (node.body.start > node.id.end) ctx.s.update(node.id.end, node.body.start, ` extends ${header}`)
+  else ctx.s.appendLeft(node.id.end, ` extends ${header}`)
   if (tag !== undefined) removeLine(ctx, tag)
   fields.forEach((field, i) => rewriteField(ctx, field, i === fields.length - 1))
   // an error's HTTP status (`status 404`, replaced with the header above) is Effect's own
   // annotation, read by HttpApi (ADR-0064)
   const status: Node | undefined = node.efxStatus
-  moveMembersAfter(ctx, node.body, members, status === undefined ? "})" : `}, { httpApiStatus: ${status.raw} })`)
+  const close = status === undefined ? "})" : `}, { httpApiStatus: ${status.raw} })`
+  // `error Forbidden`: the empty body the declaration doesn't write (ADR-0091 A4)
+  if (node.efxBodyless === true) ctx.s.appendLeft(node.body.end, `{${close} {}`)
+  else moveMembersAfter(ctx, node.body, members, close)
   for (const member of members) walk(member, node.body, ctx)
   return true
 }
@@ -49,7 +53,7 @@ const commentsBetween = (source: string, from: number, to: number): Array<string
   [...source.slice(from, to).matchAll(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g)].map((m) => m[0])
 
 /** `Schema.Struct({ … })` for an alias type literal, keeping member comments (multi-line when present). */
-const aliasSchema = (ctx: Parameters<Handler>[2], type: Node): string => {
+const aliasSchema = (ctx: Ctx, type: Node): string => {
   if (type.type !== "TSTypeLiteral") return typeToSchema(ctx, type)
   let previous = type.start + 1
   let hasComments = false
@@ -69,14 +73,65 @@ const aliasSchema = (ctx: Parameters<Handler>[2], type: Node): string => {
   return `${schemaRef(ctx, "Struct")}({\n${lines.join("\n")}\n})`
 }
 
+const typeLine = (prefix: string, name: string): string => `\n${prefix}type ${name} = typeof ${name}.Type`
+
+/**
+ * Writes `const Name = <schema>` and its type over an alias or a brand. The name stays in place, so
+ * the editor maps it to the `const` (hover, go to definition). `open` and `close` go around the
+ * `where` checks, which stay where they are too (ADR-0077); without checks they are joined.
+ */
+const writeDeclaration = (ctx: Ctx, node: Node, prefix: string, open: string, close: string): void => {
+  const name: string = node.id.name
+  const clause: Node | null = node.efxWhere ?? null
+  ctx.s.update(node.start, node.id.start, "const ")
+  if (clause === null) {
+    ctx.s.update(node.id.end, node.end, ` = ${open}${close}${typeLine(prefix, name)}`)
+    return
+  }
+  lowerChecks(ctx, node.id.end, clause, ` = ${open}`, close)
+  // the type line follows the checks; a trailing `;` goes
+  if (node.end > clause.end) ctx.s.update(clause.end, node.end, typeLine(prefix, name))
+  else ctx.s.appendLeft(clause.end, typeLine(prefix, name))
+}
+
 const schemaAlias: Handler = (node, parent, ctx) => {
   const prefix = parent?.type === "ExportNamedDeclaration" ? "export " : ""
+  const type: Node = node.typeAnnotation
+  if (node.efxWhere === null || node.efxWhere === undefined) {
+    writeDeclaration(ctx, node, prefix, aliasSchema(ctx, type), "")
+  } else {
+    const { close, open } = checkedParts(ctx, type, false, node.efxWhere)
+    writeDeclaration(ctx, node, prefix, open, close)
+  }
+  return true
+}
+
+/** `brand Name = T [where …]` → `const Name = <T>[.check(…)].pipe(Schema.brand("Name"))` and its type (ADR-0077). */
+const brandDeclaration: Handler = (node, parent, ctx) => {
+  const prefix = parent?.type === "ExportNamedDeclaration" ? "export " : ""
   const name: string = node.id.name
-  ctx.s.update(
-    node.start,
-    node.end,
-    `const ${name} = ${aliasSchema(ctx, node.typeAnnotation)}\n${prefix}type ${name} = typeof ${name}.Type`
+  const type: Node = node.typeAnnotation
+  const inner: Node = type.type === "TSParenthesizedType" ? type.typeAnnotation : type
+  const nullish = (inner.type === "TSUnionType" ? inner.types as Array<Node> : [inner]).find((t) =>
+    t.type === "TSNullKeyword" || t.type === "TSUndefinedKeyword"
   )
+  if (nullish !== undefined) {
+    ctx.diagnostics.push(
+      diagnosticError(
+        "EFX3006",
+        "A brand can't include `null` or `undefined`",
+        nullish.start,
+        nullish.end,
+        `brand the value, and write \`${name} | null\` where it's used`
+      )
+    )
+  }
+  const brand = `.pipe(${schemaRef(ctx, "brand")}(${JSON.stringify(name)}))`
+  if (node.efxWhere === null) writeDeclaration(ctx, node, prefix, aliasSchema(ctx, type), brand)
+  else {
+    const { close, open } = checkedParts(ctx, type, false, node.efxWhere)
+    writeDeclaration(ctx, node, prefix, open, `${close}${brand}`)
+  }
   return true
 }
 
@@ -92,7 +147,7 @@ const schemaAdt: Handler = (node, parent, ctx) => {
           "ADT variants support typed fields only",
           variant.start,
           variant.end,
-          "use a class-form schema with a `_tag` field"
+          "write checks with `where`, or use a class-form schema with a `_tag` field"
         )
       )
     }
@@ -103,7 +158,7 @@ const schemaAdt: Handler = (node, parent, ctx) => {
           return `${f.key.name}: ${schemaRef(ctx, "Unknown")}`
         }
         const type: Node = f.typeAnnotation.typeAnnotation
-        return `${f.key.name}: ${f.optional === true ? optionalField(ctx, type) : typeToSchema(ctx, type)}`
+        return `${f.key.name}: ${fieldSchema(ctx, type, f.optional === true, f.efxWhere)}`
       }).join(", ")
     } }`
     const from = i === 0 ? node.id.end : (node.variants as Array<Node>)[i - 1]!.end
@@ -130,5 +185,6 @@ const schemaAdt: Handler = (node, parent, ctx) => {
 export const schemaHandlers: HandlerGroup = {
   ClassDeclaration: schemaClass,
   SchemaAliasDeclaration: schemaAlias,
+  BrandDeclaration: brandDeclaration,
   SchemaAdtDeclaration: schemaAdt
 }
