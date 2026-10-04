@@ -9,6 +9,8 @@ import { effectscript, frontmatter, markdown, theme } from "effectscript/blume"
 export default defineConfig({
   title: "EffectScript",
   description: "All of Effect. None of the ceremony.",
+  // the ƒx mark (currentColor, so it follows light and dark) and the name, set like the wordmark
+  logo: { image: "/mark.svg", text: "EffectScript", href: "/" },
   basePath: "/docs",
   content: { root: "content" },
   theme,

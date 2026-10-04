@@ -79,9 +79,8 @@ describe("efx init (Plan 8 Task 5)", { timeout: 120_000 }, () => {
     expect(read(dir, "docs/components.ts")).toBe(
       "import { defineComponents } from \"blume\"\n" +
         "import Footer from \"effectscript/blume/components/Footer.astro\"\n" +
-        "import Logo from \"effectscript/blume/components/Logo.astro\"\n" +
         "import PageHeader from \"effectscript/blume/components/PageHeader.astro\"\n\n" +
-        "export default defineComponents({ layout: { Footer, Logo, PageHeader } })\n"
+        "export default defineComponents({ layout: { Footer, PageHeader } })\n"
     )
     expect(read(dir, "docs/theme.css")).toBe("@import \"effectscript/blume/theme.css\";\n")
     expect(init(dir).stdout).toContain("blume@2.1.1")

@@ -61,6 +61,10 @@ describe("the site build (Plan 16 Task 1, ADR-0054; Blume since Plan 28, ADR-007
     }
   })
 
+  it("says once, in plain text, that ▷ is typed |> (ADR-0080)", () => {
+    expect(read("docs/reference/pipeline/index.html")).toContain("You type |&gt;, and copying gives |&gt;.")
+  })
+
   it("shows the construct badge on reference pages (spec §4.3)", () => {
     expect(read("docs/reference/error/index.html")).toMatch(/class="efx-kind[^"]*"[^>]*data-signal="fail"/)
     expect(read("docs/reference/schema/index.html")).toMatch(/class="efx-kind/)
@@ -172,10 +176,18 @@ const contrast = (a: string, b: string) => {
 const generatedDocs = path.join(site, "content")
 
 describe("Plan 16 final review fixes", () => {
-  it("I1: the docs logo has both lockups, swapped by mode", () => {
+  it("I1: the docs logo is the currentColor ƒx mark and the name, linked home (review: Blume's own Logo)", () => {
     const page = read("docs/index.html")
-    expect(page).toContain("efx-logo-light")
-    expect(page).toContain("efx-logo-dark")
+    const logo = /<a[^>]*href="\/"[^>]*>[\s\S]*?<\/a>/.exec(page)![0]
+    expect(logo).toContain("currentColor")
+    expect(logo).toContain("EffectScript")
+    expect(page).not.toContain("efx-logo")
+  })
+
+  it("takes the footer's tagline from the site's description, so a library shows its own (review)", () => {
+    const footer = /<footer class="efx-footer"[\s\S]*?<\/footer>/.exec(read("docs/index.html"))![0]
+    expect(footer).toContain("All of Effect. None of the ceremony.")
+    expect(footer).toContain("Not affiliated with or endorsed by Effectful Technologies.")
   })
 
   it("I2: wrong examples are marked visibly, and the intro says how", () => {

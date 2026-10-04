@@ -1,13 +1,16 @@
 ---
 /**
- * The site footer (spec §4.6): the tagline, the Effect disclaimer, and the repository and social
- * links that Blume's own footer carries. Replaces Blume's `Footer` slot.
+ * The site footer (spec §4.6): the project's own tagline (its `description`), the Effect disclaimer,
+ * and the repository and social links that Blume's own footer carries. Replaces Blume's `Footer` slot.
  */
+import data from "blume:data"
+
 interface Props {
   readonly footer?: { readonly socials?: Readonly<Record<string, string>> }
   readonly navigation?: { readonly repoUrl?: string }
 }
 const { footer, navigation } = Astro.props
+const tagline = (data.config as { description?: string | null }).description
 const links = [
   ...(navigation?.repoUrl === undefined ? [] : [["GitHub", navigation.repoUrl] as const]),
   ...Object.entries(footer?.socials ?? {}).map(([name, href]) => [name === "x" ? "X" : name, href] as const)
@@ -16,7 +19,7 @@ const links = [
 
 <footer class="efx-footer" data-blume-footer>
   <div>
-    <p class="efx-tagline">All of Effect. None of the ceremony.</p>
+    {tagline && <p class="efx-tagline">{tagline}</p>}
     <p class="efx-disclaimer">Built on Effect. Not affiliated with or endorsed by Effectful Technologies.</p>
   </div>
   {

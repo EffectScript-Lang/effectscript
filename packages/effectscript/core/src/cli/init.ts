@@ -63,9 +63,8 @@ const blumeConfig = (title: string): string =>
 /** The EffectScript theme's page parts (ADR-0079). Blume reads this file statically, so it lists each. */
 const blumeComponents = `import { defineComponents } from "blume"\n` +
   `import Footer from "effectscript/blume/components/Footer.astro"\n` +
-  `import Logo from "effectscript/blume/components/Logo.astro"\n` +
   `import PageHeader from "effectscript/blume/components/PageHeader.astro"\n\n` +
-  `export default defineComponents({ layout: { Footer, Logo, PageHeader } })\n`
+  `export default defineComponents({ layout: { Footer, PageHeader } })\n`
 
 const blumeTheme = `@import "effectscript/blume/theme.css";\n`
 
@@ -97,7 +96,7 @@ const setUpDocs = (
   }
   for (
     const [file, text, what] of [
-      ["components.ts", blumeComponents, "the EffectScript theme's logo, page header and footer"],
+      ["components.ts", blumeComponents, "the EffectScript theme's page header and footer"],
       ["theme.css", blumeTheme, "the EffectScript theme's styles"]
     ] as const
   ) {

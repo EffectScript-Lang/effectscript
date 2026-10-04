@@ -35,7 +35,7 @@
 packages/effectscript/core/
   src/blume.ts                  effectscript(), theme, markdown, navigation: the integration and config
   src/blume-facts.ts            the facts enhancer, injected on every page (§4.4)
-  blume/components/*.astro      Logo, PageHeader, Footer
+  blume/components/*.astro      PageHeader, Footer
   blume/theme.css               --blume-* and --efx-* tokens, light + dark, canvas, labels, callouts
   blume/shiki/effectscript-{dark,light}.json   the signal-aware monochrome syntax themes
   blume/fonts/*.woff2           the brand fonts, subset with their ligatures (generated)
@@ -75,9 +75,8 @@ export default defineConfig({ title: "my-lib", theme, markdown, frontmatter, int
 // components.ts: Blume reads this file statically, so it lists each part
 import { defineComponents } from "blume"
 import Footer from "effectscript/blume/components/Footer.astro"
-import Logo from "effectscript/blume/components/Logo.astro"
 import PageHeader from "effectscript/blume/components/PageHeader.astro"
-export default defineComponents({ layout: { Footer, Logo, PageHeader } })
+export default defineComponents({ layout: { Footer, PageHeader } })
 
 /* theme.css */
 @import "effectscript/blume/theme.css";
@@ -106,8 +105,12 @@ that `PageHeader` receives only `title`, `description` and `route`, which shaped
 Blume's own header, configured and styled rather than replaced, so search, the mobile drawer and
 tabs keep working across upgrades:
 
-- `Logo` (replaced): the lockup SVG, white on dark and black on light, and a version pill
-  (`alpha`) in the Warn signal.
+- Blume's own `Logo`, configured: the site sets `logo: { image: "/mark.svg", text: "EffectScript" }`
+  (the `currentColor` ƒx mark, so it follows light and dark), and `theme.css` sets the name like the
+  wordmark. A library made with `efx init` shows its own title. Blume's Logo keeps the base path,
+  `logo.href` and locales right. (The final review of Plan 28 replaced the theme's own Logo, which
+  hard-coded `/` and the EffectScript lockup, and dropped its `alpha` pill: the preview gate's
+  banner already says the site isn't released.)
 - Tabs from `navigation.tabs`, ⌘K search, `navigation.actions` for GitHub, and `navigation.cta` as the
   white "Playground ↗" pill.
 - `theme.css` gives it the hairline border, the blurred ink background and mono uppercase tab
@@ -152,7 +155,8 @@ facts stay a readable table.
 - Blume's callouts map to signals: tip ✓ Pass, caution and pitfall ▲ Warn, danger ! Fail, note ◇ Need.
 
 ### 4.6 Footer
-The tagline, "Built on Effect. Not affiliated with or endorsed by Effectful Technologies.", and the
+The project's own tagline (its `description`), "Built on Effect. Not affiliated with or endorsed by
+Effectful Technologies.", and the
 repository and social links Blume's own footer carries (Blume asks overrides to keep them). No
 colour.
 

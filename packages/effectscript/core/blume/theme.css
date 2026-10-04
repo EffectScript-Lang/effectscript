@@ -161,13 +161,12 @@ article h1 {
   border-color: var(--efx-need);
 }
 
-/* the preview pill next to the logo: Warn, because the language is pre-release */
-.efx-version {
-  color: var(--efx-warn);
-  background: var(--efx-warn-tint);
-  border-radius: 999px;
-  padding: 0.2rem 0.5rem;
-  margin-left: 0.625rem;
+/* Blume's logo: the project's name set like the EffectScript wordmark (Inter Display, tight) */
+[data-blume-header] a:has(> span[aria-hidden="true"] svg),
+[data-blume-header] > a:first-of-type {
+  font-family: var(--blume-font-display);
+  font-weight: 700;
+  letter-spacing: -0.022em;
 }
 
 /* signal-coded facts: efx docs' Returns / Fails with / Needs rows, marked by effectscript/blume-facts */

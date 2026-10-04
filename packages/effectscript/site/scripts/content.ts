@@ -59,6 +59,8 @@ export const brandAssets = async () => {
     copy(path.join(brand, "icons", icon), path.join(site, "public", icon))
   }
   copy(path.join(brand, "social/web/og-image.jpg"), path.join(site, "public/og-image.jpg"))
+  // the docs header's logo: Blume inlines it, and currentColor follows light and dark
+  copy(path.join(brand, "logo/svg/effectscript-mark.svg"), path.join(site, "public/mark.svg"))
   for (
     const svg of [
       "effectscript-lockup-white.svg",
@@ -193,7 +195,8 @@ const reference = () => {
       "Each example is EffectScript followed by the TypeScript it compiles to, from the compiler's own tests.",
       // ADR-0080: the site draws `|>` as a ligature
       ...(dir === "pipeline"
-        ? ["Code on this site draws `|>` as a ▷ ligature. You type `|>`, and copying gives `|>`."]
+        // plain text, not code, so the note itself shows the two characters
+        ? ["Code on this site draws |> as a ▷ ligature. You type |>, and copying gives |>."]
         : [])
     ].join("\n\n")
     page(
