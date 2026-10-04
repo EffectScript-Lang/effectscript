@@ -260,18 +260,16 @@ with the grammar from a local repository, to try in Zed with "zed: install dev e
 
 ## 13. The site
 
-```bash
-pnpm --filter @effectscript/site build
-```
-
-The output in `packages/effectscript/site/dist` is static. Deploy it to Cloudflare as
-`effectscript.dev`:
+The site is already online as a private preview (ADR-0073): `packages/effectscript/site-edge` serves
+the built site on Workers, behind an invite link. It is deployed with Cloudflare's `cf` CLI, signed
+in with `cf auth login`, never Wrangler. To redeploy (it builds the site first):
 
 ```bash
-npx wrangler pages deploy packages/effectscript/site/dist --project-name effectscript
+pnpm --filter @effectscript/site-edge deploy
 ```
 
-(Spec §9.4 names Alchemy for this. Either way, the deploy is only that folder.)
+At launch, change the gate in `site-edge/src/gate.ts` to serve every page without the banner or
+`noindex` (or drop the Worker and serve the assets directly), and redeploy.
 
 Then check that `https://effectscript.dev/install` serves the same bytes as
 `packages/effectscript/core/distribution/install.sh`, because the install command on the site
