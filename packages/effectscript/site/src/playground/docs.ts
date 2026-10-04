@@ -300,6 +300,62 @@ export const constructs: Readonly<Record<string, Construct>> = {
     adr: adr("0086", "the-infra-extension-sketched-on-alchemy"),
     status: "A proposed sketch (ADR-0086), not built"
   },
+  table: {
+    what: "a Convex table",
+    body:
+      "`table notes { … }` is Confect's `Table.make`: its fields are a schema, and `index by_tag(tag)` lines add indexes. Confect names a table after its file, so the name must match it.",
+    adr: adr("0090", "a-convex-extension-sketched-on-confect"),
+    status: "A proposed sketch (ADR-0090), not built"
+  },
+  index: {
+    what: "a table index",
+    body:
+      "Inside a `table`, `index by_tag(tag)` is `.index(\"by_tag\", [\"tag\"])`: queries read by it, in its fields' order.",
+    adr: adr("0090", "a-convex-extension-sketched-on-confect"),
+    status: "A proposed sketch (ADR-0090), not built"
+  },
+  Id: {
+    what: "a document id",
+    body:
+      "`Id<\"notes\">` is the id of a document in that table: Confect's `Id(\"notes\")` schema, checked against the declared tables.",
+    adr: adr("0090", "a-convex-extension-sketched-on-confect"),
+    status: "A proposed sketch (ADR-0090), not built"
+  },
+  Doc: {
+    what: "a table's document",
+    body:
+      "`Doc<\"notes\">` is a document of that table, its fields plus `_id` and `_creationTime`: the table's `notes.Doc` schema.",
+    adr: adr("0090", "a-convex-extension-sketched-on-confect"),
+    status: "A proposed sketch (ADR-0090), not built"
+  },
+  functions: {
+    what: "Convex functions",
+    body:
+      "`functions notes { … }` is Confect's spec, a `GroupSpec`: each `query`, `mutation` or `action` signature declares its args, return type and error as schemas, which clients decode. `impl notes { … }` implements it.",
+    adr: adr("0090", "a-convex-extension-sketched-on-confect"),
+    status: "A proposed sketch (ADR-0090), not built"
+  },
+  query: {
+    what: "a Convex query",
+    body:
+      "A read-only function, cached and reactive: `FunctionSpec.publicQuery`. Its handler reads with `DatabaseReader`. `internal query` is callable only from other functions.",
+    adr: adr("0090", "a-convex-extension-sketched-on-confect"),
+    status: "A proposed sketch (ADR-0090), not built"
+  },
+  mutation: {
+    what: "a Convex mutation",
+    body:
+      "A transaction that writes with `DatabaseWriter`: `FunctionSpec.publicMutation`. Failing with its typed error rolls the transaction back.",
+    adr: adr("0090", "a-convex-extension-sketched-on-confect"),
+    status: "A proposed sketch (ADR-0090), not built"
+  },
+  action: {
+    what: "a Convex action",
+    body:
+      "A function that can call the outside world and other functions, without a transaction: `FunctionSpec.publicAction`.",
+    adr: adr("0090", "a-convex-extension-sketched-on-confect"),
+    status: "A proposed sketch (ADR-0090), not built"
+  },
   stack: {
     what: "what Alchemy deploys",
     body: "`stack App { Site }` is the deployment: its workers, with the providers the file's header names.",
@@ -327,7 +383,7 @@ export interface Declaration {
 }
 
 const declarationLine =
-  /^[ \t]*(?:export[ \t]+(?:default[ \t]+)?)?(schema|brand|error|service|config|layer|api|group|rpc|tool|toolkit|entity|workflow|command|atom|resource|worker|stack|law|effect\*?)[ \t]+([A-Za-z_$][\w$]*)/gm
+  /^[ \t]*(?:export[ \t]+(?:default[ \t]+)?)?(schema|brand|error|service|config|layer|api|group|rpc|tool|toolkit|entity|workflow|command|atom|resource|worker|stack|law|table|functions|effect\*?)[ \t]+([A-Za-z_$][\w$]*)/gm
 
 /** The names a file declares with EffectScript's constructs, with each declaration's text range. */
 export const declarations = (text: string): Map<string, Declaration> => {
@@ -466,6 +522,8 @@ const kinds: Readonly<Record<string, string>> = {
   worker: "a worker",
   stack: "a stack",
   law: "a law",
+  table: "a Convex table",
+  functions: "Convex functions",
   effect: "an effect function",
   "effect*": "a stream function"
 }
@@ -502,7 +560,8 @@ export const hoverAt = async (
         .filter((p) => p !== "").join("\n\n")
     }
   }
-  if (language === "efx" && qualifier === undefined) {
+  // a member (`.index(…)`, `x.match`) is never one of the language's words
+  if (language === "efx" && qualifier === undefined && text[start - 1] !== ".") {
     const line = text.slice(
       text.lastIndexOf("\n", start - 1) + 1,
       text.indexOf("\n", start) === -1 ? text.length : text.indexOf("\n", start)

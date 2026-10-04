@@ -231,9 +231,25 @@ describe("the playground's presets", async () => {
 
   it("keeps a preset proposed only while the compiler refuses it", () => {
     const proposed = presets.filter((p) => p.proposal !== undefined)
-    expect(proposed.map((p) => p.id)).toEqual(["brands", "law", "laws", "infra", "stack"])
+    expect(proposed.map((p) => p.id)).toEqual([
+      "brands",
+      "law",
+      "laws",
+      "infra",
+      "stack",
+      "convex-table",
+      "convex-spec",
+      "convex-impl"
+    ])
     // once the syntax is built, the preset becomes live and its lowering is the compiler's
-    for (const preset of proposed) expect(compiled(preset.code).diagnostics[0]?.code).toBe("EFX1001")
+    for (const preset of proposed.filter((p) => p.id !== "convex-impl")) {
+      expect({ id: preset.id, code: compiled(preset.code).diagnostics[0]?.code }).toEqual({
+        id: preset.id,
+        code: "EFX1001"
+      })
+    }
+    // `impl` is the core's word, so the impl parses today, but only the extension writes Confect's
+    expect(compiled(presets.find((p) => p.id === "convex-impl")!.code).code).not.toContain("GroupImpl")
   })
 
   // a lowering's imports come first, and the proposed parts change them
@@ -255,6 +271,19 @@ describe("the playground's presets", async () => {
       .replace("await Uploads", "await Cloudflare.R2.ReadWriteBucket(Uploads)")
       .trimEnd() + " |> provide(Cloudflare.R2.ReadWriteBucketBinding)\n"
     expect(lowering("infra")).toContain(body(compiled(handlers).code))
+  })
+
+  it("writes the Convex handlers as the compiler writes effect functions, wrapped for Confect", () => {
+    // the handlers, as top-level effect functions: today's syntax for the same bodies
+    const impl = source("convex-impl")
+    const handlers = impl.slice(impl.indexOf("return {") + "return {".length, impl.lastIndexOf("}\n}"))
+      .replace(/^ {4}effect /gm, "effect ")
+      .replace(/^ {4}\},?$/gm, "}")
+      .replace(/^ {4}/gm, "")
+    const out = compiled(`import { NoteNotFound } from "./notes.spec.efx"\n${handlers}`).code
+    for (const [, name, body] of out.matchAll(/const (\w+) = Effect\.fn\("\w+"\)\((function\*[\s\S]*?\n\})\)/g)) {
+      expect(lowering("convex-impl")).toContain(`Effect.fn("notes.${name}")(${body})`)
+    }
   })
 
   it("imports what each lowering uses", () => {

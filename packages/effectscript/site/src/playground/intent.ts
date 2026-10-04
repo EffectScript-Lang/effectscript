@@ -84,6 +84,13 @@ const declarations = new Set([
   "worker",
   "stack",
   "serves",
+  "table",
+  "index",
+  "functions",
+  "query",
+  "mutation",
+  "action",
+  "internal",
   "get",
   "set"
 ])
@@ -163,7 +170,14 @@ const structure = new Set([
   "resource",
   "worker",
   "stack",
-  "serves"
+  "serves",
+  "table",
+  "index",
+  "functions",
+  "query",
+  "mutation",
+  "action",
+  "internal"
 ])
 
 /** JavaScript's own keywords: the structure words of the TypeScript pane. */

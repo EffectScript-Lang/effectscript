@@ -433,6 +433,203 @@ export default Alchemy.Stack(
 )
 `
     }
+  },
+  {
+    id: "convex-table",
+    path: "extensions/convex/confect/tables/notes.efx",
+    title: "Convex: a table (proposed)",
+    code: `// @efx convex
+// A Convex table, sketched in ADR-0090 (proposed, not built): fields are a schema,
+// indexes follow. Confect names a table after its file, so the two names match.
+export table notes {
+  text: string where isMaxLength(500)
+  tag?: string
+  pinned: boolean
+
+  index by_tag(tag)
+  index by_pinned(pinned, tag)
+}
+`,
+    proposal: {
+      adr: "ADR-0090",
+      status: "a proposed sketch, not built",
+      lowering: `import { Table } from "@confect/core"
+import * as Schema from "effect/Schema"
+// @efx convex
+// A Convex table, sketched in ADR-0090 (proposed, not built): fields are a schema,
+// indexes follow. Confect names a table after its file, so the two names match.
+export default Table.make(() =>
+  Schema.Struct({
+    text: Schema.String.check(Schema.isMaxLength(500)),
+    tag: Schema.optionalKey(Schema.String),
+    pinned: Schema.Boolean
+  })
+)
+  .index("by_tag", ["tag"])
+  .index("by_pinned", ["pinned", "tag"])
+`
+    }
+  },
+  {
+    id: "convex-spec",
+    path: "extensions/convex/confect/notes.spec.efx",
+    title: "Convex: the functions' spec (proposed)",
+    code: `// @efx convex
+// The notes functions as Confect's spec (ADR-0090, proposed, not built). Args,
+// returns and errors are schemas, so every client decodes them, typed errors too.
+export error NoteNotFound { noteId: Id<"notes"> }
+
+export functions notes {
+  query list(): Doc<"notes">[]
+  query get(noteId: Id<"notes">): Doc<"notes"> throws NoteNotFound
+  mutation create(text: string): Id<"notes">
+  mutation remove(noteId: Id<"notes">): null throws NoteNotFound
+}
+`,
+    proposal: {
+      adr: "ADR-0090",
+      status: "a proposed sketch, not built",
+      lowering: `import { FunctionSpec, GroupSpec } from "@confect/core"
+import * as Schema from "effect/Schema"
+import { Id } from "./_generated/id"
+import notes from "./_generated/tables/notes"
+// @efx convex
+// The notes functions as Confect's spec (ADR-0090, proposed, not built). Args,
+// returns and errors are schemas, so every client decodes them, typed errors too.
+export class NoteNotFound extends Schema.TaggedError<NoteNotFound>()("NoteNotFound", { noteId: Id("notes") }) {}
+
+export default GroupSpec.make()
+  .addFunction(FunctionSpec.publicQuery({ name: "list", returns: () => Schema.Array(notes.Doc) }))
+  .addFunction(
+    FunctionSpec.publicQuery({
+      name: "get",
+      args: () => ({ noteId: Id("notes") }),
+      returns: () => notes.Doc,
+      error: () => NoteNotFound
+    })
+  )
+  .addFunction(
+    FunctionSpec.publicMutation({ name: "create", args: () => ({ text: Schema.String }), returns: () => Id("notes") })
+  )
+  .addFunction(
+    FunctionSpec.publicMutation({
+      name: "remove",
+      args: () => ({ noteId: Id("notes") }),
+      returns: () => Schema.Null,
+      error: () => NoteNotFound
+    })
+  )
+`
+    }
+  },
+  {
+    id: "convex-impl",
+    path: "extensions/convex/confect/notes.impl.efx",
+    title: "Convex: the functions' impl (proposed)",
+    code: `// @efx convex
+// The handlers as Confect's impl (ADR-0090, proposed, not built): \`impl\` builds
+// the group's layer, which compiles once every function in the spec has a handler.
+import { NoteNotFound } from "./notes.spec.efx"
+
+export default impl notes {
+  return {
+    effect list() {
+      const reader = await DatabaseReader
+      return await reader.table("notes").index("by_creation_time", "desc").collect()
+        |> orDie
+    },
+    effect get({ noteId }) {
+      const reader = await DatabaseReader
+      return await reader.table("notes").get(noteId) |> mapError(() => new NoteNotFound({ noteId }))
+    },
+    effect create({ text }) {
+      const writer = await DatabaseWriter
+      return await writer.table("notes").insert({ text, pinned: false }) |> orDie
+    },
+    effect remove({ noteId }) {
+      const reader = await DatabaseReader
+      await reader.table("notes").get(noteId) |> mapError(() => new NoteNotFound({ noteId }))
+      const writer = await DatabaseWriter
+      await writer.table("notes").delete(noteId) |> orDie
+      return null
+    }
+  }
+}
+`,
+    proposal: {
+      adr: "ADR-0090",
+      status: "a proposed sketch, not built",
+      lowering: `import { FunctionImpl, GroupImpl } from "@confect/server"
+import * as Effect from "effect/Effect"
+import { pipe } from "effect/Function"
+import * as Layer from "effect/Layer"
+import databaseSchema from "./_generated/schema"
+import { DatabaseReader, DatabaseWriter } from "./_generated/services"
+import notes from "./notes.spec.efx"
+// @efx convex
+// The handlers as Confect's impl (ADR-0090, proposed, not built): \`impl\` builds
+// the group's layer, which compiles once every function in the spec has a handler.
+import { NoteNotFound } from "./notes.spec.efx"
+
+const list = FunctionImpl.make(databaseSchema, notes, "list", Effect.fn("notes.list")(function*() {
+  const reader = yield* DatabaseReader
+  return yield* pipe(reader.table("notes").index("by_creation_time", "desc").collect(),
+    Effect.orDie)
+}))
+
+const get = FunctionImpl.make(databaseSchema, notes, "get", Effect.fn("notes.get")(function*({ noteId }) {
+  const reader = yield* DatabaseReader
+  return yield* pipe(reader.table("notes").get(noteId), Effect.mapError(() => new NoteNotFound({ noteId })))
+}))
+
+const create = FunctionImpl.make(databaseSchema, notes, "create", Effect.fn("notes.create")(function*({ text }) {
+  const writer = yield* DatabaseWriter
+  return yield* pipe(writer.table("notes").insert({ text, pinned: false }), Effect.orDie)
+}))
+
+const remove = FunctionImpl.make(databaseSchema, notes, "remove", Effect.fn("notes.remove")(function*({ noteId }) {
+  const reader = yield* DatabaseReader
+  yield* pipe(reader.table("notes").get(noteId), Effect.mapError(() => new NoteNotFound({ noteId })))
+  const writer = yield* DatabaseWriter
+  yield* pipe(writer.table("notes").delete(noteId), Effect.orDie)
+  return null
+}))
+
+export default GroupImpl.make(databaseSchema, notes).pipe(
+  Layer.provide(list),
+  Layer.provide(get),
+  Layer.provide(create),
+  Layer.provide(remove),
+  GroupImpl.finalize
+)
+`
+    }
+  },
+  {
+    id: "convex-client",
+    path: "extensions/convex/src/App.efx",
+    title: "Convex: the React client",
+    code: `// The client, in today's EffectScript: Confect's hooks call the functions through
+// their schemas, so results and typed errors arrive decoded. React stays as it is.
+import { QueryResult, useMutation, useQuery } from "@confect/react"
+import refs from "../confect/_generated/refs"
+
+export const App = () => {
+  const notes = useQuery(refs.public.notes.list, {})
+  const create = useMutation(refs.public.notes.create)
+  return (
+    <section>
+      <ul>
+        {QueryResult.match(notes, {
+          onLoading: () => <li>Loading…</li>,
+          onSuccess: (all) => all.map((note) => <li key={note._id}>{note.text}</li>)
+        })}
+      </ul>
+      <button onClick={() => void create({ text: "A new note" })}>Add a note</button>
+    </section>
+  )
+}
+`
   }
 ]
 

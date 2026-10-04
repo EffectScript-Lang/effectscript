@@ -96,6 +96,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0086](0086-the-infra-extension-sketched-on-alchemy.md) | The infra extension, sketched: resources, workers that serve an `api`, and stacks on Alchemy v2 | Proposed |
 | [0087](0087-is-tests-a-tag.md) | `is` tests a value's tag, and `is T` on its own is a predicate | Accepted |
 | [0088](0088-the-playground-is-a-workspace-both-ways-with-docs.md) | The playground is a workspace of example files, converts both ways with either side on the left, and shows docs on hover | Accepted |
+| [0090](0090-a-convex-extension-sketched-on-confect.md) | A Convex extension, sketched on Confect: tables, function specs and their impls | Proposed |
 
 ## Template
 
