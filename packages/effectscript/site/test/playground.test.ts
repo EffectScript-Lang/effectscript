@@ -231,7 +231,7 @@ describe("the playground's presets", async () => {
 
   it("keeps a preset proposed only while the compiler refuses it", () => {
     const proposed = presets.filter((p) => p.proposal !== undefined)
-    expect(proposed.map((p) => p.id)).toEqual(["brands", "law", "infra"])
+    expect(proposed.map((p) => p.id)).toEqual(["brands", "law", "laws", "infra", "stack"])
     // once the syntax is built, the preset becomes live and its lowering is the compiler's
     for (const preset of proposed) expect(compiled(preset.code).diagnostics[0]?.code).toBe("EFX1001")
   })
@@ -261,5 +261,152 @@ describe("the playground's presets", async () => {
     expect(lowering("law")).toMatch(/^import \{ Effect, Exit, Schema \} from "effect"\n/)
     expect(lowering("infra")).toMatch(/^import \* as Cloudflare from "alchemy\/Cloudflare"\n/)
     expect(lowering("infra")).not.toMatch(/from "alchemy"|HttpServerResponse/)
+  })
+})
+
+describe("the playground's explorer (ADR-0088)", async () => {
+  const { ancestors, outputName, toTree, visibleRows } = await import("@effectscript/site/playground/files")
+  const { presets } = await import("@effectscript/site/playground/presets")
+
+  it("gives every preset its own .efx path", () => {
+    const paths = presets.map((p) => p.path)
+    expect(new Set(paths).size).toBe(paths.length)
+    for (const path of paths) expect(path).toMatch(/^(language|extensions|gallery)\/[\w./-]+\.efx$/)
+  })
+
+  it("builds folders in the order their files appear, folders before files", () => {
+    const tree = toTree(["b/x.efx", "a.efx", "b/c/y.efx", "b/z.efx"])
+    expect(tree.map((n) => n.name)).toEqual(["b", "a.efx"])
+    const b = tree[0]!
+    expect(b.kind === "folder" && b.children.map((n) => n.name)).toEqual(["c", "x.efx", "z.efx"])
+    expect(visibleRows(tree, new Set(["b"])).map((r) => [r.node.path, r.depth])).toEqual([
+      ["b", 0],
+      ["b/c", 1],
+      ["b/x.efx", 1],
+      ["b/z.efx", 1],
+      ["a.efx", 0]
+    ])
+    expect(ancestors("extensions/infra/site.efx")).toEqual(["extensions", "extensions/infra"])
+    expect([outputName("site.efx", false), outputName("counter.efx", true)]).toEqual(["site.ts", "counter.tsx"])
+  })
+})
+
+describe("the playground's hover docs (ADR-0088)", async () => {
+  const { constructs, declarations, hoverAt, wordAt } = await import("@effectscript/site/playground/docs")
+  type Docs = Parameters<typeof hoverAt>[4]
+  const docs: Docs = {
+    bare: async () => ({ retry: "Effect.retry", isPattern: "Schema.isPattern" }),
+    namespace: async (name) =>
+      name === "Effect"
+        ? {
+          retry: {
+            summary: "Retries typed failures.",
+            when: "Use when a failure is transient.",
+            examples: "/docs/x#retry"
+          }
+        }
+        : name === "Schema"
+        ? { isPattern: { summary: "Validates a string against a pattern." } }
+        : undefined
+  }
+  const source = `error UserNotFound { id: string }
+
+schema User {
+  id: string
+}
+
+export effect greet(id: string): string throws UserNotFound {
+  const user = await Users.find(id)
+  return user.id
+} |> retry({ times: 3 })
+`
+  const hover = (text: string, needle: string, language: "efx" | "ts" = "efx", nth = 0) => {
+    let offset = -1
+    for (let i = 0; i <= nth; i++) offset = text.indexOf(needle, offset + 1)
+    return hoverAt(text, offset + 1, language, source, docs, "https://effectscript.dev")
+  }
+
+  it("finds the word, `|>` or `effect*` under the pointer, and its namespace", () => {
+    expect(wordAt("a |> b", 2)).toMatchObject({ word: "|>", start: 2, end: 4 })
+    expect(wordAt("effect* ticks()", 2)).toMatchObject({ word: "effect*", end: 7 })
+    expect(wordAt("Schema.isPattern(x)", 9)).toMatchObject({ word: "isPattern", qualifier: "Schema" })
+    expect(wordAt("f(12)", 2)).toBeUndefined()
+  })
+
+  it("explains EffectScript's constructs, with their reference page", async () => {
+    const md = (await hover(source, "await"))!.markdown
+    expect(md).toContain("**await** · runs an effect")
+    expect(md).toContain("https://effectscript.dev/docs/reference/effect")
+    expect((await hover(source, "throws"))!.markdown).toContain("`E`")
+    expect((await hover(source, "|>"))!.markdown).toContain("the pipeline")
+    // syntax that isn't built links its ADR and says so
+    const brand = await hoverAt("brand Email = string", 1, "efx", "", docs, "")
+    expect(brand!.markdown).toContain("▲ Accepted in ADR-0077, not built yet")
+    for (const c of Object.values(constructs)) expect(c.page ?? c.adr).toBeDefined()
+  })
+
+  it("shows a declared name's declaration, on both sides", async () => {
+    expect([...declarations(source).keys()]).toEqual(["UserNotFound", "User", "greet"])
+    const md = (await hover(source, "UserNotFound", "efx", 1))!.markdown
+    expect(md).toContain("**UserNotFound** · a typed error")
+    expect(md).toContain("error UserNotFound { id: string }")
+    const ts = "class User extends Schema.Class<User>(\"User\")({}) {}"
+    expect((await hover(ts, "User", "ts"))!.markdown).toContain("Declared in the EffectScript")
+  })
+
+  it("shows Effect's own docs for builtins and qualified exports", async () => {
+    const retry = (await hover(source, "retry"))!.markdown
+    expect(retry).toContain("**Effect.retry**")
+    expect(retry).toContain("*When to use:* when a failure is transient.")
+    expect(retry).toContain("[Examples in EffectScript](https://effectscript.dev/docs/x#retry)")
+    expect((await hover("Schema.isPattern(/a/)", "isPattern"))!.markdown).toContain("Validates a string")
+    expect((await hover("yield* x", "yield", "ts"))!.markdown).toContain("what `await` became")
+  })
+})
+
+describe("the playground's Effect docs, from Effect's JSDoc (ADR-0088)", async () => {
+  const path = await import("node:path")
+  const { effectDocs, summaries } = await import("@effectscript/site/lib/effectDocs")
+
+  it("takes each export's summary and when-to-use, a value's over a namespace's", () => {
+    const docs = summaries(`/**
+ * Type helpers.
+ *
+ * @since 1.0.0
+ */
+export declare namespace fn {}
+
+/**
+ * Runs it {@link gen} again.
+ *
+ * **When to use**
+ *
+ * Use when it fails.
+ *
+ * **Example** (Twice)
+ *
+ * \`\`\`ts
+ * fn()
+ * \`\`\`
+ *
+ * @category constructors
+ */
+export const fn = 1
+`)
+    expect(docs.get("fn")).toEqual({
+      summary: "Runs it `gen` again.",
+      when: "Use when it fails.",
+      category: "constructors"
+    })
+  })
+
+  it("covers the prelude's modules, with links to their EffectScript examples", () => {
+    const site = path.join(import.meta.dirname, "..")
+    const docs = effectDocs(path.join(site, "../../effect/src"), path.join(site, "content/effect/api/effect"))
+    expect(docs.namespaces.Effect!.retry!.summary).toMatch(/^Retries typed failures/)
+    expect(docs.namespaces.Effect!.fn!.summary).toMatch(/traced function/)
+    expect(docs.namespaces.Schema!.isPattern).toBeDefined()
+    expect(docs.bare.retry).toBe("Effect.retry")
+    expect(docs.bare.isPattern).toBe("Schema.isPattern")
   })
 })

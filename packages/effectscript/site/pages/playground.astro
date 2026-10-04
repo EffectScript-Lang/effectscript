@@ -1,6 +1,6 @@
 ---
 /**
- * The playground (spec §9.2, ADR-0054, ADR-0084): a full-screen editor. The bar is static, so the
+ * The playground (spec §9.2, ADR-0054, ADR-0084, ADR-0088): a full-screen editor. The bar is static, so the
  * page has its links before the editor loads; the editor itself is a client-only island.
  */
 import Lockup from "../src/assets/lockup-white.svg"
@@ -15,7 +15,7 @@ import "../src/styles/playground.css"
     <header class="pg-site">
       <a href="/" class="pg-brand" aria-label="EffectScript home"><Lockup height={24} width={128} /></a>
       <h1 class="pg-title">Playground</h1>
-      <p class="pg-lede">Write EffectScript on the left. Every part is linked to the Effect TypeScript it becomes.</p>
+      <p class="pg-lede">Write EffectScript or Effect TypeScript: each turns into the other as you type, part by part.</p>
       <nav class="pg-nav" aria-label="Site">
         <a href="/docs">Docs</a>
         <a href="https://github.com/EffectScript-Lang/effectscript">GitHub</a>

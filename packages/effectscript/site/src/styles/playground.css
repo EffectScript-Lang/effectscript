@@ -1,5 +1,6 @@
-/* The playground (ADR-0084): a full-screen editor on the brand's ink, the two panes side by side,
-   a ribbon linking each EffectScript part to its TypeScript, and a status bar. */
+/* The playground (ADR-0084, ADR-0088): a full-screen editor on the brand's ink, an explorer of
+   example files, the two panes side by side (either way round), a band linking each EffectScript
+   part to its TypeScript, hover docs, and a status bar. */
 
 :root {
   --pg-ink: #09090b;
@@ -108,27 +109,6 @@ body:has(.pg-page) {
   border-bottom: 1px solid var(--pg-line);
   background: #0c0c0e;
 }
-.pg-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font: 500 11.5px/1 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pg-muted);
-}
-.pg-field select {
-  appearance: none;
-  background: var(--pg-tile) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a1a1aa' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat right 10px center;
-  border: 1px solid var(--pg-line);
-  border-radius: 6px;
-  color: #fff;
-  font: 400 13px/1 var(--font-sans);
-  letter-spacing: 0;
-  text-transform: none;
-  padding: 7px 30px 7px 10px;
-}
-.pg-field select:focus-visible,
 .pg-button:focus-visible,
 .pg-count:focus-visible {
   outline: 2px solid #fff;
@@ -169,18 +149,216 @@ body:has(.pg-page) {
   white-space: nowrap;
 }
 
+/* the toolbar's own controls: the explorer's toggle, and what the playground does */
+.pg-icon {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pg-muted);
+  cursor: pointer;
+}
+.pg-icon svg,
+.pg-swap svg {
+  width: 16px;
+  height: 16px;
+}
+.pg-icon:hover {
+  background: var(--pg-tile);
+  color: #fff;
+}
+.pg-icon[aria-pressed="true"] {
+  color: #fff;
+}
+.pg-icon:focus-visible,
+.pg-swap:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.pg-twoway {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font: 400 12.5px/1 var(--font-sans);
+  color: var(--pg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-twoway b {
+  font-weight: 500;
+  color: #fff;
+}
+
+/* the explorer beside the panes (ADR-0088) */
+.pg-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.pg-explorer {
+  flex: none;
+  width: 248px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  border-right: 1px solid var(--pg-line);
+  background: #0c0c0e;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff1f transparent;
+}
+[data-sidebar="closed"] .pg-explorer {
+  display: none;
+}
+.pg-x-title {
+  margin: 0;
+  padding: 13px 16px 9px;
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pg-muted);
+}
+.pg-x-tree {
+  margin: 0;
+  padding: 0 0 12px;
+  list-style: none;
+}
+.pg-x-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 26px;
+  padding-right: 12px;
+  border: 0;
+  background: transparent;
+  color: #c8c8ce;
+  font: 400 13px/1 var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+.pg-x-row:hover {
+  background: rgb(255 255 255 / 0.04);
+  color: #fff;
+}
+.pg-x-row.active {
+  background: rgb(255 255 255 / 0.09);
+  color: #fff;
+}
+.pg-x-row:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: -1px;
+}
+.pg-x-fold {
+  flex: none;
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: var(--pg-muted);
+  transition: transform 140ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.pg-x-fold.open {
+  transform: rotate(90deg);
+}
+.pg-x-chevron {
+  width: 16px;
+  height: 16px;
+}
+/* a file's icon sits where its folder's chevron would, a level in */
+.pg-x-icon {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-left: 16px;
+  color: var(--pg-subtle);
+}
+.pg-x-row.active .pg-x-icon {
+  color: #fff;
+}
+.pg-x-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pg-x-dot,
+.pg-tab-dot {
+  flex: none;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+}
+.pg-x-proposed {
+  flex: none;
+  font: 500 10px/1 var(--font-mono);
+  color: var(--efx-warn);
+}
+.pg-x-note {
+  margin: auto 0 0;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--pg-line);
+  font: 400 12px/1.5 var(--font-sans);
+  color: var(--pg-muted);
+}
+.pg-scrim {
+  display: none;
+}
+
 /* the panes */
 .pg-main {
   position: relative;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
 }
 /* the channel between the panes, where the band joins a concept to what it became */
 .pg-channel {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   border-left: 1px solid var(--pg-line);
   background: linear-gradient(var(--pg-line), var(--pg-line)) 0 35px / 100% 1px no-repeat;
+}
+/* the swap: either language on the left, since the playground converts both ways */
+.pg-swap {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 4px;
+  border: 1px solid var(--pg-line-strong);
+  border-radius: 6px;
+  background: var(--pg-ink);
+  color: #fff;
+  cursor: pointer;
+}
+.pg-swap:hover {
+  background: var(--pg-tile);
+}
+.pg-swap-bar {
+  display: none;
+}
+.pg[data-swapped] .pg-ts {
+  order: 1;
+  border-left: 0;
+}
+.pg[data-swapped] .pg-channel {
+  order: 2;
+}
+.pg[data-swapped] .pg-efx {
+  order: 3;
+  border-left: 1px solid var(--pg-line);
 }
 .pg-pane {
   min-width: 0;
@@ -202,20 +380,66 @@ body:has(.pg-page) {
   background: #0c0c0e;
 }
 .pg-tab-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
   font: 500 12.5px/1 var(--font-mono);
   color: #fff;
   padding: 11px 0 10px;
   border-bottom: 1px solid #fff;
   margin-bottom: -1px;
+  white-space: nowrap;
+}
+.pg-tab-dir {
+  font-weight: 400;
+  color: var(--pg-muted);
+}
+.pg-tab-dot {
+  margin-left: 8px;
 }
 .pg-tab-role {
   font: 400 11.5px/1 var(--font-mono);
   color: var(--pg-muted);
 }
-[data-source="efx"] .pg-efx .pg-tab-name::before,
-[data-source="ts"] .pg-ts .pg-tab-name::before {
-  content: "● ";
+/* hover docs: the brand's card, with the same code look as the panes */
+body:has(.pg-page) .monaco-hover {
+  font: 400 13px/1.55 var(--font-sans);
+  color: #d4d4d8;
+}
+body:has(.pg-page) .monaco-hover .hover-contents {
+  max-width: 540px;
+  padding: 10px 14px;
+}
+body:has(.pg-page) .monaco-hover p {
+  margin: 0 0 8px;
+}
+body:has(.pg-page) .monaco-hover p:last-child {
+  margin-bottom: 0;
+}
+body:has(.pg-page) .monaco-hover strong {
   color: #fff;
+  font-weight: 600;
+}
+body:has(.pg-page) .monaco-hover code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #fff;
+  background: rgb(255 255 255 / 0.07);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+body:has(.pg-page) .monaco-hover pre code {
+  background: none;
+  padding: 0;
+}
+body:has(.pg-page) .monaco-hover a {
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-color: var(--pg-line-strong);
+  text-underline-offset: 3px;
+}
+body:has(.pg-page) .monaco-hover a:hover {
+  text-decoration-color: #fff;
 }
 .pg-editor {
   flex: 1;
@@ -453,9 +677,35 @@ body:has(.pg-page) {
     border-left: 0;
     border-top: 1px solid var(--pg-line);
   }
+  .pg[data-swapped] .pg-ts {
+    border-top: 0;
+  }
+  .pg[data-swapped] .pg-efx {
+    border-left: 0;
+    border-top: 1px solid var(--pg-line);
+  }
   .pg-ribbon,
   .pg-channel {
     display: none;
+  }
+  .pg-swap-bar {
+    display: grid;
+  }
+  /* the explorer slides over the panes, and closes when a file opens */
+  .pg-explorer {
+    position: absolute;
+    z-index: 30;
+    inset: 0 auto 0 0;
+    width: min(300px, 86vw);
+    box-shadow: 12px 0 32px rgb(0 0 0 / 0.55);
+  }
+  .pg-scrim {
+    display: block;
+    position: absolute;
+    z-index: 29;
+    inset: 0;
+    border: 0;
+    background: rgb(0 0 0 / 0.5);
   }
   .pg-pos,
   .pg-mode {
@@ -469,12 +719,8 @@ body:has(.pg-page) {
     gap: 10px;
     padding-inline: 12px;
   }
-  .pg-title,
-  .pg-field span {
+  .pg-title {
     display: none;
-  }
-  .pg-field select {
-    max-width: 52vw;
   }
   .pg-nav .pg-follow {
     padding: 7px 10px;

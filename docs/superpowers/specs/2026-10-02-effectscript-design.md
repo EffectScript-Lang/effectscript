@@ -1811,6 +1811,9 @@ Details of the parts that carry over from the first page:
    - code coloured by intent on both sides: effects, structure, A/E/R in their signals, types and
      literals; and examples of decided syntax that isn't built yet, shown with the lowering their
      ADR specifies (ADR-0085)
+   - an explorer of example files in folders, as in an editor; either language on the left, since
+     it converts both ways; and docs on hover for EffectScript's constructs, the names a file
+     declares and Effect's own JSDoc (ADR-0088)
 5. **"Stricter than TypeScript, ready for agents":** strict-mode rules (§4.17), one canonical way
    to write each construct, explicit effects, fewer tokens, and the AI skill.
 6. **Library constructs:** `test`/`describe` (the vitest + Effect story), `api`/`impl`, `command`,

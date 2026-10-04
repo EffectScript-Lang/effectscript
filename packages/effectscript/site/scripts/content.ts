@@ -7,6 +7,7 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 // @ts-expect-error: subset-font ships no types
 import subsetFont from "subset-font"
+import { effectDocs } from "../src/lib/effectDocs.ts"
 
 const site = path.join(import.meta.dirname, "..")
 const brand = path.join(site, "../brand")
@@ -30,6 +31,21 @@ const fontText = [
   [0x2200, 0x22ff],
   [0x25a0, 0x25ff]
 ].flatMap(([from, to]) => Array.from({ length: to! - from! + 1 }, (_, i) => String.fromCodePoint(from! + i))).join("")
+
+/** The playground's hover docs for Effect, one file per namespace (ADR-0088). */
+export const playgroundDocs = () => {
+  const out = path.join(site, "public/playground/docs")
+  fs.rmSync(out, { recursive: true, force: true })
+  fs.mkdirSync(out, { recursive: true })
+  const docs = effectDocs(path.join(site, "../../effect/src"), path.join(site, "content/effect/api/effect"))
+  for (const [namespace, entries] of Object.entries(docs.namespaces)) {
+    fs.writeFileSync(path.join(out, `${namespace}.json`), JSON.stringify(entries))
+  }
+  fs.writeFileSync(
+    path.join(out, "index.json"),
+    JSON.stringify({ bare: docs.bare, namespaces: Object.keys(docs.namespaces) })
+  )
+}
 
 export const brandAssets = async () => {
   const fonts = path.join(brand, "fonts")
@@ -448,6 +464,8 @@ export const generate = async () => {
   guides()
   effect()
   sidebar()
+  // after `effect()`, whose example pages the docs link to
+  playgroundDocs()
 }
 
 if (import.meta.main) await generate()

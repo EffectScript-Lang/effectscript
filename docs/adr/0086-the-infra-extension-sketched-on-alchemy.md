@@ -43,9 +43,10 @@ can't declare it as an error, so a handler turns it into a defect or into a decl
 
 ### Switching it on
 
-- The sketch writes `// @efx infra`, next to the existing `// @efx` headers. How a project switches
-  extensions on is still ADR-0083's open question.
-- The extension's prelude brings in each provider's namespace (`Cloudflare` from
+- The sketch writes `// @efx infra cloudflare`, next to the existing `// @efx` headers: the
+  extension, then the providers the file uses. How a project switches extensions on is still
+  ADR-0083's open question.
+- The extension's prelude brings in each named provider's namespace (`Cloudflare` from
   `alchemy/Cloudflare`) when it is a free name, as the core prelude does for `effect`. No file
   imports `alchemy`.
 
@@ -80,8 +81,10 @@ can't declare it as an error, so a handler turns it into a defect or into a decl
 - **Form:** `stack App { Site, … }`, in `alchemy.run.efx`.
 - **Output:** `export default Alchemy.Stack("App", { providers, state }, …)`, returning each
   worker's URL.
-- **Providers:** the providers come from the namespaces the resources use (`Cloudflare.providers()`,
-  merged with others). The state store is the first provider's (`Cloudflare.state()`).
+- **Providers:** the header's providers (`Cloudflare.providers()`, merged with others). The state
+  store is the first one's (`Cloudflare.state()`). The stack file doesn't see its workers'
+  resources, so the header names them (revised while the sketch was under review, when the
+  playground gained its `alchemy.run.efx`, ADR-0088).
 
 ### Keywords
 

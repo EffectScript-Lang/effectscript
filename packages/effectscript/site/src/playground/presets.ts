@@ -1,8 +1,9 @@
 /**
- * Starting points for the playground: the language, then extensions (ADR-0083), then every gallery
- * scenario. Each follows the docs (ADR-0086): the syntax reference, the spec and the ADRs. A
- * proposed preset shows syntax an ADR has decided or sketched but the compiler doesn't accept yet,
- * next to the lowering that ADR specifies; it compiles for real once it is edited.
+ * The playground's files (ADR-0088): the language, then extensions (ADR-0083), then every gallery
+ * scenario, each at a path in the explorer. Each follows the docs (ADR-0086): the syntax reference,
+ * the spec and the ADRs. A proposed file shows syntax an ADR has decided or sketched but the
+ * compiler doesn't accept yet, next to the lowering that ADR specifies; it compiles for real once
+ * it is edited.
  */
 import { scenarios } from "../samples/scenarios.ts"
 
@@ -10,16 +11,18 @@ const samples = import.meta.glob<string>("../samples/*/app.efx", { query: "?raw"
 
 export interface Preset {
   readonly id: string
-  readonly group: string
+  /** Where the explorer shows it, like a file in a project: `language/brands.efx`. */
+  readonly path: string
   readonly title: string
   readonly code: string
   /** Syntax that isn't built yet: the ADR that decides it, and the TypeScript it specifies. */
   readonly proposal?: { readonly adr: string; readonly status: string; readonly lowering: string }
 }
 
-const language: ReadonlyArray<Omit<Preset, "group">> = [
+const language: ReadonlyArray<Preset> = [
   {
     id: "hello",
+    path: "language/effect-functions.efx",
     title: "Effect functions",
     code: `error UserNotFound { id: string }
 
@@ -41,6 +44,7 @@ export effect greet(id: string): string throws UserNotFound needs Users {
   },
   {
     id: "errors",
+    path: "language/typed-errors.efx",
     title: "Typed errors and try",
     code: `export error NotFound { id: string }
 export error Timeout { ms: number }
@@ -59,19 +63,8 @@ export effect withFallback(id: string) {
 `
   },
   {
-    id: "concurrency",
-    title: "Concurrency",
-    code: `declare const loadUser: (id: string) => Effect<string>
-declare const loadPosts: (id: string) => Effect<ReadonlyArray<string>>
-
-export effect profile(id: string) {
-  const [user, posts] = await [loadUser(id), loadPosts(id)]
-  return { user, posts }
-}
-`
-  },
-  {
     id: "brands",
+    path: "language/brands.efx",
     title: "Brands and where checks (next)",
     code: `// \`brand\` takes its key from its name; \`where\` adds checks to a type or a field.
 // Accepted in ADR-0077, not built yet: the TypeScript is the lowering it specifies.
@@ -129,6 +122,7 @@ export const register = Effect.fn("register")(function*(input: unknown): Effect.
   },
   {
     id: "observability",
+    path: "language/observability.efx",
     title: "Observability: spans and OTLP",
     code: `// @efx observability otlp
 error PaymentDeclined { reason: string }
@@ -155,9 +149,10 @@ main {
   }
 ]
 
-const extensions: ReadonlyArray<Omit<Preset, "group">> = [
+const extensions: ReadonlyArray<Preset> = [
   {
     id: "law",
+    path: "extensions/proofs/bank.efx",
     title: "Proofs: laws for Bend2 (proposed)",
     code: `// A \`law\` is a rule the program must keep. It runs as a property test today,
 // and it is what a Bend2 proof proves (ADR-0074). Proposed in ADR-0075, not built:
@@ -229,7 +224,27 @@ void withdrawFailsExactlyWhenShort
     }
   },
   {
+    id: "laws",
+    path: "extensions/proofs/bank.test.efx",
+    title: "Running the laws as tests (proposed)",
+    code: `// Runs every law in bank.efx as a property test: inputs come from each parameter's schema,
+// and a counterexample fails the test, shrunk (proofs spec §2.3, ADR-0075: proposed).
+laws "./bank.efx"
+`,
+    proposal: {
+      adr: "ADR-0075",
+      status: "proposed, not built yet",
+      lowering: `import { describe, it } from "@effect/vitest"
+import __laws_bank from "./bank.efx?laws"
+// Runs every law in bank.efx as a property test: inputs come from each parameter's schema,
+// and a counterexample fails the test, shrunk (proofs spec §2.3, ADR-0075: proposed).
+describe("laws ./bank.efx", () => __laws_bank(it))
+`
+    }
+  },
+  {
     id: "elm",
+    path: "extensions/app/counter.efx",
     title: "Apps: The Elm Architecture, today",
     code: `// The Elm Architecture, as Foldkit applies it to Effect, in today's EffectScript.
 // Messages are a union, the update is a match, a command is an effect that ends in
@@ -285,8 +300,9 @@ export const Counter = () => {
   },
   {
     id: "infra",
+    path: "extensions/infra/site.efx",
     title: "Infra: a Cloudflare Worker (proposed)",
-    code: `// @efx infra
+    code: `// @efx infra cloudflare
 // The infra extension on Alchemy v2, sketched in ADR-0086 (proposed, not built):
 // the TypeScript is the lowering it specifies, in the shape of Alchemy's guide.
 // \`Cloudflare\` comes with the extension. Deploy with \`stack App { Site }\`.
@@ -329,7 +345,7 @@ export default worker Site serves Api with FilesLive
 import { Effect, Layer, Path, Schema, pipe } from "effect"
 import { Etag, HttpPlatform, HttpRouter } from "effect/http"
 import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
-// @efx infra
+// @efx infra cloudflare
 // The infra extension on Alchemy v2, sketched in ADR-0086 (proposed, not built):
 // the TypeScript is the lowering it specifies, in the shape of Alchemy's guide.
 // \`Cloudflare\` comes with the extension. Deploy with \`stack App { Site }\`.
@@ -384,15 +400,51 @@ const Site = Cloudflare.Worker(
 export default Site
 `
     }
+  },
+  {
+    id: "stack",
+    path: "extensions/infra/alchemy.run.efx",
+    title: "The stack Alchemy deploys (proposed)",
+    code: `// @efx infra cloudflare
+// The stack Alchemy deploys: its workers, with the header's providers (ADR-0086, proposed).
+// \`alchemy deploy\` reads this file; each worker's URL is an output.
+import Site from "./site.efx"
+
+stack App { Site }
+`,
+    proposal: {
+      adr: "ADR-0086",
+      status: "a proposed sketch, not built",
+      lowering: `import * as Alchemy from "alchemy"
+import * as Cloudflare from "alchemy/Cloudflare"
+import { Effect } from "effect"
+// @efx infra cloudflare
+// The stack Alchemy deploys: its workers, with the header's providers (ADR-0086, proposed).
+// \`alchemy deploy\` reads this file; each worker's URL is an output.
+import Site from "./site.efx"
+
+export default Alchemy.Stack(
+  "App",
+  { providers: Cloudflare.providers(), state: Cloudflare.state() },
+  Effect.gen(function*() {
+    const site = yield* Site
+    return { site: site.url }
+  })
+)
+`
+    }
   }
 ]
 
+/** A gallery scenario's file name: its id, and a test file for the tests. */
+const galleryFile = (id: string) => (id === "testing" ? "users.test.efx" : `${id}.efx`)
+
 export const presets: ReadonlyArray<Preset> = [
-  ...language.map((preset) => ({ ...preset, group: "The language" })),
-  ...extensions.map((preset) => ({ ...preset, group: "Extensions (roadmap)" })),
+  ...language,
+  ...extensions,
   ...scenarios.map(({ id, title }) => ({
     id: `gallery-${id}`,
-    group: "Gallery",
+    path: `gallery/${galleryFile(id)}`,
     title,
     code: samples[`../samples/${id}/app.efx`]!
   }))

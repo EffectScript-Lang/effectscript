@@ -12,6 +12,8 @@ export interface Request {
   readonly seq: number
   readonly direction: "toTypeScript" | "toEffectScript"
   readonly source: string
+  /** The file's path in the explorer (ADR-0088), as the compiler's file name. */
+  readonly filename?: string | undefined
 }
 
 export interface Problem {
@@ -69,6 +71,7 @@ const position = (source: string, offset: number) => {
 /** Compiles one request. Never throws: an internal error becomes a diagnostic. */
 export const compile = (request: Request): Response => {
   const { direction, seq, source } = request
+  const filename = request.filename ?? "playground.efx"
   if (source.length > maxSource) {
     return {
       seq,
@@ -90,7 +93,7 @@ export const compile = (request: Request): Response => {
   }
   try {
     if (direction === "toTypeScript") {
-      const result = toTypeScript(source, { filename: "playground.efx", recover: true })
+      const result = toTypeScript(source, { filename, recover: true })
       return {
         seq,
         direction,
@@ -115,7 +118,7 @@ export const compile = (request: Request): Response => {
         })
       }
     }
-    const result = toEffectScript(source, { filename: "playground.ts" })
+    const result = toEffectScript(source, { filename: filename.replace(/\.efx$/, ".ts") })
     return {
       seq,
       direction,
