@@ -26,7 +26,7 @@ def logos():
     cap = 100
     wd, ww = b.wordmark(cap, 0, cap)
     m = b.metrics(b.WORD_FONT)
-    desc = cap * 0.27  # room for the p descender
+    desc = cap * b.DESCENDER_PER_CAP
     for name, color in COLORS.items():
         p = b.write(
             f"logo/svg/effectscript-wordmark-{name}.svg", b.svg(ww, cap + desc, f'<path fill="{color}" d="{wd}"/>')
@@ -37,7 +37,7 @@ def logos():
     for kind, fn in (("lockup", b.lockup_horizontal), ("lockup-stacked", b.lockup_stacked)):
         for name, color in COLORS.items():
             body, w, h = fn(cap, color)
-            h += desc if kind == "lockup-stacked" else 0
+            h = h + desc if kind == "lockup-stacked" else b.lockup_horizontal_height(cap)
             p = b.write(f"logo/svg/effectscript-{kind}-{name}.svg", b.svg(w, h, body))
             for px in (1024, 2048):
                 b.render(p.relative_to(b.ROOT), f"logo/png/effectscript-{kind}-{name}-{px}.png", width=px)
@@ -46,7 +46,7 @@ def logos():
     for kind, fn in (("lockup", b.lockup_horizontal), ("lockup-stacked", b.lockup_stacked)):
         for ground, fg, bg in (("on-black", b.WHITE, b.INK), ("on-white", b.INK, b.WHITE)):
             body, w, h = fn(cap, fg)
-            h += desc if kind == "lockup-stacked" else 0
+            h = h + desc if kind == "lockup-stacked" else b.lockup_horizontal_height(cap)
             pad = cap * 1.6
             p = b.write(
                 f".gen/out/{kind}-{ground}.svg",

@@ -26,7 +26,9 @@ const teaserFiles = [
   /^\/apple-touch-icon\.png$/,
   /^\/icon-[\w-]+\.png$/,
   /^\/og-image\.jpg$/,
-  /^\/site\.webmanifest$/
+  /^\/site\.webmanifest$/,
+  // the teaser's photographs and film stills (ADR-0082)
+  /^\/img\/lp\/[\w-]+\.webp$/
 ]
 
 /** The banner the full site carries during the preview. */

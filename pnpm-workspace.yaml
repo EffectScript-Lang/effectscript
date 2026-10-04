@@ -15,6 +15,7 @@ verifyDepsBeforeRun: error
 enableGlobalVirtualStore: false
 
 allowBuilds:
+  '@vgpu/adapter-node': false
   '@vscode/vsce-sign': false
   core-js: false
   cpu-features: false
@@ -28,6 +29,7 @@ allowBuilds:
   tree-sitter-cli: true
   tree-sitter-javascript: false
   tree-sitter-typescript: false
+  webgpu: false
   workerd: false
 
 patchedDependencies:

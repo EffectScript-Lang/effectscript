@@ -1,0 +1,26 @@
+---
+/**
+ * A WebGPU scene (ADR-0082, `src/scenes/`): a canvas over its poster. The runtime fades the canvas
+ * in after its first frame; without WebGPU, or before it starts, the poster is what shows.
+ */
+import Picture from "./Picture.astro"
+
+interface Props {
+  scene: string
+  class?: string
+  /** A poster image name in `public/img/lp/`, and its description. */
+  poster?: string
+  alt?: string
+  position?: string
+  eager?: boolean
+  /** `data-*` attributes the scene reads. */
+  data?: Record<string, string | number>
+}
+const { alt = "", data = {}, eager, position, poster, scene } = Astro.props
+const attributes = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data-${k}`, String(v)]))
+---
+
+<div class:list={["scene", Astro.props.class]} data-scene={scene} {...attributes}>
+  {poster && <Picture class="scene-poster" name={poster} alt={alt} position={position} eager={eager} />}
+  <canvas class="scene-canvas" aria-hidden="true"></canvas>
+</div>

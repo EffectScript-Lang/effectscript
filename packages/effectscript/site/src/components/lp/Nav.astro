@@ -1,0 +1,30 @@
+---
+/** The landing pages' top bar (the approved comp's nav). The teaser passes `teaser`: no links in. */
+import Lockup from "../../assets/lockup-white.svg"
+
+interface Props {
+  teaser?: boolean
+}
+const { teaser = false } = Astro.props
+---
+
+<header class="nav">
+  <nav class="nav-inner" aria-label="Main">
+    <a href={teaser ? "#top" : "/"} class="nav-brand" aria-label="EffectScript home"><Lockup height={30} width={160} /></a>
+    {
+      teaser ? (
+        <a class="btn btn-solid btn-small" href="https://x.com/gunta85">Follow @gunta85</a>
+      ) : (
+        <>
+          <ul class="nav-links">
+            <li><a href="/docs">Docs</a></li>
+            <li><a href="/playground">Playground</a></li>
+            <li><a href="#extensions">Extensions</a></li>
+            <li><a href="https://github.com/EffectScript-Lang/effectscript">GitHub</a></li>
+          </ul>
+          <a class="btn btn-solid btn-small" href="/docs/start/install">Get started</a>
+        </>
+      )
+    }
+  </nav>
+</header>

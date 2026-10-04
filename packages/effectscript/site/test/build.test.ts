@@ -287,10 +287,44 @@ describe("Plan 16 final review fixes", () => {
   })
 })
 
+describe("the landing page's exhibition (ADR-0082)", () => {
+  it("ships its WebGPU scenes over posters, and every image they name", () => {
+    const page = read("index.html")
+    for (const scene of ["ceremony", "theater", "tokens", "errors", "retry", "fibers", "channels", "lockstep"]) {
+      expect(page, scene).toContain(`data-scene="${scene}"`)
+    }
+    const images = [...new Set([...page.matchAll(/\/img\/lp\/([\w-]+\.webp)/g)].map((m) => m[1]!))]
+    expect(images.length).toBeGreaterThan(20)
+    for (const image of images) expect(fs.existsSync(path.join(dist, "img/lp", image)), image).toBe(true)
+  })
+
+  it("reserves the film's room, and the teaser links nowhere inside the site", () => {
+    expect(text("index.html")).toContain("Introducing EffectScript.")
+    const teaser = read("soon/index.html")
+    const links = [...teaser.matchAll(/href="([^"]+)"/g)].map((m) => m[1]!).filter((href) =>
+      href.startsWith("/") && !/^\/(favicon|apple-touch|site\.webmanifest|_astro|fonts)/.test(href)
+    )
+    expect(links).toEqual([])
+  })
+
+  it("colours a signature's return type, throws and needs with the signals (ADR-0078)", () => {
+    const page = read("index.html")
+    expect(page).toMatch(/color:#4ADE80[^"]*">User</)
+    expect(page).toMatch(/color:#F87171[^"]*">UserNotFound</)
+    expect(page).toMatch(/color:#60A5FA[^"]*">Users</)
+  })
+
+  it("labels the extensions as roadmap", () => {
+    expect(text("index.html")).toContain("▲ Roadmap: not shipped, syntax may change")
+  })
+})
+
 describe("Plan 18 Task 6: site polish", () => {
   it("highlights the install block as shell, so the URL isn't a comment", () => {
-    const comments = [...read("index.html").matchAll(/<span style="color:#8e8e96;font-style:italic">([^<]*)<\/span>/gi)]
-      .map((m) => m[1]!)
+    // the landing page's code uses the brand's mono theme, whose comments are #8E8E96 (ADR-0082)
+    const comments = [...read("index.html").matchAll(/<span style="color:#8E8E96[^"]*">([^<]*)<\/span>/gi)].map((m) =>
+      m[1]!
+    )
     expect(comments.filter((c) => c.includes("effectscript.dev/install"))).toEqual([])
     expect(comments.some((c) => c.includes("# editors and coding agents"))).toBe(true)
   })

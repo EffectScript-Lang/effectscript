@@ -1,161 +1,674 @@
 ---
+/**
+ * effectscript.dev (spec §9.2, ADR-0082): an exhibition in a dark room. Every idea gets a room with
+ * one live WebGPU scene or photograph, one artifact and a placard; the chapters pin like the
+ * launch film's titles. Every number and diagnostic is computed when the site is built.
+ */
 import CodeWindow from "../src/components/CodeWindow.astro"
 import Follow from "../src/components/Follow.astro"
-import Header from "../src/components/Header.astro"
+import Nav from "../src/components/lp/Nav.astro"
+import Picture from "../src/components/lp/Picture.astro"
+import Placard from "../src/components/lp/Placard.astro"
+import Scene from "../src/components/lp/Scene.astro"
 import { corpusTotals } from "../src/data/corpus.ts"
-import { gallery, saving } from "../src/data/gallery.ts"
+import { film, stills } from "../src/data/film.ts"
+import { saving } from "../src/data/gallery.ts"
+import { ceremony, ceremonySheet, mistakes, outputExample, savings, scenarios, totals } from "../src/data/lp.ts"
+import { keywords, libraries, tiles, translation } from "../src/data/stdlib.ts"
 import Base from "../src/layouts/Base.astro"
 import { highlight } from "../src/lib/highlight.ts"
+// oxlint-disable-next-line import/no-unassigned-import -- Astro loads stylesheets by import
+import "../src/styles/lp.css"
 
-const scenarios = gallery()
-const totals = scenarios.reduce(
-  (sum, s) => ({ plain: sum.plain + s.panes[0].tokens, effect: sum.effect + s.panes[1].tokens, efx: sum.efx + s.panes[2].tokens }),
-  { plain: 0, effect: 0, efx: 0 }
-)
-const hero = scenarios.find((s) => s.id === "services")!
 const corpus = corpusTotals()
+const mono = (code: string, language: "efx" | "ts" | "shell" = "efx") => highlight(code, language, "mono")
+const bento = await Promise.all(tiles.map(async (t) => ({ ...t, html: await mono(t.code) })))
+const libs = await Promise.all(libraries.map(async (l) => ({ ...l, html: await mono(l.code) })))
+const diagnosed = await Promise.all(mistakes.map(async (m) => ({ ...m, html: await mono(m.code) })))
+const output = { efx: await mono(outputExample.efx), ts: await mono(outputExample.ts, "ts") }
+const intentCode =
+  "export schema User {\n  id: string\n  name: string\n}\n\nexport error UserNotFound { id: string }\n\nexport service Users {\n  effect find(id: string): User throws UserNotFound\n}\n\nexport effect getUser(id: string): User throws UserNotFound needs Users {\n  const user = await Users.find(id)\n  console.log(`found ${user.name}`)\n  return user\n} |> retry({ times: 3 })"
+const intent = await mono(intentCode)
+const header = await mono("// @effect 4.0\nexport effect greet(name: string) {\n  return `Hello, ${name}`\n}")
+const install = await mono(
+  "curl -fsSL https://effectscript.dev/install | sh\nefx setup     # editors and coding agents\nefx init      # in a project\nefx convert   # see what would become EffectScript",
+  "shell"
+)
+const removed = ceremony.filter((c) => c.efx < c.effect)
 
-import { constructs } from "../src/data/constructs.ts"
-const highlighted = await Promise.all(constructs.map(async (c) => ({ ...c, html: await highlight(c.code, "efx") })))
-const install = await highlight("curl -fsSL https://effectscript.dev/install | sh\nefx setup     # editors and coding agents\nefx init      # in a project\nefx convert   # see what would become EffectScript", "shell")
+/** The rooms, in order: the chapter index at the right edge reads these. */
+const rooms = [
+  ["film", "The film"],
+  ["ceremony", "Ceremony"],
+  ["translation", "Translation"],
+  ["stdlib", "The library"],
+  ["gallery", "The gallery"],
+  ["intent", "Intent"],
+  ["agents", "Agents"],
+  ["output", "Output"],
+  ["strict", "Strict"],
+  ["extensions", "Extensions"],
+  ["superset", "Superset"],
+  ["lockstep", "Lockstep"],
+  ["start", "Start"]
+] as const
+const number = (id: (typeof rooms)[number][0]) => String(rooms.findIndex(([r]) => r === id) + 1).padStart(2, "0")
+const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: rooms.find(([r]) => r === id)![1] })
 ---
 
-<Base title="EffectScript: All of Effect. None of the ceremony." description="EffectScript is TypeScript with Effect as native syntax: typed errors, services and retries without the ceremony, compiled to idiomatic Effect TypeScript.">
-  <Header />
-  <main>
-    <section class="relative overflow-hidden border-b border-line">
-      <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#27272a55_1px,transparent_1px),linear-gradient(to_bottom,#27272a55_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"></div>
-      <div class="relative mx-auto max-w-7xl px-4 pt-20 pb-16 sm:pt-28">
-        <p class="label">// TypeScript, with Effect as syntax</p>
-        <h1 class="headline-fade mt-4 max-w-4xl font-display text-5xl font-bold tracking-[-0.025em] sm:text-7xl">All of Effect. None of the ceremony.</h1>
-        <p class="mt-6 max-w-2xl text-lg text-subtle">
-          Effect is the right foundation for serious TypeScript, and its ceremony is what people trip over. EffectScript makes Effect the language: write <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, and get typed errors, services, retries and tracing, compiled to plain, idiomatic Effect TypeScript.
+<Base
+  title="EffectScript: All of Effect. None of the ceremony."
+  description="EffectScript is TypeScript with Effect as native syntax: the standard library TypeScript never got. Write async, await, throw and try; get typed errors, services, retries and tracing, compiled to idiomatic Effect TypeScript."
+>
+  <Nav />
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title" data-pointer-area>
+      <Scene
+        scene="ceremony"
+        poster="hero-plate"
+        alt=""
+        position="40% 70%"
+        eager
+        data={{ sheet: JSON.stringify(ceremonySheet), pointer: "1", dpr: "1.25", "beam-y": "auto", converge: "0.76", "still-time": "6" }}
+      />
+      <div class="hero-copy wrap">
+        <p class="label">// TypeScript, with Effect built in</p>
+        <h1 id="hero-title" class="display h-hero">
+          <span class="headline-fade">The standard library<br /> TypeScript never got.</span>
+          <span class="dim">Now native.</span>
+        </h1>
+        <p class="lede">
+          Write <code>async</code>, <code>await</code>, <code>throw</code> and <code>try</code>. Get typed errors, services, retries and tracing, compiled to plain, idiomatic Effect TypeScript.
         </p>
-        <div class="mt-8 flex flex-wrap gap-3">
-          <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install">Get started</a>
-          <a class="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:bg-tile" href="/playground">Open the playground</a>
-          <a class="rounded-md px-5 py-2.5 text-sm font-medium text-subtle hover:text-white" href="https://x.com/gunta85">Follow @gunta85 →</a>
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="/playground">Open the playground</a>
+          <a class="btn btn-ghost" href="#start">Install efx</a>
+          <a class="btn btn-link" href="#film">
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M7.25 5.75v6.5L12.5 9z" fill="currentColor"></path></svg>
+            {film.src ? `Watch the film · ${film.duration}` : "The film · premieres at launch"}
+          </a>
         </div>
-        <div class="mt-14">
-          <CodeWindow title={`${hero.panes[2].name}: ${saving(hero.panes[1].tokens, hero.panes[2].tokens)}% fewer tokens than the Effect TypeScript it compiles to`} panes={[hero.panes[1], hero.panes[2]]} />
+        <p class="hero-note mono-note" data-beam-anchor>
+          <strong>{savings.effect}% fewer tokens</strong> than the Effect TypeScript it compiles to, across the ten samples below · o200k_base
+        </p>
+      </div>
+      <div class="hero-peek">
+        <a href="#film"><Placard {...placard("film")} note={`Introducing EffectScript · ${film.duration} · made entirely from code`} /></a>
+      </div>
+    </section>
+
+    <section id="film" class="theater" aria-labelledby="film-title" data-room="film" data-label={`${number("film")} / ${placard("film").name}`}>
+      <Scene scene="theater" data={{ dpr: "1", "still-time": "5" }} />
+      <div class="wrap">
+        <div class="room-head reveal">
+          <h2 id="film-title" class="display h-room">Introducing EffectScript.</h2>
+          <p class="body">
+            Every idea starts as one line. Effect gives that line superpowers, then buries it in ceremony. The film is about giving the line back. Its 3D scenes, typography, code morphs and score are all made from code: Blender scripts, a NumPy compositor and music synthesised sample by sample.
+          </p>
+        </div>
+        <div class="screen reveal">
+          {
+            film.src ? (
+              <video controls preload="none" playsinline poster="/img/lp/film-monolith-plain-2560.webp">
+                <source src={film.src} type="video/mp4" />
+              </video>
+            ) : (
+              <>
+                <Picture name="film-monolith-plain" alt="The ƒx mark as a monolith on a misty plain, a frame from the film" />
+                <div class="screen-veil">
+                  <div class="play" role="img" aria-label={`The film, ${film.duration}, premieres at launch`}>
+                    <span class="play-disc">
+                      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M10 6.5v17L24 15z" fill="currentColor"></path></svg>
+                    </span>
+                    <span class="play-label">Premieres at launch<span>{film.duration}</span></span>
+                  </div>
+                </div>
+              </>
+            )
+          }
+          <span class="screen-corner">Introducing EffectScript</span>
+        </div>
+        <ol class="filmstrip reveal" aria-label="Stills from the film">
+          {
+            stills.map((s) => (
+              <li>
+                <figure>
+                  <Picture name={s.name} alt={s.alt} sizes="(max-width: 760px) 50vw, 25vw" />
+                  <figcaption>
+                    <span>{s.act}</span>
+                    <span>{s.time}</span>
+                  </figcaption>
+                </figure>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
+
+    <section id="ceremony" class="chapter" aria-labelledby="ceremony-title" data-room="ceremony" data-label={`${number("ceremony")} / ${placard("ceremony").name}`}>
+      <div class="chapter-stage">
+        <div class="room-bg">
+          <Picture name="ceremony" alt="A plain light switch in the middle of a wall covered by a machine of pipes, valves and gears" position="62% 50%" />
+        </div>
+        <div class="chapter-copy wrap">
+          <Placard {...placard("ceremony")} />
+          <h2 id="ceremony-title" class="display h-chapter">You wanted reliability.<br /><span class="dim">You got ceremony.</span></h2>
+          <p class="lede">
+            Effect gives TypeScript typed errors, dependency injection, retries, resources and tracing. It also gives you <code>Effect.gen(function* () {"{"}</code>, <code>yield*</code> on every line, and a class for every error and service. The code is right. It's just loud.
+          </p>
         </div>
       </div>
     </section>
 
-    <section class="border-b border-line">
-      <dl class="mx-auto grid max-w-7xl gap-px bg-line sm:grid-cols-3">
-        <div class="bg-ink px-4 py-8">
-          <dt class="label">vs Effect TypeScript</dt>
-          <dd class="mt-2 font-display text-4xl font-bold">{saving(totals.effect, totals.efx)}% fewer tokens</dd>
-          <dd class="mt-1 text-sm text-subtle">{totals.effect} → {totals.efx} GPT-4o tokens (o200k_base) across the ten scenarios below</dd>
+    <section class="room" aria-labelledby="ledger-title">
+      <div class="wrap">
+        <div class="room-head reveal">
+          <h2 id="ledger-title" class="display h-room">Ceremony the compiler writes, so you don't.</h2>
+          <p class="body">
+            Counted in the ten samples further down: the Effect TypeScript the compiler generates on the left of each count, the EffectScript you write on the right.
+          </p>
         </div>
-        <div class="bg-ink px-4 py-8">
-          <dt class="label">vs plain TypeScript</dt>
-          <dd class="mt-2 font-display text-4xl font-bold">{saving(totals.plain, totals.efx)}% fewer tokens</dd>
-          <dd class="mt-1 text-sm text-subtle">GPT-4o tokens, with typed errors, services and retries the plain version doesn't have</dd>
+        <dl class="ledger reveal" style="margin-top:48px">
+          {
+            removed.map((c) => (
+              <div>
+                <dt>{c.label}</dt>
+                <dd>
+                  <b>{c.effect}</b> written for you · {c.efx} by you
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+        <div class="cells reveal">
+          <Scene scene="tokens" data={{ before: totals.effect, after: totals.efx, dpr: "2", "still-time": "3" }} />
+          <div class="cells-legend">
+            <dl>
+              <div>
+                <dt><span class="swatch"></span>EffectScript</dt>
+                <dd>{totals.efx.toLocaleString("en-US")}</dd>
+              </div>
+              <div>
+                <dt><span class="swatch ghost"></span>Effect TypeScript</dt>
+                <dd>{totals.effect.toLocaleString("en-US")}</dd>
+              </div>
+            </dl>
+            <p class="mono-note">
+              One cell per o200k_base token of the ten samples' Effect TypeScript. The lit cells are what the EffectScript still needs: <strong>{savings.effect}% fewer tokens</strong> than Effect TypeScript, and {savings.plain}% fewer than plain TypeScript without typed errors, services or retries.
+            </p>
+          </div>
         </div>
-        <div class="bg-ink px-4 py-8">
-          <dt class="label">Effect's own docs, converted</dt>
-          <dd class="mt-2 font-display text-4xl font-bold">{corpus.examples.toLocaleString("en-US")} examples</dd>
-          <dd class="mt-1 text-sm text-subtle">{corpus.resugared.toLocaleString("en-US")} re-sugared, each compiling back to the original: {corpus.saved} fewer tokens in the re-sugared examples, counted with the EffectScript parser</dd>
-        </div>
-      </dl>
-      <p class="mx-auto max-w-7xl px-4 pb-6 text-xs text-muted">The first two numbers count GPT-4o tokens (o200k_base) on the exact code shown, when this site is built.</p>
+      </div>
     </section>
 
-    <section id="gallery" class="mx-auto max-w-7xl px-4 py-20" data-gallery data-show-tokens="false">
-      <p class="label">// the same program, three ways</p>
-      <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">Plain TypeScript. Effect TypeScript. EffectScript.</h2>
-      <p class="mt-4 max-w-3xl text-subtle">The Effect TypeScript in the middle is the EffectScript on the right, compiled when this page was built, so it includes what the compiler generates, such as service accessors. Every sample type-checks against Effect.</p>
-      <div class="mt-8 flex flex-wrap items-center gap-2">
-        <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Scenarios">
+    <section id="translation" class="room" aria-labelledby="translation-title" data-room="translation" data-label={`${number("translation")} / ${placard("translation").name}`}>
+      <div class="room-bg from-right">
+        <Picture name="translation" alt="A black basalt stele engraved with two columns of glyphs, one half as long as the other" position="80% 50%" />
+      </div>
+      <div class="wrap">
+        <Placard {...placard("translation")} />
+        <div class="room-head reveal">
+          <h2 id="translation-title" class="display h-room">You already know it.</h2>
+          <p class="lede">
+            No <code>yield*</code> to translate in your head. If you can write async TypeScript, you can write Effect: the compiler does the translating.
+          </p>
+        </div>
+        <div class="rosetta-wrap reveal">
+          <table class="rosetta">
+            <thead>
+              <tr><th scope="col">async TypeScript</th><th scope="col">EffectScript</th><th scope="col">What Effect gives you</th></tr>
+            </thead>
+            <tbody>
+              {translation.map(([a, e, what]) => (
+                <tr><td>{a}</td><td>{e}</td><td>{what}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="body reveal" style="margin-top:32px">
+          The one real difference is laziness. A Promise starts when it's created; an effect runs when it's awaited. Forget the <code>await</code> and the compiler says so (EFX8001).
+        </p>
+      </div>
+    </section>
+
+    <section id="stdlib" class="room" aria-labelledby="stdlib-title" data-room="stdlib" data-label={`${number("stdlib")} / ${placard("stdlib").name}`}>
+      <div class="wrap">
+        <Placard {...placard("stdlib")} />
+        <div class="room-head reveal">
+          <h2 id="stdlib-title" class="display h-room">Everything Effect does, written like it was always there.</h2>
+          <p class="lede">
+            Errors, dependencies, concurrency, resources, schemas, streams, observability: Effect is the standard library TypeScript never had. EffectScript makes each one a few words of syntax.
+          </p>
+        </div>
+        <div class="bento">
+          {
+            bento.map((t) => (
+              <article class={`tile s${t.span} reveal`}>
+                {t.scene && (
+                  <div class="relative">
+                    <Scene scene={t.scene} data={{ dpr: "2", "still-time": t.scene === "retry" ? "4" : "2.4" }} />
+                    {t.scene === "errors" && (
+                      <ul class="keys" aria-label="Key">
+                        <li class="pass">✓ User</li>
+                        <li class="fail">! UserNotFound</li>
+                      </ul>
+                    )}
+                    {t.scene === "retry" && (
+                      <ul class="keys" aria-label="Key">
+                        <li class="fail">! attempts 1 and 2 fail</li>
+                        <li>waits 1, then 2</li>
+                        <li class="pass">✓ attempt 3</li>
+                      </ul>
+                    )}
+                  </div>
+                )}
+                <div class="tile-body">
+                  <h3 class="h-tile">{t.name}</h3>
+                  <p>{t.what}</p>
+                  <pre class="code-block"><code set:html={t.html} /></pre>
+                </div>
+              </article>
+            ))
+          }
+        </div>
+        <div class="libs">
+          {
+            libs.map((l) => (
+              <article class="lib reveal">
+                <h3>{l.name}</h3>
+                <pre class="code-block"><code set:html={l.html} /></pre>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section id="gallery" class="room" aria-labelledby="gallery-title" data-room="gallery" data-label={`${number("gallery")} / ${placard("gallery").name}`}>
+      <div class="room-bg soft">
+        <Picture name="gallery" alt="A long dark museum gallery lined with lit glass vitrines" position="50% 40%" />
+      </div>
+      <div class="wrap" data-gallery data-show-tokens="false">
+        <Placard {...placard("gallery")} note="Every sample type-checks against Effect" />
+        <div class="room-head reveal" style="max-width:64rem">
+          <h2 id="gallery-title" class="display h-room">Plain TypeScript. Effect TypeScript. EffectScript.</h2>
+          <p class="body">
+            The same program, three ways. The Effect TypeScript in the middle is the EffectScript on the right, compiled when this page was built, so it includes what the compiler generates, such as service accessors.
+          </p>
+        </div>
+        <div class="mt-10 flex flex-wrap items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Scenarios">
+            {scenarios.map((s, i) => (
+              <button type="button" role="tab" id={`tab-${s.id}`} tabindex={i === 0 ? "0" : "-1"} class="scenario-tab rounded-full border border-line bg-ink/70 px-3.5 py-1.5 text-sm text-subtle transition-colors hover:text-white aria-selected:border-white aria-selected:bg-white aria-selected:text-ink" aria-selected={i === 0 ? "true" : "false"} aria-controls={`scenario-${s.id}`} data-scenario={s.id}>{s.title}</button>
+            ))}
+          </div>
+          <label class="ml-auto flex cursor-pointer items-center gap-2 text-sm text-subtle">
+            <input type="checkbox" class="token-toggle accent-white" /> Show tokens
+          </label>
+        </div>
+        <div class="mt-6">
           {scenarios.map((s, i) => (
-            <button type="button" role="tab" id={`tab-${s.id}`} tabindex={i === 0 ? "0" : "-1"} class="scenario-tab rounded-full border border-line px-3 py-1 text-sm text-subtle aria-selected:border-white aria-selected:text-white" aria-selected={i === 0 ? "true" : "false"} aria-controls={`scenario-${s.id}`} data-scenario={s.id}>{s.title}</button>
+            <div id={`scenario-${s.id}`} role="tabpanel" aria-labelledby={`tab-${s.id}`} tabindex="0" class="scenario" hidden={i !== 0} data-scenario-panel={s.id}>
+              <CodeWindow title={`${s.title}: ${saving(s.panes[1].tokens, s.panes[2].tokens)}% fewer tokens than Effect TypeScript, ${saving(s.panes[0].tokens, s.panes[2].tokens)}% fewer than plain`} panes={s.panes} />
+            </div>
           ))}
         </div>
-        <label class="ml-auto flex cursor-pointer items-center gap-2 text-sm text-subtle">
-          <input type="checkbox" class="token-toggle accent-white" /> Show tokens
-        </label>
+        <p class="body" style="margin-top:24px">
+          Try any of them in the <a class="text-white underline decoration-line hover:decoration-white" href="/playground">playground</a>: edit either side and watch the other follow.
+        </p>
       </div>
-      <div class="mt-6">
-        {scenarios.map((s, i) => (
-          <div id={`scenario-${s.id}`} role="tabpanel" aria-labelledby={`tab-${s.id}`} tabindex="0" class="scenario" hidden={i !== 0} data-scenario-panel={s.id}>
-            <CodeWindow title={`${s.title}: ${saving(s.panes[1].tokens, s.panes[2].tokens)}% fewer tokens than Effect TypeScript, ${saving(s.panes[0].tokens, s.panes[2].tokens)}% fewer than plain`} panes={s.panes} />
-          </div>
-        ))}
-      </div>
-      <p class="mt-6 text-sm text-subtle">Try any of them in the <a class="text-white underline decoration-line underline-offset-4" href="/playground">playground</a>: edit either side and watch the other follow.</p>
     </section>
 
-    <section class="border-y border-line bg-tile/40">
-      <div class="mx-auto grid max-w-7xl gap-12 px-4 py-20 lg:grid-cols-2">
-        <div>
-          <p class="label">// stricter than TypeScript, ready for agents</p>
-          <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">One canonical way to write each thing.</h2>
-          <p class="mt-4 text-subtle">Fewer tokens is only half of it. EffectScript gives people and coding agents fewer ways to be wrong.</p>
+    <section id="intent" class="chapter" aria-labelledby="intent-title" data-room="intent" data-label={`${number("intent")} / ${placard("intent").name}`}>
+      <div class="chapter-stage">
+        <div class="room-bg">
+          <Picture name="intent" alt="A single white thread passing through the eye of a needle" position="60% 50%" />
         </div>
-        <ul class="grid gap-4 text-sm">
-          <li class="rounded-lg border border-line bg-ink p-4"><strong class="text-white">Effects you can see.</strong> <span class="text-subtle"><code>throws</code> and <code>needs</code> put errors and dependencies in the signature, and the type checker holds the code to them.</span></li>
-          <li class="rounded-lg border border-line bg-ink p-4"><strong class="text-white">Mistakes caught where they're written.</strong> <span class="text-subtle">An effect created and never run, a Promise awaited inside <code>effect</code>, an array of effects awaited one by one: strict rules flag each with a fix.</span></li>
-          <li class="rounded-lg border border-line bg-ink p-4"><strong class="text-white">A skill for your agent.</strong> <span class="text-subtle"><code>efx setup</code> gives Claude Code, Codex, Cursor, Gemini CLI and opencode the EffectScript skill, with every example type-checked.</span></li>
-          <li class="rounded-lg border border-line bg-ink p-4"><strong class="text-white">Docs agents can read.</strong> <span class="text-subtle"><a class="underline decoration-line underline-offset-4" href="/llms.txt">llms.txt</a>, and Effect's own guide with every example in EffectScript.</span></li>
+        <div class="chapter-copy wrap">
+          <Placard {...placard("intent")} />
+          <h2 id="intent-title" class="display h-chapter">Say what you mean.<br /><span class="dim">The compiler writes the rest.</span></h2>
+          <p class="lede">
+            EffectScript is an intent language. Declarations name what you mean, <code>schema</code>, <code>error</code>, <code>service</code>, <code>config</code>, <code>api</code>, <code>test</code>, and the compiler writes the Effect that implements it.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="room" aria-labelledby="intent-file-title">
+      <div class="wrap">
+        <div class="room-head reveal">
+          <h2 id="intent-file-title" class="display h-room">One file, read for its intent.</h2>
+          <p class="lede">
+            Every effect has one type with three parts: what it succeeds with, how it can fail, and what it needs. EffectScript writes each part where you read the signature: the return type, <code>throws</code> and <code>needs</code>.
+          </p>
+        </div>
+      </div>
+      <div class="channels reveal" role="img" aria-label="Three rails, success, error and requirements, merging into one Effect type">
+        <Scene scene="channels" data={{ dpr: "2", merge: "0.58", "still-time": "6" }} />
+        <ul class="channel-keys" aria-hidden="true">
+          <li class="pass" style="top:22%">✓ A · succeeds with <b>User</b></li>
+          <li class="fail" style="top:50%">! E · can fail with <b>UserNotFound</b></li>
+          <li class="need" style="top:78%">◇ R · needs <b>Users</b></li>
+        </ul>
+        <p class="channel-type" aria-hidden="true">Effect&lt;User, UserNotFound, Users&gt;</p>
+      </div>
+      <div class="wrap">
+        <div class="annotated">
+          <pre class="code-block big reveal"><code set:html={intent} /></pre>
+          <ol class="notes reveal">
+            <li><code>schema User</code><span>A type and its decoder, from one declaration.</span></li>
+            <li><code>error UserNotFound</code><span>A failure with a name, a shape and a tag to catch it by.</span></li>
+            <li><code class="pass">✓ User</code><span>What it succeeds with: the return type.</span></li>
+            <li><code class="fail">! throws UserNotFound</code><span>What can go wrong, in the signature. Callers handle it or declare it.</span></li>
+            <li><code class="need">◇ needs Users</code><span>What it depends on, checked. Tests provide another layer.</span></li>
+            <li><code>await</code><span>Runs an effect. The compiler writes the <code>yield*</code>.</span></li>
+            <li><code>console.log</code><span>Logs through Effect, inside the function's span.</span></li>
+            <li><code>|&gt; retry(…)</code><span>The policy, not the plumbing.</span></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="agents" class="room" aria-labelledby="agents-title" data-room="agents" data-label={`${number("agents")} / ${placard("agents").name}`}>
+      <div class="room-bg">
+        <Picture name="agents" alt="A vast dark reading room with hundreds of identical lamps, each lighting one page" position="70% 50%" />
+      </div>
+      <div class="wrap">
+        <Placard {...placard("agents")} />
+        <div class="room-head reveal">
+          <h2 id="agents-title" class="display h-room">“I don't read the code anymore.”<br /><span class="dim">Fine. Your agents do.</span></h2>
+          <p class="lede">
+            Letting agents write the code doesn't make abstractions optional. Typed errors, declared dependencies and checked effects are what keeps a program correct when nobody reads every line. And on the day you do read it, in a review or at 3 AM, the intent is right there, in about half the tokens.
+          </p>
+        </div>
+        <div class="facts">
+          <article class="fact wide reveal">
+            <h3 class="h-tile">Same intent, fewer tokens</h3>
+            <p class="big-number">{savings.effect}% fewer</p>
+            <div class="bars" aria-hidden="true">
+              <div class="bar ghost"><span><b>Effect TypeScript</b>{totals.effect.toLocaleString("en-US")}</span><i style="width:100%"></i></div>
+              <div class="bar"><span><b>EffectScript</b>{totals.efx.toLocaleString("en-US")}</span><i style={`width:${(totals.efx / totals.effect) * 100}%`}></i></div>
+            </div>
+            <p>
+              o200k_base tokens on the ten samples. Every token an agent reads or writes costs context and money. Models haven't seen <code>.efx</code> in training yet, so we're measuring how well they write it, not assuming.
+            </p>
+          </article>
+          <article class="fact reveal">
+            <h3 class="h-tile">Output agents already know</h3>
+            <p>Every <code>.efx</code> compiles to idiomatic Effect v4: one canonical shape per construct, named spans, no helper runtime. When an agent opens the output, it reads the Effect it was trained on.</p>
+          </article>
+          <article class="fact reveal">
+            <h3 class="h-tile">A skill in every agent</h3>
+            <p><code>efx setup</code> installs the EffectScript skill, with every example type-checked, into:</p>
+            <ul class="agent-list">
+              <li>Claude Code</li><li>Codex</li><li>Cursor</li><li>Gemini CLI</li><li>opencode</li>
+            </ul>
+          </article>
+          <article class="fact reveal">
+            <h3 class="h-tile">Mistakes caught where they're written</h3>
+            <p>Strict rules catch what TypeScript can't see, an effect that never runs or a Promise awaited where an effect belongs, each with a fix an agent can apply.</p>
+          </article>
+          <article class="fact reveal">
+            <h3 class="h-tile">Docs agents can read</h3>
+            <p><a class="text-white underline decoration-line hover:decoration-white" href="/llms.txt">llms.txt</a>, and Effect's own guide with its {corpus.examples.toLocaleString("en-US")} examples in EffectScript: {corpus.resugared.toLocaleString("en-US")} re-sugared examples, counted with the EffectScript parser.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="output" class="room" aria-labelledby="output-title" data-room="output" data-label={`${number("output")} / ${placard("output").name}`}>
+      <div class="room-bg">
+        <Picture name="output" alt="A glass prism turning a haze of light into one straight beam" position="66% 50%" />
+      </div>
+      <div class="wrap">
+        <Placard {...placard("output")} />
+        <div class="room-head reveal">
+          <h2 id="output-title" class="display h-room">Compiles to JavaScript.<br /><span class="dim">Like TypeScript did.</span></h2>
+          <p class="lede">
+            No new runtime, no wasm blob, no fork of TypeScript. A <code>.efx</code> file becomes readable Effect TypeScript, and then the JavaScript your bundler already makes. It runs wherever Effect runs, starting with the browser.
+          </p>
+        </div>
+        <div class="pipeline reveal" aria-label="The compilation pipeline">
+          <div class="stage"><b>users.efx</b><span>What you and your agents write and review.</span></div>
+          <svg class="arrow" width="28" height="12" viewBox="0 0 28 12" aria-hidden="true"><path d="M0 6h25M20 1l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>
+          <div class="stage"><b>users.ts</b><span>Idiomatic Effect v4, with source maps back to every <code>.efx</code> line.</span></div>
+          <svg class="arrow" width="28" height="12" viewBox="0 0 28 12" aria-hidden="true"><path d="M0 6h25M20 1l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>
+          <div class="stage"><b>users.js</b><span>Plain JavaScript from tsc, Vite or Bun. Nothing to ship but Effect.</span></div>
+        </div>
+        <div class="compare reveal">
+          <div>
+            <p class="pane-head"><b>users.efx</b><span>{outputExample.efxTokens} tokens</span></p>
+            <pre class="code-block"><code set:html={output.efx} /></pre>
+          </div>
+          <div>
+            <p class="pane-head"><b>users.ts, compiled when this page was built</b><span>{outputExample.tsTokens} tokens</span></p>
+            <pre class="code-block"><code set:html={output.ts} /></pre>
+          </div>
+        </div>
+        <ul class="checks reveal">
+          <li><strong>The compiler runs in your browser</strong>Plain JavaScript, no wasm. The playground runs the real compiler in a Web Worker.</li>
+          <li><strong>Errors point at your file</strong>tsc diagnostics and stack traces map back to <code>.efx</code> lines.</li>
+          <li><strong>Two-way</strong><code>efx convert</code> turns Effect TypeScript into EffectScript, and every <code>.efx</code> compiles back.</li>
         </ul>
       </div>
     </section>
 
-    <section class="mx-auto max-w-7xl px-4 py-20">
-      <p class="label">// Effect's libraries, as language</p>
-      <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">Tests, HTTP, CLIs, config. Built in.</h2>
-      <div class="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {highlighted.map((c) => (
-          <article class="flex min-w-0 flex-col rounded-xl border border-line bg-tile/50 p-5">
-            <h3 class="font-mono text-sm text-white">{c.name}</h3>
-            <p class="mt-1 text-sm text-subtle">{c.what}</p>
-            <pre class="mt-4 overflow-x-auto rounded-md bg-[#1e1e1e] p-3 text-[12px] leading-[1.6]"><code set:html={c.html} /></pre>
-          </article>
-        ))}
+    <section id="strict" class="room" aria-labelledby="strict-title" data-room="strict" data-label={`${number("strict")} / ${placard("strict").name}`}>
+      <div class="room-bg">
+        <Picture name="strict" alt="A machinist's steel square, feeler gauges and a gauge block on black granite" position="72% 50%" />
       </div>
-    </section>
-
-    <section class="border-y border-line">
-      <div class="mx-auto max-w-7xl px-4 py-20">
-        <p class="label">// zero risk</p>
-        <h2 class="headline-fade mt-3 font-display text-4xl font-bold tracking-tight">Every TypeScript file is already EffectScript.</h2>
-        <div class="mt-10 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-2 lg:grid-cols-4">
-          <div class="bg-ink p-5"><h3 class="font-medium">A superset</h3><p class="mt-2 text-sm text-subtle">Rename <code>.ts</code> to <code>.efx</code> and nothing changes. Use the new syntax where it helps.</p></div>
-          <div class="bg-ink p-5"><h3 class="font-medium">Two-way</h3><p class="mt-2 text-sm text-subtle"><code>efx convert</code> turns Effect TypeScript into EffectScript, and every <code>.efx</code> compiles back to plain TypeScript. Leave any time.</p></div>
-          <div class="bg-ink p-5"><h3 class="font-medium">Mixed projects</h3><p class="mt-2 text-sm text-subtle"><code>.ts</code> imports <code>.efx</code> and back, with full IntelliSense in VS Code, Neovim, Helix and other LSP clients.</p></div>
-          <div class="bg-ink p-5"><h3 class="font-medium">Your tools</h3><p class="mt-2 text-sm text-subtle">tsc, Vite, Vitest, Bun, Node, VS Code, Neovim, Helix. No new runtime: the output is Effect.</p></div>
+      <div class="wrap">
+        <Placard {...placard("strict")} />
+        <div class="room-head reveal">
+          <h2 id="strict-title" class="display h-room">Stricter than TypeScript.</h2>
+          <p class="lede">
+            TypeScript can't see an effect that never runs, or a Promise awaited where an effect belongs. The EffectScript compiler can, and says how to fix it. These are its messages, produced when this page was built.
+          </p>
+        </div>
+        <div class="diagnostics">
+          {
+            diagnosed.map((m) => (
+              <article class="diagnostic reveal">
+                <h3>{m.title}</h3>
+                <pre class="code-block"><code set:html={m.html} /></pre>
+                {m.diagnostics.map((d) => (
+                  <p class={`problem ${d.severity}`}>
+                    <span class={`sev ${d.severity}`}>{d.severity === "error" ? "! error" : "▲ warning"}</span>
+                    <b>{d.code}</b>
+                    {d.message}
+                    {d.hint && <span class="hint">→ {d.hint}</span>}
+                  </p>
+                ))}
+              </article>
+            ))
+          }
         </div>
       </div>
     </section>
 
-    <section class="mx-auto max-w-7xl px-4 py-20">
-      <p class="label">// roadmap · future work, not shipped</p>
-      <h2 class="headline-fade mt-3 font-display text-3xl font-bold tracking-tight">Where it goes next</h2>
-      <ul class="mt-6 grid gap-3 text-sm text-subtle sm:grid-cols-2">
-        <li class="rounded-lg border border-dashed border-line p-4">Proofs: checked properties with Lean 4 or Bend2 behind the same syntax.</li>
-        <li class="rounded-lg border border-dashed border-line p-4">Infrastructure as constructs, on Alchemy.</li>
-        <li class="rounded-lg border border-dashed border-line p-4">Output shaped for ahead-of-time compilers.</li>
-        <li class="rounded-lg border border-dashed border-line p-4">Lint rules that read EffectScript directly, in oxlint.</li>
-      </ul>
+    <section id="extensions" class="room" aria-labelledby="extensions-title" data-room="extensions" data-label={`${number("extensions")} / ${placard("extensions").name}`} data-extensions>
+      <div class="room-bg from-right">
+        <Picture name="extensions" alt="A dark wall of recessed niches, some holding a white stone module that fits exactly" position="78% 50%" />
+      </div>
+      <div class="wrap">
+        <Placard {...placard("extensions")} note="▲ Roadmap: not shipped, syntax may change" warn />
+        <div class="room-head reveal">
+          <h2 id="extensions-title" class="display h-room">Extensions, not dialects.</h2>
+          <p class="lede">
+            Some abstractions aren't Effect's but are worth being language: proofs, infrastructure, user interfaces. They come as extensions you switch on per project. No two extensions claim the same syntax, so any combination works, and switching one off never changes what the rest of your code means.
+          </p>
+        </div>
+        <div class="ext">
+          {
+            keywords.extensions.map((x) => (
+              <button type="button" class="ext-card reveal" aria-pressed="false" data-ext={x.id}>
+                <span class="ext-top">
+                  <span class="h-tile">{x.name}</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </span>
+                <span class="ext-on">On {x.on}</span>
+                <p>{x.what}</p>
+              </button>
+            ))
+          }
+        </div>
+        <ul class="keywords reveal" aria-label="Keywords: the language's today, and the ones each extension adds">
+          {keywords.core.map((k) => <li>{k}</li>)}
+          {keywords.extensions.flatMap((x) => x.adds.map((k) => <li data-ext={x.id}>{k}</li>))}
+        </ul>
+        <p class="keywords-note mono-note">Solid: keywords today. Dashed: what each extension would add. Switch them on and off; none overlaps another.</p>
+      </div>
     </section>
 
-    <section class="border-t border-line bg-tile/40">
-      <div class="mx-auto max-w-7xl px-4 py-20">
-        <h2 class="headline-fade font-display text-4xl font-bold tracking-tight">Start in a minute.</h2>
-        <pre class="mt-8 max-w-2xl min-w-0 overflow-x-auto rounded-lg border border-line bg-[#1e1e1e] p-4 text-[13px] leading-[1.7]"><code set:html={install} /></pre>
-        <div class="mt-6 flex flex-wrap gap-3">
-          <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install">Read the docs</a>
-          <a class="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:bg-tile" href="/playground">Open the playground</a>
+    <section id="superset" class="room" aria-labelledby="superset-title" data-room="superset" data-label={`${number("superset")} / ${placard("superset").name}`}>
+      <div class="room-bg">
+        <Picture name="superset" alt="A white marble cube resting exactly inside a clear glass cube" position="58% 50%" />
+      </div>
+      <div class="wrap">
+        <Placard {...placard("superset")} />
+        <div class="room-head reveal">
+          <h2 id="superset-title" class="display h-room">Every TypeScript file is already EffectScript.</h2>
+          <p class="lede">The same philosophy as TypeScript: a superset, adopted one line at a time, never a new language to migrate to.</p>
         </div>
-        <Follow />
+        <div class="zero reveal">
+          <div><h3 class="h-tile">A superset</h3><p>Rename <code>.ts</code> to <code>.efx</code> and nothing changes. Use the new syntax where it helps.</p></div>
+          <div><h3 class="h-tile">Mixed projects</h3><p><code>.ts</code> imports <code>.efx</code> and back, with full IntelliSense in VS Code, Neovim and Helix.</p></div>
+          <div><h3 class="h-tile">No lock-in</h3><p><code>efx convert</code> turns Effect TypeScript into EffectScript, and every <code>.efx</code> compiles back. Leave any time.</p></div>
+          <div><h3 class="h-tile">Your tools</h3><p>tsc, Vite, Vitest, Bun, Node, VS Code, Neovim, Helix. No new runtime: the output is Effect.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lockstep" class="room" aria-labelledby="lockstep-title" data-room="lockstep" data-label={`${number("lockstep")} / ${placard("lockstep").name}`}>
+      <div class="room-bg from-right">
+        <Picture name="lockstep" alt="An armillary sphere with two rings locked at the same angle" position="75% 50%" />
+      </div>
+      <div class="wrap">
+        <Placard {...placard("lockstep")} />
+        <div class="room-head reveal">
+          <h2 id="lockstep-title" class="display h-room">Built on Effect.<br /><span class="dim">Versioned with it.</span></h2>
+          <p class="lede">
+            A language built on a library moves when the library does. EffectScript's version names the Effect it targets, and its builtins are generated from that release.
+          </p>
+        </div>
+        <div class="lock">
+          <div class="dial reveal">
+            <Scene scene="lockstep" data={{ dpr: "2", "still-time": "7.2" }} />
+            <p class="dial-label">effect · effectscript<b>4.0</b></p>
+          </div>
+          <div class="reveal">
+            <div class="lock-rows">
+              <div class="row"><code>effectscript@4.0.x</code><span>targets <code>effect@4.0.*</code>. When Effect ships 4.1, EffectScript 4.1 follows.</span></div>
+              <div class="row"><code>4.0.0-alpha.N</code><span><span class="pill warn">▲ alpha</span> Its own tag while the language settles. Breaking changes are allowed in alpha, and called out.</span></div>
+              <div class="row"><code>prelude</code><span>Regenerated from each Effect release's source. Nothing becomes a builtin without review.</span></div>
+            </div>
+            <p class="body" style="margin-top:28px">A file can say which Effect it targets, so an agent reading one pasted file knows which API it's looking at:</p>
+            <pre class="code-block" style="margin-top:14px"><code set:html={header} /></pre>
+          </div>
+        </div>
+        <div class="room-head reveal" style="margin-top:88px">
+          <h3 class="display h-room" style="font-size:clamp(1.8rem,3vw,3rem)">A moving target, on purpose.</h3>
+          <p class="body">
+            EffectScript is an open experiment, built on Effect and not an official Effect project. The language is still being shaped: try it, let your agents try it, and tell us what to change.
+          </p>
+          <div class="hero-actions" style="margin-top:24px">
+            <a class="btn btn-ghost" href="https://github.com/EffectScript-Lang/effectscript/issues">Open an issue</a>
+            <a class="btn btn-link" href="https://x.com/gunta85">Follow @gunta85 →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="start" class="close" aria-labelledby="start-title" data-room="start" data-label={`${number("start")} / ${placard("start").name}`}>
+      <Scene scene="ceremony" data={{ sheet: JSON.stringify(ceremonySheet.slice(0, 24)), tangle: "0.45", dpr: "1.25", "beam-y": "auto", converge: "0.34", "still-time": "6" }} />
+      <div class="wrap">
+        <Placard {...placard("start")} />
+        <h2 id="start-title" class="display reveal"><span class="headline-fade">All of Effect.</span><br /><span class="dim">None of the ceremony.</span></h2>
+        <div class="terminal reveal">
+          <div class="terminal-bar"><i></i><i></i><i></i><span>zsh</span></div>
+          <pre class="code-block"><code set:html={install} /></pre>
+        </div>
+        <div class="hero-actions reveal">
+          <a class="btn btn-solid" href="/docs/start/install">Read the docs</a>
+          <a class="btn btn-ghost" href="/playground">Open the playground</a>
+        </div>
+        <div class="reveal" data-beam-anchor><Follow /></div>
       </div>
     </section>
   </main>
+
+  <aside class="chapters" aria-hidden="true">
+    <span class="chapters-name"></span>
+    <span class="chapters-track"><span class="chapters-fill"></span></span>
+  </aside>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p>EffectScript is made by @gunta85. Built on Effect; not affiliated with or endorsed by Effectful Technologies.</p>
+      <ul>
+        <li><a href="/docs">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="/llms.txt">llms.txt</a></li>
+        <li><a href="https://github.com/EffectScript-Lang/effectscript">GitHub</a></li>
+        <li><a href="https://x.com/gunta85">@gunta85</a></li>
+      </ul>
+    </div>
+  </footer>
 </Base>
 
 <script>
+  import { start } from "../src/scenes/runtime.ts"
+  import { factories } from "../src/scenes/scenes.ts"
+
+  document.documentElement.classList.add("js")
+  void start(factories)
+
+  // reveals: visible by default, faded in once as they enter
+  const reveal = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        entry.target.classList.add("in")
+        reveal.unobserve(entry.target)
+      }
+    },
+    { rootMargin: "0px 0px -8% 0px" }
+  )
+  for (const el of document.querySelectorAll(".reveal")) reveal.observe(el)
+
+  // the chapter index at the right edge
+  const index = document.querySelector<HTMLElement>(".chapters")
+  const rooms = [...document.querySelectorAll<HTMLElement>("[data-room]")]
+  if (index !== null) {
+    const name = index.querySelector<HTMLElement>(".chapters-name")!
+    const update = () => {
+      const middle = window.innerHeight * 0.5
+      let current = -1
+      for (const [i, room] of rooms.entries()) if (room.getBoundingClientRect().top <= middle) current = i
+      index.classList.toggle("on", current >= 0)
+      if (current < 0) return
+      const room = rooms[current]!
+      const [num, label] = (room.dataset.label ?? "").split(" / ")
+      name.textContent = `${num} / ${String(rooms.length).padStart(2, "0")}  ${label ?? ""}`
+      index.style.setProperty("--progress", String((current + 1) / rooms.length))
+    }
+    addEventListener("scroll", update, { passive: true })
+    update()
+  }
+
+  // extensions: switch them on and off; their keywords light up, and nothing else changes
+  for (const room of document.querySelectorAll<HTMLElement>("[data-extensions]")) {
+    for (const card of room.querySelectorAll<HTMLButtonElement>(".ext-card")) {
+      card.addEventListener("click", () => {
+        const on = card.getAttribute("aria-pressed") !== "true"
+        card.setAttribute("aria-pressed", String(on))
+        for (const k of room.querySelectorAll<HTMLElement>(`.keywords [data-ext="${card.dataset.ext}"]`)) k.classList.toggle("lit", on)
+      })
+    }
+  }
+
+  // the gallery's tabs (the ARIA tabs pattern) and token toggle
   for (const gallery of document.querySelectorAll<HTMLElement>("[data-gallery]")) {
     const tabs = [...gallery.querySelectorAll<HTMLButtonElement>(".scenario-tab")]
     const panels = [...gallery.querySelectorAll<HTMLElement>("[data-scenario-panel]")]
@@ -169,7 +682,7 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
     }
     for (const [i, tab] of tabs.entries()) {
       tab.addEventListener("click", () => select(tab.dataset.scenario!))
-      // the ARIA tabs pattern: arrows move between tabs, Home and End jump to the ends
+      // arrows move between tabs, Home and End jump to the ends
       tab.addEventListener("keydown", (event) => {
         const next = event.key === "ArrowRight"
           ? (i + 1) % tabs.length

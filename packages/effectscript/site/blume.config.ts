@@ -3,6 +3,7 @@
  * `scripts/content.ts` and mounted at /docs; the landing page, the playground and the teaser are
  * custom pages in `pages/`. The look is the public EffectScript theme, `effectscript/blume`.
  */
+import { wgslVitePlugin } from "@vgpu/wgsl/loader-vite"
 import { defineConfig } from "blume"
 import { effectscript, frontmatter, markdown, theme } from "effectscript/blume"
 
@@ -34,5 +35,12 @@ export default defineConfig({
     cta: { label: "Playground", href: "https://effectscript.dev/playground" }
   },
   deployment: { site: "https://effectscript.dev" },
-  integrations: [effectscript()]
+  integrations: [
+    effectscript(),
+    // `.wgsl` imports for the landing page's WebGPU scenes, resolved and minified by vgpu (ADR-0082)
+    {
+      name: "effectscript-site-wgsl",
+      hooks: { "astro:config:setup": ({ updateConfig }) => updateConfig({ vite: { plugins: [wgslVitePlugin()] } }) }
+    }
+  ]
 })

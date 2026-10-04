@@ -1,0 +1,13 @@
+---
+/** A room's placard: its number and name, as on a gallery wall. */
+interface Props {
+  number: string
+  name: string
+  note?: string
+  /** The note is a warning, in the Warn signal (ADR-0078): roadmap and preview notes. */
+  warn?: boolean
+}
+const { name, note, number, warn = false } = Astro.props
+---
+
+<p class="placard"><span>{number} / {name}</span>{note && <span class:list={["placard-note", { warn }]}>{note}</span>}</p>

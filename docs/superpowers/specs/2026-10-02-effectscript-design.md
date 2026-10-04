@@ -350,21 +350,23 @@ The set is every prelude module whose same-named type exists, verified by a test
 `Sink`, `Channel`, `Metric`, `Config`, `Context`, `Brand`, `Semaphore`, `Latch`, `Pool`,
 `ManagedRuntime`.
 
-### 4.6 `schema`: data types that are TypeScript types
+### 4.6 `schema` and `brand`: data types that are TypeScript types
 
-Three forms:
+Three `schema` forms, plus `brand` for a branded type (ADR-0077):
 
 ```ts
+brand UserId = string                      // brand form → const + type, keyed "UserId"
+
 schema User {                              // class form → Schema.Class
   id: UserId
   name: string
   email?: string
-  age = Int.check(isGreaterThan(0))        // `=` field: schema expression (Schema builtins)
+  age: Int where isGreaterThan(0)          // `where`: checks on the field
+  joinedAt = DateTimeUtcFromString         // `=` field: schema expression (Schema builtins)
   get label() { return `${this.name} <${this.email ?? "?"}>` }
 }
 
-schema UserId = string & Brand<"UserId">   // alias form → const + type
-schema Point = { x: number; y: number }
+schema Point = { x: number; y: number }    // alias form → const + type
 
 schema Shape =                             // ADT form → TaggedClass per variant + Union
   | Circle { radius: number }
@@ -374,16 +376,17 @@ schema Shape =                             // ADT form → TaggedClass per varia
 →
 
 ```ts
+const UserId = Schema.String.pipe(Schema.brand("UserId"))
+type UserId = typeof UserId.Type
 class User extends Schema.Class<User>("User")({
   id: UserId,
   name: Schema.String,
   email: Schema.optionalKey(Schema.String),
-  age: Schema.Int.check(Schema.isGreaterThan(0))
+  age: Schema.Int.check(Schema.isGreaterThan(0)),
+  joinedAt: Schema.DateTimeUtcFromString
 }) {
   get label() { return `${this.name} <${this.email ?? "?"}>` }
 }
-const UserId = Schema.String.pipe(Schema.brand("UserId"))
-type UserId = typeof UserId.Type
 const Point = Schema.Struct({ x: Schema.Number, y: Schema.Number })
 type Point = typeof Point.Type
 class Circle extends Schema.TaggedClass<Circle>()("Circle", { radius: Schema.Number }) {}
@@ -395,6 +398,59 @@ type Shape = typeof Shape.Type
 Tagged classes: if the class form contains a field `_tag: "Lit"`, it becomes
 `Schema.TaggedClass<X>()("Lit", { …other fields })`. ADT variants are this shorthand with
 `_tag` = the variant name. A unit variant is written `Empty {}`.
+
+**Brands** (ADR-0077). `[export] brand Name = Type [where …]` compiles to
+`const Name = <schema of Type>[.check(…)].pipe(Schema.brand("Name"))` and
+`type Name = typeof Name.Type`. The key is the declaration's name. `Type` is anything a schema
+position accepts, so a brand of a brand (`brand AdminId = UserId`) carries both brands. It can't
+include `null` or `undefined` (**EFX3006**): brand the value, and write `Name | null` where it's
+used. Type parameters are an error (EFX3002). `Name.make(value)` runs the checks and throws when
+one fails. `T & Brand<"X">` (in the table below) still writes a brand whose key isn't the
+declaration's name, or a second brand.
+
+**Checks: `where`** (ADR-0077). A declaration's type (`brand`, the alias form) or a schema field's
+type can end with `where` and a comma-separated list of checks. The list compiles to one
+`.check(…)`, with Schema builtins bare as in `=` fields:
+
+```ts
+brand Port = Int where isBetween({ minimum: 1, maximum: 65535 })
+
+schema Server {
+  host: string where isNonEmpty()
+  port: Port
+  alias?: string where isMaxLength(20)
+  owner: string | null where isMaxLength(64)
+}
+```
+
+→
+
+```ts
+const Port = Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 65535 })).pipe(Schema.brand("Port"))
+type Port = typeof Port.Type
+class Server extends Schema.Class<Server>("Server")({
+  host: Schema.String.check(Schema.isNonEmpty()),
+  port: Port,
+  alias: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(20))),
+  owner: Schema.NullOr(Schema.String.check(Schema.isMaxLength(64)))
+}) {}
+```
+
+- **Schema fields** are those of `schema` and `error` bodies, ADT variants, members of a type
+  literal in a schema position (the alias form, nested objects, `group` endpoint sections), and the
+  parameters of `rpc`, `tool`, `entity` and `workflow` signature lines (§4.14).
+- **`null` and `undefined` stay outside the checks.** The checks apply to the type without its
+  top-level `null` and `undefined` members, which wrap the result (`Schema.NullOr`, `UndefinedOr`,
+  `NullishOr`). An optional field's `optionalKey` or `optional` wraps it too. A check on the whole
+  union is an `=` field.
+- **Not allowed** (**EFX3005**) on a nested type (an array element, a union member, a type
+  argument), on `config` fields, or on `command` parameters. The hint suggests an `=` field, or a
+  `brand` or alias used as the field's type.
+- **Layout:** `where` is on the same line as the end of the type, so a member named `where` on the
+  next line keeps its meaning. The list continues onto the next line after `where` or after a
+  comma. It ends at `;`, a closing bracket, a line break that doesn't follow a comma, or a comma
+  followed by the next member or parameter: a name (an identifier or a string, optionally after
+  `readonly`) and `:` or `?:`.
 
 **Type → Schema mapping.** This applies in schema positions only. The table is maintained in code
 and tested.
@@ -417,6 +473,7 @@ and tested.
 | `{ a: T; b?: U }`                           | `Schema.Struct({ a: T, b: Schema.optionalKey(U) })` |
 | `b?: U \| undefined` (field)                | `b: Schema.optional(U)` (accepts an explicit `undefined`) |
 | `T & Brand<"X">`                            | `T.pipe(Schema.brand("X"))`                      |
+| `T where c1, c2` (ends a field or declaration) | `T.check(c1, c2)`, inside any `NullOr`/`optionalKey` wrapper |
 | Schema vocabulary: `Int`, `Finite`, `NonEmptyString`, `Trimmed`, `DateTimeUtc` | `Schema.Int`, … |
 | `Defect`                                    | `Schema.Defect()`                               |
 | `Name` (other identifier)                   | `Name` (must be a schema value)                  |
@@ -444,8 +501,8 @@ class UserNotFound extends Schema.TaggedError<UserNotFound>()("UserNotFound", { 
 class DbError extends Schema.TaggedError<DbError>()("DbError", { cause: Schema.Defect() }) {}
 ```
 
-The body uses the same rules as the `schema` class form: fields, `=` fields, and methods. A
-`_tag: "X"` field overrides the tag.
+The body uses the same rules as the `schema` class form: fields (with `where` checks), `=` fields,
+and methods. A `_tag: "X"` field overrides the tag.
 
 **HTTP status** (ADR-0064): `error TodoNotFound status 404 { id: string }` adds Effect's own
 annotation, which `HttpApi` answers with: `Schema.TaggedError<TodoNotFound>()("TodoNotFound", { id:
@@ -790,7 +847,7 @@ export const UsersHandlers = HttpApiBuilder.group(Api, "users", Effect.fn("Api.u
 
 - **Endpoint line:** `<method> <name> "<path>" [(sections)] [: Success] [throws E1 | E2]`. The
   method is one of `get post put patch del head options`. The sections are `params`, `query`,
-  `payload`, and `headers`, typed with §4.6 types.
+  `payload`, and `headers`, typed with §4.6 types; their fields take `where` checks.
 - **Name strings:** the identifier string is optional. It defaults to the camelCase name with a
   trailing `Api`/`Group` removed (`UsersApi` → `"users"`).
 - **`impl` bodies** are `effect` bodies. Their top-level `return { … }` is wrapped in
@@ -816,9 +873,10 @@ export const UsersLive = impl UsersRpc {
 User, error: UserNotFound }), …)` and `UsersRpc.toLayer(Effect.gen(function*() { … return
 UsersRpc.of({ … }) }))`.
 
-- **Signature lines** (shared with `entity` and `tool`): the fields are the payload's struct fields
-  (`x?: T` is an optional key); no fields → no payload; no return type → `void`; `throws A | B` →
-  `Schema.Union([A, B])`. A `Stream<A>` (or `Stream<A, E>`) return type is a streaming RPC.
+- **Signature lines** (shared with `entity`, `tool` and `workflow`): the fields are the payload's
+  struct fields (`x?: T` is an optional key; `x: T where c` checks it, §4.6); no fields → no
+  payload; no return type → `void`; `throws A | B` → `Schema.Union([A, B])`. A `Stream<A>` (or
+  `Stream<A, E>`) return type is a streaming RPC.
 - **`impl Name { … }`** works for any value with `toLayer` and `of` (`RpcGroup`, `Toolkit`,
   `Entity`): every top-level `return { … }` is wrapped in `Name.of(…)`, `effect` methods are
   spanned `Name.method`, and pipes apply to the layer. `impl Api.group` keeps its HttpApi meaning.
@@ -845,7 +903,8 @@ export const AssistantLive = impl Assistant { return { GetForecast: effect ({ ci
 city.", parameters: Schema.Struct({ city: Schema.String, days: Schema.optionalKey(Schema.Number)
 }), success: Forecast, failure: UnknownCity })` and `const Assistant = Toolkit.make(GetForecast,
 GetTime)`. The doc comment is the description the model reads; the comment stays in the output.
-Tool handlers get the parameters; `impl` is as for `rpc`.
+A parameter's `where` checks (§4.6) are in the parameters' JSON Schema too (`minLength`,
+`minimum`, …), so the model sees them. Tool handlers get the parameters; `impl` is as for `rpc`.
 
 #### `entity` (`effect/cluster`, ADR-0071)
 
@@ -958,6 +1017,8 @@ const AppConfig = Config.all({
   - A literal union uses `Config.Literals([…], KEY)`.
   - Any other name is a schema: `Config.schema(Name, KEY)`.
   - Anything else is **EFX3010**.
+- A `where` clause is refused (**EFX3005**). To check a config value, give the field a `brand` or
+  alias type that carries the checks (ADR-0077).
 
 #### `atom` (`effect/reactivity`, for frontends)
 
@@ -1080,6 +1141,8 @@ the roadmap.
 | ----------------- | ---------------------------------------------------------------------------------------- |
 | `effect`              | Followed on the same line by an identifier (declaration), `{` (block), or arrow parameters followed by `=>` (arrow; speculative parse with `effect` falling back to an identifier) |
 | `schema` `error` `service` `group` `api` `rpc` `command` `config` `atom` `layer` | Statement position (optionally after `export`), followed on the same line by an identifier |
+| `brand`           | Statement position (optionally after `export`), followed on the same line by an identifier and `=` |
+| `where`           | On the same line as the end of a schema field's type or a `brand`/`schema` alias's type (§4.6) |
 | `test` `describe` (+ `.live/.skip/.only`) | Statement position, followed on the same line by a string literal |
 | `doctest`         | Statement position, followed on the same line by a string literal (docs spec §2.3)      |
 | `impl`            | Expression position, followed on the same line by `Ident.ident {` or `Ident {` (not `as`, `satisfies`, `in`, `instanceof`, `of`) |
@@ -1195,6 +1258,7 @@ library constructs and ambient forms in Plan 7 (ADR-0031).
 | `class X extends Schema.Class<X>("X")({…}) {…}`                                     | `schema X {…}`                        |
 | `class X extends Schema.TaggedClass<X>()("T", {…}) {…}`                             | `schema X { _tag: "T"; … }`; a run of these plus `Schema.Union([...])` → the ADT form |
 | `const X = <schema expr>` plus `type X = typeof X.Type`                              | `schema X = <type>`                   |
+| `const X = <schema expr>.pipe(Schema.brand("X"))` plus `type X = typeof X.Type`; with `.check(…)` before the brand | `brand X = <type>`; `brand X = <type> where …` (ADR-0077) |
 | `class X extends Schema.TaggedError<X>()("X", {…}) {…}`                             | `error X {…}` (or a `_tag` field when the tag differs) |
 | `class S extends Context.Service<S, {…}>()("key") { static readonly layer… }`       | `service S [as "key"] { … layer … }` |
 | `Match.valueTags(x, {…})` / `Match.value(x).pipe(Match.tag/when…, orElse/exhaustive)` with expression arrows | `match (x) { when … }` |
@@ -1210,8 +1274,10 @@ library constructs and ambient forms in Plan 7 (ADR-0031).
 | `Effect.x(…)` / `Layer.x(…)` in layer pipes / … where `x` is free and not excluded    | `x(…)` (builtins, §4.13)              |
 | `import { …prelude names } from "effect"`                                            | removed                               |
 
-Schema fields use the reverse of the §4.6 table. A field whose schema is not in the table becomes
-an `=` field, so it is lossless.
+Schema fields use the reverse of the §4.6 table. A field whose schema is one `.check(…)` on a
+schema in the table, alone or inside `optionalKey`, `optional`, `NullOr`, `UndefinedOr` or
+`NullishOr`, becomes a `where` field (ADR-0077). A field whose schema is not in the table becomes an
+`=` field, so it is lossless.
 
 ### 6.3 Blockers (leave the node as TypeScript)
 
@@ -1281,6 +1347,7 @@ Unsupported shapes stay TypeScript, with an explanation.
   - `main` moves to the end of the module.
   - Parentheses the forward compiler restores, such as `(await t) + n`, are dropped.
   - `ReadonlyArray<T>` in a schema → `Array<T>`.
+  - `schema X = T & Brand<"X">` → `brand X = T`, and `x = T.check(c)` → `x: T where c` (ADR-0077).
   - Class members of a `schema` come after its fields.
   - Explicit `Effect.fn.Return<A, never>` keeps `throws never`.
   - A first Hack step that the forward compiler inlined stays a call.
@@ -1615,9 +1682,11 @@ the diff of newly exposed names for review, and nothing becomes a builtin unrevi
 
 **Status (Plan 16, ADR-0054):** built and tested locally; not deployed.
 
-- **The landing page:** the problem → solution hero; a VS Code-style gallery of the ten
-  scenarios, with real `o200k_base` counts and a token toggle; the agents, constructs,
-  zero-risk, roadmap and install sections; and the Follow call to action.
+- **The landing page (ADR-0082):** an exhibition of thirteen rooms, each with a live WebGPU scene
+  (vgpu) or a generated monochrome photograph, one artifact and a placard: the film, ceremony,
+  translation, the standard library bento, the VS Code-style gallery of the ten scenarios (real
+  `o200k_base` counts and a token toggle), intent, agents, output, strict, extensions (roadmap),
+  superset, lockstep and start; and the Follow call to action.
 - **The playground:** two-way, with the compiler in a worker, presets and share links.
 - **Starlight docs:** the reference, the guides, and the Effect docs in EffectScript, plus
   `llms.txt`.
@@ -1634,25 +1703,47 @@ The site lives in this monorepo, so there are no separate repos to maintain. Its
 
 ### 9.1 Audience and pitch
 
-The page must sell the idea in seconds. It opens with **the problem, then the solution**, and
-speaks to two groups:
+The page must sell the idea in seconds. It speaks to three groups, in this order (ADR-0082):
 
-1. **People who wanted Effect but could not stand the verbosity.**
-2. **Effect users who want code that is easier to read and review.**
+1. **TypeScript developers new to Effect**, who wanted typed errors and services but bounced off
+   `Effect.gen` and `yield*`. They lead: the hero says "The standard library TypeScript never got.
+   Now native."
+2. **Effect users who want code that is easier to write, read and review.**
+3. **Agent-first builders**, whose agents write most of the code: abstractions matter more when
+   nobody reads every line, and clearer, shorter code matters when someone does.
 
-The message: the same Effect, as a language. It is less verbose, stricter than TypeScript, built
-for agents (fewer tokens, one canonical way to write things), and has no lock-in (two-way compiler,
-any TS is valid).
+The message: Effect is the standard library TypeScript never got, and EffectScript makes it the
+language. It is pragmatic in TypeScript's own way (a superset that compiles to JavaScript, with no
+new runtime and no wasm), an intent language (declarations instead of ceremony, about half the
+tokens on our samples), stricter than TypeScript, built for agents, extensible without dialects
+(ADR-0083), versioned with Effect, and free of lock-in (two-way compiler, any TS is valid). The page
+doesn't speak for Effect or its maintainers.
 
 **Credit:** the site says it is made by **@gunta85**, with a "Follow @gunta85" call to action in
 the hero, in the footer, and after the playground.
 
 ### 9.2 Page
 
-The narrative follows §0: Effect is settled → verbosity is the complaint → EffectScript → zero risk.
+The page is an exhibition (ADR-0082): numbered rooms in a dark room, each with one live WebGPU
+scene (vgpu) or monochrome photograph, one artifact and a placard. Every number and diagnostic is
+computed at build time. The narrative still follows §0: Effect is settled → ceremony is the
+complaint → EffectScript → zero risk. The rooms:
 
-1. **Problem → Solution hero.** A real Effect TS snippet next to its EffectScript twin, with live
-   token counts. The headline says the same thing ("Effect, as a language"), backed by the numbers.
+- **Hero:** the strands of the samples' compiled Effect TypeScript resolving into one beam, live;
+  the headline, the playground and install actions, and "Watch the film".
+- **01 The film:** the launch film's poster and stills; it premieres at launch.
+- **02 Ceremony** (a pinned chapter), then the ledger of what the compiler writes and the token
+  count drawn as cells.
+- **03 Translation:** the `async` ↔ `effect` table.
+- **04 The library:** a bento of what Effect gives TypeScript, three tiles with scenes.
+- **05 The gallery** (below), **06 Intent** (a pinned chapter and an annotated file),
+  **07 Agents**, **08 Output** (the compile pipeline and a compiled example), **09 Strict** (the
+  compiler's own diagnostics), **10 Extensions** (roadmap, ADR-0083), **11 Superset**,
+  **12 Lockstep** (§7.6), **13 Start** (install and follow).
+
+Details of the parts that carry over from the first page:
+
+1. **The hero's claim** is backed by a computed number (the services sample's saving).
 2. **Before/after gallery:** rendered as **real VS Code-style editor windows**, with title bar, tab
    strip (`orders.ts` · `orders.effect.ts` · `orders.efx`), activity bar, gutter line numbers,
    minimap strip, and status bar (language mode, `Ln/Col`, `UTF-8`).
@@ -1704,6 +1795,7 @@ The site started on the same tools as `Effect-TS/website` and moved to Blume (AD
 - Tailwind CSS 4
 - React 19 islands
 - `@effect/monaco-editor`
+- `vgpu` and `@vgpu/wgsl` for the landing page's WebGPU scenes (ADR-0082)
 - `motion` for animation
 - `astro-seo` plus generated Open Graph images
 
@@ -1823,7 +1915,12 @@ The order was revised after the plan review (ADR-0016).
 
 ## 14. Roadmap (explicitly out of v0.1)
 
-- More library constructs: a Foldkit-style `app` (Model/Message/update/view). (`rpc`, `tool`/
+- **Language extensions (ADR-0083).** Abstractions that aren't Effect's come as extensions a
+  project switches on: proofs (on Bend2), infrastructure (on Alchemy) and apps (Foldkit-style).
+  No two extensions, and no extension and the core, claim the same syntax, so switching any of them
+  on or off never changes what other code means. How a project enables them is still open.
+- More library constructs: a Foldkit-style `app` (Model/Message/update/view), as an extension.
+  (`rpc`, `tool`/
   `toolkit`, `entity` and `workflow` are in §4.14, ADR-0069…0072.)
 - Automatic layer wiring for `main` (whole-program analysis of which services are used).
 - Error-tolerant parsing that recovers at the statement level, for a smoother editor experience

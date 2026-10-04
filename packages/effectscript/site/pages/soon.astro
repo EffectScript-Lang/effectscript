@@ -1,39 +1,122 @@
 ---
 /**
- * The private-preview teaser (ADR-0073): what effectscript.dev shows to visitors without an invite.
- * It links nowhere inside the site, since every other page is invite-only during the preview.
+ * The private-preview teaser (ADR-0073, ADR-0082): the landing page's hero, its film and its
+ * ceremony room, for visitors without an invite. It links nowhere inside the site, since every
+ * other page is invite-only during the preview.
  */
-import CodeWindow from "../src/components/CodeWindow.astro"
-import Follow from "../src/components/Follow.astro"
-import { gallery, saving } from "../src/data/gallery.ts"
+import Nav from "../src/components/lp/Nav.astro"
+import Picture from "../src/components/lp/Picture.astro"
+import Placard from "../src/components/lp/Placard.astro"
+import Scene from "../src/components/lp/Scene.astro"
+import { film } from "../src/data/film.ts"
+import { ceremony, ceremonySheet, savings, totals } from "../src/data/lp.ts"
 import Base from "../src/layouts/Base.astro"
+// oxlint-disable-next-line import/no-unassigned-import -- Astro loads stylesheets by import
+import "../src/styles/lp.css"
 
-const scenarios = gallery()
-const hero = scenarios.find((s) => s.id === "services")!
-const totals = scenarios.reduce(
-  (sum, s) => ({ effect: sum.effect + s.panes[1].tokens, efx: sum.efx + s.panes[2].tokens }),
-  { effect: 0, efx: 0 }
-)
+const removed = ceremony.filter((c) => c.efx < c.effect)
 ---
 
-<Base title="EffectScript: private preview" description="EffectScript is TypeScript with Effect as native syntax. It is in private preview with Effect developers.">
-  <main>
-    <section class="relative overflow-hidden">
-      <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#27272a55_1px,transparent_1px),linear-gradient(to_bottom,#27272a55_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"></div>
-      <div class="relative mx-auto max-w-7xl px-4 pt-20 pb-16 sm:pt-28">
-        <p class="label">// private preview</p>
-        <h1 class="headline-fade mt-4 max-w-4xl font-display text-5xl font-bold tracking-[-0.025em] sm:text-7xl">All of Effect. None of the ceremony.</h1>
-        <p class="mt-6 max-w-2xl text-lg text-subtle">
-          EffectScript is TypeScript with Effect as syntax: <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, compiled to plain, idiomatic Effect TypeScript, {saving(totals.effect, totals.efx)}% shorter across our samples.
+<Base title="EffectScript: private preview" description="EffectScript is TypeScript with Effect as native syntax: the standard library TypeScript never got. It is in private preview with Effect developers.">
+  <Nav teaser />
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title" data-pointer-area>
+      <Scene
+        scene="ceremony"
+        poster="hero-plate"
+        alt=""
+        position="40% 70%"
+        eager
+        data={{ sheet: JSON.stringify(ceremonySheet), pointer: "1", dpr: "1.25", "beam-y": "auto", converge: "0.76", "still-time": "6" }}
+      />
+      <div class="hero-copy wrap">
+        <p class="label">// Private preview</p>
+        <h1 id="hero-title" class="display h-hero">
+          <span class="headline-fade">The standard library<br /> TypeScript never got.</span>
+          <span class="dim">Now native.</span>
+        </h1>
+        <p class="lede">
+          EffectScript is TypeScript with Effect as syntax: write <code>async</code>, <code>await</code>, <code>throw</code> and <code>try</code>, and get typed errors, services, retries and tracing, compiled to plain, idiomatic Effect TypeScript. It's in a private preview with Effect developers; the public launch is coming soon.
         </p>
-        <p class="mt-4 max-w-2xl text-lg text-subtle">
-          It is in a private preview with Effect developers right now. The public launch is coming soon.
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="https://x.com/gunta85">Follow @gunta85 for the launch</a>
+          <a class="btn btn-link" href="#film">
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M7.25 5.75v6.5L12.5 9z" fill="currentColor"></path></svg>
+            The film · {film.duration}
+          </a>
+        </div>
+        <p class="hero-note mono-note" data-beam-anchor>
+          <strong>{savings.effect}% fewer tokens</strong> than the Effect TypeScript it compiles to, across our ten samples · o200k_base
         </p>
-        <div class="mt-14">
-          <CodeWindow title={`${hero.panes[2].name}: ${saving(hero.panes[1].tokens, hero.panes[2].tokens)}% fewer tokens than the Effect TypeScript it compiles to`} panes={[hero.panes[1], hero.panes[2]]} />
+      </div>
+    </section>
+
+    <section id="film" class="theater" aria-labelledby="film-title">
+      <Scene scene="theater" data={{ dpr: "1", "still-time": "5" }} />
+      <div class="wrap">
+        <Placard number="01" name="The film" note={`${film.duration} · made entirely from code`} />
+        <div class="room-head">
+          <h2 id="film-title" class="display h-room">Introducing EffectScript.</h2>
+          <p class="body">Every idea starts as one line. Effect gives that line superpowers, then buries it in ceremony. The film is about giving the line back.</p>
+        </div>
+        <div class="screen">
+          <Picture name="film-monolith-plain" alt="The ƒx mark as a monolith on a misty plain, a frame from the film" />
+          <div class="screen-veil">
+            <div class="play" role="img" aria-label={`The film, ${film.duration}, premieres at launch`}>
+              <span class="play-disc">
+                <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M10 6.5v17L24 15z" fill="currentColor"></path></svg>
+              </span>
+              <span class="play-label">Premieres at launch<span>{film.duration}</span></span>
+            </div>
+          </div>
+          <span class="screen-corner">Introducing EffectScript</span>
         </div>
       </div>
     </section>
-    <Follow />
+
+    <section class="room" aria-labelledby="ledger-title">
+      <div class="room-bg">
+        <Picture name="ceremony" alt="A plain light switch in the middle of a wall covered by a machine of pipes, valves and gears" position="62% 50%" />
+      </div>
+      <div class="wrap">
+        <Placard number="02" name="Ceremony" />
+        <div class="room-head">
+          <h2 id="ledger-title" class="display h-room">You wanted reliability.<br /><span class="dim">You got ceremony.</span></h2>
+          <p class="lede">
+            In our ten samples, EffectScript is {totals.efx.toLocaleString("en-US")} o200k_base tokens where the Effect TypeScript it compiles to is {totals.effect.toLocaleString("en-US")}: {savings.effect}% fewer. This is what the compiler writes so you don't:
+          </p>
+        </div>
+        <dl class="ledger" style="margin-top:48px">
+          {
+            removed.map((c) => (
+              <div>
+                <dt>{c.label}</dt>
+                <dd>
+                  <b>{c.effect}</b> written for you · {c.efx} by you
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </section>
+
+    <section id="start" class="close" aria-labelledby="start-title">
+      <Scene scene="ceremony" data={{ sheet: JSON.stringify(ceremonySheet.slice(0, 24)), tangle: "0.45", dpr: "1.25", "beam-y": "auto", converge: "0.34", "still-time": "6" }} />
+      <div class="wrap">
+        <h2 id="start-title" class="display"><span class="headline-fade">All of Effect.</span><br /><span class="dim">None of the ceremony.</span></h2>
+        <p class="lede" style="margin-top:28px">The public launch is coming soon. EffectScript is made by <a class="text-white underline decoration-line hover:decoration-white" href="https://x.com/gunta85">@gunta85</a>; built on Effect, not an official Effect project.</p>
+        <div class="hero-actions" data-beam-anchor>
+          <a class="btn btn-solid" href="https://x.com/gunta85">Follow @gunta85</a>
+        </div>
+      </div>
+    </section>
   </main>
 </Base>
+
+<script>
+  import { start } from "../src/scenes/runtime.ts"
+  import { factories } from "../src/scenes/scenes.ts"
+
+  void start(factories)
+</script>

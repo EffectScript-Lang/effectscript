@@ -75,8 +75,8 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0065](0065-effect-methods-in-classes.md) | `effect` methods in classes are prototype methods returning `Effect.gen` | Accepted |
 | [0066](0066-services-with-defaults.md) | A service with a `default` compiles to a `Context.Reference` | Accepted |
 | [0067](0067-generator-streams.md) | `effect*` declares a generator stream on `Stream.callback` | Accepted |
-| [0069](0069-rpc-groups-and-generic-impl.md) | `rpc` groups, signature lines, and a generic `impl Name` | Accepted |
 | [0068](0068-linked-dev-install-of-the-editor-extension.md) | The editor extension installs from the checkout as a symlink | Accepted |
+| [0069](0069-rpc-groups-and-generic-impl.md) | `rpc` groups, signature lines, and a generic `impl Name` | Accepted |
 | [0070](0070-tools-and-toolkits.md) | `tool` declares an AI tool with its doc comment as the description | Accepted |
 | [0071](0071-cluster-entities.md) | `entity` declares a cluster entity whose `impl` holds its state | Accepted |
 | [0072](0072-workflows-and-activities.md) | A `workflow` declaration carries its body as its layer; `activity` is an expression | Accepted |
@@ -84,10 +84,13 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0074](0074-proofs-through-bend2-from-one-source.md) | Proofs go through Bend2, from one `.efx` source; Lean 4 is dropped | Accepted |
 | [0075](0075-law-declarations.md) | `law` declares a rule the program must keep; it runs as a property test and is what a proof proves | Proposed |
 | [0076](0076-the-bend-model.md) | The Bend model: what translates, how it's encoded, and what stays opaque | Proposed |
+| [0077](0077-brand-declarations-and-where-checks.md) | `brand` takes its key from its name, and `where` adds checks | Accepted |
 | [0078](0078-signal-colours-for-state.md) | Signal colours for state in a monochrome brand | Accepted |
 | [0079](0079-effectscript-dev-on-blume-with-a-public-theme.md) | effectscript.dev moves to Blume, with a public EffectScript theme | Accepted |
 | [0080](0080-code-ligatures-on.md) | Code is set with JetBrains Mono's ligatures on | Accepted |
 | [0081](0081-signature-clause-scopes.md) | The grammar scopes an effect's success, error and requirement types | Accepted |
+| [0083](0083-language-extensions.md) | Abstractions outside Effect come as language extensions that never overlap | Accepted (mechanism open) |
+| [0082](0082-the-landing-page-as-an-exhibition.md) | The landing page is an exhibition: computed rooms, vgpu WebGPU scenes and generated photography | Accepted |
 
 ## Template
 

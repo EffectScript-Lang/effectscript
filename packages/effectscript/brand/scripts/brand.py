@@ -24,6 +24,7 @@ WORD_TRACKING = -0.022
 MARK_H_PER_CAP = 1.62  # mark height = 1.62 C
 GAP_PER_CAP = 0.62  # space between mark and wordmark = 0.62 C
 STACK_GAP_PER_CAP = 0.9
+DESCENDER_PER_CAP = 0.27  # room below the baseline for the p
 
 
 def svg(w, h, body, bg=None, extra_defs=""):
@@ -71,15 +72,26 @@ def wordmark(cap, x=0.0, baseline=0.0):
     return text_path(NAME, WORD_FONT, size, x, baseline, WORD_TRACKING)
 
 
-def lockup_horizontal(cap, color):
-    """Mark + wordmark on one line. Returns (body, width, height)."""
+def lockup_baseline(cap):
+    """The horizontal lockup's wordmark baseline, measured from the top of the mark."""
     mh = cap * MARK_H_PER_CAP
-    md, mw = mark_d(mh, 0, 0)
     # centre the cap height on the mark's x-height band, which is where the eye
     # reads the mark's weight
     xh_mid = (mark.XH + mark.BASE) / 2 - mark.BBOX_Y0
-    mid = xh_mid * mh / mark.BBOX_H
-    baseline = mid + cap / 2
+    return xh_mid * mh / mark.BBOX_H + cap / 2
+
+
+def lockup_horizontal_height(cap):
+    """The horizontal lockup's height with room for the p's descender, for files cropped to it:
+    the mark alone ends above the descender."""
+    return max(cap * MARK_H_PER_CAP, lockup_baseline(cap) + cap * DESCENDER_PER_CAP)
+
+
+def lockup_horizontal(cap, color):
+    """Mark + wordmark on one line. Returns (body, width, height); the height is the mark's."""
+    mh = cap * MARK_H_PER_CAP
+    md, mw = mark_d(mh, 0, 0)
+    baseline = lockup_baseline(cap)
     wd, ww = wordmark(cap, mw + cap * GAP_PER_CAP, baseline)
     w = mw + cap * GAP_PER_CAP + ww
     body = f'<path fill="{color}" d="{md}"/><path fill="{color}" d="{wd}"/>'

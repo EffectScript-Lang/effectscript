@@ -61,6 +61,11 @@ export const brandAssets = async () => {
   copy(path.join(brand, "social/web/og-image.jpg"), path.join(site, "public/og-image.jpg"))
   // the docs header's logo: Blume inlines it, and currentColor follows light and dark
   copy(path.join(brand, "logo/svg/effectscript-mark.svg"), path.join(site, "public/mark.svg"))
+  // the landing page's key visuals and film stills, as WebP (brand/scripts/site.py, ADR-0082)
+  fs.rmSync(path.join(site, "public/img/lp"), { recursive: true, force: true })
+  for (const image of fs.readdirSync(path.join(brand, "web/lp")).filter((f) => f.endsWith(".webp"))) {
+    copy(path.join(brand, "web/lp", image), path.join(site, "public/img/lp", image))
+  }
   for (
     const svg of [
       "effectscript-lockup-white.svg",

@@ -1,0 +1,30 @@
+---
+/**
+ * A landing-page image from `public/img/lp/` (copied from `brand/web/lp/` by the content script),
+ * at 1280 and 2560 pixels wide.
+ */
+interface Props {
+  name: string
+  alt: string
+  class?: string
+  /** CSS object-position, for crops that keep the subject in view. */
+  position?: string
+  sizes?: string
+  eager?: boolean
+}
+const { alt, eager = false, name, position = "50% 50%", sizes = "100vw" } = Astro.props
+---
+
+<img
+  class={Astro.props.class}
+  src={`/img/lp/${name}-1280.webp`}
+  srcset={`/img/lp/${name}-1280.webp 1280w, /img/lp/${name}-2560.webp 2560w`}
+  sizes={sizes}
+  width="2560"
+  height="1440"
+  alt={alt}
+  loading={eager ? "eager" : "lazy"}
+  decoding="async"
+  fetchpriority={eager ? "high" : "auto"}
+  style={`object-position:${position}`}
+/>

@@ -32,6 +32,10 @@ describe("the private-preview gate (ADR-0073)", () => {
 
   it("serves the files the teaser needs to everyone", async () => {
     expect(await (await get("/_astro/a.css")).text()).toBe("body{}")
+    // the teaser's photographs (ADR-0082), and nothing else under /img/ or beside them
+    expect((await get("/img/lp/hero-plate-1280.webp")).status).toBe(200)
+    expect((await get("/img/lp/../../docs/")).status).toBe(302)
+    expect((await get("/img/other.webp")).status).toBe(302)
   })
 
   it("serves the teaser at /soon, and lets assets redirect /soon/ to it (ADR-0079)", async () => {
