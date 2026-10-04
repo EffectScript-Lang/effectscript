@@ -9,6 +9,7 @@ Foley, narration, music, mux) in the background."""
 import io
 import json
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -204,5 +205,18 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print(f"editor on http://localhost:{PORT}")
-    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    except OSError:
+        sys.exit(f"port {PORT} is busy: is the editor already running? (or use another port: PORT=4848 {HERE / 'run.sh'})")
+    def stop(*_):
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, stop)  # a plain `kill` stops it as cleanly as Ctrl-C
+    print(f"editor on http://localhost:{PORT}  (Ctrl-C to stop)", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\neditor stopped", flush=True)
+    finally:
+        server.server_close()
