@@ -3,31 +3,119 @@
   "scopeName": "effectscript.injection",
   "injectionSelector": "L:source.efx -comment -string",
   "patterns": [
-    { "include": "#effect" },
-    { "include": "#declaration" },
-    { "include": "#return-clauses" },
-    { "include": "#control" },
-    { "include": "#pipeline" }
+    {
+      "include": "#effect"
+    },
+    {
+      "include": "#declaration"
+    },
+    {
+      "include": "#return-type"
+    },
+    {
+      "include": "#return-clauses"
+    },
+    {
+      "include": "#control"
+    },
+    {
+      "include": "#pipeline"
+    }
   ],
   "repository": {
     "effect": {
       "match": "\\b(effect)\\b(?=\\s*(?:[A-Za-z_$][\\w$]*\\s*[(<]|\\{|\\(|[A-Za-z_$][\\w$]*\\s*=>))",
-      "captures": { "1": { "name": "keyword.control.effect.efx" } }
+      "captures": {
+        "1": {
+          "name": "keyword.control.effect.efx"
+        }
+      }
     },
     "declaration": {
       "match": "(?:^|(?<=\\bexport\\s))\\s*\\b(schema|error|service|layer|config|atom|command|api|group)\\b(?=\\s+[A-Za-z_$])",
-      "captures": { "1": { "name": "storage.type.efx" } }
+      "captures": {
+        "1": {
+          "name": "storage.type.efx"
+        }
+      }
+    },
+    "return-type": {
+      "match": "(?<=\\))\\s*(:)\\s*([A-Za-z_$][\\w$.]*(?:<[^{}()]*?>)?(?:\\[\\])*)(?=\\s+(?:throws|needs)\\b|\\s*\\{|\\s*$)",
+      "captures": {
+        "1": {
+          "name": "keyword.operator.type.annotation.efx"
+        },
+        "2": {
+          "name": "meta.return-type.efx entity.name.type.efx"
+        }
+      }
     },
     "return-clauses": {
-      "match": "\\b(throws|needs)\\b(?=\\s+[A-Za-z_$({\\[])",
-      "captures": { "1": { "name": "keyword.other.throws.efx" } }
+      "patterns": [
+        {
+          "match": "\\b(throws)\\s+([A-Za-z_$][\\w$.]*(?:<[^{}()]*?>)?(?:\\[\\])*(?:\\s*\\|\\s*[A-Za-z_$][\\w$.]*(?:<[^{}()]*?>)?(?:\\[\\])*)*)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.throws.efx"
+            },
+            "2": {
+              "name": "meta.throws-clause.efx",
+              "patterns": [
+                {
+                  "match": "[|,&]",
+                  "name": "keyword.operator.type.efx"
+                },
+                {
+                  "match": "[A-Za-z_$][\\w$.]*(?:<[^{}()]*?>)?(?:\\[\\])*",
+                  "name": "entity.name.type.efx"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "match": "\\b(needs)\\s+([A-Za-z_$][\\w$.]*(?:\\s*[|,&]\\s*[A-Za-z_$][\\w$.]*)*)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.throws.efx"
+            },
+            "2": {
+              "name": "meta.needs-clause.efx",
+              "patterns": [
+                {
+                  "match": "[|,&]",
+                  "name": "keyword.operator.type.efx"
+                },
+                {
+                  "match": "[A-Za-z_$][\\w$.]*(?:<[^{}()]*?>)?(?:\\[\\])*",
+                  "name": "entity.name.type.efx"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "match": "\\b(throws|needs)\\b(?=\\s+[({\\[])",
+          "captures": {
+            "1": {
+              "name": "keyword.other.throws.efx"
+            }
+          }
+        }
+      ]
     },
     "control": {
       "match": "(?:^\\s*|\\b)(main|defer)\\b(?=\\s*\\{|\\s+[A-Za-z_$(])|\\b(match)\\b(?=\\s*\\()|\\b(when)\\b(?=\\s+[A-Za-z_$\"'0-9])",
       "captures": {
-        "1": { "name": "keyword.control.efx" },
-        "2": { "name": "keyword.control.match.efx" },
-        "3": { "name": "keyword.control.match.efx" }
+        "1": {
+          "name": "keyword.control.efx"
+        },
+        "2": {
+          "name": "keyword.control.match.efx"
+        },
+        "3": {
+          "name": "keyword.control.match.efx"
+        }
       }
     },
     "pipeline": {

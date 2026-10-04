@@ -87,6 +87,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0078](0078-signal-colours-for-state.md) | Signal colours for state in a monochrome brand | Accepted |
 | [0079](0079-effectscript-dev-on-blume-with-a-public-theme.md) | effectscript.dev moves to Blume, with a public EffectScript theme | Accepted |
 | [0080](0080-code-ligatures-on.md) | Code is set with JetBrains Mono's ligatures on | Accepted |
+| [0081](0081-signature-clause-scopes.md) | The grammar scopes an effect's success, error and requirement types | Accepted |
 
 ## Template
 
