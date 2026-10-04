@@ -76,6 +76,9 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
 
 - **Produce a stream with `effect*`:** `yield` emits, `await` runs effects, the return type
   names the element: `effect* ticks(n: number): number { … }`.
+- **Declare protocols, not plumbing:** `rpc` groups, AI `tool`s and `toolkit`s, cluster
+  `entity` types and durable `workflow`s compile to Effect's own modules; `impl Name { … }` builds
+  their handlers' layer (see `references/patterns.md`).
 - **Clean up resources with `defer`** (Go-style, in reverse order) and `using x = await acquire`.
 
 ## `async` ↔ `effect`

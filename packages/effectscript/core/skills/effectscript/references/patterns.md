@@ -327,6 +327,94 @@ export effect rename(id: number, title: string) {
 }
 ```
 
+## RPC
+
+An `rpc` group declares procedures as signatures: the fields are the payload, `throws` the typed
+failures, and a `Stream<A>` return type a streaming procedure. `impl` builds the handlers' layer.
+
+```efx
+export schema Order {
+  id: string
+  total: number
+}
+
+export error OrderNotFound { id: string }
+
+export rpc OrdersRpc {
+  getOrder(id: string): Order throws OrderNotFound
+  updates(id: string): Stream<number>
+}
+
+export const OrdersLive = impl OrdersRpc {
+  const orders = new Map([["1", new Order({ id: "1", total: 42 })]])
+  return {
+    getOrder: effect ({ id }) => orders.get(id) ?? throw new OrderNotFound({ id }),
+    updates: ({ id }) => Stream.make(id.length, 2, 3)
+  }
+}
+```
+
+## AI tools
+
+A `tool` is a signature a model can call; its doc comment is the description the model reads. A
+`toolkit` groups tools, and `impl` gives them handlers.
+
+```efx
+export error UnknownCity { city: string }
+
+/** Today's high temperature in a city, in °C. */
+export tool HighTemperature(city: string): number throws UnknownCity
+
+export toolkit Weather { HighTemperature }
+
+export const WeatherLive = impl Weather {
+  return {
+    HighTemperature: effect ({ city }) => city === "Tokyo" ? 21 : throw new UnknownCity({ city })
+  }
+}
+```
+
+## Cluster entities
+
+An `entity` is addressed by id and distributed across runners. Its `impl` body runs once per
+entity, so its locals are that entity's state; handlers get the message's envelope.
+
+```efx
+export entity Cart {
+  add(item: string): number
+  count(): number
+}
+
+export const CartLive = impl Cart {
+  const items: Array<string> = []
+  return {
+    add: effect ({ payload }) => items.push(payload.item),
+    count: effect () => items.length
+  }
+}
+```
+
+## Durable workflows
+
+A `workflow` survives restarts: `key` names an execution, and each `activity` is a step whose
+result is recorded, so it doesn't run twice. Run it with `Name.execute({ … })` on a
+`WorkflowEngine`, with `Name.layer` provided.
+
+```efx
+export error PaymentDeclined { orderId: string }
+
+export workflow Checkout(orderId: string, amount: number): string throws PaymentDeclined key orderId {
+  const receipt = await activity charge(): string throws PaymentDeclined {
+    if (amount <= 0) throw new PaymentDeclined({ orderId })
+    return `receipt:${orderId}`
+  }
+  await activity notify(): void {
+    console.log(`charged ${receipt}`)
+  }
+  return receipt
+}
+```
+
 ## CLIs
 
 A `command` declares its arguments and flags in the signature. Doc comments become the help text.
