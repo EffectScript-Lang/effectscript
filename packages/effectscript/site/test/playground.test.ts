@@ -126,3 +126,127 @@ describe("the playground's live mapping (ADR-0084)", async () => {
     expect(named).toEqual([["string", "pass"], ["UserNotFound", "fail"], ["Users", "need"]])
   })
 })
+
+describe("the playground's concepts (ADR-0084)", async () => {
+  const { parse, toTypeScript } = await import("effectscript/compiler")
+  const { conceptAt, toConcepts, toLinks } = await import("@effectscript/site/playground/mapping")
+  const source = `error UserNotFound { id: string }
+
+service Users {
+  effect find(id: string): string throws UserNotFound
+}
+
+export effect greet(id: string): string throws UserNotFound needs Users {
+  const name = await Users.find(id)
+  const [a, b] = await [Users.find("a"), Users.find("b")]
+  return name + a + b
+} |> retry({ times: 3 })
+`
+  const { code, mappings } = toTypeScript(source, { filename: "playground.efx" })
+  const parsed = parse(source)
+  if (parsed._tag === "Failure") throw new Error("the sample doesn't parse")
+  const concepts = toConcepts(parsed.program, source, code, toLinks(source, code, mappings))
+  const at = (needle: string, nth = 0) => {
+    let offset = -1
+    for (let i = 0; i <= nth; i++) offset = source.indexOf(needle, offset + 1)
+    const concept = conceptAt(concepts, offset, "source")!
+    return {
+      kind: concept.kind,
+      source: source.slice(...concept.source),
+      generated: concept.generated.map((g) => code.slice(...g))
+    }
+  }
+
+  it("maps a whole phrase to the phrase it became", () => {
+    expect(at("await Users")).toMatchObject({ kind: "await", source: "await Users.find(id)" })
+    expect(at("await Users").generated).toEqual(["yield* Users.find(id)"])
+    expect(at("await [").generated.join("")).toContain("Effect.all(")
+  })
+
+  it("maps a signature to its Effect.fn header, and a pipe step to its combinator", () => {
+    const header = at("export effect greet")
+    expect(header.kind).toBe("effect-function")
+    expect(header.generated.join("")).toContain("Effect.fn(\"greet\")(function*")
+    expect(header.generated.join("")).toContain("Effect.fn.Return<string, UserNotFound, Users>")
+    expect(at("|> retry").kind).toBe("pipe")
+    expect(at("|> retry").generated.join("")).toContain("Effect.retry({ times: 3 })")
+  })
+
+  it("maps an error to its class, and a service method to every place it went", () => {
+    expect(at("error UserNotFound").generated.join("")).toContain("Schema.TaggedError<UserNotFound>")
+    const method = at("effect find")
+    expect(method.kind).toBe("service-method")
+    expect(method.generated.join("")).toContain("find(id: string): Effect.Effect<string, UserNotFound>")
+    expect(method.generated.join("")).toContain("static readonly find = (id: string) => Users.use(")
+  })
+})
+
+describe("the playground's intent colours (ADR-0085)", async () => {
+  const { namesOf, paint } = await import("@effectscript/site/playground/intent")
+  const efx = "error Gone { id: string }\nschema User { id: string }\nservice Users {}\n" +
+    "export effect f(id: string): User throws Gone needs Users {\n  const u = await Users.get(id)\n  return u\n} |> retry({ times: 3 })\n"
+  const ts =
+    "class Gone extends Schema.TaggedError<Gone>()(\"Gone\", {}) {}\nconst f = Effect.fn(\"f\")(function*() {\n  return yield* Users.get(\"1\")\n})\n"
+  const names = namesOf(efx, ts)
+  const roles = (text: string, language: "efx" | "ts") =>
+    new Map(paint(text, language, names).map((p) => [text.slice(p.start, p.end), p.role]))
+
+  it("finds Effect's A, E and R among the declared names, on both sides", () => {
+    expect([...names.errors]).toEqual(["Gone"])
+    expect([...names.data]).toEqual(["User"])
+    expect([...names.services]).toEqual(["Users"])
+  })
+
+  it("paints effects, structure, channels and literals by what they mean", () => {
+    const efxRoles = roles(efx, "efx")
+    expect(efxRoles.get("await")).toBe("effect")
+    expect(efxRoles.get("|>")).toBe("effect")
+    expect(efxRoles.get("retry")).toBe("effect")
+    expect(efxRoles.get("export")).toBe("keyword")
+    expect(efxRoles.get("Gone")).toBe("fail")
+    expect(efxRoles.get("Users")).toBe("need")
+    expect(efxRoles.get("3")).toBe("literal")
+    const tsRoles = roles(ts, "ts")
+    expect(tsRoles.get("Effect.fn")).toBe("effect")
+    expect(tsRoles.get("function*")).toBe("effect")
+    expect(tsRoles.get("yield*")).toBe("effect")
+    expect(tsRoles.get("Schema.TaggedError")).toBe("type")
+    expect(tsRoles.get("Gone")).toBe("fail")
+  })
+})
+
+describe("the playground's presets", async () => {
+  const { toTypeScript } = await import("effectscript/compiler")
+  const { presets } = await import("@effectscript/site/playground/presets")
+  const compiled = (code: string) => toTypeScript(code, { filename: "playground.efx" })
+
+  it("compiles every live preset without a problem", () => {
+    for (const preset of presets.filter((p) => p.proposal === undefined)) {
+      expect({ id: preset.id, diagnostics: compiled(preset.code).diagnostics }).toEqual({
+        id: preset.id,
+        diagnostics: []
+      })
+    }
+  })
+
+  it("keeps a preset proposed only while the compiler refuses it", () => {
+    const proposed = presets.filter((p) => p.proposal !== undefined)
+    expect(proposed.map((p) => p.id)).toEqual(["brands-where", "law"])
+    // once the syntax is built, the preset becomes live and its lowering is the compiler's
+    for (const preset of proposed) expect(compiled(preset.code).diagnostics[0]?.code).toBe("EFX1001")
+  })
+
+  it("shows a law's lowering after the compiler's own output for the rest of the file", () => {
+    const law = presets.find((p) => p.id === "law")!
+    // the laws add `Exit` to the imports, so the comparison starts after them
+    const body = (code: string) => code.slice(code.indexOf("\n") + 1)
+    const before = law.code.slice(0, law.code.indexOf("/** Withdrawing"))
+    expect(body(law.proposal!.lowering).startsWith(body(compiled(before).code).trimEnd())).toBe(true)
+    expect(law.proposal!.lowering).toMatch(/^import \{ Effect, Exit, Schema \} from "effect"\n/)
+  })
+
+  it("matches a match arm's object literal with an object, not a block", () => {
+    const foldkit = compiled(presets.find((p) => p.id === "foldkit")!.code).code
+    expect(foldkit).toContain("ClickedIncrement: () => ({ model: { ...model, count: model.count + 1 } })")
+  })
+})

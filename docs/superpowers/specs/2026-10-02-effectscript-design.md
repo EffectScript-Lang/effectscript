@@ -1767,9 +1767,12 @@ Details of the parts that carry over from the first page:
    - live two-way conversion that follows the focused pane
    - presets, "left as TS because …" notes, and a shareable URL hash
    - the compiler running in a Web Worker
-   - full screen, in the `effectscript-dark` theme with ligatures and word wrap, and a live
-     mapping: each EffectScript part lights up with the TypeScript it became, joined by a wire,
-     and the TypeScript scrolls with the EffectScript (ADR-0084)
+   - full screen, with ligatures and word wrap, and a live mapping: each EffectScript concept (an
+     `await`, a signature, a pipeline step, a match arm) lights up as a block with the TypeScript
+     it became, joined by a band, and the TypeScript scrolls with the EffectScript (ADR-0084)
+   - code coloured by intent on both sides: effects, structure, A/E/R in their signals, types and
+     literals; and examples of decided syntax that isn't built yet, shown with the lowering their
+     ADR specifies (ADR-0085)
 5. **"Stricter than TypeScript, ready for agents":** strict-mode rules (§4.17), one canonical way
    to write each construct, explicit effects, fewer tokens, and the AI skill.
 6. **Library constructs:** `test`/`describe` (the vitest + Effect story), `api`/`impl`, `command`,

@@ -165,14 +165,8 @@ body:has(.pg-page) {
   gap: 16px;
   font: 500 11.5px/1 var(--font-mono);
 }
-.pg-legend .pass {
-  color: var(--efx-pass);
-}
-.pg-legend .fail {
-  color: var(--efx-fail);
-}
-.pg-legend .need {
-  color: var(--efx-need);
+.pg-legend li {
+  white-space: nowrap;
 }
 
 /* the panes */
@@ -181,7 +175,12 @@ body:has(.pg-page) {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+}
+/* the channel between the panes, where the band joins a concept to what it became */
+.pg-channel {
+  border-left: 1px solid var(--pg-line);
+  background: linear-gradient(var(--pg-line), var(--pg-line)) 0 35px / 100% 1px no-repeat;
 }
 .pg-pane {
   min-width: 0;
@@ -254,10 +253,6 @@ body:has(.pg-page) {
   text-underline-offset: 4px;
   text-decoration-thickness: 1px;
 }
-.pg .monaco-editor .pg-edit-gen {
-  background: rgb(255 255 255 / 0.045);
-  border-radius: 2px;
-}
 /* one continuous band, even when the theme splits the range into many tokens */
 .pg .monaco-editor .pg-active {
   background: rgb(255 255 255 / 0.17);
@@ -272,14 +267,57 @@ body:has(.pg-page) {
   background: #fff;
   box-shadow: 0 0 8px #fff;
 }
-.pg .monaco-editor .pg-sig-pass {
+/* colours by intent (ADR-0085): the same reading in both panes and in the legend. Effect's
+   channels come last so they win where a span has two readings. */
+:root {
+  --pg-effect: #c084fc;
+  --pg-keyword: #f472b6;
+  --pg-literal: #fdba74;
+  --pg-type: #67e8f9;
+}
+.pg .monaco-editor [class*="pg-r-"] {
+  font-weight: 400 !important;
+}
+.pg-r-comment {
+  color: #71717a !important;
+  font-style: italic !important;
+}
+.pg-r-call {
+  color: #fff !important;
+}
+.pg-r-keyword {
+  color: var(--pg-keyword) !important;
+}
+.pg-r-effect {
+  color: var(--pg-effect) !important;
+}
+.pg .monaco-editor .pg-r-effect,
+.pg .monaco-editor .pg-r-keyword {
+  font-weight: 500 !important;
+}
+.pg-r-literal {
+  color: var(--pg-literal) !important;
+}
+.pg-r-type {
+  color: var(--pg-type) !important;
+}
+.pg-r-pass {
   color: var(--efx-pass) !important;
 }
-.pg .monaco-editor .pg-sig-fail {
+.pg-r-fail {
   color: var(--efx-fail) !important;
 }
-.pg .monaco-editor .pg-sig-need {
+.pg-r-need {
   color: var(--efx-need) !important;
+}
+
+/* the concept in focus: a block on both sides, bracketed in the gutter */
+.pg .monaco-editor .pg-block {
+  background: rgb(255 255 255 / 0.075);
+}
+.pg .monaco-editor .pg-bracket {
+  border-left: 2px solid #fff;
+  margin-left: 3px;
 }
 
 /* problems */
@@ -369,6 +407,17 @@ body:has(.pg-page) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* a proposed preset: Warn's amber and triangle, the signal for preview markers (ADR-0078) */
+.pg-proposal {
+  color: var(--pg-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-proposal b {
+  font-weight: 500;
+  color: var(--efx-warn);
+  margin-right: 4px;
+}
 .pg-count {
   flex: none;
   display: flex;
@@ -404,7 +453,8 @@ body:has(.pg-page) {
     border-left: 0;
     border-top: 1px solid var(--pg-line);
   }
-  .pg-ribbon {
+  .pg-ribbon,
+  .pg-channel {
     display: none;
   }
   .pg-pos,

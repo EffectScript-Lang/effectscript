@@ -1,6 +1,6 @@
 # ADR-0084: The playground is a full-screen editor that links each EffectScript part to its TypeScript
 
-- **Status:** Accepted
+- **Status:** Accepted, partly superseded by ADR-0085 (concept blocks, the band, colour by intent)
 - **Date:** 2026-10-05
 - **Deciders:** the user, in conversation: make the playground full screen and more like a real
   editor, with a better, Effect-style highlighter and the brand font with ligatures; map each part

@@ -2,8 +2,8 @@
  * The playground's logic, without Monaco or a worker, so tests run it directly (ADR-0054): compiling
  * both ways, diagnostics and notes with line and column, dropping stale results, and share hashes.
  */
-import { toEffectScript, toTypeScript } from "effectscript/compiler"
-import { type Link, toLinks } from "./mapping.ts"
+import { parse, toEffectScript, toTypeScript } from "effectscript/compiler"
+import { type Concept, type Link, toConcepts, toLinks } from "./mapping.ts"
 
 /** Larger sources are refused: the compiler runs on every keystroke. */
 export const maxSource = 200_000
@@ -40,6 +40,18 @@ export interface Response {
   readonly notes: ReadonlyArray<Note>
   /** EffectScript → TypeScript only: how each part of the source became output (ADR-0084). */
   readonly links: ReadonlyArray<Link>
+  /** EffectScript → TypeScript only: each concept (an `await`, a signature, a field) and its output. */
+  readonly concepts: ReadonlyArray<Concept>
+}
+
+/** The concepts of `source`, or none while it doesn't parse (the links still work then). */
+const conceptsOf = (source: string, code: string, links: ReadonlyArray<Link>): ReadonlyArray<Concept> => {
+  try {
+    const parsed = parse(source)
+    return parsed._tag === "Failure" ? [] : toConcepts(parsed.program, source, code, links)
+  } catch {
+    return []
+  }
 }
 
 const position = (source: string, offset: number) => {
@@ -64,6 +76,7 @@ export const compile = (request: Request): Response => {
       code: undefined,
       notes: [],
       links: [],
+      concepts: [],
       diagnostics: [{
         code: "EFX0000",
         message: `This source is too large for the playground (over ${maxSource} characters)`,
@@ -83,7 +96,10 @@ export const compile = (request: Request): Response => {
         direction,
         code: result.code,
         notes: [],
-        links: toLinks(source, result.code, result.mappings),
+        ...(() => {
+          const links = toLinks(source, result.code, result.mappings)
+          return { links, concepts: conceptsOf(source, result.code, links) }
+        })(),
         diagnostics: result.diagnostics.map((d) => {
           const start = position(source, d.start)
           const end = position(source, Math.max(d.end, d.start + 1))
@@ -106,6 +122,7 @@ export const compile = (request: Request): Response => {
       code: result.code,
       diagnostics: [],
       links: [],
+      concepts: [],
       notes: result.notes.map((n) => ({ message: n.message, ...position(source, n.start) }))
     }
   } catch (error) {
@@ -115,6 +132,7 @@ export const compile = (request: Request): Response => {
       code: undefined,
       notes: [],
       links: [],
+      concepts: [],
       diagnostics: [{
         code: "EFX1000",
         message: `Internal error: ${error instanceof Error ? error.message : String(error)}`,

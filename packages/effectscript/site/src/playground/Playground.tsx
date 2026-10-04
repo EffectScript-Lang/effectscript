@@ -11,10 +11,19 @@ import { useEffect, useRef, useState } from "react"
 import { createHighlighter, type ThemeRegistration } from "shiki"
 import tsx from "shiki/langs/tsx.mjs"
 import typescript from "shiki/langs/typescript.mjs"
-import { signalRanges } from "../lib/signals.ts"
 import { efxGrammars } from "./grammar.ts"
-import { explain, fromGenerated, fromSource, type Link, toGeneratedOffset } from "./mapping.ts"
-import { presets } from "./presets.ts"
+import { namesOf, paint, type Painted } from "./intent.ts"
+import {
+  type Concept,
+  conceptAt,
+  describeConcept,
+  explain,
+  fromGenerated,
+  fromSource,
+  type Link,
+  toGeneratedOffset
+} from "./mapping.ts"
+import { type Preset, presets } from "./presets.ts"
 import {
   createTracker,
   createWatchdog,
@@ -94,7 +103,10 @@ export default function Playground() {
   const [active, setActive] = useState<Active | undefined>(undefined)
   const [cursor, setCursor] = useState({ line: 1, column: 1 })
   const [drawer, setDrawer] = useState(false)
-  const api = useRef<{ load: (code: string) => void; share: () => string } | undefined>(undefined)
+  const [proposal, setProposal] = useState<Preset["proposal"]>(undefined)
+  const api = useRef<{ load: (preset: Pick<Preset, "code" | "proposal">) => void; share: () => string } | undefined>(
+    undefined
+  )
 
   useEffect(() => {
     let disposed = false
@@ -164,25 +176,39 @@ export default function Playground() {
         return new monaco.Range(a.lineNumber, a.column, b.lineNumber, b.column)
       }
 
-      // the signals: the theme colours A, E and R in EffectScript signatures; in the TypeScript they
-      // are the arguments of `Effect.fn.Return<A, E, R>`, which no grammar scope marks (ADR-0078)
-      const tsSignals = ts.createDecorationsCollection()
-      const paintSignals = () => {
-        tsSignals.set(
-          signalRanges(tsModel.getValue(), "ts").map((r) => ({
-            range: range(tsModel, [r.start, r.end]),
-            options: { inlineClassName: `pg-sig pg-sig-${r.signal}` }
+      // intent colours: one reading for both panes, with the names each side declares (ADR-0085)
+      const efxPaint = efx.createDecorationsCollection()
+      const tsPaint = ts.createDecorationsCollection()
+      // a comment is kept as written: the mapping has nothing to say about it
+      let comments: ReadonlyArray<Painted> = []
+      const paintIntent = () => {
+        const efxText = efxModel.getValue()
+        const tsText = tsModel.getValue()
+        const names = namesOf(efxText, tsText)
+        const decorate = (model: Monaco.editor.ITextModel, painted: ReadonlyArray<Painted>) =>
+          painted.map((p) => ({
+            range: range(model, [p.start, p.end]),
+            options: { inlineClassName: `pg-r-${p.role}` }
           }))
-        )
+        const efxPainted = paint(efxText, "efx", names)
+        comments = efxPainted.filter((p) => p.role === "comment")
+        efxPaint.set(decorate(efxModel, efxPainted))
+        tsPaint.set(decorate(tsModel, paint(tsText, "ts", names)))
       }
 
-      // the mapping: what was rewritten, always marked; the part in focus, lit on both sides
+      // the mapping: the concept in focus lights as a block on both sides, joined by a band; the
+      // rewritten part under the pointer stands out inside it; rewritten parts are always underlined
       let links: ReadonlyArray<Link> = []
+      let concepts: ReadonlyArray<Concept> = []
       const efxEdits = efx.createDecorationsCollection()
-      const tsEdits = ts.createDecorationsCollection()
+      const efxBlock = efx.createDecorationsCollection()
+      const tsBlock = ts.createDecorationsCollection()
       const efxActive = efx.createDecorationsCollection()
       const tsActive = ts.createDecorationsCollection()
-      let current: Link | undefined
+      let current: { readonly concept: Concept | undefined; readonly link: Link | undefined } = {
+        concept: undefined,
+        link: undefined
+      }
       const paintEdits = () => {
         efxEdits.set(
           links.filter((l) => l.kind === "edit" && l.source[1] > l.source[0]).map((l) => ({
@@ -190,51 +216,66 @@ export default function Playground() {
             options: { inlineClassName: "pg-edit-src" }
           }))
         )
-        tsEdits.set(
-          links.filter((l) => l.kind !== "verbatim").flatMap((l) =>
-            l.generated.map((g) => ({ range: range(tsModel, g), options: { inlineClassName: "pg-edit-gen" } }))
-          )
-        )
       }
-      const focus = (link: Link | undefined, from: Side) => {
-        current = link
-        if (link === undefined) {
-          efxActive.clear()
-          tsActive.clear()
-          setActive(undefined)
-          drawRibbon()
-          return
-        }
-        const zero = link.source[0] === link.source[1]
-        efxActive.set([{
-          range: range(efxModel, zero ? [link.source[0], link.source[0]] : link.source),
-          options: zero ? { beforeContentClassName: "pg-caret" } : { inlineClassName: "pg-active" }
-        }])
-        tsActive.set(
-          link.generated.map((g) => ({ range: range(tsModel, g), options: { inlineClassName: "pg-active" } }))
+      const block = (model: Monaco.editor.ITextModel, r: readonly [number, number]) => ({
+        range: range(model, r),
+        options: { inlineClassName: "pg-block", linesDecorationsClassName: "pg-bracket" }
+      })
+      const focus = (concept: Concept | undefined, link: Link | undefined, from: Side) => {
+        if (current.concept === concept && current.link === link) return
+        current = { concept, link }
+        efxBlock.set(concept === undefined ? [] : [block(efxModel, concept.source)])
+        tsBlock.set(concept === undefined ? [] : concept.generated.map((g) => block(tsModel, g)))
+        const zero = link !== undefined && link.source[0] === link.source[1]
+        efxActive.set(
+          link === undefined
+            ? []
+            : [{
+              range: range(efxModel, zero ? [link.source[0], link.source[0]] : link.source),
+              options: zero ? { beforeContentClassName: "pg-caret" } : { inlineClassName: "pg-active" }
+            }]
         )
-        if (from === "efx") {
-          ts.revealRangeInCenterIfOutsideViewport(range(tsModel, link.generated[0]!), monaco.editor.ScrollType.Smooth)
-        } else if (!zero) {
-          efx.revealRangeInCenterIfOutsideViewport(range(efxModel, link.source), monaco.editor.ScrollType.Smooth)
+        tsActive.set(
+          (link?.generated ?? []).map((g) => ({ range: range(tsModel, g), options: { inlineClassName: "pg-active" } }))
+        )
+        const target = concept?.generated[0] ?? link?.generated[0]
+        if (from === "efx" && target !== undefined) {
+          ts.revealRangeInCenterIfOutsideViewport(range(tsModel, target), monaco.editor.ScrollType.Smooth)
+        } else if (from === "ts" && concept !== undefined) {
+          efx.revealRangeInCenterIfOutsideViewport(range(efxModel, concept.source), monaco.editor.ScrollType.Smooth)
         }
         const efxText = efxModel.getValue()
         const tsText = tsModel.getValue()
-        const sourceText = efxText.slice(link.source[0], link.source[1])
-        setActive({
-          kind: link.kind,
-          source: link.kind === "prelude" ? "(the prelude)" : zero ? "(inserted)" : short(sourceText, 40),
-          generated: link.generated.map((g) => short(tsText.slice(g[0], g[1]), 48)).join("  …  "),
-          note: link.kind === "prelude"
-            ? "imports the compiler adds for the builtins you used"
-            : link.kind === "verbatim"
-            ? "kept as written"
-            : explain(sourceText)
-        })
+        if (concept !== undefined) {
+          setActive({
+            kind: "edit",
+            source: short(efxText.slice(...concept.source), 44),
+            generated: concept.generated.map((g) => short(tsText.slice(...g), 56)).join("  …  "),
+            note: describeConcept(concept, efxText, tsText)
+          })
+        } else if (link !== undefined) {
+          const sourceText = efxText.slice(...link.source)
+          setActive({
+            kind: link.kind,
+            source: link.kind === "prelude" ? "(the prelude)" : zero ? "(inserted)" : short(sourceText, 40),
+            generated: link.generated.map((g) => short(tsText.slice(...g), 48)).join("  …  "),
+            note: link.kind === "prelude"
+              ? "imports the compiler adds for the builtins you used"
+              : link.kind === "verbatim"
+              ? "kept as written"
+              : explain(sourceText)
+          })
+        } else setActive(undefined)
         drawRibbon()
       }
+      const focusSource = (offset: number) =>
+        comments.some((c) => offset >= c.start && offset < c.end)
+          ? focus(undefined, undefined, "efx")
+          : focus(conceptAt(concepts, offset, "source"), fromSource(links, efxModel.getValue(), offset), "efx")
+      const focusGenerated = (offset: number) =>
+        focus(conceptAt(concepts, offset, "generated"), fromGenerated(links, tsModel.getValue(), offset), "ts")
 
-      // the ribbon: from the end of the source part to the start of what it became
+      // the band: the concept's lines on one side joined to its output's lines on the other
       let frame = 0
       const drawRibbon = () => {
         cancelAnimationFrame(frame)
@@ -243,66 +284,49 @@ export default function Playground() {
           const box = main.current?.getBoundingClientRect()
           if (svg === null || box === undefined) return
           const stacked = window.matchMedia("(max-width: 900px)").matches
-          if (current === undefined || stacked || lastEdited !== "efx") {
+          const { concept, link } = current
+          const sourceRange = concept?.source ?? link?.source
+          const targets = concept?.generated ?? link?.generated ?? []
+          if (sourceRange === undefined || stacked || lastEdited !== "efx") {
             svg.replaceChildren()
             return
           }
           const efxBox = efx.getDomNode()!.getBoundingClientRect()
           const tsBox = ts.getDomNode()!.getBoundingClientRect()
-          // a point just under the text of a line, so guides never strike through code
-          const under = (
+          // the top and bottom of a range's lines, in the overlay's coordinates, kept inside the pane
+          const span = (
             editor: Monaco.editor.ICodeEditor,
             model: Monaco.editor.ITextModel,
             edge: DOMRect,
-            offset: number
+            [start, end]: readonly [number, number]
           ) => {
-            const visible = editor.getScrolledVisiblePosition(model.getPositionAt(offset))
-            if (visible === null) return undefined
-            const y = edge.top - box.top + visible.top + visible.height - 2
-            const clamped = Math.min(Math.max(y, edge.top - box.top + 6), edge.bottom - box.top - 6)
-            return { x: edge.left - box.left + visible.left, y: clamped, hidden: clamped !== y }
+            const a = editor.getScrolledVisiblePosition(model.getPositionAt(start))
+            const b = editor.getScrolledVisiblePosition(model.getPositionAt(Math.max(start, end - 1)))
+            if (a === null || b === null) return undefined
+            const clamp = (y: number) => Math.min(Math.max(y, edge.top - box.top + 2), edge.bottom - box.top - 2)
+            const top = edge.top - box.top + a.top
+            const bottom = edge.top - box.top + b.top + b.height
+            return { top: clamp(top), bottom: clamp(bottom), hidden: clamp(top) !== top && clamp(bottom) !== bottom }
           }
-          const from = under(efx, efxModel, efxBox, current.source[1])
-          // the wire crosses between the panes: from the source pane's edge to the output's text column
-          const edgeFrom = efxBox.right - box.left - 14
-          const edgeTo = tsBox.left - box.left + ts.getLayoutInfo().contentLeft - 4
-          const paths: Array<string> = []
-          const dots: Array<string> = []
-          current.generated.forEach((g, i) => {
-            const to = under(ts, tsModel, tsBox, g[0])
+          const from = span(efx, efxModel, efxBox, sourceRange)
+          // the band crosses the channel between the panes, so it never covers code or line numbers
+          const x1 = efxBox.right - box.left
+          const x2 = tsBox.left - box.left
+          const bend = (x2 - x1) * 0.5
+          const shapes: Array<string> = []
+          targets.forEach((g, i) => {
+            const to = span(ts, tsModel, tsBox, g)
             if (from === undefined || to === undefined) return
-            const fade = from.hidden || to.hidden ? 0.35 : 1
-            const strength = (i === 0 ? 1 : 0.5) * fade
-            const bend = Math.max(28, (edgeTo - edgeFrom) * 0.5)
-            const wire = `M ${edgeFrom} ${from.y} C ${edgeFrom + bend} ${from.y}, ${
-              edgeTo - bend
-            } ${to.y}, ${edgeTo} ${to.y}`
-            if (i === 0) {
-              paths.push(
-                `<path d="M ${from.x} ${from.y} H ${edgeFrom}" stroke="#fff" stroke-opacity="${
-                  0.28 * fade
-                }" stroke-width="1" stroke-dasharray="2 4"/>`
-              )
-            }
-            paths.push(
-              `<path d="${wire}" fill="none" stroke="#fff" stroke-opacity="${
-                0.12 * strength
-              }" stroke-width="6" stroke-linecap="round"/>`,
-              `<path d="${wire}" fill="none" stroke="#fff" stroke-opacity="${0.9 * strength}" stroke-width="${
-                i === 0 ? 1.4 : 1
-              }"/>`,
-              `<path d="M ${edgeTo} ${to.y} H ${to.x}" stroke="#fff" stroke-opacity="${
-                0.28 * strength
-              }" stroke-width="1" stroke-dasharray="2 4"/>`
-            )
-            dots.push(
-              `<circle cx="${to.x}" cy="${to.y}" r="${i === 0 ? 2.6 : 2}" fill="#fff" fill-opacity="${strength}"/>`
+            const strength = (i === 0 ? 1 : 0.6) * (from.hidden || to.hidden ? 0.35 : 1)
+            const band = `M ${x1} ${from.top} C ${x1 + bend} ${from.top}, ${x2 - bend} ${to.top}, ${x2} ${to.top} ` +
+              `L ${x2} ${to.bottom} C ${x2 - bend} ${to.bottom}, ${x1 + bend} ${from.bottom}, ${x1} ${from.bottom} Z`
+            shapes.push(
+              `<path d="${band}" fill="#fff" fill-opacity="${0.075 * strength}" stroke="#fff" stroke-opacity="${
+                0.45 * strength
+              }" stroke-width="1"/>`
             )
           })
-          if (from !== undefined && paths.length > 0) {
-            dots.push(`<circle cx="${from.x}" cy="${from.y}" r="2.6" fill="#fff"/>`)
-          }
-          svg.innerHTML = paths.join("") + dots.join("")
+          svg.innerHTML = shapes.join("")
         })
       }
 
@@ -320,6 +344,9 @@ export default function Playground() {
       }
 
       const tracker = createTracker()
+      // a proposed preset's lowering, shown instead of the compiler's output until the code is edited
+      let pinned: string | undefined
+      let loading = false
       let applying = false
       let lastEdited: Side = "efx"
       let timer: ReturnType<typeof setTimeout> | undefined
@@ -372,19 +399,24 @@ export default function Playground() {
         const pane = paneToUpdate(response)
         if (pane !== undefined) {
           const target = pane === "ts" ? ts : efx
+          const code = pane === "ts" && pinned !== undefined ? pinned : response.code!
           applying = true
-          if (target.getValue() !== response.code) {
+          if (target.getValue() !== code) {
             const state = target.saveViewState()
-            target.setValue(response.code!)
+            target.setValue(code)
             if (state !== null) target.restoreViewState(state)
           }
           applying = false
         }
-        links = response.direction === "toTypeScript" ? response.links : []
+        // the compiler refuses a proposal's syntax, so its problems and its mapping aren't shown
+        const live = response.direction === "toTypeScript" && pinned === undefined
+        const diagnostics = pinned === undefined ? response.diagnostics : []
+        links = live ? response.links : []
+        concepts = live ? response.concepts : []
         monaco.editor.setModelMarkers(
           efxModel,
           "effectscript",
-          response.diagnostics.map((d) => ({
+          diagnostics.map((d) => ({
             startLineNumber: d.line,
             startColumn: d.column,
             endLineNumber: d.endLine,
@@ -393,19 +425,28 @@ export default function Playground() {
             severity: d.severity === "error" ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning
           }))
         )
-        setProblems(response.diagnostics)
-        setNotes(response.notes)
-        paintSignals()
+        setProblems(diagnostics)
+        setNotes(pinned === undefined ? response.notes : [])
+        paintIntent()
         paintEdits()
-        focus(undefined, "efx")
+        // the old focus points into the old text: drop it, then find it again in the new one
+        for (const collection of [efxBlock, tsBlock, efxActive, tsActive]) collection.clear()
+        current = { concept: undefined, link: undefined }
+        setActive(undefined)
+        drawRibbon()
         if (lastEdited === "efx") {
-          focus(fromSource(links, efxModel.getValue(), efxModel.getOffsetAt(efx.getPosition()!)), "efx")
+          focusSource(efxModel.getOffsetAt(efx.getPosition()!))
           follow()
         }
       }
       let worker = spawn()
       const changed = (side: Side) => () => {
         if (applying) return
+        if (!loading && pinned !== undefined) {
+          // edited: from here on, the compiler's own answer
+          pinned = undefined
+          setProposal(undefined)
+        }
         // a link shown for copying by hand would no longer match the code
         setShared((current) => (current === "copied" ? current : "no"))
         lastEdited = side
@@ -420,17 +461,17 @@ export default function Playground() {
         efx.onMouseMove((e) => {
           if (lastEdited !== "efx" || e.target.position === null) return
           hovering = true
-          focus(fromSource(links, efxModel.getValue(), efxModel.getOffsetAt(e.target.position)), "efx")
+          focusSource(efxModel.getOffsetAt(e.target.position))
         }),
         ts.onMouseMove((e) => {
           if (lastEdited !== "efx" || e.target.position === null) return
           hovering = true
-          focus(fromGenerated(links, tsModel.getValue(), tsModel.getOffsetAt(e.target.position)), "ts")
+          focusGenerated(tsModel.getOffsetAt(e.target.position))
         }),
         efx.onMouseLeave(() => {
           hovering = false
           if (lastEdited === "efx") {
-            focus(fromSource(links, efxModel.getValue(), efxModel.getOffsetAt(efx.getPosition()!)), "efx")
+            focusSource(efxModel.getOffsetAt(efx.getPosition()!))
           }
         }),
         ts.onMouseLeave(() => {
@@ -439,7 +480,7 @@ export default function Playground() {
         efx.onDidChangeCursorPosition((e) => {
           setCursor({ line: e.position.lineNumber, column: e.position.column })
           if (!hovering && lastEdited === "efx") {
-            focus(fromSource(links, efxModel.getValue(), efxModel.getOffsetAt(e.position)), "efx")
+            focusSource(efxModel.getOffsetAt(e.position))
           }
         }),
         efx.onDidScrollChange((e) => {
@@ -452,11 +493,16 @@ export default function Playground() {
       ]
       cleanups.push(() => listeners.forEach((l) => l.dispose()))
       api.current = {
-        load: (code) => {
+        load: ({ code, proposal }) => {
           lastEdited = "efx"
           setSource("efx")
+          pinned = proposal?.lowering
+          setProposal(proposal)
+          loading = true
           efx.setValue(code)
+          loading = false
           efx.setScrollTop(0)
+          ts.setScrollTop(0)
         },
         share: () => encodeHash(lastEdited === "efx" ? efx.getValue() : ts.getValue())
       }
@@ -465,7 +511,7 @@ export default function Playground() {
         const code = decodeHash(location.hash)
         if (code === undefined) return
         setPreset("shared")
-        api.current?.load(code)
+        api.current?.load({ code })
       }
       window.addEventListener("hashchange", onHash)
       window.addEventListener("resize", drawRibbon)
@@ -511,12 +557,17 @@ export default function Playground() {
             value={preset}
             onChange={(e) => {
               setPreset(e.target.value)
-              api.current?.load(presets.find((p) => p.id === e.target.value)!.code)
+              api.current?.load(presets.find((p) => p.id === e.target.value)!)
             }}
             disabled={!ready}
           >
             {preset === "shared" && <option value="shared" disabled>Shared code</option>}
-            {presets.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            {[...new Set(presets.map((p) => p.group))].map((group) => (
+              <optgroup key={group} label={group}>
+                {presets.filter((p) => p.group === group).map((p) => <option key={p.id} value={p.id}>{p.title}
+                </option>)}
+              </optgroup>
+            ))}
           </select>
         </label>
         <button type="button" onClick={share} className="pg-button" disabled={!ready}>
@@ -531,10 +582,14 @@ export default function Playground() {
             className="pg-link"
           />
         )}
-        <ul className="pg-legend" aria-label="Signal colours">
-          <li className="pass">✓ A succeeds with</li>
-          <li className="fail">! E fails with</li>
-          <li className="need">◇ R needs</li>
+        <ul className="pg-legend" aria-label="What the colours mean">
+          <li className="pg-r-effect">effect</li>
+          <li className="pg-r-keyword">structure</li>
+          <li className="pg-r-pass">✓ data, success</li>
+          <li className="pg-r-fail">! errors</li>
+          <li className="pg-r-need">◇ services</li>
+          <li className="pg-r-type">types</li>
+          <li className="pg-r-literal">literals</li>
         </ul>
       </div>
 
@@ -546,10 +601,17 @@ export default function Playground() {
           </div>
           <div ref={efxHost} className="pg-editor" />
         </section>
+        <div className="pg-channel" aria-hidden="true" />
         <section className="pg-pane pg-ts" aria-label="TypeScript">
           <div className="pg-tab">
             <span className="pg-tab-name">playground.ts</span>
-            <span className="pg-tab-role">{source === "efx" ? "Effect v4 · compiled as you type" : "you write"}</span>
+            <span className="pg-tab-role">
+              {proposal !== undefined
+                ? `the lowering ${proposal.adr} specifies`
+                : source === "efx"
+                ? "Effect v4 · compiled as you type"
+                : "you write"}
+            </span>
           </div>
           <div ref={tsHost} className="pg-editor" />
         </section>
@@ -578,7 +640,15 @@ export default function Playground() {
       <footer className="pg-status">
         <span className="pg-mode">{source === "efx" ? "EffectScript → TypeScript" : "TypeScript → EffectScript"}</span>
         <span className="pg-map" aria-live="polite">
-          {source !== "efx"
+          {proposal !== undefined
+            ? (
+              <span className="pg-proposal">
+                <b>▲ {proposal.adr}</b>{" "}
+                {proposal.status}. The TypeScript is the lowering it specifies, and the compiler takes over once you
+                edit.
+              </span>
+            )
+            : source !== "efx"
             ? "The mapping shows while you edit the EffectScript"
             : active === undefined
             ? "Hover or move through the EffectScript to see what each part becomes"

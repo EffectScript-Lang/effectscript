@@ -1,6 +1,6 @@
 # ADR-0078: Signal colours for state in a monochrome brand
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by ADR-0085 (the playground colours code by intent)
 - **Date:** 2026-10-05
 - **Deciders:** the user, in conversation: they found the all-monochrome docs "boring and hard to
   process" and asked for red, green and yellow for states like failed; they approved the palette
