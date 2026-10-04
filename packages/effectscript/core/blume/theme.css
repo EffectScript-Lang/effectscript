@@ -207,22 +207,22 @@ tr[data-efx-fact="r"] > :first-child strong::before {
   content: "◇ ";
 }
 
-/* callouts: tip ✓ Pass, caution ▲ Warn, danger ! Fail, note ◇ Need */
-[data-callout="tip"] {
+/* Blume's callouts: tip and success ✓ Pass, warning ▲ Warn, danger ! Fail, note and info ◇ Need */
+[data-blume-callout="tip"],
+[data-blume-callout="success"] {
   border-color: var(--efx-pass);
   background: var(--efx-pass-tint);
 }
-[data-callout="warning"],
-[data-callout="caution"] {
+[data-blume-callout="warning"] {
   border-color: var(--efx-warn);
   background: var(--efx-warn-tint);
 }
-[data-callout="danger"] {
+[data-blume-callout="danger"] {
   border-color: var(--efx-fail);
   background: var(--efx-fail-tint);
 }
-[data-callout="note"],
-[data-callout="info"] {
+[data-blume-callout="note"],
+[data-blume-callout="info"] {
   border-color: var(--efx-need);
   background: var(--efx-need-tint);
 }

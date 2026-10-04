@@ -89,19 +89,31 @@
       }
     },
     {
-      "scope": "meta.return-type.efx",
+      "scope": [
+        "meta.return-type.efx",
+        "meta.return-type.efx entity.name.type",
+        "meta.return-type.efx entity.name.type.efx"
+      ],
       "settings": {
         "foreground": "#4ade80"
       }
     },
     {
-      "scope": "meta.throws-clause.efx",
+      "scope": [
+        "meta.throws-clause.efx",
+        "meta.throws-clause.efx entity.name.type",
+        "meta.throws-clause.efx entity.name.type.efx"
+      ],
       "settings": {
         "foreground": "#f87171"
       }
     },
     {
-      "scope": "meta.needs-clause.efx",
+      "scope": [
+        "meta.needs-clause.efx",
+        "meta.needs-clause.efx entity.name.type",
+        "meta.needs-clause.efx entity.name.type.efx"
+      ],
       "settings": {
         "foreground": "#60a5fa"
       }

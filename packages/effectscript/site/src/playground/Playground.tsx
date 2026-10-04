@@ -4,6 +4,7 @@
  * bridge gives both the same grammar as the docs.
  */
 import { shikiToMonaco } from "@shikijs/monaco"
+import dark from "effectscript/blume/shiki/effectscript-dark.json" with { type: "json" }
 import type * as Monaco from "monaco-editor/editor/editor.api"
 import { useEffect, useRef, useState } from "react"
 import { createHighlighter } from "shiki"
@@ -45,7 +46,7 @@ export default function Playground() {
       const { default: EditorWorker } = await import("monaco-editor/editor/editor.worker?worker")
       ;(globalThis as { MonacoEnvironment?: unknown }).MonacoEnvironment = { getWorker: () => new EditorWorker() }
       const highlighter = await createHighlighter({
-        themes: ["dark-plus"],
+        themes: [dark as never],
         langs: [...tsx, ...typescript, ...efxGrammars]
       })
       if (disposed) return
@@ -53,11 +54,12 @@ export default function Playground() {
       monaco.languages.register({ id: "typescript" })
       shikiToMonaco(highlighter, monaco)
       const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
-        theme: "dark-plus",
+        theme: "effectscript-dark",
         automaticLayout: true,
         minimap: { enabled: false },
         fontFamily: "JetBrains Mono, ui-monospace, monospace",
-        fontLigatures: false,
+        // `|>` draws as ▷ (ADR-0080)
+        fontLigatures: true,
         fontSize: 13,
         scrollBeyondLastLine: false,
         tabSize: 2

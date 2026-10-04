@@ -1,5 +1,6 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
+import { createHighlighter } from "shiki"
 import { describe, expect, it } from "vitest"
 
 const dir = path.join(import.meta.dirname, "../blume/shiki")
@@ -26,9 +27,34 @@ describe("effectscript syntax themes (ADR-0078)", () => {
       expect(colourOf("meta.throws-clause.efx")).toBe(signals[mode].fail)
       expect(colourOf("meta.needs-clause.efx")).toBe(signals[mode].need)
       const coloured = t.tokenColors.filter((c: any) => c.settings.foreground && hue(c.settings.foreground))
-      expect(coloured.flatMap((c: any) => [c.scope].flat()).sort()).toEqual(
-        ["meta.needs-clause.efx", "meta.return-type.efx", "meta.throws-clause.efx"]
+      // the clause scopes, and the clause's type names inside them: nothing else has a hue
+      const scopes: Array<string> = coloured.flatMap((c: any) => [c.scope].flat())
+      expect(new Set(scopes.map((scope) => scope.split(" ")[0]))).toEqual(
+        new Set(["meta.needs-clause.efx", "meta.return-type.efx", "meta.throws-clause.efx"])
       )
     })
   }
+
+  it("renders the clauses in their signal colours, over the type colour", async () => {
+    const grammar = (f: string) => JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "../grammars", f), "utf8"))
+    const highlighter = await createHighlighter({
+      themes: [theme("dark"), theme("light")],
+      langs: [
+        "tsx",
+        { ...grammar("effectscript.injection.tmLanguage.json"), name: "efx-injection", injectTo: ["source.efx"] },
+        { ...grammar("effectscript.tmLanguage.json"), name: "efx", embeddedLangs: ["tsx"] }
+      ]
+    })
+    for (const mode of ["dark", "light"] as const) {
+      const tokens = highlighter.codeToTokensBase(
+        "export effect f(id: string): User throws NotFound | Timeout needs Db {\n}",
+        { lang: "efx", theme: `effectscript-${mode}` }
+      ).flat()
+      const colour = (text: string) => tokens.find((t) => t.content.trim() === text)?.color?.toLowerCase()
+      expect(colour("User"), mode).toBe(signals[mode].pass)
+      expect(colour("NotFound"), mode).toBe(signals[mode].fail)
+      expect(colour("Timeout"), mode).toBe(signals[mode].fail)
+      expect(colour("Db"), mode).toBe(signals[mode].need)
+    }
+  })
 })

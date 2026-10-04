@@ -1,11 +1,11 @@
 ---
-import CodeWindow from "../components/CodeWindow.astro"
-import Follow from "../components/Follow.astro"
-import Header from "../components/Header.astro"
-import { corpusTotals } from "../data/corpus.ts"
-import { gallery, saving } from "../data/gallery.ts"
-import Base from "../layouts/Base.astro"
-import { highlight } from "../lib/highlight.ts"
+import CodeWindow from "../src/components/CodeWindow.astro"
+import Follow from "../src/components/Follow.astro"
+import Header from "../src/components/Header.astro"
+import { corpusTotals } from "../src/data/corpus.ts"
+import { gallery, saving } from "../src/data/gallery.ts"
+import Base from "../src/layouts/Base.astro"
+import { highlight } from "../src/lib/highlight.ts"
 
 const scenarios = gallery()
 const totals = scenarios.reduce(
@@ -15,7 +15,7 @@ const totals = scenarios.reduce(
 const hero = scenarios.find((s) => s.id === "services")!
 const corpus = corpusTotals()
 
-import { constructs } from "../data/constructs.ts"
+import { constructs } from "../src/data/constructs.ts"
 const highlighted = await Promise.all(constructs.map(async (c) => ({ ...c, html: await highlight(c.code, "efx") })))
 const install = await highlight("curl -fsSL https://effectscript.dev/install | sh\nefx setup     # editors and coding agents\nefx init      # in a project\nefx convert   # see what would become EffectScript", "shell")
 ---
@@ -32,8 +32,8 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
           Effect is the right foundation for serious TypeScript, and its ceremony is what people trip over. EffectScript makes Effect the language: write <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, and get typed errors, services, retries and tracing, compiled to plain, idiomatic Effect TypeScript.
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
-          <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install/">Get started</a>
-          <a class="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:bg-tile" href="/playground/">Open the playground</a>
+          <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install">Get started</a>
+          <a class="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:bg-tile" href="/playground">Open the playground</a>
           <a class="rounded-md px-5 py-2.5 text-sm font-medium text-subtle hover:text-white" href="https://x.com/gunta85">Follow @gunta85 →</a>
         </div>
         <div class="mt-14">
@@ -84,7 +84,7 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
           </div>
         ))}
       </div>
-      <p class="mt-6 text-sm text-subtle">Try any of them in the <a class="text-white underline decoration-line underline-offset-4" href="/playground/">playground</a>: edit either side and watch the other follow.</p>
+      <p class="mt-6 text-sm text-subtle">Try any of them in the <a class="text-white underline decoration-line underline-offset-4" href="/playground">playground</a>: edit either side and watch the other follow.</p>
     </section>
 
     <section class="border-y border-line bg-tile/40">
@@ -146,8 +146,8 @@ const install = await highlight("curl -fsSL https://effectscript.dev/install | s
         <h2 class="headline-fade font-display text-4xl font-bold tracking-tight">Start in a minute.</h2>
         <pre class="mt-8 max-w-2xl min-w-0 overflow-x-auto rounded-lg border border-line bg-[#1e1e1e] p-4 text-[13px] leading-[1.7]"><code set:html={install} /></pre>
         <div class="mt-6 flex flex-wrap gap-3">
-          <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install/">Read the docs</a>
-          <a class="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:bg-tile" href="/playground/">Open the playground</a>
+          <a class="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-ink hover:bg-zinc-200" href="/docs/start/install">Read the docs</a>
+          <a class="rounded-md border border-line px-5 py-2.5 text-sm font-medium hover:bg-tile" href="/playground">Open the playground</a>
         </div>
         <Follow />
       </div>

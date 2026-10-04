@@ -16,7 +16,7 @@ beforeAll(() => {
   }
 }, 600_000)
 
-describe("the site build (Plan 16 Task 1, ADR-0054)", () => {
+describe("the site build (Plan 16 Task 1, ADR-0054; Blume since Plan 28, ADR-0079)", () => {
   it("writes the landing page and the docs", () => {
     expect(read("index.html")).toContain("All of Effect. None of the ceremony.")
     expect(read("docs/index.html")).toContain("EffectScript documentation")
@@ -33,14 +33,42 @@ describe("the site build (Plan 16 Task 1, ADR-0054)", () => {
     expect(css).toContain("Inter Display")
   })
 
-  it("highlights EffectScript code with the efx grammar", () => {
-    // Expressive Code renders the efx keywords with the grammar's scopes
-    expect(read("docs/index.html")).toMatch(/class="ec-line"/)
-    expect(read("docs/index.html")).not.toContain("Unknown language")
+  it("highlights EffectScript code with the efx grammar and the EffectScript themes (ADR-0078, ADR-0081)", () => {
+    const page = read("docs/index.html")
+    expect(page).toContain("data-language=\"efx\"")
+    expect(page).not.toContain("Unknown language")
+    // the signature's error and requirement types carry their signal colours
+    expect(page).toMatch(/--shiki-dark:#f87171[^>]*>\s*UserNotFound</i)
+    expect(page).toMatch(/--shiki-dark:#60a5fa[^>]*>\s*Users</i)
+    expect(page).toMatch(/--shiki-light:#b91c1c[^>]*>\s*UserNotFound</i)
+  })
+
+  it("builds the custom pages and Blume's 404 next to the docs", () => {
+    for (const file of ["index.html", "playground/index.html", "soon/index.html", "404.html"]) {
+      expect(fs.existsSync(path.join(dist, file)), file).toBe(true)
+    }
+    expect(fs.existsSync(path.join(site, "astro.config.ts"))).toBe(false)
+    const pkg = fs.readFileSync(path.join(site, "package.json"), "utf8")
+    expect(pkg).not.toContain("starlight")
+    expect(JSON.parse(pkg).dependencies.blume).toBe("2.1.1")
+  })
+
+  it("shows the construct badge on reference pages (spec §4.3)", () => {
+    expect(read("docs/reference/error/index.html")).toMatch(/class="efx-kind[^"]*"[^>]*data-signal="fail"/)
+    expect(read("docs/reference/schema/index.html")).toMatch(/class="efx-kind/)
+    expect(read("docs/guides/pitfalls/index.html")).not.toMatch(/class="efx-kind/)
   })
 })
 
 const fixtures = path.resolve(site, "../core/test/fixtures")
+/** Blume's prerendered sidebar fragments for closed groups (navigation `display: "group"`). */
+const navFragments = (): Array<string> => {
+  const dir = path.join(dist, "blume-nav")
+  if (!fs.existsSync(dir)) return []
+  return (fs.readdirSync(dir, { recursive: true }) as Array<string>)
+    .filter((f) => fs.statSync(path.join(dir, f)).isFile())
+    .map((f) => fs.readFileSync(path.join(dir, f), "utf8"))
+}
 const htmlFiles = (dir: string): Array<string> =>
   (fs.readdirSync(dir, { recursive: true }) as Array<string>).filter((f) => f.endsWith(".html"))
 
@@ -50,7 +78,7 @@ describe("the generated docs (Plan 16 Task 2, ADR-0054)", () => {
     for (const dir of dirs) {
       const page = path.join("docs/reference", dir, "index.html")
       expect(fs.existsSync(path.join(dist, page)), page).toBe(true)
-      expect(read(page)).toContain("/playground/#code=")
+      expect(read(page)).toContain("https://effectscript.dev/playground#code=")
     }
   })
 
@@ -65,11 +93,10 @@ describe("the generated docs (Plan 16 Task 2, ADR-0054)", () => {
     expect(fs.existsSync(path.join(dist, "docs/effect/api/effect/option/index.html"))).toBe(true)
   })
 
-  it("writes llms.txt and llms-full.txt", () => {
-    const llms = read("llms.txt")
-    expect(llms).toMatch(/^# EffectScript\n\n> /)
-    expect(llms).toContain("https://effectscript.dev/docs/reference/effect/")
-    expect(read("llms-full.txt")).toContain("name: effectscript")
+  it("has Blume's llms.txt and llms-full.txt, with the reference", () => {
+    expect(read("llms.txt")).toMatch(/^# EffectScript/)
+    expect(read("llms.txt")).toContain("/docs/reference/effect")
+    expect(read("llms-full.txt")).toContain("layer test")
   })
 
   it("has no broken internal links, anchors included (Plan 21)", () => {
@@ -134,13 +161,13 @@ const contrast = (a: string, b: string) => {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
   return (hi! + 0.05) / (lo! + 0.05)
 }
-const generatedDocs = path.join(site, "src/content/docs/docs")
+const generatedDocs = path.join(site, "content")
 
 describe("Plan 16 final review fixes", () => {
-  it("I1: the docs logo has a light-mode variant", () => {
+  it("I1: the docs logo has both lockups, swapped by mode", () => {
     const page = read("docs/index.html")
-    expect(page).toMatch(/lockup-black[^"]*\.svg/)
-    expect(page).toMatch(/lockup-white[^"]*\.svg/)
+    expect(page).toContain("efx-logo-light")
+    expect(page).toContain("efx-logo-dark")
   })
 
   it("I2: wrong examples are marked visibly, and the intro says how", () => {
@@ -149,7 +176,8 @@ describe("Plan 16 final review fixes", () => {
     const marked = pitfalls.match(/```efx title="Wrong/g)?.length ?? 0
     expect(marked).toBeGreaterThan(0)
     expect(pitfalls).not.toContain("marked `efx wrong`")
-    expect(text("docs/guides/pitfalls/index.html").match(/Wrong/g)!.length).toBeGreaterThanOrEqual(marked)
+    // Blume shows a fence's title from its data-title attribute
+    expect(read("docs/guides/pitfalls/index.html").match(/data-title="Wrong/g)!.length).toBeGreaterThanOrEqual(marked)
   })
 
   it("I3: /install serves the install script, byte for byte", () => {
@@ -179,9 +207,7 @@ describe("Plan 16 final review fixes", () => {
     for (const background of ["#09090b", "#18181a", "#181818", "#1e1e1e"]) {
       expect(contrast(muted, background), `${muted} on ${background}`).toBeGreaterThanOrEqual(4.5)
     }
-    const starlight = fs.readFileSync(path.join(site, "src/styles/starlight.css"), "utf8")
-    const gray3 = /--sl-color-gray-3:\s*(#[0-9a-f]{6})/i.exec(starlight)![1]!
-    expect(contrast(gray3, "#09090b")).toBeGreaterThanOrEqual(4.5)
+    // the docs' own tokens are checked by the theme (core/test/blume-theme-css.test.ts)
   })
 
   it("I9: the scenario tabs follow the ARIA tabs pattern", () => {
@@ -208,7 +234,8 @@ describe("Plan 16 final review fixes", () => {
     expect(fonts).toEqual(expect.arrayContaining(["Inter-OFL.txt", "JetBrainsMono-OFL.txt"]))
     const css = fs.readdirSync(path.join(dist, "_astro")).filter((f) => f.endsWith(".css"))
       .map((f) => fs.readFileSync(path.join(dist, "_astro", f), "utf8")).join("\n")
-    expect(css).not.toMatch(/\.(otf|ttf)\b/)
+    // no brand font ships unsubset (KaTeX, which Blume loads for maths, keeps its own fallbacks)
+    expect(css).not.toMatch(/(Inter|JetBrains)[\w-]*\.(otf|ttf)\b/)
   })
 
   it("I11: the editor setup, strict rules and migration guides exist", () => {
@@ -242,7 +269,8 @@ describe("Plan 16 final review fixes", () => {
 
 describe("Plan 18 Task 6: site polish", () => {
   it("highlights the install block as shell, so the URL isn't a comment", () => {
-    const comments = [...read("index.html").matchAll(/<span style="color:#6A9955">([^<]*)<\/span>/g)].map((m) => m[1]!)
+    const comments = [...read("index.html").matchAll(/<span style="color:#8e8e96;font-style:italic">([^<]*)<\/span>/gi)]
+      .map((m) => m[1]!)
     expect(comments.filter((c) => c.includes("effectscript.dev/install"))).toEqual([])
     expect(comments.some((c) => c.includes("# editors and coding agents"))).toBe(true)
   })
@@ -260,22 +288,33 @@ describe("Plan 18 Task 6: site polish", () => {
 describe("Plan 21: site polish", () => {
   it("links Effect pages to each other on the site, and gives their examples playground links", () => {
     expect(read("docs/effect/guides/migration/schema/index.html")).toContain(
-      "href=\"/docs/effect/guides/packages/effect/arbitrary/\""
+      "href=\"/docs/effect/guides/packages/effect/arbitrary\""
     )
-    expect(read("docs/effect/guide/index.html")).toContain("/playground/#code=")
+    expect(read("docs/effect/guide/index.html")).toContain("https://effectscript.dev/playground#code=")
   })
 
-  it("capitalizes sidebar groups and draws |> without a ligature", () => {
-    const page = read("docs/index.html")
-    expect(page).toMatch(/>Patterns</)
-    expect(page).not.toMatch(/>patterns</)
+  it("capitalizes sidebar groups, and draws |> with its ligature (ADR-0080)", () => {
+    // Blume lazy-loads closed groups as fragments under blume-nav/, so look at the whole build
+    const nav = [read("docs/guides/patterns/services-and-layers/index.html"), ...navFragments()].join("\n")
+    expect(nav).toMatch(/>Patterns</)
+    expect(nav).not.toMatch(/>patterns</)
     // the Effect guides' own folders too; package and module folders keep their names (review)
-    expect(page).toMatch(/>Migration</)
-    expect(page).toMatch(/>Packages</)
-    expect(page).not.toMatch(/>(migration|packages)</)
+    const effect = [read("docs/effect/guide/index.html"), ...navFragments()].join("\n")
+    expect(effect).toMatch(/>Migration</)
+    expect(effect).toMatch(/>Packages</)
+    expect(effect).not.toMatch(/>(migration|packages)</)
     const css = fs.readdirSync(path.join(dist, "_astro")).filter((f) => f.endsWith(".css"))
       .map((f) => fs.readFileSync(path.join(dist, "_astro", f), "utf8")).join("\n")
-    expect(css).toMatch(/font-variant-ligatures:\s*none/)
+    expect(css).toMatch(/font-variant-ligatures:\s*contextual common-ligatures/)
+    expect(css).not.toMatch(/font-variant-ligatures:\s*none/)
+    expect(css).toContain("--efx-fail")
+  })
+
+  it("keeps the |> ligature in the site's subset JetBrains Mono (ADR-0080)", async () => {
+    const fontkit = await import("fontkit")
+    const font = fontkit.create(fs.readFileSync(path.join(dist, "fonts/JetBrainsMono-Regular.woff2"))) as any
+    const ids = (run: any) => run.glyphs.map((g: any) => g.id)
+    expect(ids(font.layout("|>"))).not.toEqual(ids(font.layout("|>", { calt: false, liga: false })))
   })
 
   it("keeps the copy measured", () => {

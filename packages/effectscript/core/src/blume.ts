@@ -9,13 +9,19 @@
  */
 import * as fs from "node:fs"
 import { factKind } from "./blume-facts.ts"
+import { kindGlyph } from "./blume-kinds.ts"
 
 export {
   /**
    * @since 4.0.0
    * @category facts
    */
-  factKind
+  factKind,
+  /**
+   * @since 4.0.0
+   * @category config
+   */
+  kindGlyph
 }
 
 /**
@@ -117,28 +123,3 @@ const optionalString = {
  * @category config
  */
 export const frontmatter = { extend: { kind: optionalString } } as const
-
-const glyphs: Record<string, { readonly glyph: string; readonly signal?: "fail" | "need" }> = {
-  effect: { glyph: "ƒ" },
-  error: { glyph: "!", signal: "fail" },
-  try: { glyph: "!", signal: "fail" },
-  schema: { glyph: "{}" },
-  service: { glyph: "◇", signal: "need" },
-  layer: { glyph: "◇", signal: "need" },
-  config: { glyph: "⚙" },
-  cli: { glyph: "$" },
-  command: { glyph: "$" },
-  pipeline: { glyph: "|>" },
-  match: { glyph: "?" },
-  main: { glyph: "▶" },
-  test: { glyph: "✓" }
-}
-
-/**
- * A construct's badge glyph, and its signal for errors and services (ADR-0078).
- *
- * @since 4.0.0
- * @category config
- */
-export const kindGlyph = (kind: string): { readonly glyph: string; readonly signal?: "fail" | "need" } =>
-  glyphs[kind] ?? { glyph: "·" }

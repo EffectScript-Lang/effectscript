@@ -4,23 +4,21 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "effectscript.dev: the landing page, the playground and the docs",
+  "description": "effectscript.dev on Blume: the landing page, the playground and the docs (ADR-0079)",
   "exports": {
     "./package.json": "./package.json",
     "./*": "./src/*.ts"
   },
   "scripts": {
     "content": "node scripts/content.ts",
-    "dev": "node scripts/content.ts && astro dev",
-    "build": "node scripts/content.ts && astro build --force",
-    "preview": "astro preview"
+    "dev": "node scripts/content.ts && blume dev",
+    "build": "node scripts/content.ts && blume build",
+    "preview": "blume preview"
   },
   "dependencies": {
-    "@astrojs/react": "^7.0.0",
-    "@astrojs/starlight": "^0.42.5",
     "@shikijs/monaco": "~4.4.3",
-    "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.5",
+    "blume": "2.1.1",
     "effectscript": "workspace:^",
     "gpt-tokenizer": "^4.0.0",
     "monaco-editor": "^0.57.0",
@@ -33,6 +31,7 @@
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "fontkit": "^2.0.4",
     "subset-font": "^2.9.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.1",

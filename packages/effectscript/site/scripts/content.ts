@@ -71,12 +71,13 @@ export const brandAssets = async () => {
   }
 }
 
-const docs = path.join(site, "src/content/docs/docs")
+/** Blume's content root, mounted at /docs (ADR-0079). */
+const docs = path.join(site, "content")
 const skill = path.join(site, "../core/skills/effectscript")
 const corpus = path.join(site, "../effect-docs/content")
 const github = "https://github.com/EffectScript-Lang/effectscript/blob/effectscript"
 
-/** The generated docs paths (gitignored; everything else under src/content/docs is hand-written). */
+/** The generated docs paths (gitignored; everything else under content/ is hand-written). */
 export const generated = [
   "reference",
   "guides/patterns",
@@ -84,6 +85,8 @@ export const generated = [
   "guides/writing-effectscript.md",
   "guides/editor-setup.md",
   "guides/strict-rules.md",
+  "guides/meta.ts",
+  "start/meta.ts",
   "effect"
 ]
 
@@ -110,8 +113,12 @@ const sections = (markdown: string) => {
   }
 }
 
-/** The playground link for a piece of EffectScript (base64url of its UTF-8). */
-export const playgroundLink = (code: string) => `/playground/#code=${Buffer.from(code, "utf8").toString("base64url")}`
+/**
+ * The playground link for a piece of EffectScript (base64url of its UTF-8). Absolute: Blume puts
+ * `/docs` in front of every root link in the docs, and the playground lives outside it (ADR-0079).
+ */
+export const playgroundLink = (code: string) =>
+  `https://effectscript.dev/playground#code=${Buffer.from(code, "utf8").toString("base64url")}`
 
 /** Adds an "Open in playground" link after each `efx` fence. */
 const withPlaygroundLinks = (markdown: string) =>
@@ -123,10 +130,10 @@ const withPlaygroundLinks = (markdown: string) =>
 /** The skill's links, as site routes. */
 const skillLinks = (markdown: string) =>
   markdown
-    .replaceAll("](references/syntax.md)", "](/docs/reference/effect/)")
-    .replaceAll("](references/patterns.md)", "](/docs/guides/patterns/services-and-layers/)")
-    .replaceAll("](references/pitfalls.md)", "](/docs/guides/pitfalls/)")
-    .replaceAll("](references/effect-docs.md)", "](/docs/effect/guide/)")
+    .replaceAll("](references/syntax.md)", "](/docs/reference/effect)")
+    .replaceAll("](references/patterns.md)", "](/docs/guides/patterns/services-and-layers)")
+    .replaceAll("](references/pitfalls.md)", "](/docs/guides/pitfalls)")
+    .replaceAll("](references/effect-docs.md)", "](/docs/effect/guide)")
 
 /**
  * Effect's pages, republished: without Effectful's own calls to action, which would read as ours,
@@ -152,12 +159,12 @@ const githubLinks = (markdown: string, original: string, published: ReadonlySet<
       const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(original), target))
       const hash = anchor === undefined ? "" : `#${anchor}`
       return published.has(resolved)
-        ? `](/docs/effect/guides/${resolved.toLowerCase().replace(/\.md$/, "")}/${hash})`
+        ? `](/docs/effect/guides/${resolved.toLowerCase().replace(/\.md$/, "")}${hash})`
         : `](${github}/${resolved}${hash})`
     }
   )
 
-/** A heading's anchor, as Starlight makes it (github-slugger). */
+/** A heading's anchor, as Blume makes it (github-slugger, in its heading-anchors plugin). */
 const anchorOf = (heading: string) =>
   heading.trim().toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc} -]/gu, "").replace(/ /g, "-")
 
@@ -182,13 +189,20 @@ const reference = () => {
   constructs.forEach(({ body, heading }, order) => {
     const dir = /<!-- fixtures\/([\w-]+) -->/.exec(body)![1]!
     const title = heading.replace(/\s*\(§[^)]*\)$/, "")
-    const intro =
-      "Each example is EffectScript followed by the TypeScript it compiles to, from the compiler's own tests."
+    const intro = [
+      "Each example is EffectScript followed by the TypeScript it compiles to, from the compiler's own tests.",
+      // ADR-0080: the site draws `|>` as a ligature
+      ...(dir === "pipeline"
+        ? ["Code on this site draws `|>` as a ▷ ligature. You type `|>`, and copying gives `|>`."]
+        : [])
+    ].join("\n\n")
     page(
       path.join(docs, "reference", `${dir}.md`),
       title,
       `${intro}\n\n${withPlaygroundLinks(body.replace(/^###/gm, "##"))}`,
       {
+        // the construct badge (spec §4.3)
+        kind: dir,
         sidebar: { order }
       }
     )
@@ -212,7 +226,7 @@ const guides = () => {
       sidebar: { order: order + 10 }
     })
   })
-  // Expressive Code ignores the skill's `wrong` meta, so the site titles those blocks (review I2)
+  // code blocks don't know the skill's `wrong` meta, so the site titles those blocks (review I2)
   const pitfalls = fs.readFileSync(path.join(skill, "references/pitfalls.md"), "utf8").replace(/^# .*\n/m, "")
     .replace(
       /^```efx wrong( EFX\d+)?$/gm,
@@ -372,50 +386,46 @@ const effect = () => {
   }
 }
 
-/** `llms.txt` (llmstxt.org) and `llms-full.txt`: the docs for agents, as plain text. */
-const llms = () => {
-  const base = "https://effectscript.dev"
-  const reference = fs.readdirSync(path.join(docs, "reference")).sort().map((f) => {
-    const title = /^title: (.*)$/m.exec(fs.readFileSync(path.join(docs, "reference", f), "utf8"))![1]!
-    return `- [${JSON.parse(title)}](${base}/docs/reference/${f.replace(/\.md$/, "")}/)`
+/** A sidebar group's `meta.ts` (Blume's folder meta), for a generated folder. */
+const meta = (dir: string, fields: Record<string, unknown>) => {
+  fs.mkdirSync(path.join(docs, dir), { recursive: true })
+  fs.writeFileSync(
+    path.join(docs, dir, "meta.ts"),
+    `import { defineMeta } from "blume"\n\nexport default defineMeta(${JSON.stringify(fields, null, 2)})\n`
+  )
+}
+
+/**
+ * The sidebar: the four sections, in order, with their groups' labels. A generated folder's own
+ * subfolders are capitalized (`migration` → Migration); their subfolders are package and module
+ * names, kept as they are (Plan 21).
+ */
+const sidebar = () => {
+  meta("start", { title: "Start here", order: 0 })
+  meta("guides", {
+    title: "Guides",
+    order: 1,
+    pages: ["writing-effectscript", "migrating", "pitfalls", "editor-setup", "strict-rules", "patterns"]
   })
-  const text = [
-    "# EffectScript",
-    "",
-    "> TypeScript with Effect as native syntax. Every .ts file is valid EffectScript (.efx), and every .efx file compiles to plain, idiomatic Effect v4 TypeScript.",
-    "",
-    "## Docs",
-    "",
-    `- [Install](${base}/docs/start/install/): the efx CLI, efx setup, efx init`,
-    `- [Writing EffectScript](${base}/docs/guides/writing-effectscript/): core rules, async ↔ effect, best practices`,
-    `- [Pitfalls](${base}/docs/guides/pitfalls/): mistakes and the diagnostics that catch them`,
-    `- [Strict rules](${base}/docs/guides/strict-rules/): every rule, with an example and the compiler's message`,
-    `- [Migrating with efx convert](${base}/docs/guides/migrating/): converting an Effect TypeScript project`,
-    `- [Editor setup](${base}/docs/guides/editor-setup/): VS Code, Neovim, Helix and any LSP client`,
-    "",
-    "## Language reference",
-    "",
-    ...reference,
-    "",
-    "## Effect, in EffectScript",
-    "",
-    `- [Effect's guide, in EffectScript](${base}/docs/effect/guide/): Effect's LLMS.md with EffectScript code`,
-    "",
-    "## Optional",
-    "",
-    `- [llms-full.txt](${base}/llms-full.txt): the agent skill and Effect's guide in one file`,
-    ""
-  ].join("\n")
-  fs.writeFileSync(path.join(site, "public/llms.txt"), text)
-  const full = [
-    "SKILL.md",
-    "references/syntax.md",
-    "references/patterns.md",
-    "references/pitfalls.md",
-    "references/effect-docs.md"
-  ]
-    .map((f) => fs.readFileSync(path.join(skill, f), "utf8")).join("\n\n---\n\n")
-  fs.writeFileSync(path.join(site, "public/llms-full.txt"), full)
+  meta("guides/patterns", { title: "Patterns", collapsed: true })
+  meta("reference", { title: "Language reference", order: 2 })
+  meta("effect", { title: "Effect, in EffectScript", order: 3, pages: ["guide", "guides", "api"] })
+  meta("effect/guides", { title: "Guides", collapsed: true })
+  meta("effect/api", { title: "API examples", collapsed: true })
+  for (const section of ["effect/guides", "effect/api"]) {
+    const subfolders = (dir: string) =>
+      fs.readdirSync(path.join(docs, dir), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)
+    for (const name of subfolders(section)) {
+      meta(`${section}/${name}`, { title: `${name[0]!.toUpperCase()}${name.slice(1)}`, collapsed: true })
+      const walkNames = (dir: string) => {
+        for (const child of subfolders(dir)) {
+          meta(`${dir}/${child}`, { title: child, collapsed: true })
+          walkNames(`${dir}/${child}`)
+        }
+      }
+      walkNames(`${section}/${name}`)
+    }
+  }
 }
 
 /**
@@ -429,7 +439,7 @@ export const generate = async () => {
   reference()
   guides()
   effect()
-  llms()
+  sidebar()
 }
 
 if (import.meta.main) await generate()

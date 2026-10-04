@@ -45,6 +45,11 @@
   --color-line: #27272a;
   --color-muted: #8e8e96;
   --color-subtle: #a1a1aa;
+  /* signal colours: state only, never the brand itself (ADR-0078) */
+  --color-pass: #4ade80;
+  --color-fail: #f87171;
+  --color-warn: #facc15;
+  --color-need: #60a5fa;
   --font-display: "Inter Display", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -60,7 +65,7 @@
   pre,
   kbd {
     font-family: var(--font-mono);
-    font-variant-ligatures: none;
+    font-variant-ligatures: contextual common-ligatures;
   }
 }
 
@@ -78,11 +83,4 @@
   letter-spacing: 0.06em;
   font-size: 0.75rem;
   color: var(--color-muted);
-}
-
-/* `|>` and `=>` read as typed: no programming ligatures in code (Plan 21) */
-code,
-pre,
-kbd {
-  font-variant-ligatures: none;
 }

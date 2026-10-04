@@ -3,10 +3,10 @@
  * The private-preview teaser (ADR-0073): what effectscript.dev shows to visitors without an invite.
  * It links nowhere inside the site, since every other page is invite-only during the preview.
  */
-import CodeWindow from "../components/CodeWindow.astro"
-import Follow from "../components/Follow.astro"
-import { gallery, saving } from "../data/gallery.ts"
-import Base from "../layouts/Base.astro"
+import CodeWindow from "../src/components/CodeWindow.astro"
+import Follow from "../src/components/Follow.astro"
+import { gallery, saving } from "../src/data/gallery.ts"
+import Base from "../src/layouts/Base.astro"
 
 const scenarios = gallery()
 const hero = scenarios.find((s) => s.id === "services")!
