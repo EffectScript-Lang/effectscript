@@ -79,6 +79,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0068](0068-linked-dev-install-of-the-editor-extension.md) | The editor extension installs from the checkout as a symlink | Accepted |
 | [0070](0070-tools-and-toolkits.md) | `tool` declares an AI tool with its doc comment as the description | Accepted |
 | [0071](0071-cluster-entities.md) | `entity` declares a cluster entity whose `impl` holds its state | Accepted |
+| [0072](0072-workflows-and-activities.md) | A `workflow` declaration carries its body as its layer; `activity` is an expression | Accepted |
 
 ## Template
 
