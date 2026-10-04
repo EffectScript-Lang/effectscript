@@ -1,14 +1,12 @@
 /**
  * The landing page's standard-library bento (ADR-0082): what Effect gives TypeScript, each in a
- * few lines of EffectScript. Every snippet compiles (a test), and `scene` names the WebGPU scene
- * drawn above it.
+ * few lines of EffectScript. Every snippet compiles (a test); the line above it draws the ideas
+ * (ADR-0091).
  */
 export interface Tile {
   readonly id: string
   readonly name: string
-  readonly what: string
   readonly code: string
-  readonly scene?: "errors" | "retry" | "fibers"
   /** Grid columns out of 12 at desktop width. */
   readonly span: 3 | 4 | 5 | 6 | 7
 }
@@ -17,34 +15,27 @@ export const tiles: ReadonlyArray<Tile> = [
   {
     id: "errors",
     name: "Typed errors",
-    what: "Failures are declared, thrown, and part of the signature. The checker holds every caller to them.",
     code:
       "export error UserNotFound { id: string }\n\nexport effect getUser(id: string): User throws UserNotFound {\n  return users.get(id) ?? throw new UserNotFound({ id })\n}",
-    scene: "errors",
     span: 7
   },
   {
     id: "retry",
     name: "Retries and timeouts",
-    what: "The policy, not the plumbing: compose it onto any effect with |>.",
     code:
       "effect load(id: string) {\n  return await getUser(id)\n    |> retry({ times: 3 })\n    |> timeout(\"5 seconds\")\n}",
-    scene: "retry",
     span: 5
   },
   {
     id: "fibers",
     name: "Structured concurrency",
-    what: "Await an array and the effects run together. If one fails, the others are interrupted.",
     code:
       "effect profile(id: string) {\n  const [user, posts] = await [loadUser(id), loadPosts(id)]\n  return { user, posts }\n}",
-    scene: "fibers",
     span: 5
   },
   {
     id: "services",
     name: "Services and layers",
-    what: "Dependency injection the type checker can see: needs in the signature, layers to provide them.",
     code:
       "export service Users {\n  effect find(id: string): User throws UserNotFound\n}\n\nexport effect greet(id: string): string needs Users {\n  const user = await Users.find(id)\n  return `Hello, ${user.name}`\n}",
     span: 7
@@ -52,14 +43,12 @@ export const tiles: ReadonlyArray<Tile> = [
   {
     id: "schemas",
     name: "Schemas",
-    what: "A type and its runtime decoder, written once.",
     code: "export schema Signup {\n  email: Email\n  name: string\n  plan: \"free\" | \"pro\"\n}",
     span: 4
   },
   {
     id: "resources",
     name: "Resources",
-    what: "defer runs on every exit, in reverse order. Nothing leaks.",
     code:
       "effect upload(path: string, url: string) {\n  const file = await openFile(path)\n  defer file.close\n  const socket = await connect(url)\n  defer socket.close\n  await socket.send(await file.read)\n}",
     span: 4
@@ -67,7 +56,6 @@ export const tiles: ReadonlyArray<Tile> = [
   {
     id: "match",
     name: "Pattern matching",
-    what: "Exhaustive, checked, and compiled to Effect's Match.",
     code:
       "const area = (shape: Shape) =>\n  match (shape) {\n    when Circle({ radius }): Math.PI * radius ** 2\n    when Square({ side }): side ** 2\n  }",
     span: 4
@@ -75,7 +63,6 @@ export const tiles: ReadonlyArray<Tile> = [
   {
     id: "streams",
     name: "Streams",
-    what: "effect* declares a stream: yield emits, await runs effects.",
     code:
       "export effect* countdown(from: number): number {\n  for (let i = from; i > 0; i--) {\n    yield i\n    await sleep(\"1 second\")\n  }\n}",
     span: 6
@@ -83,8 +70,6 @@ export const tiles: ReadonlyArray<Tile> = [
   {
     id: "main",
     name: "Observability",
-    what:
-      "Every effect function is a named span. One main provides the layers, with OpenTelemetry from config when you want it.",
     code: "main {\n  const greeting = await greet(\"Ada\")\n  console.log(greeting)\n} |> provide(AppLive)",
     span: 6
   }

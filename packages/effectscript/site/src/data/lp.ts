@@ -49,7 +49,7 @@ export const ceremony = (() => {
 export interface Diagnosed {
   readonly title: string
   readonly code: string
-  readonly diagnostics: ReadonlyArray<{ code: string; severity: string; message: string; hint?: string }>
+  readonly diagnostics: ReadonlyArray<{ code: string; severity: string; message: string; hint?: string; line: number }>
 }
 
 const diagnose = (title: string, code: string): Diagnosed => ({
@@ -59,6 +59,8 @@ const diagnose = (title: string, code: string): Diagnosed => ({
     code: d.code,
     severity: d.severity,
     message: d.message,
+    // the 1-based line it points at, which the landing page's line underlines (ADR-0091)
+    line: code.slice(0, d.start).split("\n").length,
     ...(d.hint === undefined ? {} : { hint: d.hint })
   }))
 })

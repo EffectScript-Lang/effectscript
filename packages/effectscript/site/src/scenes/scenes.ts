@@ -1,16 +1,12 @@
 /**
  * The landing page's scenes (ADR-0082). Each one draws an idea the room next to it explains:
- * ceremony resolving into one line, fibers forking and joining, a retry schedule, typed errors
- * leaving on their own rail, the token count, Effect's A, E and R merging into one type, and two
- * versions turning in lockstep.
+ * ceremony resolving into one line, the film's light, the token count, Effect's A, E and R merging
+ * into one type, and two versions turning in lockstep. The line (ADR-0091) draws the rest.
  */
 import { effect, sampler, texture } from "vgpu"
 import ceremonyShader from "../shaders/ceremony.wgsl"
 import channelsShader from "../shaders/channels.wgsl"
-import errorsShader from "../shaders/errors.wgsl"
-import fibersShader from "../shaders/fibers.wgsl"
 import lockstepShader from "../shaders/lockstep.wgsl"
-import retryShader from "../shaders/retry.wgsl"
 import theaterShader from "../shaders/theater.wgsl"
 import tokensShader from "../shaders/tokens.wgsl"
 import type { SceneContext, SceneFactory } from "./runtime.ts"
@@ -164,9 +160,6 @@ export const factories: Record<string, SceneFactory> = {
   ceremony,
   tokens,
   theater: simple(theaterShader, () => ({ intensity: 1 })),
-  fibers: simple(fibersShader, (element) => ({ lanes: Number(element.dataset.lanes ?? "5") })),
-  retry: simple(retryShader, () => ({ pad: 0, passColor: signal("pass"), failColor: signal("fail") })),
-  errors: simple(errorsShader, () => ({ pad: 0, passColor: signal("pass"), failColor: signal("fail") })),
   lockstep: simple(lockstepShader, () => ({ pad: 0 })),
   channels: simple(channelsShader, (element) => ({
     merge: Number(element.dataset.merge ?? "0.58"),

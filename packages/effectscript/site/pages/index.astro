@@ -8,7 +8,6 @@ import CodeWindow from "../src/components/CodeWindow.astro"
 import Follow from "../src/components/Follow.astro"
 import Nav from "../src/components/lp/Nav.astro"
 import Picture from "../src/components/lp/Picture.astro"
-import Placard from "../src/components/lp/Placard.astro"
 import Scene from "../src/components/lp/Scene.astro"
 import { corpusTotals } from "../src/data/corpus.ts"
 import { film, stills } from "../src/data/film.ts"
@@ -23,7 +22,18 @@ import "../src/styles/lp.css"
 const corpus = corpusTotals()
 const mono = (code: string, language: "efx" | "ts" | "shell" = "efx") => highlight(code, language, "mono")
 const bento = await Promise.all(tiles.map(async (t) => ({ ...t, html: await mono(t.code) })))
-const libs = await Promise.all(libraries.map(async (l) => ({ ...l, html: await mono(l.code) })))
+/** Each library construct, linked to its reference page. */
+const pages: Readonly<Record<string, string>> = {
+  config: "config",
+  test: "test",
+  api: "http",
+  command: "cli",
+  rpc: "rpc",
+  tool: "ai",
+  entity: "cluster",
+  workflow: "workflow"
+}
+const libs = libraries.map((l) => ({ ...l, page: pages[l.name] ?? "effect" }))
 const diagnosed = await Promise.all(mistakes.map(async (m) => ({ ...m, html: await mono(m.code) })))
 const output = { efx: await mono(outputExample.efx), ts: await mono(outputExample.ts, "ts") }
 const intentCode =
@@ -36,24 +46,6 @@ const install = await mono(
 )
 const removed = ceremony.filter((c) => c.efx < c.effect)
 
-/** The rooms, in order: the chapter index at the right edge reads these. */
-const rooms = [
-  ["film", "The film"],
-  ["ceremony", "Ceremony"],
-  ["translation", "Translation"],
-  ["stdlib", "The library"],
-  ["gallery", "The gallery"],
-  ["intent", "Intent"],
-  ["agents", "Agents"],
-  ["output", "Output"],
-  ["strict", "Strict"],
-  ["extensions", "Extensions"],
-  ["superset", "Superset"],
-  ["lockstep", "Lockstep"],
-  ["start", "Start"]
-] as const
-const number = (id: (typeof rooms)[number][0]) => String(rooms.findIndex(([r]) => r === id) + 1).padStart(2, "0")
-const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: rooms.find(([r]) => r === id)![1] })
 ---
 
 <Base
@@ -62,7 +54,7 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
 >
   <Nav />
   <main id="top">
-    <section class="hero" aria-labelledby="hero-title" data-pointer-area>
+    <section class="hero" aria-labelledby="hero-title" data-pointer-area data-line="hero">
       <Scene
         scene="ceremony"
         poster="hero-plate"
@@ -72,7 +64,6 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
         data={{ sheet: JSON.stringify(ceremonySheet), pointer: "1", dpr: "1.25", "beam-y": "auto", converge: "0.76", "still-time": "6" }}
       />
       <div class="hero-copy wrap">
-        <p class="label">// TypeScript, with Effect built in</p>
         <h1 id="hero-title" class="display h-hero">
           <span class="headline-fade">The standard library<br /> TypeScript never got.</span>
           <span class="dim">Now native.</span>
@@ -92,19 +83,14 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
           <strong>{savings.effect}% fewer tokens</strong> than the Effect TypeScript it compiles to, across the ten samples below · o200k_base
         </p>
       </div>
-      <div class="hero-peek">
-        <a href="#film"><Placard {...placard("film")} note={`Introducing EffectScript · ${film.duration} · made entirely from code`} /></a>
-      </div>
     </section>
 
-    <section id="film" class="theater" aria-labelledby="film-title" data-room="film" data-label={`${number("film")} / ${placard("film").name}`}>
+    <section id="film" class="theater" aria-labelledby="film-title" data-room="film" data-label="The film" data-line="film">
       <Scene scene="theater" data={{ dpr: "1", "still-time": "5" }} />
       <div class="wrap">
         <div class="room-head reveal">
           <h2 id="film-title" class="display h-room">Introducing EffectScript.</h2>
-          <p class="body">
-            Every idea starts as one line. Effect gives that line superpowers, then buries it in ceremony. The film is about giving the line back. Its 3D scenes, typography, code morphs and score are all made from code: Blender scripts, a NumPy compositor and music synthesised sample by sample.
-          </p>
+          <p class="lede">The line, given back. Every frame and every note is made from code.</p>
         </div>
         <div class="screen reveal">
           {
@@ -126,7 +112,6 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
               </>
             )
           }
-          <span class="screen-corner">Introducing EffectScript</span>
         </div>
         <ol class="filmstrip reveal" aria-label="Stills from the film">
           {
@@ -146,30 +131,26 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
       </div>
     </section>
 
-    <section id="ceremony" class="chapter" aria-labelledby="ceremony-title" data-room="ceremony" data-label={`${number("ceremony")} / ${placard("ceremony").name}`}>
+    <section id="ceremony" class="chapter" aria-labelledby="ceremony-title" data-room="ceremony" data-label="Ceremony" data-line="spine">
       <div class="chapter-stage">
         <div class="room-bg">
           <Picture name="ceremony" alt="A plain light switch in the middle of a wall covered by a machine of pipes, valves and gears" position="62% 50%" />
         </div>
         <div class="chapter-copy wrap">
-          <Placard {...placard("ceremony")} />
           <h2 id="ceremony-title" class="display h-chapter">You wanted reliability.<br /><span class="dim">You got ceremony.</span></h2>
-          <p class="lede">
-            Effect gives TypeScript typed errors, dependency injection, retries, resources and tracing. It also gives you <code>Effect.gen(function* () {"{"}</code>, <code>yield*</code> on every line, and a class for every error and service. The code is right. It's just loud.
-          </p>
+          <p class="lede">Typed errors, services, retries: Effect gives you all of it, and <code>yield*</code> on every line.</p>
         </div>
       </div>
     </section>
 
-    <section class="room" aria-labelledby="ledger-title">
+    <section class="room" aria-labelledby="ledger-title" data-line="ledger">
       <div class="wrap">
         <div class="room-head reveal">
-          <h2 id="ledger-title" class="display h-room">Ceremony the compiler writes, so you don't.</h2>
-          <p class="body">
-            Counted in the ten samples further down: the Effect TypeScript the compiler generates on the left of each count, the EffectScript you write on the right.
-          </p>
+          <h2 id="ledger-title" class="display h-room">Ceremony the compiler writes,<br /><span class="dim">so you don't.</span></h2>
         </div>
-        <dl class="ledger reveal" style="margin-top:48px">
+        <div class="line-stage stage-tangle" data-line-stage aria-hidden="true"></div>
+        <ul class="sr-only">{removed.map((c) => <li data-ceremony={c.label}>{c.label}</li>)}</ul>
+        <dl class="ledger reveal">
           {
             removed.map((c) => (
               <div>
@@ -194,110 +175,68 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
                 <dd>{totals.effect.toLocaleString("en-US")}</dd>
               </div>
             </dl>
-            <p class="mono-note">
-              One cell per o200k_base token of the ten samples' Effect TypeScript. The lit cells are what the EffectScript still needs: <strong>{savings.effect}% fewer tokens</strong> than Effect TypeScript, and {savings.plain}% fewer than plain TypeScript without typed errors, services or retries.
-            </p>
+            <p class="mono-note">One cell per token. The lit ones are what EffectScript still needs.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="translation" class="room" aria-labelledby="translation-title" data-room="translation" data-label={`${number("translation")} / ${placard("translation").name}`}>
+    <section id="translation" class="room" aria-labelledby="translation-title" data-room="translation" data-label="Translation" data-line="translation">
       <div class="room-bg from-right">
         <Picture name="translation" alt="A black basalt stele engraved with two columns of glyphs, one half as long as the other" position="80% 50%" />
       </div>
       <div class="wrap">
-        <Placard {...placard("translation")} />
         <div class="room-head reveal">
           <h2 id="translation-title" class="display h-room">You already know it.</h2>
-          <p class="lede">
-            No <code>yield*</code> to translate in your head. If you can write async TypeScript, you can write Effect: the compiler does the translating.
-          </p>
+          <p class="lede">If you can write async TypeScript, you can write Effect.</p>
         </div>
-        <div class="rosetta-wrap reveal">
-          <table class="rosetta">
-            <thead>
-              <tr><th scope="col">async TypeScript</th><th scope="col">EffectScript</th><th scope="col">What Effect gives you</th></tr>
-            </thead>
-            <tbody>
-              {translation.map(([a, e, what]) => (
-                <tr><td>{a}</td><td>{e}</td><td>{what}</td></tr>
-              ))}
-            </tbody>
-          </table>
+        <div class="pairs reveal" role="table" aria-label="async TypeScript, and the EffectScript that says the same">
+          <div class="pair pair-head" role="row">
+            <span role="columnheader">async TypeScript</span><span role="columnheader">EffectScript</span><span role="columnheader">What Effect gives you</span>
+          </div>
+          {translation.map(([a, e, what]) => (
+            <div class="pair" role="row">
+              <code class="pair-from" role="cell">{a}</code><code class="pair-to" role="cell">{e}</code><span class="pair-what" role="cell">{what}</span>
+            </div>
+          ))}
         </div>
-        <p class="body reveal" style="margin-top:32px">
-          The one real difference is laziness. A Promise starts when it's created; an effect runs when it's awaited. Forget the <code>await</code> and the compiler says so (EFX8001).
-        </p>
+        <p class="aside reveal">One difference: an effect runs when it's awaited, not when it's created. Forget the <code>await</code> and the compiler says so.</p>
       </div>
     </section>
 
-    <section id="stdlib" class="room" aria-labelledby="stdlib-title" data-room="stdlib" data-label={`${number("stdlib")} / ${placard("stdlib").name}`}>
+    <section id="stdlib" class="room" aria-labelledby="stdlib-title" data-room="stdlib" data-label="The library" data-line="stdlib">
       <div class="wrap">
-        <Placard {...placard("stdlib")} />
         <div class="room-head reveal">
-          <h2 id="stdlib-title" class="display h-room">Everything Effect does, written like it was always there.</h2>
-          <p class="lede">
-            Errors, dependencies, concurrency, resources, schemas, streams, observability: Effect is the standard library TypeScript never had. EffectScript makes each one a few words of syntax.
-          </p>
+          <h2 id="stdlib-title" class="display h-room">Everything Effect does,<br /><span class="dim">as if it was always there.</span></h2>
+          <p class="lede">Errors, dependencies, concurrency, resources, schemas: each one a few words.</p>
         </div>
+        <div class="line-stage stage-band" data-line-stage aria-hidden="true"></div>
         <div class="bento">
           {
             bento.map((t) => (
               <article class={`tile s${t.span} reveal`}>
-                {t.scene && (
-                  <div class="relative">
-                    <Scene scene={t.scene} data={{ dpr: "2", "still-time": t.scene === "retry" ? "4" : "2.4" }} />
-                    {t.scene === "errors" && (
-                      <ul class="keys" aria-label="Key">
-                        <li class="pass">✓ User</li>
-                        <li class="fail">! UserNotFound</li>
-                      </ul>
-                    )}
-                    {t.scene === "retry" && (
-                      <ul class="keys" aria-label="Key">
-                        <li class="fail">! attempts 1 and 2 fail</li>
-                        <li>waits 1, then 2</li>
-                        <li class="pass">✓ attempt 3</li>
-                      </ul>
-                    )}
-                  </div>
-                )}
-                <div class="tile-body">
-                  <h3 class="h-tile">{t.name}</h3>
-                  <p>{t.what}</p>
-                  <pre class="code-block"><code set:html={t.html} /></pre>
-                </div>
+                <h3 class="h-tile">{t.name}</h3>
+                <pre class="code-block"><code set:html={t.html} /></pre>
               </article>
             ))
           }
         </div>
-        <div class="libs">
-          {
-            libs.map((l) => (
-              <article class="lib reveal">
-                <h3>{l.name}</h3>
-                <pre class="code-block"><code set:html={l.html} /></pre>
-              </article>
-            ))
-          }
-        </div>
+        <ul class="constructs reveal" aria-label="Effect's libraries as declarations">
+          {libs.map((l) => <li><a href={`/docs/reference/${l.page}`}><code>{l.name}</code></a></li>)}
+        </ul>
       </div>
     </section>
 
-    <section id="gallery" class="room" aria-labelledby="gallery-title" data-room="gallery" data-label={`${number("gallery")} / ${placard("gallery").name}`}>
+    <section id="gallery" class="room" aria-labelledby="gallery-title" data-room="gallery" data-label="The gallery" data-line="gallery">
       <div class="room-bg soft">
         <Picture name="gallery" alt="A long dark museum gallery lined with lit glass vitrines" position="50% 40%" />
       </div>
       <div class="wrap" data-gallery data-show-tokens="false">
-        <Placard {...placard("gallery")} note="Every sample type-checks against Effect" />
         <div class="room-head reveal" style="max-width:64rem">
-          <h2 id="gallery-title" class="display h-room">Plain TypeScript. Effect TypeScript. EffectScript.</h2>
-          <p class="body">
-            The same program, three ways. The Effect TypeScript in the middle is the EffectScript on the right, compiled when this page was built, so it includes what the compiler generates, such as service accessors.
-          </p>
+          <h2 id="gallery-title" class="display h-room">Plain. Effect. EffectScript.</h2>
+          <p class="lede">The same program three ways. Every sample type-checks against Effect.</p>
         </div>
-        <div class="mt-10 flex flex-wrap items-center gap-2">
+        <div class="gallery-bar flex flex-wrap items-center gap-2">
           <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Scenarios">
             {scenarios.map((s, i) => (
               <button type="button" role="tab" id={`tab-${s.id}`} tabindex={i === 0 ? "0" : "-1"} class="scenario-tab rounded-full border border-line bg-ink/70 px-3.5 py-1.5 text-sm text-subtle transition-colors hover:text-white aria-selected:border-white aria-selected:bg-white aria-selected:text-ink" aria-selected={i === 0 ? "true" : "false"} aria-controls={`scenario-${s.id}`} data-scenario={s.id}>{s.title}</button>
@@ -314,34 +253,27 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
             </div>
           ))}
         </div>
-        <p class="body" style="margin-top:24px">
-          Try any of them in the <a class="text-white underline decoration-line hover:decoration-white" href="/playground">playground</a>: edit either side and watch the other follow.
-        </p>
+        <p class="aside">Edit any of them in the <a class="text-white underline decoration-line hover:decoration-white" href="/playground">playground</a>, either side.</p>
       </div>
     </section>
 
-    <section id="intent" class="chapter" aria-labelledby="intent-title" data-room="intent" data-label={`${number("intent")} / ${placard("intent").name}`}>
+    <section id="intent" class="chapter" aria-labelledby="intent-title" data-room="intent" data-label="Intent" data-line="spine">
       <div class="chapter-stage">
         <div class="room-bg">
           <Picture name="intent" alt="A single white thread passing through the eye of a needle" position="60% 50%" />
         </div>
         <div class="chapter-copy wrap">
-          <Placard {...placard("intent")} />
           <h2 id="intent-title" class="display h-chapter">Say what you mean.<br /><span class="dim">The compiler writes the rest.</span></h2>
-          <p class="lede">
-            EffectScript is an intent language. Declarations name what you mean, <code>schema</code>, <code>error</code>, <code>service</code>, <code>config</code>, <code>api</code>, <code>test</code>, and the compiler writes the Effect that implements it.
-          </p>
+          <p class="lede">Declarations name the intent: <code>schema</code>, <code>error</code>, <code>service</code>, <code>config</code>, <code>api</code>, <code>test</code>.</p>
         </div>
       </div>
     </section>
 
-    <section class="room" aria-labelledby="intent-file-title">
+    <section class="room" aria-labelledby="intent-file-title" data-line="intent">
       <div class="wrap">
         <div class="room-head reveal">
           <h2 id="intent-file-title" class="display h-room">One file, read for its intent.</h2>
-          <p class="lede">
-            Every effect has one type with three parts: what it succeeds with, how it can fail, and what it needs. EffectScript writes each part where you read the signature: the return type, <code>throws</code> and <code>needs</code>.
-          </p>
+          <p class="lede">What it returns, how it fails, what it needs: all in the signature.</p>
         </div>
       </div>
       <div class="channels reveal" role="img" aria-label="Three rails, success, error and requirements, merging into one Effect type">
@@ -357,84 +289,57 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
         <div class="annotated">
           <pre class="code-block big reveal"><code set:html={intent} /></pre>
           <ol class="notes reveal">
-            <li><code>schema User</code><span>A type and its decoder, from one declaration.</span></li>
-            <li><code>error UserNotFound</code><span>A failure with a name, a shape and a tag to catch it by.</span></li>
-            <li><code class="pass">✓ User</code><span>What it succeeds with: the return type.</span></li>
-            <li><code class="fail">! throws UserNotFound</code><span>What can go wrong, in the signature. Callers handle it or declare it.</span></li>
-            <li><code class="need">◇ needs Users</code><span>What it depends on, checked. Tests provide another layer.</span></li>
-            <li><code>await</code><span>Runs an effect. The compiler writes the <code>yield*</code>.</span></li>
-            <li><code>console.log</code><span>Logs through Effect, inside the function's span.</span></li>
-            <li><code>|&gt; retry(…)</code><span>The policy, not the plumbing.</span></li>
+            <li data-find="schema User"><code>schema</code><span>A type and its decoder.</span></li>
+            <li data-find="error UserNotFound"><code>error</code><span>A failure you can catch by name.</span></li>
+            <li data-find="): User" data-tone="pass"><code class="pass">✓ User</code><span>What it returns.</span></li>
+            <li data-find="throws UserNotFound needs" data-tone="fail"><code class="fail">! throws</code><span>What can go wrong.</span></li>
+            <li data-find="needs Users" data-tone="need"><code class="need">◇ needs</code><span>What it depends on.</span></li>
+            <li data-find="await Users"><code>await</code><span>Runs an effect.</span></li>
+            <li data-find="console.log"><code>console.log</code><span>Logs inside its span.</span></li>
+            <li data-find="retry({ times: 3 })"><code>|&gt; retry</code><span>Policy, not plumbing.</span></li>
           </ol>
         </div>
       </div>
     </section>
 
-    <section id="agents" class="room" aria-labelledby="agents-title" data-room="agents" data-label={`${number("agents")} / ${placard("agents").name}`}>
+    <section id="agents" class="room" aria-labelledby="agents-title" data-room="agents" data-label="Agents" data-line="agents" data-ratio={String(totals.efx / totals.effect)} data-before={`Effect TypeScript · ${totals.effect.toLocaleString("en-US")}`} data-after={`EffectScript · ${totals.efx.toLocaleString("en-US")}`}>
       <div class="room-bg">
         <Picture name="agents" alt="A vast dark reading room with hundreds of identical lamps, each lighting one page" position="70% 50%" />
       </div>
       <div class="wrap">
-        <Placard {...placard("agents")} />
         <div class="room-head reveal">
           <h2 id="agents-title" class="display h-room">“I don't read the code anymore.”<br /><span class="dim">Fine. Your agents do.</span></h2>
-          <p class="lede">
-            Letting agents write the code doesn't make abstractions optional. Typed errors, declared dependencies and checked effects are what keeps a program correct when nobody reads every line. And on the day you do read it, in a review or at 3 AM, the intent is right there, in about half the tokens.
-          </p>
+          <p class="lede">Abstractions are what keep a program right when nobody reads every line.</p>
         </div>
-        <div class="facts">
-          <article class="fact wide reveal">
-            <h3 class="h-tile">Same intent, fewer tokens</h3>
-            <p class="big-number">{savings.effect}% fewer</p>
-            <div class="bars" aria-hidden="true">
-              <div class="bar ghost"><span><b>Effect TypeScript</b>{totals.effect.toLocaleString("en-US")}</span><i style="width:100%"></i></div>
-              <div class="bar"><span><b>EffectScript</b>{totals.efx.toLocaleString("en-US")}</span><i style={`width:${(totals.efx / totals.effect) * 100}%`}></i></div>
-            </div>
-            <p>
-              o200k_base tokens on the ten samples. Every token an agent reads or writes costs context and money. Models haven't seen <code>.efx</code> in training yet, so we're measuring how well they write it, not assuming.
-            </p>
-          </article>
-          <article class="fact reveal">
-            <h3 class="h-tile">Output agents already know</h3>
-            <p>Every <code>.efx</code> compiles to idiomatic Effect v4: one canonical shape per construct, named spans, no helper runtime. When an agent opens the output, it reads the Effect it was trained on.</p>
-          </article>
-          <article class="fact reveal">
-            <h3 class="h-tile">A skill in every agent</h3>
-            <p><code>efx setup</code> installs the EffectScript skill, with every example type-checked, into:</p>
-            <ul class="agent-list">
-              <li>Claude Code</li><li>Codex</li><li>Cursor</li><li>Gemini CLI</li><li>opencode</li>
-            </ul>
-          </article>
-          <article class="fact reveal">
-            <h3 class="h-tile">Mistakes caught where they're written</h3>
-            <p>Strict rules catch what TypeScript can't see, an effect that never runs or a Promise awaited where an effect belongs, each with a fix an agent can apply.</p>
-          </article>
-          <article class="fact reveal">
-            <h3 class="h-tile">Docs agents can read</h3>
-            <p><a class="text-white underline decoration-line hover:decoration-white" href="/llms.txt">llms.txt</a>, and Effect's own guide with its {corpus.examples.toLocaleString("en-US")} examples in EffectScript: {corpus.resugared.toLocaleString("en-US")} re-sugared examples, counted with the EffectScript parser.</p>
-          </article>
+        <div class="tapes reveal">
+          <p class="big-number">{savings.effect}%<span>fewer tokens, same intent</span></p>
+          <div class="line-stage stage-tapes" data-line-stage aria-hidden="true"></div>
+          <p class="mono-note">o200k_base tokens on the ten samples. Models haven't seen <code>.efx</code> in training yet: we measure how well they write it.</p>
         </div>
+        <ul class="facts-list reveal">
+          <li><b>Output agents know.</b> Idiomatic Effect v4, one shape per construct.</li>
+          <li><b>A skill in every agent.</b> <code>efx setup</code>: Claude Code, Codex, Cursor, Gemini CLI, opencode.</li>
+          <li><b>Mistakes caught as they're written</b>, each with a fix an agent can apply.</li>
+          <li><b>Docs agents can read.</b> <a class="text-white underline decoration-line hover:decoration-white" href="/llms.txt">llms.txt</a>, and Effect's guide in EffectScript: {corpus.resugared.toLocaleString("en-US")} re-sugared examples, counted with the EffectScript parser.</li>
+        </ul>
       </div>
     </section>
 
-    <section id="output" class="room" aria-labelledby="output-title" data-room="output" data-label={`${number("output")} / ${placard("output").name}`}>
+    <section id="output" class="room" aria-labelledby="output-title" data-room="output" data-label="Output" data-line="output">
       <div class="room-bg">
         <Picture name="output" alt="A glass prism turning a haze of light into one straight beam" position="66% 50%" />
       </div>
       <div class="wrap">
-        <Placard {...placard("output")} />
         <div class="room-head reveal">
           <h2 id="output-title" class="display h-room">Compiles to JavaScript.<br /><span class="dim">Like TypeScript did.</span></h2>
-          <p class="lede">
-            No new runtime, no wasm blob, no fork of TypeScript. A <code>.efx</code> file becomes readable Effect TypeScript, and then the JavaScript your bundler already makes. It runs wherever Effect runs, starting with the browser.
-          </p>
+          <p class="lede">No new runtime, no wasm blob. Readable Effect, then the JavaScript your bundler makes.</p>
         </div>
-        <div class="pipeline reveal" aria-label="The compilation pipeline">
-          <div class="stage"><b>users.efx</b><span>What you and your agents write and review.</span></div>
-          <svg class="arrow" width="28" height="12" viewBox="0 0 28 12" aria-hidden="true"><path d="M0 6h25M20 1l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>
-          <div class="stage"><b>users.ts</b><span>Idiomatic Effect v4, with source maps back to every <code>.efx</code> line.</span></div>
-          <svg class="arrow" width="28" height="12" viewBox="0 0 28 12" aria-hidden="true"><path d="M0 6h25M20 1l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>
-          <div class="stage"><b>users.js</b><span>Plain JavaScript from tsc, Vite or Bun. Nothing to ship but Effect.</span></div>
+        <div class="line-stage stage-pipeline" data-line-stage>
+          <ol class="sr-only" aria-label="The compilation pipeline">
+            <li data-node="users.efx">users.efx: what you and your agents write</li>
+            <li data-node="users.ts">users.ts: idiomatic Effect v4, with source maps</li>
+            <li data-node="users.js">users.js: plain JavaScript from your bundler</li>
+          </ol>
         </div>
         <div class="compare reveal">
           <div>
@@ -447,29 +352,26 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
           </div>
         </div>
         <ul class="checks reveal">
-          <li><strong>The compiler runs in your browser</strong>Plain JavaScript, no wasm. The playground runs the real compiler in a Web Worker.</li>
-          <li><strong>Errors point at your file</strong>tsc diagnostics and stack traces map back to <code>.efx</code> lines.</li>
-          <li><strong>Two-way</strong><code>efx convert</code> turns Effect TypeScript into EffectScript, and every <code>.efx</code> compiles back.</li>
+          <li><strong>Runs in your browser.</strong> The compiler is plain JavaScript.</li>
+          <li><strong>Errors point at your file.</strong> Source maps back to every <code>.efx</code> line.</li>
+          <li><strong>Two-way.</strong> <code>efx convert</code> turns Effect TypeScript into EffectScript.</li>
         </ul>
       </div>
     </section>
 
-    <section id="strict" class="room" aria-labelledby="strict-title" data-room="strict" data-label={`${number("strict")} / ${placard("strict").name}`}>
+    <section id="strict" class="room" aria-labelledby="strict-title" data-room="strict" data-label="Strict" data-line="strict">
       <div class="room-bg">
         <Picture name="strict" alt="A machinist's steel square, feeler gauges and a gauge block on black granite" position="72% 50%" />
       </div>
       <div class="wrap">
-        <Placard {...placard("strict")} />
         <div class="room-head reveal">
           <h2 id="strict-title" class="display h-room">Stricter than TypeScript.</h2>
-          <p class="lede">
-            TypeScript can't see an effect that never runs, or a Promise awaited where an effect belongs. The EffectScript compiler can, and says how to fix it. These are its messages, produced when this page was built.
-          </p>
+          <p class="lede">It sees what TypeScript can't, and says how to fix it. Real messages, from this build.</p>
         </div>
         <div class="diagnostics">
           {
             diagnosed.map((m) => (
-              <article class="diagnostic reveal">
+              <article class="diagnostic reveal" data-flags={m.diagnostics.map((d) => `${d.line}:${d.severity}`).join(" ")}>
                 <h3>{m.title}</h3>
                 <pre class="code-block"><code set:html={m.html} /></pre>
                 {m.diagnostics.map((d) => (
@@ -487,70 +389,62 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
       </div>
     </section>
 
-    <section id="extensions" class="room" aria-labelledby="extensions-title" data-room="extensions" data-label={`${number("extensions")} / ${placard("extensions").name}`} data-extensions>
+    <section id="extensions" class="room" aria-labelledby="extensions-title" data-room="extensions" data-label="Extensions" data-extensions data-line="extensions">
       <div class="room-bg from-right">
         <Picture name="extensions" alt="A dark wall of recessed niches, some holding a white stone module that fits exactly" position="78% 50%" />
       </div>
       <div class="wrap">
-        <Placard {...placard("extensions")} note="▲ Roadmap: not shipped, syntax may change" warn />
         <div class="room-head reveal">
+          <p class="roadmap">▲ Roadmap: not shipped, syntax may change</p>
           <h2 id="extensions-title" class="display h-room">Extensions, not dialects.</h2>
-          <p class="lede">
-            Some abstractions aren't Effect's but are worth being language: proofs, infrastructure, user interfaces. They come as extensions you switch on per project. No two extensions claim the same syntax, so any combination works, and switching one off never changes what the rest of your code means.
-          </p>
+          <p class="lede">Switch them on per project. None claims another's syntax.</p>
         </div>
-        <div class="ext">
-          {
-            keywords.extensions.map((x) => (
-              <button type="button" class="ext-card reveal" aria-pressed="false" data-ext={x.id}>
-                <span class="ext-top">
-                  <span class="h-tile">{x.name}</span>
-                  <span class="switch" aria-hidden="true"></span>
-                </span>
-                <span class="ext-on">On {x.on}</span>
-                <p>{x.what}</p>
-              </button>
-            ))
-          }
+        <div class="ext-row">
+          <div class="line-stage stage-ring" data-line-stage aria-hidden="true"></div>
+          <div class="ext">
+            {
+              keywords.extensions.map((x) => (
+                <button type="button" class="ext-card reveal" aria-pressed="false" data-ext={x.id}>
+                  <span class="ext-top">
+                    <span class="h-tile">{x.name}</span>
+                    <span class="switch" aria-hidden="true"></span>
+                  </span>
+                  <span class="ext-on">On {x.on} · adds {x.adds.join(", ")}</span>
+                </button>
+              ))
+            }
+          </div>
         </div>
-        <ul class="keywords reveal" aria-label="Keywords: the language's today, and the ones each extension adds">
-          {keywords.core.map((k) => <li>{k}</li>)}
-          {keywords.extensions.flatMap((x) => x.adds.map((k) => <li data-ext={x.id}>{k}</li>))}
-        </ul>
-        <p class="keywords-note mono-note">Solid: keywords today. Dashed: what each extension would add. Switch them on and off; none overlaps another.</p>
       </div>
     </section>
 
-    <section id="superset" class="room" aria-labelledby="superset-title" data-room="superset" data-label={`${number("superset")} / ${placard("superset").name}`}>
+    <section id="superset" class="room" aria-labelledby="superset-title" data-room="superset" data-label="Superset" data-line="spine">
       <div class="room-bg">
         <Picture name="superset" alt="A white marble cube resting exactly inside a clear glass cube" position="58% 50%" />
       </div>
       <div class="wrap">
-        <Placard {...placard("superset")} />
         <div class="room-head reveal">
-          <h2 id="superset-title" class="display h-room">Every TypeScript file is already EffectScript.</h2>
-          <p class="lede">The same philosophy as TypeScript: a superset, adopted one line at a time, never a new language to migrate to.</p>
+          <h2 id="superset-title" class="display h-room">Every TypeScript file<br /><span class="dim">is already EffectScript.</span></h2>
         </div>
-        <div class="zero reveal">
-          <div><h3 class="h-tile">A superset</h3><p>Rename <code>.ts</code> to <code>.efx</code> and nothing changes. Use the new syntax where it helps.</p></div>
-          <div><h3 class="h-tile">Mixed projects</h3><p><code>.ts</code> imports <code>.efx</code> and back, with full IntelliSense in VS Code, Neovim and Helix.</p></div>
-          <div><h3 class="h-tile">No lock-in</h3><p><code>efx convert</code> turns Effect TypeScript into EffectScript, and every <code>.efx</code> compiles back. Leave any time.</p></div>
-          <div><h3 class="h-tile">Your tools</h3><p>tsc, Vite, Vitest, Bun, Node, VS Code, Neovim, Helix. No new runtime: the output is Effect.</p></div>
+        <div class="superset-row">
+          <ul class="facts-list reveal">
+            <li><b>A superset.</b> Rename <code>.ts</code> to <code>.efx</code> and nothing changes.</li>
+            <li><b>Mixed projects.</b> <code>.ts</code> and <code>.efx</code> import each other.</li>
+            <li><b>No lock-in.</b> Every <code>.efx</code> compiles back. Leave any time.</li>
+            <li><b>Your tools.</b> tsc, Vite, Vitest, Bun, Node, VS Code, Neovim, Helix.</li>
+          </ul>
         </div>
       </div>
     </section>
 
-    <section id="lockstep" class="room" aria-labelledby="lockstep-title" data-room="lockstep" data-label={`${number("lockstep")} / ${placard("lockstep").name}`}>
+    <section id="lockstep" class="room" aria-labelledby="lockstep-title" data-room="lockstep" data-label="Lockstep" data-line="lockstep">
       <div class="room-bg from-right">
         <Picture name="lockstep" alt="An armillary sphere with two rings locked at the same angle" position="75% 50%" />
       </div>
       <div class="wrap">
-        <Placard {...placard("lockstep")} />
         <div class="room-head reveal">
           <h2 id="lockstep-title" class="display h-room">Built on Effect.<br /><span class="dim">Versioned with it.</span></h2>
-          <p class="lede">
-            A language built on a library moves when the library does. EffectScript's version names the Effect it targets, and its builtins are generated from that release.
-          </p>
+          <p class="lede">EffectScript's version names the Effect it targets.</p>
         </div>
         <div class="lock">
           <div class="dial reveal">
@@ -559,20 +453,17 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
           </div>
           <div class="reveal">
             <div class="lock-rows">
-              <div class="row"><code>effectscript@4.0.x</code><span>targets <code>effect@4.0.*</code>. When Effect ships 4.1, EffectScript 4.1 follows.</span></div>
-              <div class="row"><code>4.0.0-alpha.N</code><span><span class="pill warn">▲ alpha</span> Its own tag while the language settles. Breaking changes are allowed in alpha, and called out.</span></div>
-              <div class="row"><code>prelude</code><span>Regenerated from each Effect release's source. Nothing becomes a builtin without review.</span></div>
+              <div class="row"><code>effectscript@4.0.x</code><span>targets <code>effect@4.0.*</code></span></div>
+              <div class="row"><code>4.0.0-alpha.N</code><span><span class="pill warn">▲ alpha</span> while the language settles</span></div>
+              <div class="row"><code>prelude</code><span>regenerated from each Effect release</span></div>
             </div>
-            <p class="body" style="margin-top:28px">A file can say which Effect it targets, so an agent reading one pasted file knows which API it's looking at:</p>
-            <pre class="code-block" style="margin-top:14px"><code set:html={header} /></pre>
+            <pre class="code-block" style="margin-top:22px"><code set:html={header} /></pre>
           </div>
         </div>
-        <div class="room-head reveal" style="margin-top:88px">
-          <h3 class="display h-room" style="font-size:clamp(1.8rem,3vw,3rem)">A moving target, on purpose.</h3>
-          <p class="body">
-            EffectScript is an open experiment, built on Effect and not an official Effect project. The language is still being shaped: try it, let your agents try it, and tell us what to change.
-          </p>
-          <div class="hero-actions" style="margin-top:24px">
+        <div class="room-head reveal moving">
+          <h3 class="display h-room">A moving target, on purpose.</h3>
+          <p class="lede">An open experiment built on Effect, not an official Effect project. Try it, and tell us what to change.</p>
+          <div class="hero-actions">
             <a class="btn btn-ghost" href="https://github.com/EffectScript-Lang/effectscript/issues">Open an issue</a>
             <a class="btn btn-link" href="https://x.com/gunta85">Follow @gunta85 →</a>
           </div>
@@ -580,10 +471,9 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
       </div>
     </section>
 
-    <section id="start" class="close" aria-labelledby="start-title" data-room="start" data-label={`${number("start")} / ${placard("start").name}`}>
+    <section id="start" class="close" aria-labelledby="start-title" data-room="start" data-label="Start" data-line="start">
       <Scene scene="ceremony" data={{ sheet: JSON.stringify(ceremonySheet.slice(0, 24)), tangle: "0.45", dpr: "1.25", "beam-y": "auto", converge: "0.34", "still-time": "6" }} />
       <div class="wrap">
-        <Placard {...placard("start")} />
         <h2 id="start-title" class="display reveal"><span class="headline-fade">All of Effect.</span><br /><span class="dim">None of the ceremony.</span></h2>
         <div class="terminal reveal">
           <div class="terminal-bar"><i></i><i></i><i></i><span>zsh</span></div>
@@ -618,11 +508,14 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
 </Base>
 
 <script>
+  import { startLine } from "../src/scenes/line.ts"
   import { start } from "../src/scenes/runtime.ts"
   import { factories } from "../src/scenes/scenes.ts"
 
   document.documentElement.classList.add("js")
   void start(factories)
+  // the line that draws itself down the page (ADR-0091)
+  const line = startLine()
 
   // reveals: visible by default, faded in once as they enter
   const reveal = new IntersectionObserver(
@@ -648,9 +541,7 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
       for (const [i, room] of rooms.entries()) if (room.getBoundingClientRect().top <= middle) current = i
       index.classList.toggle("on", current >= 0)
       if (current < 0) return
-      const room = rooms[current]!
-      const [num, label] = (room.dataset.label ?? "").split(" / ")
-      name.textContent = `${num} / ${String(rooms.length).padStart(2, "0")}  ${label ?? ""}`
+      name.textContent = rooms[current]!.dataset.label ?? ""
       index.style.setProperty("--progress", String((current + 1) / rooms.length))
     }
     addEventListener("scroll", update, { passive: true })
@@ -663,7 +554,7 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
       card.addEventListener("click", () => {
         const on = card.getAttribute("aria-pressed") !== "true"
         card.setAttribute("aria-pressed", String(on))
-        for (const k of room.querySelectorAll<HTMLElement>(`.keywords [data-ext="${card.dataset.ext}"]`)) k.classList.toggle("lit", on)
+        line?.light(card.dataset.ext!, on)
       })
     }
   }
@@ -679,6 +570,7 @@ const placard = (id: (typeof rooms)[number][0]) => ({ number: number(id), name: 
         tab.tabIndex = selected ? 0 : -1
       }
       for (const panel of panels) panel.hidden = panel.dataset.scenarioPanel !== id
+      line?.station(id)
     }
     for (const [i, tab] of tabs.entries()) {
       tab.addEventListener("click", () => select(tab.dataset.scenario!))

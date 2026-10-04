@@ -89,7 +89,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0079](0079-effectscript-dev-on-blume-with-a-public-theme.md) | effectscript.dev moves to Blume, with a public EffectScript theme | Accepted |
 | [0080](0080-code-ligatures-on.md) | Code is set with JetBrains Mono's ligatures on | Accepted |
 | [0081](0081-signature-clause-scopes.md) | The grammar scopes an effect's success, error and requirement types | Accepted |
-| [0082](0082-the-landing-page-as-an-exhibition.md) | The landing page is an exhibition: computed rooms, vgpu WebGPU scenes and generated photography | Accepted |
+| [0082](0082-the-landing-page-as-an-exhibition.md) | The landing page is an exhibition: computed rooms, vgpu WebGPU scenes and generated photography | Accepted, partly superseded by 0091 |
 | [0083](0083-language-extensions.md) | Abstractions outside Effect come as language extensions that never overlap | Accepted (mechanism open) |
 | [0084](0084-the-playground-maps-each-part-live.md) | The playground is a full-screen editor that links each EffectScript part to its TypeScript | Accepted, partly superseded by 0085 and 0088 |
 | [0085](0085-the-playground-maps-concepts-and-colours-intent.md) | The playground maps whole concepts, colours code by intent, and previews decided syntax | Accepted, partly superseded by 0086 |
@@ -98,6 +98,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0088](0088-the-playground-is-a-workspace-both-ways-with-docs.md) | The playground is a workspace of example files, converts both ways with either side on the left, and shows docs on hover | Accepted |
 | [0089](0089-prelude-imports-name-the-module-file.md) | Prelude imports name the module's own file, not the package index | Accepted |
 | [0090](0090-a-convex-extension-sketched-on-confect.md) | A Convex extension, sketched on Confect: tables, function specs and their impls | Proposed |
+| [0091](0091-the-landing-page-is-drawn-by-one-line.md) | The landing page is drawn by one line, with a headline and one sentence per room | Accepted |
 
 ## Template
 

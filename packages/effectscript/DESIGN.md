@@ -129,13 +129,14 @@ components:
 
 **Creative North Star: "The Exhibition in a Dark Room"**
 
-The landing page (`site/src/pages/index.astro`) and the public teaser (`soon.astro`) share one system. Each idea gets its own full-width room on ink. A room holds one source of light: a live WebGPU scene drawn over its poster, or one of the brand's monochrome monolith photographs under a gradient scrim. It also holds one artifact (a table, a ledger, code, a diagnostic) and a numbered mono placard. Light is the only colour. White does the emphasis, the zinc grays set the hierarchy, and hue appears only as a signal for state.
+The landing page (`site/src/pages/index.astro`) and the public teaser (`soon.astro`) share one system. Each idea gets its own full-width room on ink. A room holds one source of light: a live WebGPU scene drawn over its poster, or one of the brand's monochrome monolith photographs under a gradient scrim. It also holds one artifact (a table, a ledger, code, a diagnostic). One white line runs the whole landing page, drawing itself as the reader scrolls, and becomes each room's diagram (ADR-0091). Light is the only colour. White does the emphasis, the zinc grays set the hierarchy, and hue appears only as a signal for state.
 
 The system inherits the binding brand (`brand/README.md`): Effect's zinc on near-black, Inter Display Bold headlines, Inter body, JetBrains Mono for code and labels, and the ƒx lockup drawn only from the brand files, white on black. The page is dense with real numbers and real code, and every count is computed at build time. Rooms are separated by hairlines, not cards or colour bands. The page is long and paced like a film. Three rooms open as pinned chapter scenes, and bento grids act as intermissions between them.
 
 When the site moves to Blume (ADR-0079), the Blume theme's `effectscript-dark` code theme replaces this page's monochrome Shiki theme (`site/src/lib/highlight.ts`), and the theme's header replaces the page's own nav. This document records the system as built. It does not describe Blume.
 
 **Key Characteristics:**
+
 - Ink rooms divided by 1px hairlines, each lit by one live scene or one monochrome photograph.
 - A monochrome palette: white for emphasis, zinc grays for hierarchy, four signal colours used for state only.
 - Inter Display Bold headlines in tight tracking, with the effect.website white-to-gray fade.
@@ -148,9 +149,11 @@ When the site moves to Blume (ADR-0079), the Blume theme's `effectscript-dark` c
 The palette is zinc on near-black. White carries the brand, and nothing on the page uses an accent hue.
 
 ### Primary
+
 - **Exhibition White** (white): headlines, keywords in code, the solid button, focus rings, selection, lit token cells, toggled-on states. White is the page's only accent.
 
 ### Neutral
+
 - **Ink** (ink): the ground of every room, the scrims over photographs, and the halo behind hero copy.
 - **Well** (well): the background of code blocks; one step above ink so code reads as recessed.
 - **Vitrine** (vitrine): bento tiles and the cells legend. Translucent versions of it (0.85 to 0.92 alpha) back the cards placed over photographs.
@@ -165,6 +168,7 @@ The palette is zinc on near-black. White carries the brand, and nothing on the p
 - **Mist** (mist): solid-button hover, chip text, numerics and type names in code.
 
 ### Signal (state only, ADR-0078)
+
 - **Pass** (signal-pass) with ✓: success values and passing attempts.
 - **Fail** (signal-fail) with !: error types, failed attempts, error diagnostics.
 - **Warn** (signal-warn) with ▲: roadmap and alpha markers, warning diagnostics.
@@ -173,6 +177,7 @@ The palette is zinc on near-black. White carries the brand, and nothing on the p
 In code, a signature carries the same three: the return type in Pass, the types after `throws` in Fail and the services after `needs` in Need; everything else stays in the monochrome code theme.
 
 ### Named Rules
+
 **The Light Is the Only Colour Rule.** Grounds, headlines, buttons, the mark and the photographs stay monochrome, and the shaders draw white light on ink. A scene uses a signal only where it shows state: the typed-error rails, the retry attempts and the A/E/R channels, as thin rails and points of light, each with a glyph-and-label key beside it. Merged channels turn white, never a blend of two signals.
 
 **The Signal Needs a Name Rule.** A signal colour always comes with its glyph or a label. It appears as text, a 1px `currentColor` border, a 2px inset rule, or a 8 to 10% tint, and never as a fill, a gradient or decoration.
@@ -186,6 +191,7 @@ In code, a signature carries the same three: the return type in Pass, the types 
 **Character:** A heavy, tightly tracked display face over quiet Inter body, framed by monospaced labels that read like comments in a source file. The mono face is used for everything functional (buttons, nav, placards, captions, numbers' units). The sans faces are used for argument.
 
 ### Hierarchy
+
 - **Display** (700, `clamp(2.6rem, 4.75vw, 6rem)`, 0.98): the hero headline. Pinned chapter titles use the same style at up to `clamp(2.5rem, 6.4vw, 6rem)`, and the closing headline at up to `clamp(2.8rem, 7vw, 6rem)`. Balanced wrapping.
 - **Headline** (700, `clamp(2.1rem, 4vw, 4.25rem)`, 1.02): each room's h2, in a head up to 46rem wide.
 - **Title** (Inter Display 600, 1.25rem, 1.25): bento-tile and card heads.
@@ -196,6 +202,7 @@ In code, a signature carries the same three: the return type in Pass, the types 
 - **Code** (JetBrains Mono 400, 13px, 1.7; 13 to 15.5px in large wells): inline `code` is set at 0.9em in white.
 
 ### Named Rules
+
 **The Fade Ends on the Last Word Rule.** A display headline's white lines may carry the effect.website fade: solid white to 70%, then fading to a light gray (`#96969c`) on the final word. A dimmed closing line follows in Dim Gray. The fade is used only on display headlines.
 
 **The Ligatures for Code Rule.** Code is set with JetBrains Mono's contextual and common ligatures on (ADR-0080), so `|>` draws as a play triangle. Any rule that sets code with the `font` shorthand turns ligatures back on. Tracked uppercase labels keep their letter-spacing, which stops ligatures from forming.
@@ -204,7 +211,7 @@ In code, a signature carries the same three: the return type in Pass, the types 
 
 The page is a single column of full-bleed rooms. Content sits in a wrap up to 2240px wide with a fluid gutter (`clamp(16px, 4.4vw, 90px)`). Each room has generous vertical padding (`clamp(88px, 10vw, 168px)`) and ends at a 1px hairline. Room heads are about 46rem wide and align left by default. In a photographed room whose light falls on the left, the head aligns right, opposite the light. The artifact sits 48 to 64px below the head.
 
-- **Hero:** at least `max(720px, 100svh - nav)`. The live scene fills the hero, with a radial ink scrim behind the copy. The next room's placard sticks out from the bottom edge.
+- **Hero:** at least `max(720px, 100svh - nav)`. The live scene fills the hero, with a radial ink scrim behind the copy. The line leaves the hero's beam and sweeps down to its spine.
 - **Chapters:** above 900px, a chapter is 175vh tall and holds a sticky 100svh stage. The chapter's own scroll drives a push-in on its photograph and a rise-and-unblur on its title. A vertical chapter index (mono, rotated, with a 1px progress track) shows on the right edge from 1280px.
 - **Grids:** a 12-column bento with a 16px gap (tiles span 3 to 7 columns at 1100px or wider, and 6 at 760px or wider). Ruled shelves of 2 to 4 columns divided by hairlines rather than gaps, and 2 to 3 column card grids with a 16px gap.
 - **Breakpoints:** 600, 760, 900, 1000, 1100 and 1280px. At 760px and below, nav links hide, the hero scene drops into a 42svh band below the copy, and photographed rooms get a heavier even scrim (0.8 to 0.94 alpha) so text keeps its contrast.
@@ -214,6 +221,7 @@ The page is a single column of full-bleed rooms. Content sits in a wrap up to 22
 Depth comes from light and scrims rather than lifted surfaces. Rooms are flat ink. Photographs and scenes sit behind gradient scrims of ink that keep the light where there is no text. Cards placed over light use translucent vitrine and a backdrop blur. Real drop shadows appear only on the objects that hold the film and the terminal: deep, soft and black, as if lit from above in a dark room.
 
 ### Shadow Vocabulary
+
 - **Screen** (`box-shadow: 0 40px 120px -30px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(255 255 255 / 0.03)`): the film's screen.
 - **Terminal** (`box-shadow: 0 30px 90px -30px rgb(0 0 0 / 0.9)`): the closing install terminal.
 - **Play Disc** (`box-shadow: 0 18px 50px -10px rgb(0 0 0 / 0.8)`): the white play disc.
@@ -221,6 +229,7 @@ Depth comes from light and scrims rather than lifted surfaces. Rooms are flat in
 - **Signal Rule** (`box-shadow: inset 2px 0 0 <signal>`): the left edge of an error or warning diagnostic.
 
 ### Named Rules
+
 **The Scrim, Not the Box Rule.** When text sits over a photograph or a scene, darken the light with an ink gradient (or a halo on the hero) instead of placing the text in a solid box.
 
 ## Shapes
@@ -230,7 +239,9 @@ Rooms, placards, tables and shelves are square-cornered and ruled by hairlines. 
 ## Components
 
 ### Buttons
+
 Mono, quiet and exact.
+
 - **Shape:** gently rounded (7px), 48 to 58px tall, JetBrains Mono 500.
 - **Solid:** white with ink text, turning Mist on hover. Use one per group, for the main action.
 - **Ghost:** translucent ink with a Strong Hairline border, turning to a zinc-400 border and a tile tint on hover.
@@ -238,14 +249,21 @@ Mono, quiet and exact.
 - **Small:** 38 to 48px, used in the nav.
 - **Press / Focus:** press nudges the button 1px down. Focus shows a 2px white outline at a 3px offset with a 6px radius, site-wide.
 
+### The line
+
+The landing page's signature (ADR-0091): one white 1.6px stroke with a faint 9px glow, drawn as the reader scrolls, with a glowing pen at its tip. It runs down a spine in the left gutter and, in each room, swings out into that room's diagram before it returns: a frame around the film, a tangle that loosens into a straight line, rungs between translations, an error rail with retries, fibers and layers, stations over the gallery's tabs, rings and leaders on annotated code, token tapes, the compile pipeline, squiggles under diagnostics, a ring of extension arcs, a belt around the lockstep dial, and an underline under the last words, where it ends. Branches take a signal colour only when they mean state (an error rail, a service layer), always with a glyph or label. Its diagrams sit in stage rows, so it never crosses copy; on a phone it runs straight down the spine. With reduced motion it is drawn whole.
+
 ### Placard
-The room's threshold band and the exhibition's wayfinding: a full-width frame with a Strong Hairline border and translucent ink background. It holds the room number and name (`03 / TRANSLATION`) and an optional real note on the right, such as a duration, a fact, or a Warn note with ▲ for roadmap items. Numbers come from the room list, the same list the chapter index reads.
+
+The teaser's threshold band: a full-width frame with a Strong Hairline border and translucent ink background, holding a label and an optional note. The landing page no longer numbers its rooms (ADR-0091); the chapter index at the right edge shows the room's name only.
 
 ### Chips
+
 - **Style:** a 1px border in Strong Hairline or `currentColor`, mono 11.5 to 13px, pill radius (6px for keyword chips).
 - **State:** language-extension keywords are dashed and dim when unlit, and solid white with ink text when lit. A Warn pill gets an 8% tint.
 
 ### Cards / Containers
+
 - **Corner Style:** 14 to 18px (see Shapes).
 - **Background:** Vitrine, or translucent vitrine with a 10px blur over photographs.
 - **Shadow Strategy:** none, except the screen and terminal (see Elevation & Depth).
@@ -253,20 +271,25 @@ The room's threshold band and the exhibition's wayfinding: a full-width frame wi
 - **Internal Padding:** 24 to 26px.
 
 ### Navigation
+
 A sticky bar of 72% ink with a 14px blur and saturation, ruled by a hairline. It holds the white lockup at 30 to 46px tall, uppercase mono links in Placard Gray that turn white on hover, and a small solid button. Links hide at 760px and below. The teaser keeps only the lockup and one solid button.
 
 ### Code Well
+
 Code on Well with a hairline border and 10px radius, set in the monochrome Shiki theme: keywords white, names near-white, strings and punctuation in zinc grays, comments muted italic. Inside tiles, diagnostics and the terminal, the well loses its box and keeps only a top rule. The gallery's editor windows keep VS Code Dark+. Blume's `effectscript-dark` replaces both themes after the move (ADR-0079).
 
 ### Scene
+
 A WebGPU canvas over its poster image. The canvas fades in over 1.4s after its first frame. Without WebGPU, the poster is the complete page. The pointer stirs the hero tangle. Only scenes near the viewport draw, and each has its own device-pixel-ratio cap.
 
 ### Diagnostic
+
 The compiler's real message on a mistake. A ruled block in mono, with a severity tag (an uppercase 11px label in a 4px-radius border, tinted with its signal), a bold rule code, a muted hint, and a 2px inset signal rule on the left.
 
 ## Do's and Don'ts
 
 ### Do:
+
 - **Do** give each room one source of light (a live scene or a monochrome photograph), one artifact and a numbered placard, and close it with a 1px Hairline.
 - **Do** keep every number and diagnostic computed at build time, and set big numbers in Inter Display 700 with tabular figures.
 - **Do** pair every signal colour with its glyph (✓ ! ▲ ◇) or a label, as text, a border, a 2px rule or a tint of 10% or less.
@@ -275,6 +298,7 @@ The compiler's real message on a mistake. A ruled block in mono, with a severity
 - **Do** draw icons as inline SVG in `currentColor`.
 
 ### Don't:
+
 - **Don't** introduce an accent hue, a coloured ground, or a coloured gradient. Light is the only colour.
 - **Don't** use a signal colour on the mark, headlines, buttons or page grounds, or without its glyph or label.
 - **Don't** redraw, recolour or tint the ƒx mark. Use the lockup from the brand files, white on black.
