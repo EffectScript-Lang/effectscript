@@ -1686,19 +1686,21 @@ The narrative follows §0: Effect is settled → verbosity is the complaint → 
    constructs, AoT-friendly output, and direct oxlint support.
 9. **Install/quickstart**, and the follow call to action.
 
-### 9.3 Docs (Starlight at `/docs`)
+### 9.3 Docs (Blume at `/docs`, ADR-0079)
 
 The docs are a language reference generated from the golden fixtures (EffectScript ↔ TypeScript
 pairs), plus guides: getting started, migrating with `efx convert`, services and layers, errors,
-testing, HTTP, CLI, the strict rules, editor setup, and the AI skill. The pages use Expressive Code
-blocks with the `.efx` grammar, and every example has an "Open in playground" link.
+testing, HTTP, CLI, the strict rules, editor setup, and the AI skill. The whole site is one Blume
+project with the public EffectScript theme (`effectscript/blume`, spec
+`2026-10-05-effectscript-blume-theme-design.md`). Code blocks use the `.efx` grammar and the
+signal-aware monochrome syntax theme (ADR-0078), and every example has an "Open in playground" link.
 
 ### 9.4 Stack (mirrors the Effect website)
 
-The site uses the same tools as `Effect-TS/website`:
+The site started on the same tools as `Effect-TS/website` and moved to Blume (ADR-0079):
 
-- Astro 7 (static output) + Starlight
-- Expressive Code + Shiki 4
+- Blume 2.1.1 on Astro 7 (static output), replacing Starlight
+- Shiki 4 with the EffectScript syntax themes, replacing Expressive Code
 - Tailwind CSS 4
 - React 19 islands
 - `@effect/monaco-editor`

@@ -58,7 +58,8 @@ diagonals with slopes of 0.8 and −0.895.
 ## Colour
 
 The palette is Effect's own: Tailwind zinc on near-black. White carries the
-brand. Grays are for hierarchy.
+brand. Grays are for hierarchy. Four signal colours carry state, never the
+brand itself (below).
 
 | Token  | Hex       | Use                                       |
 | ------ | --------- | ----------------------------------------- |
@@ -72,13 +73,37 @@ brand. Grays are for hierarchy.
 Headlines may use the effect.website treatment: white for the first ~60% of
 the line, fading to `#71717A` at the end.
 
+### Signal colours
+
+Four colours carry state, and only state (ADR-0078). Three of them map onto
+Effect's own shape, `Effect<A, E, R>`, so readers can tell at a glance what
+succeeds, what can fail and what a program needs. The fourth marks caution.
+
+| Signal | Dark      | Light     | Glyph | Means                                                               |
+| ------ | --------- | --------- | ----- | ------------------------------------------------------------------- |
+| Pass   | `#4ADE80` | `#15803D` | ✓     | A, success types, passing tests, additions in diffs, tips           |
+| Fail   | `#F87171` | `#B91C1C` | !     | E, error types and `throws`, failed tests, diagnostics, removals    |
+| Warn   | `#FACC15` | `#854D0E` | ▲     | Pitfalls, deprecations, defects, timeouts, alpha and preview badges |
+| Need   | `#60A5FA` | `#1D4ED8` | ◇     | R, services, layers and `needs`, notes                              |
+
+Dark values sit on Ink and Tile, light values on white and zinc-100. Every
+pair passes WCAG AA as text.
+
+- **Meaning only.** A signal marks a channel, a result, a diagnostic or a
+  callout. It is never decoration, and nothing in the brand is "the green one".
+- **Never colour alone.** Always pair a signal with a label or its glyph.
+- **Light touch.** Use it as text, a 2 px rule, or a 6–12% tint. No full-bleed
+  fills, no gradients, no two signals blended.
+- **Off limits.** The mark, wordmark, headlines, buttons and page grounds stay
+  monochrome.
+
 ## Typography
 
-| Role                | Typeface               | Notes                                                       |
-| ------------------- | ---------------------- | ----------------------------------------------------------- |
-| Wordmark, headlines | Inter Display Bold     | Tracking −2.2% (wordmark), −2.5% heads                      |
-| Body                | Inter Regular / Medium |                                                             |
-| Code, labels        | JetBrains Mono         | Ligatures off for code; `// LABELS` uppercase, +6% tracking |
+| Role                | Typeface               | Notes                                                                         |
+| ------------------- | ---------------------- | ----------------------------------------------------------------------------- |
+| Wordmark, headlines | Inter Display Bold     | Tracking −2.2% (wordmark), −2.5% heads                                        |
+| Body                | Inter Regular / Medium |                                                                               |
+| Code, labels        | JetBrains Mono         | Ligatures on for code (`\|>` draws as ▷); `// LABELS` uppercase, +6% tracking |
 
 Both are SIL Open Font License fonts and are included in [`fonts/`](fonts)
 with their licences. All logo files use outlined type, so they need no fonts.

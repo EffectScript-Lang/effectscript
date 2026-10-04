@@ -54,7 +54,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0040](0040-standalone-language-server-and-efx-lsp.md) | A standalone language server, run by `efx lsp` | Accepted |
 | [0041](0041-vscode-extension-packaging-and-commands.md) | VS Code extension packaging and commands | Accepted |
 | [0042](0042-docs-are-tsdoc-documented-once-with-doctests.md) | Docs are TSDoc comments, written once at the definition, with Elixir-style doctests | Accepted, amended by 0044 |
-| [0043](0043-efx-docs-generator-and-blume.md) | `efx docs` is our own syntactic generator that writes Markdown for Blume | Accepted, amended by 0044 |
+| [0043](0043-efx-docs-generator-and-blume.md) | `efx docs` is our own syntactic generator that writes Markdown for Blume | Accepted, amended by 0044, partly superseded by 0079 |
 | [0044](0044-living-docs-review-amendments.md) | Living-docs amendments from the Plan 12 review | Accepted |
 | [0045](0045-private-research-and-strategy-repo.md) | Research and strategy live in a private repository | Superseded by 0061 |
 | [0050](0050-effect-docs-corpus-in-effectscript.md) | The Effect docs, translated to EffectScript by the reverse compiler | Accepted |
@@ -84,6 +84,9 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0074](0074-proofs-through-bend2-from-one-source.md) | Proofs go through Bend2, from one `.efx` source; Lean 4 is dropped | Accepted |
 | [0075](0075-law-declarations.md) | `law` declares a rule the program must keep; it runs as a property test and is what a proof proves | Proposed |
 | [0076](0076-the-bend-model.md) | The Bend model: what translates, how it's encoded, and what stays opaque | Proposed |
+| [0078](0078-signal-colours-for-state.md) | Signal colours for state in a monochrome brand | Accepted |
+| [0079](0079-effectscript-dev-on-blume-with-a-public-theme.md) | effectscript.dev moves to Blume, with a public EffectScript theme | Accepted |
+| [0080](0080-code-ligatures-on.md) | Code is set with JetBrains Mono's ligatures on | Accepted |
 
 ## Template
 
