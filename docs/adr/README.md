@@ -78,6 +78,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0069](0069-rpc-groups-and-generic-impl.md) | `rpc` groups, signature lines, and a generic `impl Name` | Accepted |
 | [0068](0068-linked-dev-install-of-the-editor-extension.md) | The editor extension installs from the checkout as a symlink | Accepted |
 | [0070](0070-tools-and-toolkits.md) | `tool` declares an AI tool with its doc comment as the description | Accepted |
+| [0071](0071-cluster-entities.md) | `entity` declares a cluster entity whose `impl` holds its state | Accepted |
 
 ## Template
 
