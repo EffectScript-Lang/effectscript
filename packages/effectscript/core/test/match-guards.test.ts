@@ -17,6 +17,24 @@ const check = (source: string) => {
 }
 
 describe("match guards and object patterns (ADR-0063)", () => {
+  it("keeps an arm's object literal an object, with or without its parentheses", () => {
+    const source = `${shapes}export const size = match (shape) {
+  when Circle({ radius }): ({ kind: "round", size: radius })
+  when Square: { kind: "square", size: 1 }
+}
+export const tagged = match (shape) {
+  when Circle(c) if c.radius > 10: ({ kind: "big", size: c.radius })
+  default: ({ kind: "other", size: 0 })
+}
+`
+    const { code } = toTypeScript(source, { filename: "guards.efx" })
+    expect(code).toContain("Circle: ({ radius }) => ({ kind: \"round\", size: radius })")
+    expect(code).toContain("Square: () => ({ kind: \"square\", size: 1 })")
+    expect(code).toContain("(c) => ({ kind: \"big\", size: c.radius })")
+    expect(code).toContain("() => ({ kind: \"other\", size: 0 })")
+    expect(check(source)).toEqual([])
+  })
+
   it("doesn't count a guarded arm as handling its case", () => {
     const errors = check(`${shapes}export const size = match (shape) {
   when Circle(c) if c.radius > 10: "big"

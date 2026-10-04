@@ -156,8 +156,11 @@ const matchExpression: Handler = (node, _parent, ctx) => {
   arms.forEach((arm, i) => {
     const pattern: Node | null = arm.pattern
     const guard: Node | null = arm.guard
-    const arrow = generator ? `) => ${E}.gen(function*() { return ` : ") => "
-    const close = generator ? " })" : ""
+    // an object literal (or a sequence) as an arrow's body needs its parentheses back: the parser
+    // drops them from the body's range, and `() => { a: 1 }` is a block
+    const wrap = !generator && ["ObjectExpression", "SequenceExpression"].includes(arm.body.type)
+    const arrow = generator ? `) => ${E}.gen(function*() { return ` : wrap ? ") => (" : ") => "
+    const close = generator ? " })" : wrap ? ")" : ""
     const tail = tagsOnly ? close : `${close})`
     const last = i === arms.length - 1
     // in a match written over several lines, `Match.exhaustive` gets a line of its own
