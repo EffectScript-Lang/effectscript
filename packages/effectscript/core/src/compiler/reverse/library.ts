@@ -5,6 +5,7 @@
  * @since 4.0.0
  */
 import { children, type Node } from "../ast.ts"
+import { jsdocBefore } from "../transform/command.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
 import { commentsIn, isCanonicalString, type ReverseCtx, within } from "./context.ts"
@@ -161,5 +162,99 @@ export const convertGenericImpl = (ctx: ReverseCtx, call: Node, visit: Visit): b
     ctx.s.remove(of.arguments[0].end, of.end)
   }
   within(ctx, "Effect", () => inFrame(ctx, true, () => visit(body, shape.fn, true)), name)
+  return true
+}
+
+const constDeclarator = (statement: Node): Node | undefined =>
+  statement.kind === "const" && statement.declarations.length === 1 &&
+    statement.declarations[0].id.type === "Identifier" && !statement.declarations[0].id.typeAnnotation &&
+    statement.declarations[0].init?.type === "CallExpression"
+    ? statement.declarations[0]
+    : undefined
+
+/**
+ * `const X = Tool.make("X", { description, parameters: Schema.Struct({ … }), success, failure })`
+ * → `tool X(fields): A throws E`, when the description is the doc comment above it.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertTool = (ctx: ReverseCtx, statement: Node, outerStart: number): boolean => {
+  const tool = importedLocal(ctx.analysis, "effect/ai", "Tool")
+  const declarator = constDeclarator(statement)
+  if (tool === undefined || declarator === undefined || ctx.schema === undefined) return false
+  const call: Node = declarator.init
+  const [name, options]: Array<Node> = call.arguments
+  if (!isMember(call.callee, tool, "make") || call.arguments.length > 2 || !isCanonicalString(ctx, name)) return false
+  if (name.value !== declarator.id.name || commentsIn(ctx, statement.start, statement.end).length > 0) return false
+  const doc = jsdocBefore(ctx.source, 0, outerStart)
+  let description: string | undefined
+  let fields = ""
+  let success: string | undefined
+  let failure: string | undefined
+  if (options !== undefined) {
+    if (options.type !== "ObjectExpression" || options.properties.length === 0) return false
+    const order = ["description", "parameters", "success", "failure"]
+    let stage = 0
+    for (const property of options.properties as Array<Node>) {
+      if (property.type !== "Property" || property.computed || property.method || property.key.type !== "Identifier") {
+        return false
+      }
+      const index = order.indexOf(property.key.name)
+      if (index < stage) return false
+      stage = index + 1
+      const value: Node = property.value
+      if (property.key.name === "description") {
+        if (!isCanonicalString(ctx, value)) return false
+        description = value.value
+      } else if (property.key.name === "parameters") {
+        const struct = value.type === "CallExpression" && isMember(value.callee, ctx.schema, "Struct") &&
+            value.arguments.length === 1
+          ? fieldsText(ctx, value.arguments[0])
+          : undefined
+        if (struct === undefined || struct === "") return false
+        fields = struct
+      } else if (property.key.name === "success") {
+        success = typeOf(ctx, value)
+        if (success === undefined) return false
+      } else {
+        failure = errorText(ctx, value)
+        if (failure === undefined) return false
+      }
+    }
+  }
+  // the description is the doc comment's text: both, or neither
+  if ((doc?.description ?? "") !== (description ?? "")) return false
+  ctx.s.update(
+    statement.start,
+    statement.end,
+    `tool ${name.value}(${fields})${success === undefined ? "" : `: ${success}`}${
+      failure === undefined ? "" : ` throws ${failure}`
+    }`
+  )
+  return true
+}
+
+/**
+ * `const X = Toolkit.make(A, B)` → `toolkit X { A, B }`.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertToolkit = (ctx: ReverseCtx, statement: Node): boolean => {
+  const toolkit = importedLocal(ctx.analysis, "effect/ai", "Toolkit")
+  const declarator = constDeclarator(statement)
+  if (toolkit === undefined || declarator === undefined) return false
+  const call: Node = declarator.init
+  if (!isMember(call.callee, toolkit, "make") || commentsIn(ctx, statement.start, statement.end).length > 0) {
+    return false
+  }
+  const tools = call.arguments as Array<Node>
+  if (tools.some((t) => t.type !== "Identifier" && t.type !== "MemberExpression")) return false
+  ctx.s.update(
+    statement.start,
+    statement.end,
+    `toolkit ${declarator.id.name} { ${tools.map((t) => ctx.source.slice(t.start, t.end)).join(", ")} }`
+  )
   return true
 }

@@ -823,6 +823,29 @@ UsersRpc.of({ … }) }))`.
   `Entity`): every top-level `return { … }` is wrapped in `Name.of(…)`, `effect` methods are
   spanned `Name.method`, and pipes apply to the layer. `impl Api.group` keeps its HttpApi meaning.
 - RPC handlers get the payload; a streaming one returns a `Stream`.
+- **Reverse form:** the reverse compiler recognizes `const Name = RpcGroup.make(Rpc.make(…), …)`
+  only when `Rpc` and `RpcGroup` resolve to their value imports from `effect/rpc` and every
+  procedure has a supported canonical shape. It writes `rpc Name { … }` with one signature line
+  per procedure, preserving argument order, optional fields, success type, error union, and
+  streaming status. A stream failure type is written after `throws` (for example,
+  `Stream<A, E>` becomes `Stream<A> throws E`). The `Rpc.make` options must use the forward order
+  (`payload`, `success`, `error`, `stream`); schemas must have a reverse type mapping. Unsupported
+  options or shapes keep the group as TypeScript, as required by §6.4 and ADR-0030.
+
+#### `tool` and `toolkit` (`effect/ai`, ADR-0070)
+
+```ts
+/** Looks up the forecast for a city. */
+export tool GetForecast(city: string, days?: number): Forecast throws UnknownCity
+export toolkit Assistant { GetForecast, GetTime }
+export const AssistantLive = impl Assistant { return { GetForecast: effect ({ city }) => … } }
+```
+
+→ `const GetForecast = Tool.make("GetForecast", { description: "Looks up the forecast for a
+city.", parameters: Schema.Struct({ city: Schema.String, days: Schema.optionalKey(Schema.Number)
+}), success: Forecast, failure: UnknownCity })` and `const Assistant = Toolkit.make(GetForecast,
+GetTime)`. The doc comment is the description the model reads; the comment stays in the output.
+Tool handlers get the parameters; `impl` is as for `rpc`.
 
 #### `command` (CLI, `effect/cli`)
 
@@ -1013,7 +1036,7 @@ the roadmap.
 | Keyword / syntax  | Triggers only when                                                                       |
 | ----------------- | ---------------------------------------------------------------------------------------- |
 | `effect`              | Followed on the same line by an identifier (declaration), `{` (block), or arrow parameters followed by `=>` (arrow; speculative parse with `effect` falling back to an identifier) |
-| `schema` `error` `service` `group` `api` `command` `config` `atom` `layer` | Statement position (optionally after `export`), followed on the same line by an identifier |
+| `schema` `error` `service` `group` `api` `rpc` `command` `config` `atom` `layer` | Statement position (optionally after `export`), followed on the same line by an identifier |
 | `test` `describe` (+ `.live/.skip/.only`) | Statement position, followed on the same line by a string literal |
 | `doctest`         | Statement position, followed on the same line by a string literal (docs spec §2.3)      |
 | `impl`            | Expression position, followed on the same line by `Ident.ident {`                        |

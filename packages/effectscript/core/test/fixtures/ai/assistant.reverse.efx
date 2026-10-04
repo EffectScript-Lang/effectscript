@@ -1,0 +1,26 @@
+export schema Forecast {
+  city: string
+  high: number
+}
+
+export error UnknownCity { city: string }
+
+/** Looks up the forecast for a city. */
+export tool GetForecast(city: string, days?: number): Forecast throws UnknownCity
+
+/**
+ * The current time, as an ISO string.
+ */
+export tool GetTime(): string
+
+tool Ping()
+
+export toolkit Assistant { GetForecast, GetTime, Ping }
+
+export const AssistantLive = impl Assistant {
+  return {
+    GetForecast: effect ({ city }) => city === "Tokyo" ? new Forecast({ city, high: 21 }) : throw new UnknownCity({ city }),
+    GetTime: effect () => "2026-10-04T00:00:00Z",
+    Ping: effect () => {}
+  }
+}

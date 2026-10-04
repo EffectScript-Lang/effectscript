@@ -216,6 +216,8 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsHttpApiStart("group")) return this.efxParseGroup()
       if (this.efxIsHttpApiStart("api")) return this.efxParseApi()
       if (this.efxIsSignatureBlockStart("rpc")) return this.efxParseSignatureBlock("RpcDeclaration")
+      if (this.efxIsToolStart()) return this.efxParseTool()
+      if (this.efxIsSignatureBlockStart("toolkit")) return this.efxParseToolkit()
       if (this.efxIsDescribeStart()) return this.efxParseDescribe()
       if (this.efxIsTestStart()) return this.efxParseTest()
       if (this.efxIsDoctestStart()) return this.efxParseDoctest()
@@ -226,7 +228,7 @@ export const efxPlugin = (Base: any): any =>
       return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() ||
         this.efxIsBindingDeclarationStart("layer") || this.efxIsBindingDeclarationStart("atom") ||
         this.efxIsHttpApiStart("group") || this.efxIsHttpApiStart("api") || this.efxIsCommandStart() ||
-        this.efxIsSignatureBlockStart("rpc") ||
+        this.efxIsSignatureBlockStart("rpc") || this.efxIsToolStart() || this.efxIsSignatureBlockStart("toolkit") ||
         super.shouldParseExportStatement()
     }
 
@@ -670,6 +672,37 @@ export const efxPlugin = (Base: any): any =>
       node.lines = []
       while (!this.eat(tt.braceR)) node.lines.push(this.efxParseSignatureLine())
       return this.finishNode(node, type)
+    }
+
+    /** `tool Name(fields): A throws E` (ADR-0070): one signature line as a statement. */
+    efxIsToolStart(): boolean {
+      if (!this.efxIsWord("tool") || !this.efxNextIsNameSameLine()) return false
+      const name = this.lookahead()
+      return this.input[skipSpace(this.input, name.end)] === "("
+    }
+
+    efxParseTool(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.line = this.efxParseSignatureLine()
+      node.id = node.line.name
+      return this.finishNode(node, "ToolDeclaration")
+    }
+
+    /** `toolkit Name { A, B }` (ADR-0070). */
+    efxParseToolkit(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.id = this.parseIdent()
+      this.expect(tt.braceL)
+      node.tools = []
+      while (!this.eat(tt.braceR)) {
+        node.tools.push(this.parseExprSubscripts(null, false))
+        if (this.type !== tt.braceR) this.expect(tt.comma)
+      }
+      return this.finishNode(node, "ToolkitDeclaration")
     }
 
     efxParseApi(): any {

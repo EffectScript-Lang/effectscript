@@ -31,7 +31,9 @@ const keywords = [
   "when",
   "middleware",
   "status",
-  "rpc"
+  "rpc",
+  "tool",
+  "toolkit"
 ]
 
 /** One or more `rule`, separated by `separator`. */
@@ -255,6 +257,8 @@ export default grammar(TypeScript, {
         $.atom_declaration,
         $.group_declaration,
         $.rpc_declaration,
+        $.tool_declaration,
+        $.toolkit_declaration,
         $.api_declaration,
         $.command_declaration
       ),
@@ -650,6 +654,12 @@ export default grammar(TypeScript, {
 
     // `rpc Name { name(fields): A throws E … }` (ADR-0069)
     rpc_declaration: ($) => seq("rpc", field("name", $.identifier), "{", repeat(choice($.signature, ";")), "}"),
+
+    // `tool Name(fields): A throws E` and `toolkit Name { A, B }` (ADR-0070)
+    tool_declaration: ($) => seq("tool", $.signature),
+
+    toolkit_declaration: ($) =>
+      seq("toolkit", field("name", $.identifier), "{", optional(seq(sep1($.identifier, ","), optional(","))), "}"),
 
     signature: ($) =>
       prec.right(

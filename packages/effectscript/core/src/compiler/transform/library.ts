@@ -9,6 +9,7 @@ import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "..
 import { ref } from "../names.ts"
 import { optionalField, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
+import { jsdocBefore } from "./command.ts"
 import type { HandlerGroup } from "./registry.ts"
 
 /** A signature line's fields as struct fields: `{ id: Schema.String, limit: Schema.optionalKey(…) }`. */
@@ -63,6 +64,40 @@ const rpcDeclaration: Handler = (node, _parent, ctx) => {
   return true
 }
 
+/**
+ * `tool Name(fields): A throws E` → `const Name = Tool.make("Name", { description, parameters:
+ * Schema.Struct({ … }), success, failure })` (ADR-0070). The doc comment above it is the
+ * description the model reads.
+ */
+const toolDeclaration: Handler = (node, parent, ctx) => {
+  const line: Node = node.line
+  const options: Array<string> = []
+  // the doc comment sits before `export`, when there is one
+  const doc = jsdocBefore(ctx.source, 0, parent?.type === "ExportNamedDeclaration" ? parent.start : node.start)
+  if (doc !== undefined && doc.description !== "") options.push(`description: ${JSON.stringify(doc.description)}`)
+  if (line.fields.length > 0) {
+    options.push(`parameters: ${ref(ctx, "effect", "Schema")}.Struct(${signatureFields(ctx, line)})`)
+  }
+  if (line.success !== null) options.push(`success: ${typeToSchema(ctx, line.success)}`)
+  if (line.error !== null) options.push(`failure: ${errorUnion(ctx, line.error)}`)
+  const name: string = line.name.name
+  ctx.s.update(
+    node.start,
+    node.end,
+    `const ${name} = ${ref(ctx, "effect/ai", "Tool")}.make(${JSON.stringify(name)}${
+      options.length > 0 ? `, { ${options.join(", ")} }` : ""
+    })`
+  )
+  return true
+}
+
+/** `toolkit Name { A, B }` → `const Name = Toolkit.make(A, B)` (ADR-0070). */
+const toolkitDeclaration: Handler = (node, _parent, ctx) => {
+  const tools = (node.tools as Array<Node>).map((t) => ctx.source.slice(t.start, t.end)).join(", ")
+  ctx.s.update(node.start, node.end, `const ${node.id.name} = ${ref(ctx, "effect/ai", "Toolkit")}.make(${tools})`)
+  return true
+}
+
 /** Return statements of a body, not crossing into nested functions or classes. */
 const bodyReturns = (node: Node, out: Array<Node> = []): Array<Node> => {
   if (node.type === "ReturnStatement") out.push(node)
@@ -101,5 +136,7 @@ export const genericImpl: Handler = (node, _parent, ctx) => {
  * @category handlers
  */
 export const libraryHandlers: HandlerGroup = {
-  RpcDeclaration: rpcDeclaration
+  RpcDeclaration: rpcDeclaration,
+  ToolDeclaration: toolDeclaration,
+  ToolkitDeclaration: toolkitDeclaration
 }

@@ -273,6 +273,8 @@
   "middleware"
   "status"
   "rpc"
+  "tool"
+  "toolkit"
 ] @keyword
 
 (match_arm "default" @keyword)

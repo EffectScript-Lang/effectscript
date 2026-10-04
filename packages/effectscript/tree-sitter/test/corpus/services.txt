@@ -164,3 +164,33 @@ const UsersLive = impl UsersRpc { return {} }
         (statement_block
           (return_statement
             (object)))))))
+
+=====================
+Tool and toolkit
+=====================
+
+/** Looks up a city. */
+export tool GetForecast(city: string): Forecast throws UnknownCity
+toolkit Assistant { GetForecast, Ping }
+
+---
+
+(program
+  (comment)
+  (export_statement
+    (tool_declaration
+      (signature
+        (identifier)
+        (formal_parameters
+          (required_parameter
+            (identifier)
+            (type_annotation
+              (predefined_type))))
+        (type_annotation
+          (type_identifier))
+        (effect_clauses
+          (type_identifier)))))
+  (toolkit_declaration
+    (identifier)
+    (identifier)
+    (identifier)))

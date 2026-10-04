@@ -80,6 +80,8 @@
   "middleware"
   "status"
   "rpc"
+  "tool"
+  "toolkit"
 ] @keyword
 
 [ "abstract"
