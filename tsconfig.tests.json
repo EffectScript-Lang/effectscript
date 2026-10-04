@@ -16,6 +16,7 @@
     // EffectScript scripts whose functions tests import
     "./packages/effectscript/core/scripts/release.ts",
     "./packages/effectscript/core/scripts/standalone.ts",
+    "./packages/effectscript/site-edge/src/gate.ts",
     "./packages/effectscript/vscode/scripts/marketplace.ts"
   ],
   "exclude": [

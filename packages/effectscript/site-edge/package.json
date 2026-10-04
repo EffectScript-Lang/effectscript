@@ -1,0 +1,17 @@
+{
+  "name": "@effectscript/site-edge",
+  "version": "4.0.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "description": "effectscript.dev on Cloudflare Workers: the built site as static assets, behind the private-preview gate (ADR-0073)",
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm --filter @effectscript/site build && cf build",
+    "deploy": "pnpm --filter @effectscript/site build && cf deploy --secrets-file .dev.vars"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "2.0.0-beta.sha-52b0dc0e9",
+    "cf": "1.0.0-beta.12",
+    "vite": "^8.3.1"
+  }
+}

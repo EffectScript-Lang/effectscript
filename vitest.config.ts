@@ -141,6 +141,7 @@ export default defineConfig({
       ...project("@effectscript/zed", "packages/effectscript/zed"),
       ...project("@effectscript/effect-docs", "packages/effectscript/effect-docs"),
       ...project("@effectscript/site", "packages/effectscript/site"),
+      ...project("@effectscript/site-edge", "packages/effectscript/site-edge"),
       ...project("@effectscript/examples", "packages/effectscript/examples", true, { plugins: [efx()] }, undefined, [
         "test/**/*.test.{ts,efx}"
       ]),

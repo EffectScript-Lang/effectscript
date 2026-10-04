@@ -1,0 +1,39 @@
+---
+/**
+ * The private-preview teaser (ADR-0073): what effectscript.dev shows to visitors without an invite.
+ * It links nowhere inside the site, since every other page is invite-only during the preview.
+ */
+import CodeWindow from "../components/CodeWindow.astro"
+import Follow from "../components/Follow.astro"
+import { gallery, saving } from "../data/gallery.ts"
+import Base from "../layouts/Base.astro"
+
+const scenarios = gallery()
+const hero = scenarios.find((s) => s.id === "services")!
+const totals = scenarios.reduce(
+  (sum, s) => ({ effect: sum.effect + s.panes[1].tokens, efx: sum.efx + s.panes[2].tokens }),
+  { effect: 0, efx: 0 }
+)
+---
+
+<Base title="EffectScript: private preview" description="EffectScript is TypeScript with Effect as native syntax. It is in private preview with Effect developers.">
+  <main>
+    <section class="relative overflow-hidden">
+      <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#27272a55_1px,transparent_1px),linear-gradient(to_bottom,#27272a55_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)]"></div>
+      <div class="relative mx-auto max-w-7xl px-4 pt-20 pb-16 sm:pt-28">
+        <p class="label">// private preview</p>
+        <h1 class="headline-fade mt-4 max-w-4xl font-display text-5xl font-bold tracking-[-0.025em] sm:text-7xl">All of Effect. None of the ceremony.</h1>
+        <p class="mt-6 max-w-2xl text-lg text-subtle">
+          EffectScript is TypeScript with Effect as syntax: <code class="text-white">effect</code>, <code class="text-white">await</code>, <code class="text-white">throw</code> and <code class="text-white">try</code>, compiled to plain, idiomatic Effect TypeScript, {saving(totals.effect, totals.efx)}% shorter across our samples.
+        </p>
+        <p class="mt-4 max-w-2xl text-lg text-subtle">
+          It is in a private preview with Effect developers right now. The public launch is coming soon.
+        </p>
+        <div class="mt-14">
+          <CodeWindow title={`${hero.panes[2].name}: ${saving(hero.panes[1].tokens, hero.panes[2].tokens)}% fewer tokens than the Effect TypeScript it compiles to`} panes={[hero.panes[1], hero.panes[2]]} />
+        </div>
+      </div>
+    </section>
+    <Follow />
+  </main>
+</Base>
