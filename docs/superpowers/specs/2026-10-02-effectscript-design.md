@@ -564,8 +564,7 @@ class Users extends Context.Service<Users, {
 Rules:
 
 - **Members.** `effect m(…): A throws E` (a return type is required, error **EFX4001**), property
-  signatures, and plain method signatures form the shape. Property signatures are `readonly`
-  whether or not they say so: a service's shape is never written to (ADR-0091 A5). `layer [name] = expr` members become
+  signatures, and plain method signatures form the shape. `layer [name] = expr` members become
   `static readonly layer[Name]`. Other class members are errors (**EFX4002**).
 - **Layer initializers:**
   - An `effect` block → `Layer.effect(Self, Effect.gen(…))`. Every top-level `return { … }` object
@@ -1406,8 +1405,8 @@ Unsupported shapes stay TypeScript, with an explanation.
   - `ReadonlyArray<T>` and `Array<T>` in a schema → `T[]`, or `Array<T>` where `T` would need
     parentheses (ADR-0091 A3).
   - `error X {}` → `error X` (ADR-0091 A4).
-  - In a service, `readonly` on fields is dropped, and an implementation's parameter types that
-    repeat its signature are dropped (ADR-0091 A2, A5).
+  - In a service, an implementation's parameter types that repeat its signature are dropped
+    (ADR-0091 A2).
   - `.pipe(…)` on a head the forward compiler knows is pipeable → `|>` (ADR-0091 A1).
   - `schema X = T & Brand<"X">` → `brand X = T`, and `x = T.check(c)` → `x: T where c` (ADR-0077).
     A check called without arguments is written bare: `.check(Schema.isTrimmed())` →

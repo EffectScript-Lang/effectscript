@@ -123,7 +123,7 @@ await runPromise(Stream.runCollect(stream)) // => [42]
 
 ```efx
 service Greeter {
-  greet: (name: string) => string
+  readonly greet: (name: string) => string
 }
 
 const stream = Stream.service(Greeter)
@@ -145,7 +145,7 @@ await runPromise(
 
 ```efx
 service Greeter {
-  greet: (name: string) => string
+  readonly greet: (name: string) => string
 }
 
 const stream = Stream.serviceOption(Greeter)
@@ -431,7 +431,7 @@ await runPromise(program)
 
 ```efx
 service UserRepo {
-  list: Effect<ReadonlyArray<string>>
+  readonly list: Effect<ReadonlyArray<string>>
 }
 
 const listUsers = service(UserRepo)
@@ -3377,7 +3377,7 @@ events // => ["cleanup"]
 ```efx
 import { Console } from "effect"
 
-service Env { name: string }
+service Env { readonly name: string }
 
 const layer = Layer.succeed(Env)({ name: "Ada" })
 
@@ -3398,8 +3398,8 @@ await runPromise(Stream.runCollect(withEnv)) // => ["Hello, Ada"]
 **Providing multiple services to the stream using a context**
 
 ```efx
-service Config { prefix: string }
-class Greeter extends Context.Service<Greeter, { greet: (name: string) => string }>()("Greeter") {}
+service Config { readonly prefix: string }
+service Greeter { greet: (name: string) => string }
 
 const context = Context.make(Config, { prefix: "Hello" })
   |> Context.add(Greeter, { greet: (name: string) => `${name}!` })
@@ -3425,9 +3425,9 @@ await runPromise(program)
 **Providing a stream service**
 
 ```efx
-class Greeter extends Context.Service<Greeter, {
+service Greeter {
   greet: (name: string) => string
-}>()("Greeter") {}
+}
 
 const stream = Stream.fromEffect(
   service(Greeter).pipe(
@@ -3454,7 +3454,7 @@ await runPromise(program)
 **Providing a stream service effectfully**
 
 ```efx
-service ApiConfig { baseUrl: string }
+service ApiConfig { readonly baseUrl: string }
 
 const stream = Stream.fromEffect(
   effect {
@@ -3481,8 +3481,8 @@ events // => ["loading"]
 **Updating the stream context**
 
 ```efx
-class Logger extends Context.Service<Logger, { prefix: string }>()("Logger") {}
-class Config extends Context.Service<Config, { name: string }>()("Config") {}
+service Logger { prefix: string }
+service Config { name: string }
 
 const stream = Stream.fromEffect(
   effect {
@@ -3512,7 +3512,7 @@ await runPromise(
 **Updating a stream service**
 
 ```efx
-class Counter extends Context.Service<Counter, { count: number }>()("Counter") {}
+service Counter { count: number }
 
 const stream = Stream.fromEffect(service(Counter))
   |> Stream.updateService(Counter, (counter) => ({ count: counter.count + 1 }))

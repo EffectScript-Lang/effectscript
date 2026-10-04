@@ -64,7 +64,7 @@ In v4, use the same pattern with `Effect.context<R>()`, then run with
 
 ```efx
 service Logger {
-  log: (message: string) => void
+  readonly log: (message: string) => void
 }
 
 const program = effect {

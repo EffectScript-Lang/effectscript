@@ -97,7 +97,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0087](0087-is-tests-a-tag.md) | `is` tests a value's tag, and `is T` on its own is a predicate | Accepted |
 | [0088](0088-the-playground-is-a-workspace-both-ways-with-docs.md) | The playground is a workspace of example files, converts both ways with either side on the left, and shows docs on hover | Accepted |
 | [0090](0090-a-convex-extension-sketched-on-confect.md) | A Convex extension, sketched on Confect: tables, function specs and their impls | Proposed |
-| [0091](0091-intent-compression-audit.md) | Audit the whole language for ceremony, with one form per intent | Accepted |
+| [0091](0091-intent-compression-audit.md) | Audit the whole language for ceremony, with one form per intent | Accepted, A5 withdrawn by its amendment 1 |
 | [0092](0092-tokens-counted-with-hugging-face-tokenizers.md) | Tokens are counted with Hugging Face tokenizers, against a panel of frontier vocabularies | Accepted |
 
 ## Template

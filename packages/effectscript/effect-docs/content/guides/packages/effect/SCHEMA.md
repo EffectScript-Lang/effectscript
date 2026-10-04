@@ -6679,7 +6679,7 @@ You can use `Schema.catchDecodingWithContext` to get a fallback value from a ser
 
 ```efx
 // Define a service that provides a fallback value
-class Service extends Context.Service<Service, { fallback: Effect<string> }>()("Service") {}
+service Service { fallback: Effect<string> }
 
 //      ┌─── Codec<string, string, Service, never>
 //      ▼

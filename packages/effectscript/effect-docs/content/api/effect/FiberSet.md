@@ -197,7 +197,7 @@ actual // => ["hello", "world"]
 
 ```efx
 service Users {
-  getAll: Effect<Array<unknown>>
+  readonly getAll: Effect<Array<unknown>>
 }
 
 const program = effect {

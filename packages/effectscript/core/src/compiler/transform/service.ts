@@ -155,11 +155,6 @@ const typeImplementations = (ctx: Ctx, value: Node, signatures: ReadonlyMap<stri
   }
 }
 
-/** A service's shape is never written to: its fields are `readonly` whether or not they say so (ADR-0091 A5). */
-const readonlyField = (ctx: Ctx, member: Node): void => {
-  if (member.type === "PropertyDefinition" && member.readonly !== true) ctx.s.appendLeft(member.key.start, "readonly ")
-}
-
 // a field named `default` without a value is part of the shape (Plan 22 review I1)
 const isDefaultMember = (member: Node): boolean =>
   member.type === "PropertyDefinition" && member.efxLayer === undefined && member.static !== true &&
@@ -230,7 +225,6 @@ const referenceService = (node: Node, parent: Node | undefined, ctx: Ctx, defaul
       (member.type === "PropertyDefinition" && (member.value === null || member.value === undefined) &&
         member.static !== true)
     ) {
-      readonlyField(ctx, member)
       walk(member, node.body, ctx)
     } else {
       ctx.diagnostics.push(
@@ -348,7 +342,6 @@ const service: Handler = (node, parent, ctx) => {
       (member.type === "PropertyDefinition" && (member.value === null || member.value === undefined) &&
         member.static !== true)
     ) {
-      readonlyField(ctx, member)
       walk(member, node.body, ctx)
     } else {
       ctx.diagnostics.push(

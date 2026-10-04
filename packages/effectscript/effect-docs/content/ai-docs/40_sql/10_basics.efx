@@ -85,7 +85,7 @@ export service Groups as "app/Groups" {
   create(name: string, slug: string): Effect<Group>
   rename(id: GroupId, name: string): Effect<Group, GroupNotFound>
   findById(id: GroupId): Effect<Group, GroupNotFound>
-  list: Effect<Array<Group>>
+  readonly list: Effect<Array<Group>>
   layer = effect {
       const sql = await SqlClient.SqlClient
 

@@ -116,18 +116,20 @@ describe("one form per intent (ADR-0091)", () => {
     })
   })
 
-  describe("A5: a service's fields are read-only", () => {
-    it("compiles a field as `readonly` whether or not it says so", () => {
-      const efx = "service S {\n  size: number\n  effect get(): number\n}\n"
-      expect(compile(efx)).toContain("readonly size: number")
-      expect(compile(efx)).toBe(compile(efx.replace("  size", "  readonly size")))
+  describe("a `_tag` written inline", () => {
+    it("leaves no extra space behind, and round-trips", () => {
+      const efx = "schema Event { _tag: \"Ev\"; at: number }\nerror Only { _tag: \"X\" }\n"
+      expect(compile(efx)).toContain("(\"Ev\", { at: Schema.Number })")
+      expect(compile(efx)).toContain("(\"X\", {})")
       expect(back(compile(efx))).toBe(efx)
     })
+  })
 
-    it("leaves a service with a mutable field as TypeScript", () => {
-      const ts =
-        "import { Context } from \"effect\"\nexport class S extends Context.Service<S, {\n  size: number\n}>()(\"a/S\") {}\n"
-      expect(back(ts)).toBe(ts)
+  describe("A5, withdrawn: a service field means what TypeScript says", () => {
+    it("keeps `readonly` and a mutable field as written, both ways", () => {
+      const efx = "service S {\n  readonly size: number\n  count: number\n  effect get(): number\n}\n"
+      expect(compile(efx)).toContain("  readonly size: number\n  count: number\n")
+      expect(back(compile(efx))).toBe(efx)
     })
   })
 })

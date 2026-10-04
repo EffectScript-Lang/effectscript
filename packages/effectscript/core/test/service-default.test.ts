@@ -47,7 +47,7 @@ export const run: Effect<string> = welcome("x")
   })
   it("converts back, with a custom key, and leaves a hand-written reference as TypeScript", () => {
     const efx = `service Flags as "app/Flags" {
-  beta: boolean
+  readonly beta: boolean
 
   default = { beta: false }
 }

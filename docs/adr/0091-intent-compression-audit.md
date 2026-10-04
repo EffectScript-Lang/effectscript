@@ -92,7 +92,7 @@ Every construct, sample, doc, skill page and plan is held to these rules, in thi
 - **A4. An empty error needs no body.** `error Forbidden` and `error Unauthorized status 401` are
   complete declarations. The reverse compiler writes them without `{}`.
 - **A5. A service's members are read-only.** A member of a `service` body compiles to `readonly`
-  whether or not it says so. The reverse compiler drops the modifier.
+  whether or not it says so. The reverse compiler drops the modifier. *Withdrawn by Amendment 1.*
 - **A6. Short tag names in `catch` and `is`.** The samples, docs and skill name a tag by its tag
   (`catch (e: TimeoutError)`), as ADR-0010 and ADR-0087 already allow.
 
@@ -163,8 +163,9 @@ TypeScript):
 - Every forward fixture compiles to the same bytes as before. Where output changed, it moved
   towards hand-written Effect: the CLI's own `pipe(Command.make(…), Command.withDescription(…))`
   became `Command.make(…).pipe(Command.withDescription(…))`.
-- Every changed fixture's source is now identical to its reverse golden: the form people write and
-  the form the compiler converts to are one form.
+- In every fixture the audit changed, the changed construct is written as the reverse compiler
+  writes it. Where a fixture still differs from its reverse golden, the difference is a
+  normalization the spec lists (§6.4), kept on purpose so the forward compiler stays tested on it.
 
 - The reverse compiler becomes the place the canonical forms live. `efx convert`, `efx fix` and the
   docs corpus all converge on them, and an agent trained on the corpus sees one spelling per
@@ -174,8 +175,6 @@ TypeScript):
 - A2 means an implementation's parameter types are read from another line of the same
   declaration. Hovers in the editor still show the full type, because TypeScript sees the
   compiled annotation.
-- A5 changes what `size: number` means in a service body: it's now read-only. A service whose
-  shape needs a mutable field must be written as a TypeScript class.
 - Each rejected idea is recorded here, so it isn't proposed again without new evidence.
 
 ## Alternatives considered
@@ -188,3 +187,25 @@ TypeScript):
   to end. Accepting both as input is fine; generating both isn't.
 - **One-off fixes without an ADR:** the rubric is a standing rule for every future construct, so
   it's a decision, not a cleanup.
+
+## Amendment 1: A5 withdrawn
+
+- **Status:** Accepted
+- **Date:** 2026-10-05
+- **Deciders:** agent ruling, on the audit's own evidence (rule 6)
+
+Measured after A1–A6, Plan 29 and Plan 30 landed, A5 failed the rubric:
+
+- Effect's docs write service shapes both ways: 73 services in the corpus mark every field
+  `readonly`, and 11 have a mutable one (`{ defaultValue: Effect.Effect<number> }`). Under A5 those
+  11 can't convert, because `size: number` would compile to `readonly size: number`. A service left
+  as a `Context.Service` class is a second way to write a service, which is worse than a modifier.
+- Without A5, the whole corpus is 9–10 tokens *smaller* in every vocabulary of the panel, and one
+  more example converts (1,951 → 1,952). The `readonly` tokens A5 saved are outweighed by what it
+  blocked.
+- A TypeScript reader reads `size: number` as mutable (rule 1). In a `service` body it now means
+  that again.
+
+So a service field means what TypeScript says: `readonly size: number` and `size: number` are two
+intents, not two spellings of one, and both convert both ways.
+

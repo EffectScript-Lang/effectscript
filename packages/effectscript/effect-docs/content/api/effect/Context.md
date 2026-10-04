@@ -31,17 +31,15 @@ Context.get(context, Database).query("SELECT 1") // => "Result: SELECT 1"
 **Creating service keys**
 
 ```efx
-import { Context } from "effect"
-
 // Create a simple service
 const Database = Context.Service<{
   query: (sql: string) => string
 }>("Database")
 
 // Create a service class
-class Config extends Context.Service<Config, {
+service Config {
   port: number
-}>()("Config") {}
+}
 
 // Use the services to create contexts
 const db = Context.make(Database, {

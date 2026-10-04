@@ -10,7 +10,7 @@ declare const SqlLive: Layer<never>
 export service Users {
   effect find(id: string): User throws UserNotFound
   effect list(): ReadonlyArray<User>
-  size: number
+  readonly size: number
 
   layer = effect {
     const cache = new Map<string, User>()

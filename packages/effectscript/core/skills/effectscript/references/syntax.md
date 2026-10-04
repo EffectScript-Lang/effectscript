@@ -976,7 +976,7 @@ declare const SqlLive: Layer<never>
 export service Users {
   effect find(id: string): User throws UserNotFound
   effect list(): ReadonlyArray<User>
-  size: number
+  readonly size: number
 
   layer = effect {
     const cache = new Map<string, User>()
@@ -1065,7 +1065,7 @@ export const firstName = Effect.fn("firstName")(function*(id: string) {
 ```efx
 export service Greeter {
   effect greet(name: string): string
-  punctuation: string
+  readonly punctuation: string
 
   default = {
     punctuation: "!",

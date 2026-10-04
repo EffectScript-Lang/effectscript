@@ -56,7 +56,6 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
   already states:
   - a service implementation's parameters take their types from its signature:
     `layer test = { find: effect (id) => … }`;
-  - a service's fields are read-only without `readonly`;
   - an error with no fields has no body: `error Forbidden`, `error Unauthorized status 401`;
   - an array in a schema is `T[]`;
   - a tag is named by its tag: `catch (e: TimeoutError)`.

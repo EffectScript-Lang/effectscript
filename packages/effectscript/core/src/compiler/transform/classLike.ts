@@ -57,7 +57,11 @@ export const lineRange = (source: string, node: Node): readonly [number, number]
  */
 export const removeLine = (ctx: Ctx, node: Node): void => {
   const [start, end] = lineRange(ctx.source, node)
-  ctx.s.remove(start, end)
+  // inside a line (`{ _tag: "A"; at: number }`), the spaces after it go too
+  const spaces = start === node.start ? /^[ \t]*/.exec(ctx.source.slice(end))![0].length : 0
+  // alone between braces (`{ _tag: "A" }`), the spaces before it go too, leaving `{}`
+  const before = ctx.source[end + spaces] === "}" ? /[ \t]*$/.exec(ctx.source.slice(0, start))![0].length : 0
+  ctx.s.remove(start - before, end + spaces)
 }
 
 /**

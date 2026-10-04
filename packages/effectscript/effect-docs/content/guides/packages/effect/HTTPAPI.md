@@ -2381,7 +2381,7 @@ When you attach interdependent middleware to an endpoint, group, or API, the mid
 
 ```efx
 service AuthInfo {
-  userId: string
+  readonly userId: string
 }
 
 class LoadAuth extends HttpApiMiddleware.Service<LoadAuth, {
@@ -2637,7 +2637,7 @@ const User = Schema.Struct({
 
 // Define the UsersRepository service
 service UsersRepository {
-  findById: (id: number) => Effect<typeof User.Type>
+  readonly findById: (id: number) => Effect<typeof User.Type>
 }
 
 const Api = HttpApi.make("MyApi")

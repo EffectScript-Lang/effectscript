@@ -2223,7 +2223,7 @@ output // => ["Querying database", "result"]
 
 ```efx
 service Config {
-  greeting: string
+  readonly greeting: string
 }
 
 const program = effect {

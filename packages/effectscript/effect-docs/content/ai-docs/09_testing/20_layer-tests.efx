@@ -19,7 +19,7 @@ export class TodoRepoTestRef extends Context.Service<TodoRepoTestRef, Ref<Array<
 
 service TodoRepo as "app/TodoRepo" {
   create(title: string): Effect<Todo>
-  list: Effect<ReadonlyArray<Todo>>
+  readonly list: Effect<ReadonlyArray<Todo>>
   layer test = effect {
       const store = await TodoRepoTestRef
 
@@ -45,7 +45,7 @@ service TodoRepo as "app/TodoRepo" {
 
 service TodoService as "app/TodoService" {
   addAndCount(title: string): Effect<number>
-  titles: Effect<ReadonlyArray<string>>
+  readonly titles: Effect<ReadonlyArray<string>>
   layer noDeps = effect {
       const repo = await TodoRepo
 

@@ -19,7 +19,7 @@ The examples in the JSDoc of `packages/effect/src/ManagedRuntime.ts`, in EffectS
 const notifications: Array<string> = []
 
 service Notifications {
-  notify: (message: string) => Effect<void>
+  readonly notify: (message: string) => Effect<void>
   layer = Layer.succeed(this)({
     notify: Effect.fn("Notifications.notify")((message) =>
       Effect.sync(() => notifications.push(message))

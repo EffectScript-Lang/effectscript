@@ -14,7 +14,7 @@ schema Todo {
 }
 
 export service JsonPlaceholder as "app/JsonPlaceholder" {
-  allTodos: Effect.Effect<ReadonlyArray<Todo>, JsonPlaceholderError>
+  readonly allTodos: Effect.Effect<ReadonlyArray<Todo>, JsonPlaceholderError>
   getTodo(id: number): Effect.Effect<Todo, JsonPlaceholderError>
   createTodo(todo: Omit<Todo, "id">): Effect.Effect<Todo, JsonPlaceholderError>
   layer = effect {

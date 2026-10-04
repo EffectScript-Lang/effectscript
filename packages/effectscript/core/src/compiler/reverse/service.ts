@@ -177,21 +177,6 @@ const signatureMap = (members: Iterable<Node>): Map<string, Node> =>
   new Map([...members].map((signature) => [signature.key.name as string, signature]))
 
 /**
- * A service's fields are `readonly` in its shape and written without the modifier (ADR-0091 A5): the
- * field that isn't, or `undefined` when they all are.
- */
-const mutableField = (members: ReadonlyArray<Node>): Node | undefined =>
-  members.find((m) => m.type === "TSPropertySignature" && m.readonly !== true)
-
-const dropReadonly = (ctx: ReverseCtx, members: ReadonlyArray<Node>): void => {
-  for (const m of members) {
-    if (m.type === "TSPropertySignature" && /^readonly\s/.test(ctx.source.slice(m.start, m.key.start))) {
-      ctx.s.remove(m.start, m.key.start)
-    }
-  }
-}
-
-/**
  * @since 4.0.0
  * @category reverse
  */
@@ -224,8 +209,6 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
       return explain("its members are separated by commas")
     }
   }
-  const mutable = mutableField(members)
-  if (mutable !== undefined) return explain(`its \`${slice(ctx, mutable.key)}\` field isn't readonly`)
   // class body: `static readonly layer…` members, then the generated accessors
   const statics: Array<Node> = cls.body.body
   const accessors = new Map<string, Node>()
@@ -293,7 +276,6 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
   const as = key.value === serviceKey(ctx.options, name) ? "" : ` as ${keyText}`
   ctx.s.update(cls.start, shape.start, `service ${name}${as} `)
   // members
-  dropReadonly(ctx, members)
   for (const signature of effects) {
     ctx.s.appendLeft(signature.start, "effect ")
     convertReturnType(ctx, returnTypeOf(signature), "Effect")
@@ -497,7 +479,6 @@ export const convertReferenceService = (
     else accessors.set(property.key.name, property)
   }
   const members: Array<Node> = iface.body.body
-  if (mutableField(members) !== undefined) return 0
   const effects: Array<Node> = []
   for (const signature of members) {
     if (
@@ -528,7 +509,6 @@ export const convertReferenceService = (
   const keyword = ctx.source.indexOf("interface", iface.start)
   const as = key.value === serviceKey(ctx.options, name) ? "" : ` as ${JSON.stringify(key.value)}`
   ctx.s.update(keyword, iface.id.end, `service ${name}${as}`)
-  dropReadonly(ctx, members)
   const signatures = signatureMap(effects)
   untypeImplementations(ctx, value, signatures, undefined)
   for (const layer of layers) untypeImplementations(ctx, layer.member.value, signatures, reference)

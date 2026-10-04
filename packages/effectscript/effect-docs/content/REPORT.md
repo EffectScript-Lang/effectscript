@@ -8,10 +8,10 @@ and after.
 
 | area | examples | re-sugared | unchanged | left as TS | TS tokens | EffectScript tokens | saved |
 | ---- | -------: | ---------: | --------: | ---------: | --------: | ------------------: | ----: |
-| ai-docs | 40 | 38 | 2 | 0 | 27618 | 25179 | 8.8% |
-| guides | 565 | 200 | 292 | 73 | 35600 | 31984 | 10.2% |
-| api | 3415 | 1713 | 1699 | 3 | 212149 | 180000 | 15.2% |
-| **total** | **4020** | **1951** | **1993** | **76** | **275367** | **237163** | **13.9%** |
+| ai-docs | 40 | 38 | 2 | 0 | 27618 | 25191 | 8.8% |
+| guides | 565 | 200 | 292 | 73 | 35600 | 31978 | 10.2% |
+| api | 3415 | 1714 | 1698 | 3 | 212288 | 180123 | 15.2% |
+| **total** | **4020** | **1952** | **1992** | **76** | **275506** | **237292** | **13.9%** |
 
 ## The same examples in other vocabularies
 
@@ -19,17 +19,17 @@ The re-sugared examples, counted with each vocabulary of the panel (ADR-0092).
 
 | vocabulary | lab | TS tokens | EffectScript tokens | saved |
 | ---------- | --- | --------: | ------------------: | ----: |
-| o200k | OpenAI | 275367 | 237163 | 13.9% |
-| qwen3 | Qwen | 277699 | 239628 | 13.7% |
-| deepseek-v3 | DeepSeek | 290730 | 249965 | 14.0% |
-| glm-4.6 | Z.ai | 274372 | 236301 | 13.9% |
+| o200k | OpenAI | 275506 | 237292 | 13.9% |
+| qwen3 | Qwen | 277842 | 239762 | 13.7% |
+| deepseek-v3 | DeepSeek | 290873 | 250098 | 14.0% |
+| glm-4.6 | Z.ai | 274513 | 236433 | 13.9% |
 
 ## API examples by package
 
 | package | examples | re-sugared | unchanged | left as TS | TS tokens | EffectScript tokens | saved |
 | ------- | -------: | ---------: | --------: | ---------: | --------: | ------------------: | ----: |
 | packages/atom/react | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
-| packages/effect | 3407 | 1709 | 1696 | 2 | 211495 | 179430 | 15.2% |
+| packages/effect | 3407 | 1710 | 1695 | 2 | 211634 | 179553 | 15.2% |
 | packages/opentelemetry | 1 | 1 | 0 | 0 | 286 | 269 | 5.9% |
 | packages/platform/deno | 1 | 1 | 0 | 0 | 71 | 51 | 28.2% |
 | packages/sql/pg | 2 | 0 | 1 | 1 | 0 | 0 | 0.0% |

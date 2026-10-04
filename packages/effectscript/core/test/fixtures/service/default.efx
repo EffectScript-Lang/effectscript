@@ -1,6 +1,6 @@
 export service Greeter {
   effect greet(name: string): string
-  punctuation: string
+  readonly punctuation: string
 
   default = {
     punctuation: "!",
