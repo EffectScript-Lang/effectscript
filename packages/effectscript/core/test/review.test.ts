@@ -80,7 +80,9 @@ describe("C4: match bindings are scoped", () => {
 describe("I1: untyped catch does not catch errors raised by typed clauses", () => {
   it("passes the untyped clause as orElse", async () => {
     const mod = await runCompiled(`
-      import { Data, Effect, Exit } from "effect"
+      import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
       class NotFound extends Data.TaggedError("NotFound")<{}> {}
       class Fatal extends Data.TaggedError("Fatal")<{}> {}
       effect run() {
@@ -112,7 +114,7 @@ describe("I2: generated imports and type-only imports", () => {
 
   it("aliases pipe when it is shadowed", () => {
     const code = compile("export const f = (pipe: string) => pipe.length |> String\n")
-    expect(code).toContain("import { pipe as pipe$ } from \"effect\"")
+    expect(code).toContain("import { pipe as pipe$ } from \"effect/Function\"")
     expect(code).toContain("pipe$(pipe.length, String)")
   })
 })

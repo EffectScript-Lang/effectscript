@@ -6,9 +6,7 @@
  */
 import { NodeRuntime } from "@effect/platform-node"
 import { SqliteClient, SqliteMigrator } from "@effect/sql-sqlite-node"
-import { Context } from "effect"
 import { Model } from "effect/schema"
-import { SqlClient } from "effect/sql"
 
 // Use a branded string for the group id, so it cannot be mixed up with other
 // string ids in the application.
@@ -59,7 +57,7 @@ const SqlLayer = SqliteClient.layer({ filename: ":memory:" })
 const MigratorLayer = SqliteMigrator.layer({
   loader: SqliteMigrator.fromRecord({
     "0001_create_groups": effect {
-      const sql = await SqlClient.SqlClient
+      const sql = await SqlClient
       await sql`
         CREATE TABLE groups (
           id TEXT PRIMARY KEY,
@@ -87,7 +85,7 @@ export service Groups as "app/Groups" {
   findById(id: GroupId): Effect<Group, GroupNotFound>
   readonly list: Effect<Array<Group>>
   layer = effect {
-      const sql = await SqlClient.SqlClient
+      const sql = await SqlClient
 
       // `SqlModel.makeRepository` derives insert / update / findById / delete
       // operations from the model, using the matching variant schema for each

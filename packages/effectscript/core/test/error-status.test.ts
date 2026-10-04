@@ -18,7 +18,7 @@ describe("error status (ADR-0064)", () => {
 
   it("converts a hand-written annotation back only when it is the status alone", () => {
     const ts = (annotations: string) =>
-      `import { Schema } from "effect"\nclass A extends Schema.TaggedError<A>()("A", {}, ${annotations}) {}\n`
+      `import * as Schema from "effect/Schema"\nclass A extends Schema.TaggedError<A>()("A", {}, ${annotations}) {}\n`
     expect(toEffectScript(ts("{ httpApiStatus: 404 }"), { filename: "a.ts" }).code).toBe("error A status 404 {}\n")
     expect(toEffectScript(ts("{ httpApiStatus: 404, title: \"x\" }"), { filename: "a.ts" }).code).toContain(
       "Schema.TaggedError"

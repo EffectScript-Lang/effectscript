@@ -1,4 +1,3 @@
-import { Data } from "effect"
 
 class NotFound extends Data.TaggedError("NotFound")<{}> {}
 class Timeout extends Data.TaggedError("Timeout")<{}> {}

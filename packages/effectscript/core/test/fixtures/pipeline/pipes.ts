@@ -1,4 +1,5 @@
-import { Effect, pipe } from "effect"
+import * as Effect from "effect/Effect"
+import { pipe } from "effect/Function"
 declare const getUserName: (id: string) => Effect.Effect<string, Error>
 
 const loadUser = Effect.fn("loadUser")(function*(id: string) {

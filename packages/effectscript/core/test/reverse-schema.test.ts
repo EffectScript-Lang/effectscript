@@ -29,7 +29,7 @@ describe("reverse: schema forms (Plan 6 Task 7)", () => {
 
   it("keeps a class with an instance property as TypeScript", () => {
     const ts =
-      "import { Schema } from \"effect\"\nexport class A extends Schema.Class<A>(\"A\")({ a: Schema.String }) {\n  readonly cache = new Map()\n}\n"
+      "import * as Schema from \"effect/Schema\"\nexport class A extends Schema.Class<A>(\"A\")({ a: Schema.String }) {\n  readonly cache = new Map()\n}\n"
     const result = toEffectScript(ts)
     expect(result.code).toBe(ts)
     expect(result.notes.map((n) => n.message).join("\n")).toMatch(/instance property/)
@@ -37,7 +37,7 @@ describe("reverse: schema forms (Plan 6 Task 7)", () => {
 
   it("keeps an alias whose type alias doesn't match", () => {
     const ts =
-      "import { Schema } from \"effect\"\nexport const P = Schema.Struct({ x: Schema.Number })\nexport type P = { x: number }\n"
+      "import * as Schema from \"effect/Schema\"\nexport const P = Schema.Struct({ x: Schema.Number })\nexport type P = { x: number }\n"
     expect(toEffectScript(ts).code).toBe(ts)
   })
 })

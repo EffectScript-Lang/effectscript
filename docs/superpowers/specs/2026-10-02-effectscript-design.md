@@ -745,8 +745,13 @@ Considered and **not adopted**:
 A free identifier, meaning one not declared or imported anywhere in the file, that names an
 `effect` module export is imported automatically:
 
-`import { Effect, Schema, … } from "effect"`. Names inserted by the compiler (`Effect`, `Schema`,
-`Layer`, `Context`, `Match`, `Stream`, `pipe`, runtime modules) are added the same way.
+`import * as Effect from "effect/Effect"`, `import * as Schema from "effect/Schema"`, … Each
+module comes from its own file, never the package index, so bundlers and unbundled runtimes load
+only what is used (ADR-0089). `pipe`, `flow` and `identity` come from `effect/Function`. Names
+inserted by the compiler (`Effect`, `Schema`, `Layer`, `Context`, `Match`, `Stream`, `pipe`,
+runtime modules) are added the same way. A file that already imports from the index
+(`import { Runtime } from "effect"`) gets new names added to that import instead, and new
+module-file imports join the file's existing `effect/…` imports in path order.
 
 - The prelude includes every namespace export of `effect`'s `index.ts`, plus `pipe`, `flow`, and
   `identity`. It excludes names that shadow JS globals: `Array`, `BigInt`, `Boolean`, `Function`,
@@ -1310,7 +1315,7 @@ library constructs and ambient forms in Plan 7 (ADR-0031).
 | `yield* Effect.log*(…)`, `Clock.currentTimeMillis`, `Random.next`, `Config.String("X")` in generators | ambient forms (§4.15) |
 | `yield* M.M` (bare-service-tag set)                                                  | `await M`                             |
 | `Effect.x(…)` / `Layer.x(…)` in layer pipes / … where `x` is free and not excluded    | `x(…)` (builtins, §4.13)              |
-| `import { …prelude names } from "effect"`                                            | removed                               |
+| `import { …prelude names } from "effect"` / `import * as M from "effect/M"`           | removed                               |
 
 Schema fields use the reverse of the §4.6 table. A field whose schema is one `.check(…)` on a
 schema in the table, alone or inside `optionalKey`, `optional`, `NullOr`, `UndefinedOr` or
@@ -1377,6 +1382,10 @@ Unsupported shapes stay TypeScript, with an explanation.
   on them, and the same comments in order. `toEffectScript` checks this at
   conversion time (ADR-0030 amendment 2). When the check fails, it keeps only the top-level
   statements that verify and notes the others.
+- One listed exception to that: an `import { … } from "effect"` of prelude names may come back as
+  imports of the modules' own files (`import * as Schema from "effect/Schema"`), compared as
+  bindings, with each run of `effect` imports kept in place. The conversion carries a
+  `canonicalized:` note (ADR-0089).
 - **EffectScript-side normalizations** (`toEffectScript(toTypeScript(efx))` differs from `efx`):
   - `Effect.Effect<A>` → `Effect<A>` and `Effect.succeed(…)` → `succeed(…)`. A builtin stays
     qualified when its name is bound anywhere in the file.

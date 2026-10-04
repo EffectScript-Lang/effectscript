@@ -30,7 +30,7 @@ describe("reverse: group and api (Plan 7 Task 6)", () => {
     ]
   ])("keeps %s as TypeScript", (_name, body) => {
     const ts =
-      `import { Schema } from "effect"\nimport { HttpApiEndpoint, HttpApiGroup } from "effect/http-api"\n${body}`
+      `import * as Schema from "effect/Schema"\nimport * as HttpApiEndpoint from "effect/http-api/HttpApiEndpoint"\nimport * as HttpApiGroup from "effect/http-api/HttpApiGroup"\n${body}`
     expect(expectSafe(ts).code).toContain("HttpApiGroup.make(")
   })
 })

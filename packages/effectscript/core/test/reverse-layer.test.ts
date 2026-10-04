@@ -20,7 +20,7 @@ describe("reverse: top-level layer (Plan 7 Task 3)", () => {
     ["a single-argument merge", "export const X = Layer.mergeAll(A)\n"],
     ["a conditional operand", "export const X = Layer.mergeAll(c ? A : B, C)\n"]
   ])("keeps %s as TypeScript", (_name, body) => {
-    const ts = `import { Layer } from "effect"\ndeclare const c: boolean\n${
+    const ts = `import * as Layer from "effect/Layer"\ndeclare const c: boolean\n${
       services.replaceAll("Layer<never>", "Layer.Layer<never>")
     }${body}`
     expect(expectSafe(ts).code).toContain("Layer.mergeAll(")

@@ -4,9 +4,7 @@
  * Configure Otlp tracing + log export with a reusable observability layer.
  */
 import { NodeRuntime } from "@effect/platform-node"
-import { Context } from "effect"
 import { FetchHttpClient } from "effect/http"
-import { OtlpLogger } from "effect/observability"
 
 // Configure OTLP span export.
 export const OtlpTracingLayer = OtlpTracer.layer({

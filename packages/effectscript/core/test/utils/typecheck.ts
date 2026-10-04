@@ -1,9 +1,23 @@
+import * as fs from "node:fs"
 import * as path from "node:path"
 import * as ts from "typescript"
 
 const root = path.resolve(import.meta.dirname, "../../../../..")
 const virtualDir = path.join(root, "packages/effectscript/core/test/.virtual")
 const src = (p: string) => path.join(root, "packages", p)
+
+const effectPaths = (): Record<string, Array<string>> => {
+  const manifest = JSON.parse(fs.readFileSync(src("effect/package.json"), "utf8")) as {
+    readonly exports: Record<string, unknown>
+  }
+  const paths: Record<string, Array<string>> = {}
+  for (const [key, value] of Object.entries(manifest.exports)) {
+    if (typeof value === "string" && value.endsWith(".ts")) {
+      paths[key === "." ? "effect" : `effect/${key.slice(2)}`] = [src(`effect/${value.slice(2)}`)]
+    }
+  }
+  return paths
+}
 
 const compilerOptions: ts.CompilerOptions = {
   strict: true,
@@ -18,8 +32,8 @@ const compilerOptions: ts.CompilerOptions = {
   jsx: ts.JsxEmit.ReactJSX,
   types: ["node"],
   paths: {
-    "effect": [src("effect/src/index.ts")],
-    "effect/*": [src("effect/src/*/index.ts"), src("effect/src/*.ts")],
+    // mirrors effect's export map: exact entries for the subpath indexes, then `./*` (ADR-0089)
+    ...effectPaths(),
     "@effect/platform-node": [src("platform/node/src/index.ts")],
     "@effect/platform-bun": [src("platform/bun/src/index.ts")],
     "@effect/vitest": [src("vitest/src/index.ts")]

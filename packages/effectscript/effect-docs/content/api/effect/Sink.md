@@ -101,7 +101,7 @@ await runPromise(Stream.run(stream, sink)) // => 42
 **Failing with an error**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Create a sink that always fails
 const sink = Sink.fail("Sink failed")
@@ -116,7 +116,7 @@ await runPromiseExit(Stream.run(stream, sink)) // => Exit.fail("Sink failed")
 **Failing with a lazy error**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Create a sink that fails with a lazy error
 const sink = Sink.failSync(() => "Lazy error")
@@ -131,7 +131,7 @@ await runPromiseExit(Stream.run(stream, sink)) // => Exit.fail("Lazy error")
 **Failing with a cause**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Create a sink that fails with a specific cause
 const sink = Sink.failCause(Cause.fail("Custom cause"))
@@ -146,7 +146,7 @@ await runPromiseExit(Stream.run(stream, sink)) // => Exit.fail("Custom cause")
 **Failing with a lazy cause**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Create a sink that fails with a lazy cause
 const sink = Sink.failCauseSync(() => Cause.fail("Lazy cause"))
@@ -161,7 +161,7 @@ await runPromiseExit(Stream.run(stream, sink)) // => Exit.fail("Lazy cause")
 **Dying with a defect**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Create a sink that dies with a defect
 const sink = Sink.die("Defect error")

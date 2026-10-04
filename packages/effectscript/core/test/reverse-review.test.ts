@@ -21,7 +21,8 @@ const expectSafe = (ts: string, options: { runtime?: "node" | "browser" } = {}) 
 const fallbacks = (back: { readonly notes: ReadonlyArray<{ readonly message: string }> }) =>
   back.notes.filter((n) => n.message.includes("doesn't compile back"))
 
-const effect = "import { Effect, Layer, Match, Schema, pipe } from \"effect\"\n"
+const effect =
+  "import * as Effect from \"effect/Effect\"\nimport { pipe } from \"effect/Function\"\nimport * as Layer from \"effect/Layer\"\nimport * as Match from \"effect/Match\"\nimport * as Schema from \"effect/Schema\"\n"
 const decls =
   "declare const c: boolean\nlet x = 0\ndeclare const f: (a: unknown) => unknown\ndeclare const a: Effect.Effect<number>\n"
 

@@ -4,7 +4,6 @@
  * Learn how to create effects from various sources, including plain values,
  * synchronous code, Promise APIs, optional values, and callback-based APIs.
  */
-import { Effect } from "effect"
 
 error InvalidPayload {
   input: string

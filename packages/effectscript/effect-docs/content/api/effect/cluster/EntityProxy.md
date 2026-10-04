@@ -44,9 +44,7 @@ const result = [MyRpcs.requests.size, Layer.isLayer(RpcServerLayer)] // => [2, t
 **Deriving HTTP API endpoints from an entity**
 
 ```efx
-import { ClusterSchema, Entity, EntityProxy } from "effect/cluster"
-import { HttpApi } from "effect/http-api"
-import { Rpc } from "effect/rpc"
+import { EntityProxy } from "effect/cluster"
 
 export const Counter = Entity.make("Counter", [
   Rpc.make("Increment", {

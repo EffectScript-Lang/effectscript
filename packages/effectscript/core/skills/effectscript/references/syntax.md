@@ -31,7 +31,7 @@ effect precedence() {
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const a: Effect.Effect<number>
 declare const b: Effect.Effect<boolean>
 declare const s: Effect.Effect<{ readonly length: number }>
@@ -88,7 +88,7 @@ export const api = {
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const task: Effect.Effect<number>
 
 export const program = Effect.gen(function*() {
@@ -146,7 +146,7 @@ const notEffect = async () => await Promise.resolve(2)
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 const outer = Effect.fn("outer")(function*() {
   const plain = [1, 2].map((n) => n + 1)
   const promise = async () => {
@@ -182,7 +182,7 @@ export class Counter {
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 export class Counter {
   #count = 0
 
@@ -218,7 +218,7 @@ export effect /* inline */ doubled(): number {
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const task: Effect.Effect<number>
 
 /** Doubles the task result. */
@@ -245,7 +245,7 @@ effect both() {
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const a: Effect.Effect<number>
 declare const b: Effect.Effect<string>
 
@@ -307,7 +307,7 @@ export default effect main() {
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const task: Effect.Effect<number>
 
 const main = Effect.fn("main")(function*() {
@@ -330,7 +330,7 @@ export effect resilient() {
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const task: Effect.Effect<number, string>
 
 export const resilient = Effect.fn("resilient")(
@@ -371,7 +371,10 @@ function* letters() {
 Compiles to:
 
 ```ts
-import { Effect, Queue, Schema, Stream } from "effect"
+import * as Effect from "effect/Effect"
+import * as Queue from "effect/Queue"
+import * as Schema from "effect/Schema"
+import * as Stream from "effect/Stream"
 class Exhausted extends Schema.TaggedError<Exhausted>()("Exhausted", { after: Schema.Number }) {}
 
 export const countdown = (from: number): Stream.Stream<number> =>
@@ -656,7 +659,7 @@ schema Event {
 Compiles to:
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 const UserId = Schema.String.pipe(Schema.brand("UserId"))
 type UserId = typeof UserId.Type
 
@@ -703,7 +706,7 @@ export schema Product {
 Compiles to:
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 /** A product. */
 export class Product extends Schema.Class<Product>("Product")({
   // the sku
@@ -735,7 +738,8 @@ export schema User {
 Compiles to:
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 class Banned extends Schema.TaggedError<Banned>()("Banned", { name: Schema.String }) {}
 
 export class User extends Schema.Class<User>("User")({
@@ -783,7 +787,8 @@ effect find(id: string): string throws UserNotFound | DbError {
 Compiles to:
 
 ```ts
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 export class UserNotFound extends Schema.TaggedError<UserNotFound>()("UserNotFound", { id: Schema.String }) {}
 class DbError extends Schema.TaggedError<DbError>()("DbError", { cause: Schema.Defect() }) {}
 class Timeout extends Schema.TaggedError<Timeout>()("RequestTimeout", {
@@ -819,7 +824,7 @@ export schema Reply { status: number }
 Compiles to:
 
 ```ts
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 export class TodoNotFound
   extends Schema.TaggedError<TodoNotFound>()("TodoNotFound", { id: Schema.String }, { httpApiStatus: 404 })
 {}
@@ -886,7 +891,10 @@ export effect firstName(id: string) {
 Compiles to:
 
 ```ts
-import { Context, Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 class UserNotFound extends Schema.TaggedError<UserNotFound>()("UserNotFound", { id: Schema.String }) {}
 
 class User extends Schema.Class<User>("User")({
@@ -964,7 +972,9 @@ export effect welcome(name: string) {
 Compiles to:
 
 ```ts
-import { Context, Effect, Layer } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 export interface Greeter {
   greet(name: string): Effect.Effect<string>
   readonly punctuation: string
@@ -1026,7 +1036,9 @@ export layer Worker = effect {
 Compiles to:
 
 ```ts
-import { Context, Effect, Layer } from "effect"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 export class Users extends Context.Service<Users, {
   list(): Effect.Effect<Array<string>>
 }>()("fixtures/layer/app/Users") {
@@ -1102,7 +1114,8 @@ effect awaited() {
 Compiles to:
 
 ```ts
-import { Effect, pipe } from "effect"
+import * as Effect from "effect/Effect"
+import { pipe } from "effect/Function"
 declare const getUserName: (id: string) => Effect.Effect<string, Error>
 
 const loadUser = Effect.fn("loadUser")(function*(id: string) {
@@ -1153,7 +1166,8 @@ Compiles to:
 
 ```ts
 import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Effect, Layer } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 declare const program: Effect.Effect<void>
 
 const helper = Effect.fn("helper")(function*() {
@@ -1180,9 +1194,11 @@ Compiles to:
 
 ```ts
 import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Effect, Layer } from "effect"
-import { FetchHttpClient } from "effect/http"
-import { Otlp, OtlpSerialization } from "effect/observability"
+import * as Effect from "effect/Effect"
+import * as FetchHttpClient from "effect/http/FetchHttpClient"
+import * as Layer from "effect/Layer"
+import * as Otlp from "effect/observability/Otlp"
+import * as OtlpSerialization from "effect/observability/OtlpSerialization"
 // @efx observability otlp
 NodeRuntime.runMain(
   Effect.gen(function*() {
@@ -1225,7 +1241,9 @@ export const label = match (status) {
 Compiles to:
 
 ```ts
-import { Match, Predicate, Schema } from "effect"
+import * as Match from "effect/Match"
+import * as Predicate from "effect/Predicate"
+import * as Schema from "effect/Schema"
 class Circle extends Schema.TaggedClass<Circle>()("Circle", { radius: Schema.Number }) {}
 class Square extends Schema.TaggedClass<Square>()("Square", { side: Schema.Number }) {}
 const Shape = Schema.Union([Circle, Square])
@@ -1286,7 +1304,9 @@ export effect scaled() {
 Compiles to:
 
 ```ts
-import { Effect, Match, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Match from "effect/Match"
+import * as Schema from "effect/Schema"
 class Circle extends Schema.TaggedClass<Circle>()("Circle", { radius: Schema.Number }) {}
 class Square extends Schema.TaggedClass<Square>()("Square", { side: Schema.Number }) {}
 const Shape = Schema.Union([Circle, Square])
@@ -1343,7 +1363,8 @@ export const describeEvent = match (event) {
 Compiles to:
 
 ```ts
-import { Match, Predicate } from "effect"
+import * as Match from "effect/Match"
+import * as Predicate from "effect/Predicate"
 declare const res: { status: number; body: string }
 type Event = { type: "click"; x: number; y: number } | { type: "key"; key: string }
 declare const event: Event
@@ -1475,7 +1496,11 @@ export effect readConfig(path: string) {
 Compiles to:
 
 ```ts
-import { Effect, FileSystem, Option, pipe, Schedule } from "effect"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import { pipe } from "effect/Function"
+import * as Option from "effect/Option"
+import * as Schedule from "effect/Schedule"
 declare const fetchUser: (id: string) => Effect.Effect<string, Error>
 
 export const profile = Effect.fn("profile")(function*(id: string): Effect.fn.Return<string, Error> {
@@ -1519,7 +1544,7 @@ export config AppConfig {
 Compiles to:
 
 ```ts
-import { Config } from "effect"
+import * as Config from "effect/Config"
 export const AppConfig = Config.all({
   port: Config.Port("PORT").pipe(Config.withDefault(3000)),
   databaseUrl: Config.Redacted("DATABASE_URL"),
@@ -1573,7 +1598,10 @@ Compiles to:
 
 ```ts
 import { assert, describe, expect, it, layer } from "@effect/vitest"
-import { Clock, Context, Effect, Layer } from "effect"
+import * as Clock from "effect/Clock"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 class Users extends Context.Service<Users, {
   find(id: string): Effect.Effect<string>
 }>()("fixtures/test/Users") {
@@ -1676,8 +1704,14 @@ export const UsersHandlers = impl Api.users {
 Compiles to:
 
 ```ts
-import { Context, Effect, Layer, Schema } from "effect"
-import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as HttpApi from "effect/http-api/HttpApi"
+import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder"
+import * as HttpApiEndpoint from "effect/http-api/HttpApiEndpoint"
+import * as HttpApiGroup from "effect/http-api/HttpApiGroup"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 export class User extends Schema.Class<User>("User")({
   id: Schema.String,
   name: Schema.String
@@ -1768,7 +1802,9 @@ Compiles to:
 
 ```ts
 import { Effect, Schema } from "effect"
-import { Argument, Command, Flag } from "effect/cli"
+import * as Argument from "effect/cli/Argument"
+import * as Command from "effect/cli/Command"
+import * as Flag from "effect/cli/Flag"
 
 const Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))
 
@@ -1838,8 +1874,11 @@ export const UsersLive = impl UsersRpc {
 Compiles to:
 
 ```ts
-import { Effect, Schema, Stream } from "effect"
-import { Rpc, RpcGroup } from "effect/rpc"
+import * as Effect from "effect/Effect"
+import * as Rpc from "effect/rpc/Rpc"
+import * as RpcGroup from "effect/rpc/RpcGroup"
+import * as Schema from "effect/Schema"
+import * as Stream from "effect/Stream"
 export class User extends Schema.Class<User>("User")({
   id: Schema.String,
   name: Schema.String
@@ -1918,8 +1957,10 @@ export const AssistantLive = impl Assistant {
 Compiles to:
 
 ```ts
-import { Effect, Schema } from "effect"
-import { Tool, Toolkit } from "effect/ai"
+import * as Tool from "effect/ai/Tool"
+import * as Toolkit from "effect/ai/Toolkit"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 export class Forecast extends Schema.Class<Forecast>("Forecast")({
   city: Schema.String,
   high: Schema.Number
@@ -1991,9 +2032,10 @@ export const CounterLive = impl Counter {
 Compiles to:
 
 ```ts
-import { Effect, Schema } from "effect"
-import { Entity } from "effect/cluster"
-import { Rpc } from "effect/rpc"
+import * as Entity from "effect/cluster/Entity"
+import * as Effect from "effect/Effect"
+import * as Rpc from "effect/rpc/Rpc"
+import * as Schema from "effect/Schema"
 export class TooLarge extends Schema.TaggedError<TooLarge>()("TooLarge", { by: Schema.Number }) {}
 
 export const Counter = Entity.make("Counter", [
@@ -2040,8 +2082,10 @@ export workflow SendWelcome(email: string, name?: string): string throws EmailFa
 Compiles to:
 
 ```ts
-import { Effect, Schema } from "effect"
-import { Activity, Workflow } from "effect/workflow"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as Activity from "effect/workflow/Activity"
+import * as Workflow from "effect/workflow/Workflow"
 export class EmailFailed extends Schema.TaggedError<EmailFailed>()("EmailFailed", { to: Schema.String }) {}
 
 const SendWelcomeWorkflow = Workflow.make("SendWelcome", {
@@ -2095,8 +2139,8 @@ export atom greeting = effect {
 Compiles to:
 
 ```ts
-import { Effect } from "effect"
-import { Atom } from "effect/reactivity"
+import * as Effect from "effect/Effect"
+import * as Atom from "effect/reactivity/Atom"
 export const count = Atom.make(0)
 
 export const doubled = Atom.make((get) => get(count) * 2)
@@ -2133,7 +2177,10 @@ export function plain() {
 Compiles to:
 
 ```ts
-import { Clock, Config, Effect, Random } from "effect"
+import * as Clock from "effect/Clock"
+import * as Config from "effect/Config"
+import * as Effect from "effect/Effect"
+import * as Random from "effect/Random"
 export const report = Effect.fn("report")(function*(name: string) {
   yield* Effect.log("hello", name)
   yield* Effect.logWarning("careful")

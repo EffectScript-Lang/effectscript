@@ -4,7 +4,6 @@
  * Use `Layer.launch` to run a long-running Effect program as your process entrypoint.
  */
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 

@@ -20,7 +20,7 @@ import { importedLocal } from "./origin.ts"
 import { topicsRoundTrip } from "./pipes.ts"
 import { effectDeclarationName } from "./resources.ts"
 import { convertService } from "./service.ts"
-import { compilesBack } from "./verify.ts"
+import { compilesBack, compilesBackModuloImports } from "./verify.ts"
 
 export type { ConvertNote, ConvertOptions } from "./context.ts"
 
@@ -52,10 +52,16 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
   }
 }
 
+/** Whether `result` compiles back to `source`, its imports compared as bindings when canonicalized. */
+const verifies = (source: string, result: ConvertResult, options: ConvertOptions): boolean =>
+  compilesBack(source, result.code, options) ||
+  (result.notes.some((n) => n.message.startsWith("canonicalized: imports")) &&
+    compilesBackModuloImports(source, result.code, options))
+
 /** ADR-0030 amendment 2: the full conversion, or the statements that verify. */
 const guarded = (source: string, options: ConvertOptions): ConvertResult => {
   const full = convert(source, options, new Set(), undefined, true)
-  if (full.code === source || compilesBack(source, full.code, options)) return full
+  if (full.code === source || verifies(source, full, options)) return full
   const parsed = parse(source)
   if (parsed._tag === "Failure") return { code: source, notes: full.notes }
   const body: Array<Node> = parsed.program.body
@@ -89,7 +95,7 @@ const guarded = (source: string, options: ConvertOptions): ConvertResult => {
   tryAdd(body.map((_, i) => i))
   if (enabled.size > 0) {
     const sugared = convert(source, options, new Set(), enabled, true)
-    if (compilesBack(source, sugared.code, options)) best = sugared
+    if (verifies(source, sugared, options)) best = sugared
   }
   return { code: best.code, notes: [...best.notes, ...failed] }
 }
@@ -199,7 +205,15 @@ const convert = (
     return convert(source, options, new Set([...disabled, "try"]), only, prelude)
   }
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
-  const code = prelude ? applyPrelude(ctx.s.toString(), options, source) : ctx.s.toString()
+  const applied = prelude ? applyPrelude(ctx.s.toString(), options, source) : undefined
+  const code = applied?.code ?? ctx.s.toString()
+  if (applied?.canonicalized === true) {
+    ctx.notes.push({
+      start: 0,
+      end: 0,
+      message: "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)"
+    })
+  }
   // a telemetry directive must end up leading (after the imports above it went)
   if (ctx.telemetryDirective) {
     const found = directive.exec(code)

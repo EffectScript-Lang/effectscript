@@ -1,4 +1,4 @@
-import { Config } from "effect"
+import * as Config from "effect/Config"
 export const AppConfig = Config.all({
   port: Config.Port("PORT").pipe(Config.withDefault(3000)),
   databaseUrl: Config.Redacted("DATABASE_URL"),

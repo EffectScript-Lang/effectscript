@@ -136,7 +136,6 @@ passing in the service interface as a type parameter.
 
 ```efx
 // file: src/db/Database.ts
-import { Context } from "effect"
 
 // Pass in the service class name as the first type parameter, and the service
 // interface as the second type parameter.
@@ -190,8 +189,6 @@ export type DatabaseService = Database["Service"]
 Defining custom errors and handling them with Effect.catch and Effect.catchTag.
 
 ```efx
-import { Effect } from "effect"
-
 // Define custom errors using Schema.TaggedError
 export error ParseError {
   input: string
@@ -202,7 +199,7 @@ export error ReservedPortError {
   port: Int
 }
 
-declare const loadPort: (input: string) => Effect.Effect<number, ParseError | ReservedPortError>
+declare const loadPort: (input: string) => Effect<number, ParseError | ReservedPortError>
 
 export const recovered = loadPort("80").pipe(
   // Catch multiple errors with Effect.catchTag, and return a default port number.

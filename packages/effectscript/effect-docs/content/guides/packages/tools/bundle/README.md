@@ -194,14 +194,11 @@ Good temporary fixtures are small, focused entrypoints that import public
 package APIs:
 
 ```efx
-import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
-
 const schema = Schema.Struct({
   name: Schema.String
 })
 
-Schema.decodeUnknownEffect(schema)({ name: "effect" }).pipe(Effect.runFork)
+Schema.decodeUnknownEffect(schema)({ name: "effect" }).pipe(runFork)
 ```
 
 Prefer self-contained fixtures. The compare-selected workflow copies only the

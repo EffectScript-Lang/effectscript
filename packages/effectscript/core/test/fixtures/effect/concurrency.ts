@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const a: Effect.Effect<number>
 declare const b: Effect.Effect<string>
 

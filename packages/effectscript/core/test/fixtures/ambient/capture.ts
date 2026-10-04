@@ -1,4 +1,7 @@
-import { Clock, Config, Effect, Random } from "effect"
+import * as Clock from "effect/Clock"
+import * as Config from "effect/Config"
+import * as Effect from "effect/Effect"
+import * as Random from "effect/Random"
 export const report = Effect.fn("report")(function*(name: string) {
   yield* Effect.log("hello", name)
   yield* Effect.logWarning("careful")

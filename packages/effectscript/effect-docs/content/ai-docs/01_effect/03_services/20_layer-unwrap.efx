@@ -3,7 +3,6 @@
  *
  * Build a layer dynamically from an Effect / Config with `Layer.unwrap`.
  */
-import { Config } from "effect"
 
 export error MessageStoreError {
   cause: Defect

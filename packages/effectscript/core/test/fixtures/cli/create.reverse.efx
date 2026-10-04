@@ -1,4 +1,3 @@
-import { Schema } from "effect"
 
 const Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))
 

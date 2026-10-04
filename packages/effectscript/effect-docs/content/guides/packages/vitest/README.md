@@ -114,8 +114,6 @@ To write a test, place your assertions directly within the main effect. This ens
 In the following example, we test a function that divides two numbers, but fails if the divisor is zero. The goal is to check that the function returns the correct result when given valid input.
 
 ```efx
-import { Effect } from "effect"
-
 // A simple divide function that returns an Effect, failing when dividing by zero
 function divide(a: number, b: number) {
   if (b === 0) return fail("Cannot divide by zero")
@@ -136,8 +134,6 @@ When you need to handle both success and failure cases in a test, you can use `E
 **Example** (Testing Success and Failure with `Exit`)
 
 ```efx
-import { Effect } from "effect"
-
 // A function that divides two numbers and returns an Effect.
 // It fails if the divisor is zero.
 function divide(a: number, b: number) {
@@ -175,9 +171,6 @@ Here are examples that demonstrate how you can work with time in your tests usin
 3. **Using `it.effect` and adjusting time**: In this test, we simulate the passage of time by advancing the clock by 1000 milliseconds (1 second).
 
 ```efx
-import { Clock } from "effect"
-import { TestClock } from "effect/testing"
-
 // Effect to log the current time
 const logNow = Effect.gen(function*() {
   const now = yield* Clock.currentTimeMillis // Fetch the current time from the clock
@@ -255,7 +248,7 @@ When adding new failing tests, you might not be able to fix them right away. Ins
 
 ```efx
 import { it } from "@effect/vitest"
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 function divide(a: number, b: number) {
   if (b === 0) return fail("Cannot divide by zero")
@@ -277,8 +270,6 @@ By default, `it.effect` suppresses log output, which can be useful for keeping t
 **Example** (Controlling Logging in Tests)
 
 ```efx
-import { Effect } from "effect"
-
 // This test won't display the log message, as logging is suppressed by default in `it.effect`
 test "does not display a log" {
     console.log("it.effect") // Log won't be shown
@@ -305,8 +296,6 @@ Both `it.effect` and `it.live` provide a fresh `Scope` and close it after each t
 **Example** (Managing a Resource Lifecycle)
 
 ```efx
-import { Console } from "effect"
-
 // Simulating the acquisition and release of a resource with console logging
 const acquire = Console.log("acquire resource")
 const release = Console.log("release resource")

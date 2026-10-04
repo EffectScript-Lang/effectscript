@@ -331,9 +331,7 @@ experimental.kind // => "flag"
 **Making flags optional**
 
 ```efx
-import { Effect, FileSystem, Layer, Option } from "effect"
-import { Flag } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
+import { Option } from "effect"
 
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
@@ -643,9 +641,7 @@ const kinds = [valueFlag.kind, configFlag.kind] // => ["flag", "flag"]
 **Returning fallback results**
 
 ```efx
-import { Effect, FileSystem, Layer, Path, Result } from "effect"
-import { Flag } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
+import { Result } from "effect"
 
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),

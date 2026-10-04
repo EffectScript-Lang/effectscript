@@ -1,6 +1,7 @@
-import { Effect, Schema } from "effect"
-import { Entity } from "effect/cluster"
-import { Rpc } from "effect/rpc"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as Entity from "effect/cluster/Entity"
+import * as Rpc from "effect/rpc/Rpc"
 export class TooLarge extends Schema.TaggedError<TooLarge>()("TooLarge", { by: Schema.Number }) {}
 
 export const Counter = Entity.make("Counter", [

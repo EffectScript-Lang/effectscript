@@ -287,7 +287,10 @@ describe("the playground's presets", async () => {
   })
 
   it("imports what each lowering uses", () => {
-    expect(lowering("law")).toMatch(/^import \{ Effect, Exit, Schema \} from "effect"\n/)
+    // each module from its own file, as the compiler imports it (ADR-0089)
+    expect(lowering("law")).toMatch(
+      /^import \* as Effect from "effect\/Effect"\nimport \* as Exit from "effect\/Exit"\nimport \* as Schema from "effect\/Schema"\n/
+    )
     expect(lowering("infra")).toMatch(/^import \* as Cloudflare from "alchemy\/Cloudflare"\n/)
     expect(lowering("infra")).not.toMatch(/from "alchemy"|HttpServerResponse/)
   })

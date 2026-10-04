@@ -5,9 +5,7 @@
  */
 import type { Node } from "./ast.ts"
 import type { Ctx } from "./context.ts"
-
-const importedName = (specifier: Node): string =>
-  specifier.imported.type === "Identifier" ? specifier.imported.name : String(specifier.imported.value)
+import { importsExport } from "./prelude/files.ts"
 
 /**
  * A name that occurs nowhere in the file and was not handed out before: `base`, `base2`, `base3`, ….
@@ -38,10 +36,10 @@ export const unused = (ctx: Ctx, base: string): string => {
 /**
  * The local name to emit for `module`'s export `name`, decided once per file:
  *
- * 1. an existing import of that export whose local name no inner scope rebinds (upgraded from
- *    type-only if needed);
+ * 1. an existing import of that export, named or as its module file's namespace (ADR-0089), whose
+ *    local name no inner scope rebinds (upgraded from type-only if needed);
  * 2. otherwise the export's own name, when nothing in the file binds it;
- * 3. otherwise a fresh alias (`import { Effect as Effect$ } …`).
+ * 3. otherwise a fresh alias (`import * as Effect$ from "effect/Effect"`).
  *
  * @since 0.1.0
  * @category names
@@ -53,9 +51,9 @@ export const ref = (ctx: Ctx, module: string, name: string): string => {
   let local: string | undefined
   for (const statement of ctx.analysis.program.body as Array<Node>) {
     if (local !== undefined) break
-    if (statement.type !== "ImportDeclaration" || statement.source.value !== module) continue
+    if (statement.type !== "ImportDeclaration") continue
     for (const specifier of statement.specifiers as Array<Node>) {
-      if (specifier.type !== "ImportSpecifier" || importedName(specifier) !== name) continue
+      if (!importsExport(statement, specifier, module, name)) continue
       if (ctx.analysis.innerBound.has(specifier.local.name)) continue
       local = specifier.local.name as string
       ctx.imports.upgrade(statement, specifier)

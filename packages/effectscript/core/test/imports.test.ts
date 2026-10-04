@@ -23,7 +23,10 @@ describe("imports", () => {
     expect(
       run("x\n", [["effect", "Schema"], ["effect", "Effect"], ["effect", "Effect"], ["effect/http", "HttpClient"]])
     )
-      .toBe("import { Effect, Schema } from \"effect\"\nimport { HttpClient } from \"effect/http\"\nx\n")
+      .toBe(
+        "import * as Effect from \"effect/Effect\"\nimport * as Schema from \"effect/Schema\"\n" +
+          "import * as HttpClient from \"effect/http/HttpClient\"\nx\n"
+      )
   })
 
   it("skips names the file already binds and merges into an existing import", () => {
@@ -34,12 +37,17 @@ describe("imports", () => {
   it("never merges into type-only or namespace imports", () => {
     expect(run("import type { Option } from \"effect\"\nimport * as E from \"effect\"\nx\n", [["effect", "Effect"]]))
       .toBe(
-        "import { Effect } from \"effect\"\nimport type { Option } from \"effect\"\nimport * as E from \"effect\"\nx\n"
+        "import * as Effect from \"effect/Effect\"\nimport type { Option } from \"effect\"\nimport * as E from \"effect\"\nx\n"
       )
+  })
+
+  it("imports pipe, flow and identity from effect/Function (ADR-0089)", () => {
+    expect(run("x\n", [["effect", "pipe"], ["effect", "flow"]]))
+      .toBe("import { flow, pipe } from \"effect/Function\"\nx\n")
   })
 
   it("keeps a hashbang first", () => {
     expect(run("#!/usr/bin/env node\nx\n", [["effect", "Effect"]]))
-      .toBe("#!/usr/bin/env node\nimport { Effect } from \"effect\"\nx\n")
+      .toBe("#!/usr/bin/env node\nimport * as Effect from \"effect/Effect\"\nx\n")
   })
 })

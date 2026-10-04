@@ -5,7 +5,7 @@ describe("reverse: command (Plan 7 Task 8)", () => {
   it.each([
     [
       "flags, arguments, docs and a description",
-      "import { Schema } from \"effect\"\n\nconst Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))\n\n/** Create a task */\nexport command create(\n  /** Task title */ title: NonEmptyString,\n  /** Priority */ --priority: \"low\" | \"normal\" | \"high\" = \"normal\",\n  /** Assignee email @alias a */ --assignee?: Email,\n  --dryRun: boolean = false,\n  --count: Int,\n) {\n  console.log(`Created \"${title}\" with ${priority} priority`)\n}\n"
+      "const Email = Schema.String.pipe(Schema.check(Schema.isPattern(/@/)))\n\n/** Create a task */\nexport command create(\n  /** Task title */ title: NonEmptyString,\n  /** Priority */ --priority: \"low\" | \"normal\" | \"high\" = \"normal\",\n  /** Assignee email @alias a */ --assignee?: Email,\n  --dryRun: boolean = false,\n  --count: Int,\n) {\n  console.log(`Created \"${title}\" with ${priority} priority`)\n}\n"
     ],
     ["no parameters, a pipe", "command ping() {\n  console.log(\"pong\")\n} |> withDescription(\"Ping\")\n"],
     [
@@ -21,7 +21,7 @@ describe("reverse: command (Plan 7 Task 8)", () => {
     ["an unknown chain step", "Flag.Boolean(\"dry-run\").pipe(Flag.withFallbackConfig(Config.succeed(true)))"]
   ])("keeps %s as TypeScript", (_name, flag) => {
     const ts =
-      `import { Config, Effect } from "effect"\nimport { Command, Flag } from "effect/cli"\nexport const c = Command.make("c", {\n  dryRun: ${flag}\n}, Effect.fn("c")(function*({ dryRun }) {\n  return dryRun\n}))\n`
+      `import * as Config from "effect/Config"\nimport * as Effect from "effect/Effect"\nimport * as Command from "effect/cli/Command"\nimport * as Flag from "effect/cli/Flag"\nexport const c = Command.make("c", {\n  dryRun: ${flag}\n}, Effect.fn("c")(function*({ dryRun }) {\n  return dryRun\n}))\n`
     expect(expectSafe(ts).code).toContain("Command.make(")
   })
 })

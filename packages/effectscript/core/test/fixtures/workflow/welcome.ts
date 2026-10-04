@@ -1,5 +1,7 @@
-import { Effect, Schema } from "effect"
-import { Activity, Workflow } from "effect/workflow"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as Activity from "effect/workflow/Activity"
+import * as Workflow from "effect/workflow/Workflow"
 export class EmailFailed extends Schema.TaggedError<EmailFailed>()("EmailFailed", { to: Schema.String }) {}
 
 const SendWelcomeWorkflow = Workflow.make("SendWelcome", { payload: { email: Schema.String, name: Schema.optionalKey(Schema.String) }, success: Schema.String, error: EmailFailed, idempotencyKey: ({ email }) => email })

@@ -72,7 +72,7 @@ actual // => true
 **Running effects with a fiber handle**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Cause, Exit } from "effect"
 
 const program = effect {
   const run = await FiberHandle.makeRuntime<never>()
@@ -194,7 +194,7 @@ actual // => Option.some(true)
 **Clearing a fiber handle**
 
 ```efx
-import { Effect, FiberHandle, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const handle = await FiberHandle.make()
@@ -288,7 +288,7 @@ actual // => "hello"
 **Propagating fiber failures**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = Effect.gen(function*() {
   const handle = yield* FiberHandle.make()
@@ -307,7 +307,7 @@ actual // => Exit.fail("error")
 **Waiting for a fiber to complete**
 
 ```efx
-import { Effect, FiberHandle, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const handle = await FiberHandle.make()

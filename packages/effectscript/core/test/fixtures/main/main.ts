@@ -1,5 +1,6 @@
 import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Effect, Layer } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 declare const program: Effect.Effect<void>
 
 const helper = Effect.fn("helper")(function*() {

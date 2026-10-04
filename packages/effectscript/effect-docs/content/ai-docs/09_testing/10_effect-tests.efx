@@ -3,7 +3,6 @@
  *
  * Using `it.effect` for Effect-based tests.
  */
-import { Effect } from "effect"
 import { TestClock } from "effect/testing"
 
 describe "@effect/vitest basics" {

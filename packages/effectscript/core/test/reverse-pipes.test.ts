@@ -2,7 +2,7 @@ import { toEffectScript, toTypeScript } from "effectscript/compiler"
 import { describe, expect, it } from "vitest"
 
 const head =
-  "import { Effect, pipe } from \"effect\"\ndeclare const name: (id: string) => Effect.Effect<string, Error>\n"
+  "import * as Effect from \"effect/Effect\"\nimport { pipe } from \"effect/Function\"\ndeclare const name: (id: string) => Effect.Effect<string, Error>\n"
 
 const convert = (body: string) => {
   const ts = `${head}${body}`
@@ -45,7 +45,7 @@ describe("reverse: pipelines (Plan 6 Task 4)", () => {
 
   it("keeps a pipe function that isn't Effect's", () => {
     const ts =
-      "import { Effect } from \"effect\"\nconst pipe = (a: number, f: (n: number) => number) => f(a)\nexport const n = pipe(1, (x) => x + 1)\nexport const e = Effect.succeed(n)\n"
+      "import * as Effect from \"effect/Effect\"\nconst pipe = (a: number, f: (n: number) => number) => f(a)\nexport const n = pipe(1, (x) => x + 1)\nexport const e = Effect.succeed(n)\n"
     expect(toEffectScript(ts).code).toContain("pipe(1, (x) => x + 1)")
   })
 

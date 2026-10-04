@@ -1,5 +1,11 @@
-import { Context, Effect, Layer, Schema } from "effect"
-import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
+import * as HttpApi from "effect/http-api/HttpApi"
+import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder"
+import * as HttpApiEndpoint from "effect/http-api/HttpApiEndpoint"
+import * as HttpApiGroup from "effect/http-api/HttpApiGroup"
 export class User extends Schema.Class<User>("User")({
   id: Schema.String,
   name: Schema.String

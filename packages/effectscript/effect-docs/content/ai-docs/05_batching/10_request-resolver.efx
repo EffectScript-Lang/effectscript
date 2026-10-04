@@ -3,7 +3,7 @@
  *
  * Define request types with `Request.Class`, resolve them in batches with `RequestResolver`.
  */
-import { Context, Effect, Exit, Layer, Request } from "effect"
+import { Request } from "effect"
 
 export schema User {
   id: Int
@@ -16,7 +16,7 @@ export error UserNotFound {
 }
 
 export service Users as "app/Users" {
-  getUserById(id: number): Effect.Effect<User, UserNotFound>
+  getUserById(id: number): Effect<User, UserNotFound>
   layer = effect {
       // Request classes model a single external lookup.
       class GetUserById extends Request.Class<

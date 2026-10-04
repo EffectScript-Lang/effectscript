@@ -123,7 +123,7 @@ await runPromise(program) // => 1
 **Peeking without retrying**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const pq = await TxPriorityQueue.empty<number>(Order.Number)
@@ -193,7 +193,7 @@ await runPromise(program) // => [1, 2, 3]
 **Taking without retrying**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const pq = await TxPriorityQueue.empty<number>(Order.Number)

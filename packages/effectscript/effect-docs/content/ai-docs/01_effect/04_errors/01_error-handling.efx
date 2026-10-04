@@ -3,7 +3,6 @@
  *
  * Defining custom errors and handling them with Effect.catch and Effect.catchTag.
  */
-import { Effect } from "effect"
 
 // Define custom errors using Schema.TaggedError
 export error ParseError {
@@ -15,7 +14,7 @@ export error ReservedPortError {
   port: Int
 }
 
-declare const loadPort: (input: string) => Effect.Effect<number, ParseError | ReservedPortError>
+declare const loadPort: (input: string) => Effect<number, ParseError | ReservedPortError>
 
 export const recovered = loadPort("80").pipe(
   // Catch multiple errors with Effect.catchTag, and return a default port number.

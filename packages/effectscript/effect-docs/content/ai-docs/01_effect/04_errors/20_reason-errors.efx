@@ -6,7 +6,6 @@
  * the error channel with `Effect.unwrapReason`.
  */
 
-import { Effect } from "effect"
 
 export error RateLimitError {
   retryAfter: Finite
@@ -24,7 +23,7 @@ export error AiError {
   reason: RateLimitError | QuotaExceededError | SafetyBlockedError
 }
 
-declare const callModel: Effect.Effect<string, AiError>
+declare const callModel: Effect<string, AiError>
 
 export const handleOneReason = callModel.pipe(
   // Use `Effect.catchReason` to handle a specific reason type

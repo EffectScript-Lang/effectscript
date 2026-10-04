@@ -16,7 +16,7 @@ The examples in the JSDoc of `packages/effect/src/RequestResolver.ts`, in Effect
 **Defining a request resolver**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetUserRequest extends Request.Request<string, Error> {
   readonly _tag: "GetUserRequest"
@@ -42,7 +42,7 @@ await runPromise(program) // => "User 1"
 **Creating a request resolver**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 // Define a request type
 interface GetUserRequest extends Request.Request<string, Error> {
@@ -71,7 +71,7 @@ await runPromise(getUserEffect) // => "User 123"
 **Grouping requests by key**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetUserByRole extends Request.Request<string, Error> {
   readonly _tag: "GetUserByRole"
@@ -111,7 +111,7 @@ result // => ["User 1 with role admin", "User 2 with role admin"]
 **Creating a resolver from a pure function**
 
 ```efx
-import { Effect, Request } from "effect"
+import { Request } from "effect"
 
 interface GetSquareRequest extends Request.Request<number> {
   readonly _tag: "GetSquareRequest"
@@ -137,7 +137,7 @@ await runPromise(getSquareEffect) // => 25
 **Batching pure request handling**
 
 ```efx
-import { Effect, Request } from "effect"
+import { Request } from "effect"
 
 interface GetDoubleRequest extends Request.Request<number> {
   readonly _tag: "GetDoubleRequest"
@@ -163,7 +163,7 @@ await runPromise(batchedEffect) // => [2, 4, 6]
 **Creating a resolver from an effectful function**
 
 ```efx
-import { Effect, Request } from "effect"
+import { Request } from "effect"
 
 interface GetUserFromAPIRequest extends Request.Request<string> {
   readonly _tag: "GetUserFromAPIRequest"
@@ -191,7 +191,7 @@ await runPromise(getUserEffect) // => "User 123 from API"
 **Handling tagged request batches**
 
 ```efx
-import { Effect, Request } from "effect"
+import { Request } from "effect"
 
 interface GetUser extends Request.Request<string, Error> {
   readonly _tag: "GetUser"
@@ -227,7 +227,7 @@ await runPromise(program) // => ["User 1", "Post 2"]
 **Setting an effectful batch delay**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetDataRequest extends Request.Request<string> {
   readonly _tag: "GetDataRequest"
@@ -261,7 +261,7 @@ Array.of(delayRan, RequestResolver.isRequestResolver(resolverWithCustomDelay)) /
 **Setting a batch delay**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetDataRequest extends Request.Request<string> {
   readonly _tag: "GetDataRequest"
@@ -288,7 +288,7 @@ await runPromise(program) // => "data"
 **Running effects around request resolution**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetDataRequest extends Request.Request<string> {
   readonly _tag: "GetDataRequest"
@@ -331,7 +331,7 @@ result // => "data"
 **Limiting parallel request batches**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetDataRequest extends Request.Request<string> {
   readonly _tag: "GetDataRequest"
@@ -372,7 +372,7 @@ Array.of(result[0], result[11]) // => ["data-0", "data-11"]
 **Grouping resolver requests**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetUserRequest extends Request.Request<string> {
   readonly _tag: "GetUserRequest"
@@ -427,7 +427,7 @@ result // => ["User 1", "User 2", "User 3"]
 **Racing request resolvers**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetDataRequest extends Request.Request<string> {
   readonly _tag: "GetDataRequest"
@@ -466,7 +466,7 @@ await runPromise(program) // => "fast-1"
 **Adding a tracing span**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 
 interface GetDataRequest extends Request.Request<string> {
   readonly _tag: "GetDataRequest"

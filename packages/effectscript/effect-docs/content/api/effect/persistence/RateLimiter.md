@@ -16,8 +16,6 @@ The examples in the JSDoc of `packages/effect/src/persistence/RateLimiter.ts`, i
 **Applying rate limits to effects**
 
 ```efx
-import { RateLimiter } from "effect/persistence"
-
 const messages: Array<string> = []
 const program = effect {
   // Access the `withLimiter` function from the RateLimiter module
@@ -45,10 +43,8 @@ messages // => ["Making a request with rate limiting"]
 **Sleeping until rate limit permits**
 
 ```efx
-import { RateLimiter } from "effect/persistence"
-
 const program = effect {
-  const limiter = await RateLimiter.RateLimiter
+  const limiter = await RateLimiter
   const partiallyApplied = RateLimiter.sleep(limiter)
   const partial = await partiallyApplied({
     key: "partial",

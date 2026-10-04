@@ -4,7 +4,6 @@
  * Use `Stream.pipeThroughChannel` with the `Ndjson` and `SchemaBinary` modules to
  * decode and encode streams of structured data.
  */
-import { DateTime } from "effect"
 import { Ndjson } from "effect/encoding"
 
 // SchemaBinary derives a framed binary decoder directly from a schema.

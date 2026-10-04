@@ -434,7 +434,7 @@ Cause.pretty(Cause.fail("something went wrong")).includes("something went wrong"
 **Yielding an error in Effect.gen**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const error = new Cause.NoSuchElementError("not found")
 
@@ -500,7 +500,7 @@ await runPromise(program) // => true
 **Failing with Done**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = Cause.done("finished")
 

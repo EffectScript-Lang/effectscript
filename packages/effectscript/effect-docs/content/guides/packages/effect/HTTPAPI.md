@@ -52,9 +52,7 @@ HttpApi ("MyApi")
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 // Definition
@@ -160,10 +158,7 @@ Once you've defined an API, you can generate a fully typed client from it using 
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { FetchHttpClient } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("MyApi")
@@ -337,9 +332,7 @@ Use `HttpApiEndpoint.get` to create a GET endpoint. Provide a name (used as the 
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 // Define a schema representing a User entity
@@ -395,9 +388,7 @@ When a group has more than one endpoint, use `.handleAll` to register all the ha
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -468,9 +459,7 @@ Use `HttpApiEndpoint.delete` to create an endpoint that removes a resource.
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -547,9 +536,7 @@ Use `HttpApiEndpoint.patch` to create an endpoint that partially updates a resou
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -641,9 +628,7 @@ Path parameters let you capture dynamic values from the URL. For example, `/user
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -706,9 +691,7 @@ Set the path to `"*"` to match any URL that no other endpoint handles. This is u
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -811,9 +794,7 @@ Prefixes let you prepend a common path segment to endpoints, groups, or an entir
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("MyApi")
@@ -872,9 +853,7 @@ Query parameters are the `?key=value` pairs appended to a URL. Use the `query` o
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -933,9 +912,7 @@ A single query parameter can carry multiple values (e.g., `?a=1&a=2`). Wrap the 
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -1005,9 +982,7 @@ Use the `headers` option to declare a record of fields or a full schema for the 
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -1066,9 +1041,7 @@ To accept file uploads, mark the payload as multipart with `HttpApiSchema.asMult
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("MyApi")
@@ -1126,9 +1099,7 @@ By default, request bodies are JSON. To accept a different format — like form-
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -1193,9 +1164,7 @@ Inside a handler, `ctx.request` gives you access to the raw incoming HTTP reques
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("MyApi").add(
@@ -1240,17 +1209,7 @@ There is no `cookies` option on endpoints. Instead, validated cookie access goes
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Context } from "effect"
 import { HttpRouter } from "effect/http"
-import {
-  HttpApi,
-  HttpApiBuilder,
-  HttpApiEndpoint,
-  HttpApiGroup,
-  HttpApiMiddleware,
-  HttpApiScalar,
-  HttpApiSecurity
-} from "effect/http-api"
 import { createServer } from "node:http"
 
 // Define the service providing the current user
@@ -1334,9 +1293,7 @@ For quick, unvalidated access you can read cookies directly from `ctx.request.co
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("api").add(
@@ -1379,9 +1336,7 @@ The payload schema still describes the endpoint in the generated documentation, 
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("myApi").add(
@@ -1439,9 +1394,7 @@ Success responses default to `200 OK`. To use a different status code, annotate 
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -1490,9 +1443,7 @@ Responses default to JSON. To return a different format — like CSV or plain te
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("MyApi")
@@ -1562,9 +1513,7 @@ Wrap the success schema with `HttpApiSchema.WithHeaders(schema, headers)`. The h
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -1633,9 +1582,7 @@ The body schema is authoritative for everything wire-level: status, content type
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 error UserNotFound {
@@ -1714,9 +1661,7 @@ For headers that should not appear in the API contract, call `HttpEffect.appendP
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpEffect } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("api").add(
@@ -1760,9 +1705,7 @@ Set cookies on the response using `HttpEffect.appendPreResponseHandler` together
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpEffect } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("api").add(
@@ -1808,10 +1751,7 @@ To redirect the client to a different URL, return an `HttpServerResponse.redirec
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpServerResponse } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("MyApi").add(
@@ -1866,9 +1806,7 @@ With a streaming success schema, the handler returns a `Stream` directly, and th
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("myApi").add(
@@ -1923,9 +1861,7 @@ The response will stream data (`a`, `b`, `c`) with a 500ms interval between each
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Message = Schema.Struct({
@@ -2022,9 +1958,7 @@ Endpoints can declare the errors they may return. Each error is a schema annotat
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -2112,9 +2046,7 @@ The `HttpApiError` module provides ready-made error schemas for common HTTP stat
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -2189,9 +2121,7 @@ Each predefined error also has a `NoContent` variant that responds with the stat
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -2254,11 +2184,7 @@ In this example, if a client sends a non-integer `id` query parameter, the API r
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import {
-  HttpApi
-} from "effect/http-api"
 import { createServer } from "node:http"
 
 // Define a custom error for validation failures
@@ -2338,17 +2264,7 @@ Middleware lets you run shared logic — like logging or authentication — befo
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import {
-  HttpApi,
-  HttpApiBuilder,
-  HttpApiEndpoint,
-  HttpApiGroup,
-  HttpApiMiddleware,
-  HttpApiScalar,
-  HttpApiSchema
-} from "effect/http-api"
 import { createServer } from "node:http"
 
 class Logger extends HttpApiMiddleware.Service<Logger>()("Http/Logger", {
@@ -2670,9 +2586,7 @@ Handlers can access any Effect service. Because `HttpApiBuilder.group` returns a
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Context } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -2736,9 +2650,7 @@ Add interactive API documentation with `HttpApiScalar` (Scalar UI) or `HttpApiSw
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const User = Schema.Struct({
@@ -3329,10 +3241,7 @@ The `HttpApiClient` module generates a fully typed client from your API definiti
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { FetchHttpClient } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("MyApi")
@@ -3388,10 +3297,7 @@ When a group is `topLevel`, its endpoints are exposed as top-level methods on th
 
 ```efx
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
 import { HttpRouter } from "effect/http"
-import { FetchHttpClient } from "effect/http"
-import { HttpApi } from "effect/http-api"
 import { createServer } from "node:http"
 
 const Api = HttpApi.make("MyApi")

@@ -6,9 +6,7 @@
  */
 import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic"
 import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai"
-import { Config } from "effect"
-import { AiError, LanguageModel, Model, type Response } from "effect/ai"
-import { FetchHttpClient } from "effect/http"
+import { type Response } from "effect/ai"
 import { LaunchPlan } from "./fixtures/domain/LaunchPlan.ts"
 
 // You can use Config to create ai clients
@@ -30,7 +28,7 @@ export error AiWriterError {
   // AiErrorReason is a Schema, so we can include it directly in our custom
   // error schema.
   reason = AiError.AiErrorReason
-  static fromAiError(error: AiError.AiError) {
+  static fromAiError(error: AiError) {
     return new AiWriterError({
       reason: error.reason
     })
@@ -71,7 +69,7 @@ export service AiWriter as "docs/AiWriter" {
       const launchPlanModel = await OpenAiLanguageModel.model("gpt-4.1").captureRequirements
 
       effect draftAnnouncement(product: string) {
-          const model = await LanguageModel.LanguageModel
+          const model = await LanguageModel
           const provider = await Model.ProviderName
           const response = await model.generateText({
             prompt: `Write a short launch announcement for ${product}. ` +
@@ -95,7 +93,7 @@ export service AiWriter as "docs/AiWriter" {
         |> mapError((error) => AiWriterError.fromAiError(error))
 
       effect extractLaunchPlan(notes: string) {
-          const model = await LanguageModel.LanguageModel
+          const model = await LanguageModel
           const response = await model.generateObject({
             objectName: "launch_plan",
             prompt:

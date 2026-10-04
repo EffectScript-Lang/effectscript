@@ -1,5 +1,8 @@
-import { Effect, Schema, Stream } from "effect"
-import { Rpc, RpcGroup } from "effect/rpc"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
+import * as Stream from "effect/Stream"
+import * as Rpc from "effect/rpc/Rpc"
+import * as RpcGroup from "effect/rpc/RpcGroup"
 export class User extends Schema.Class<User>("User")({
   id: Schema.String,
   name: Schema.String

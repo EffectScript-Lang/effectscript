@@ -5,9 +5,7 @@
  * middleware, serve it over HTTP, and call it using a generated typed client.
  */
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
-import { Context, Effect, flow } from "effect"
 import { FetchHttpClient } from "effect/http"
-import { HttpApiBuilder } from "effect/http-api"
 import { createServer } from "node:http"
 // Api definitions should **always** be seperate from the server implementation,
 // so that they can be shared between the server and client without leaking

@@ -1,4 +1,6 @@
-import { Match, Predicate, Schema } from "effect"
+import * as Match from "effect/Match"
+import * as Predicate from "effect/Predicate"
+import * as Schema from "effect/Schema"
 class Circle extends Schema.TaggedClass<Circle>()("Circle", { radius: Schema.Number }) {}
 class Square extends Schema.TaggedClass<Square>()("Square", { side: Schema.Number }) {}
 const Shape = Schema.Union([Circle, Square])

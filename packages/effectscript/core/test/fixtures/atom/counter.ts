@@ -1,5 +1,5 @@
-import { Effect } from "effect"
-import { Atom } from "effect/reactivity"
+import * as Effect from "effect/Effect"
+import * as Atom from "effect/reactivity/Atom"
 export const count = Atom.make(0)
 
 export const doubled = Atom.make((get) => get(count) * 2)

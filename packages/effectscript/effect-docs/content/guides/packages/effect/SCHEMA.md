@@ -4200,8 +4200,6 @@ class PersonWithEmail extends Person {
 **Example** (Extending Data.Error)
 
 ```efx
-import { Data, Effect, identity } from "effect"
-
 const Props = Schema.Struct({
   message: Schema.String
 })

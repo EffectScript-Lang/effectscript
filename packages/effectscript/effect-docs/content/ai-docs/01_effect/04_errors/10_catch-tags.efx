@@ -4,7 +4,6 @@
  * Use `Effect.catchTags` to handle several tagged errors in one place.
  */
 
-import { Effect } from "effect"
 
 export error ValidationError {
   message: string
@@ -14,7 +13,7 @@ export error NetworkError {
   statusCode: Int
 }
 
-declare const fetchUser: (id: string) => Effect.Effect<string, ValidationError | NetworkError>
+declare const fetchUser: (id: string) => Effect<string, ValidationError | NetworkError>
 
 export const userOrFallback = fetchUser("123").pipe(
   catchTags({

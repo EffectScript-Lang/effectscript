@@ -38,7 +38,7 @@ actual // => [5, 5, 5]
 **Handling lookup failures**
 
 ```efx
-import { Cache, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Cache with error handling
 const program = effect {
@@ -194,7 +194,7 @@ actual // => { result1: 5, result2: 5 }
 **Handling lookup failures**
 
 ```efx
-import { Cache, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Error handling when lookup fails
 const program = effect {
@@ -252,7 +252,7 @@ actual // => { results: [5, 5, 5], lookupCount: 1 }
 **Reading cached values without lookup**
 
 ```efx
-import { Cache, Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const cache = await Cache.make({
@@ -278,8 +278,7 @@ actual // => [Option.none(), Option.some(5)]
 **Skipping expired entries**
 
 ```efx
-import { Cache, Effect, Option } from "effect"
-import { TestClock } from "effect/testing"
+import { Option } from "effect"
 
 // Expired entries return None
 const program = effect {
@@ -310,7 +309,7 @@ actual // => [Option.some(5), Option.none()]
 **Waiting for pending lookups**
 
 ```efx
-import { Cache, Deferred, Effect, Fiber, Option } from "effect"
+import { Option } from "effect"
 
 // Waits for ongoing computation to complete
 const program = effect {

@@ -178,7 +178,7 @@ node?.value // => "localhost"
 **Reading config from a JSON object**
 
 ```efx
-import { Config, ConfigProvider, Effect, Layer } from "effect"
+import { Layer } from "effect"
 
 const TestLayer = ConfigProvider.layer(
   ConfigProvider.fromUnknown({ port: 8080 })

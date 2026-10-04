@@ -10,6 +10,7 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import { toTypeScript } from "../compiler/compile.ts"
 import { toEffectScript } from "../compiler/reverse/convert.ts"
+import { compilesBackModuloImports } from "../compiler/reverse/verify.ts"
 import { packageInfo } from "../project.ts"
 
 const skippedDirs = new Set(["node_modules", "dist", "build", "coverage"])
@@ -57,9 +58,14 @@ export const fixSource = (
   // and EFX8101 is the one this command fixes (review I2)
   const error = before.diagnostics.find((d) => d.severity === "error" && !/^EFX8\d{3}$/.test(d.code))
   if (error !== undefined) return { problem: `doesn't compile (${error.code} ${error.message})` }
-  const back = toEffectScript(before.code, { filename }).code
-  // the round-trip contract (ADR-0030): the same TypeScript, or no change
-  if (back === source || toTypeScript(back, options).code !== before.code) return { fixed: undefined }
+  const converted = toEffectScript(before.code, { filename })
+  const back = converted.code
+  // the round-trip contract (ADR-0030): the same TypeScript, or no change; a canonicalized import
+  // cleanup may name module files instead of the effect index (ADR-0089)
+  const same = toTypeScript(back, options).code === before.code ||
+    (converted.notes.some((n) => n.message.startsWith("canonicalized: imports")) &&
+      compilesBackModuloImports(before.code, back, options))
+  if (back === source || !same) return { fixed: undefined }
   // where an `import` was the first line, the reverse compiler leaves a blank one
   const fixed = /^\s/.test(source) ? back : back.replace(/^\n+/, "")
   return { fixed: fixed === source ? undefined : fixed }

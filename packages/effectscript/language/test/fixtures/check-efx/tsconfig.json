@@ -12,6 +12,8 @@
     "types": ["node"],
     "paths": {
       "effect": ["../../../../effect/src/index.ts"],
+      "effect/Schema": ["../../../../effect/src/Schema.ts"],
+      "effect/schema": ["../../../../effect/src/schema/index.ts"],
       "effect/*": ["../../../../effect/src/*/index.ts", "../../../../effect/src/*.ts"]
     }
   },

@@ -10,7 +10,7 @@ describe("reverse: config (Plan 7 Task 2)", () => {
     ["inline", "config Small { a: string; b: number }\n"],
     [
       "a schema field",
-      "import { Schema } from \"effect\"\nconst Url = Schema.String\nconfig Remote {\n  baseUrl: Url\n}\n"
+      "const Url = Schema.String\nconfig Remote {\n  baseUrl: Url\n}\n"
     ]
   ])("%s", (_name, efx) => {
     expect(roundTrip(efx)).toBe(efx)
@@ -24,7 +24,7 @@ describe("reverse: config (Plan 7 Task 2)", () => {
       "export const C = Config.all({ port: Config.Port(\"PORT\").pipe(Config.withDefault(1), Config.orElse(() => Config.succeed(2))) })\n"
     ]
   ])("keeps %s as TypeScript", (_name, body) => {
-    const ts = `import { Config } from "effect"\n${body}`
+    const ts = `import * as Config from "effect/Config"\n${body}`
     expect(expectSafe(ts).code).toContain("Config.all(")
   })
 })

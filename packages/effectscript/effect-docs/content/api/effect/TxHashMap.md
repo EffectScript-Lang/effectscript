@@ -16,7 +16,7 @@ The examples in the JSDoc of `packages/effect/src/TxHashMap.ts`, in EffectScript
 **Using transactional hash maps**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a transactional hash map
@@ -46,7 +46,7 @@ await runPromise(program) // => 2
 **Reusing extracted TxHashMap types**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a transactional inventory map
@@ -80,7 +80,7 @@ await runPromise(program) // => Option.some({ stock: 3, price: 999 })
 **Extracting key types**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a user map to extract key type from
@@ -180,7 +180,7 @@ await runPromise(program) // => 1
 **Creating a map from entries**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a user directory
@@ -206,7 +206,7 @@ await runPromise(program) // => Option.none()
 **Creating a map from an iterable**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create from various iterable sources
@@ -236,7 +236,7 @@ await runPromise(program)
 **Looking up values safely**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const userMap = await TxHashMap.make(
@@ -260,7 +260,7 @@ await runPromise(program) // => Option.some({ name: "Bob", role: "user" })
 **Setting values**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const inventory = await TxHashMap.make(
@@ -430,7 +430,7 @@ await runPromise(program) // => false
 **Updating existing values**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const counters = await TxHashMap.make(
@@ -501,7 +501,7 @@ await runPromise(program) // => Option.some("content1.bak")
 **Reading keys**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const userRoles = await TxHashMap.make(
@@ -577,7 +577,7 @@ await runPromise(program) // => [["host", "localhost"], ["port", "3000"], ["ssl"
 **Taking immutable snapshots**
 
 ```efx
-import { Effect, HashMap, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const liveData = await TxHashMap.make(
@@ -609,7 +609,7 @@ await runPromise(program) // => Option.some(45.2)
 **Merging HashMaps**
 
 ```efx
-import { Effect, HashMap, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create initial user preferences
@@ -644,7 +644,7 @@ await runPromise(program) // => 5
 **Removing multiple keys**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a cache with temporary data
@@ -681,7 +681,7 @@ await runPromise(program) // => true
 **Setting multiple entries**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create an empty product catalog
@@ -734,7 +734,7 @@ await runPromise(program) // => Option.some({ price: 399, stock: 3 })
 **Checking TxHashMap values**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const txMap = await TxHashMap.make(["key", "value"])
@@ -765,7 +765,7 @@ await runPromise(program) // => Exit.succeed("Valid TxHashMap")
 **Looking up values with precomputed hashes**
 
 ```efx
-import { Effect, Hash, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a cache with user sessions
@@ -838,7 +838,7 @@ await runPromise(program) // => ["Role admin: true", "Role user: true", "Role mo
 **Mapping values**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a user profile map
@@ -955,7 +955,7 @@ await runPromise(program) // => { quarters: 4, total: 80000, max: 25000 }
 **Filtering and mapping entries**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a mixed data map
@@ -1039,7 +1039,7 @@ await runPromise(program) // => true
 **Finding the first matching entry**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a task priority map
@@ -1165,7 +1165,7 @@ result // => ["access.log: 2048 bytes (info)", "debug.log: 512 bytes (debug)", "
 **Flat mapping entries**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   // Create a department-employee map

@@ -5,7 +5,7 @@
  * @since 4.0.0
  */
 import { parse, toEffectScript } from "effectscript/compiler"
-import { verdict } from "effectscript/compiler/reverse/verify"
+import { compilesBackModuloImports, verdict } from "effectscript/compiler/reverse/verify"
 import ts from "typescript"
 
 /**
@@ -30,7 +30,7 @@ export interface Block {
 
 /**
  * Converts one code block. `toEffectScript` keeps the ADR-0030 contract: the result compiles back
- * to `code`.
+ * to `code`, with imports from the effect index possibly naming module files (ADR-0089).
  *
  * @since 4.0.0
  * @category translate
@@ -38,8 +38,12 @@ export interface Block {
 export const convertBlock = (code: string, filename = "example.ts"): Block => {
   const parsed = parse(code, { mode: filename.endsWith(".tsx") ? "tsx" : undefined })._tag === "Success"
   if (!parsed) return { ts: code, efx: code, changed: false, parsed, valid: false }
-  const efx = toEffectScript(code, { filename }).code
-  const valid = verdict(code, efx, { filename }) > 0
+  const converted = toEffectScript(code, { filename })
+  const efx = converted.code
+  // a canonicalized import cleanup compiles back importing module files (ADR-0089)
+  const valid = verdict(code, efx, { filename }) > 0 ||
+    (converted.notes.some((n) => n.message.startsWith("canonicalized: imports")) &&
+      compilesBackModuloImports(code, efx, { filename }))
   // where an `import` the prelude provides was the first line, the reverse compiler leaves a blank
   // one: dropping it can't change the program (Plan 21, as `efx fix` does)
   const shown = /^\s/.test(code) ? efx : efx.replace(/^\n+/, "")

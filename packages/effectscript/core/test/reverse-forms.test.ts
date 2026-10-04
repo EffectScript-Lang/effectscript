@@ -1,7 +1,7 @@
 import { toEffectScript, toTypeScript } from "effectscript/compiler"
 import { describe, expect, it } from "vitest"
 
-const head = "import { Effect } from \"effect\"\ndeclare const task: Effect.Effect<number>\n"
+const head = "import * as Effect from \"effect/Effect\"\ndeclare const task: Effect.Effect<number>\n"
 
 /** Converts `body` (after the shared head) and checks the ADR-0030 round trip. */
 const convert = (body: string) => {
@@ -68,7 +68,7 @@ describe("reverse: effect forms (Plan 6 Task 2)", () => {
 
   it("throw expressions inside generators", () => {
     const ts =
-      "import { Effect } from \"effect\"\ndeclare const find: (id: string) => Effect.Effect<string | undefined>\nexport const f = Effect.fn(\"f\")(function*(id: string) {\n  return (yield* find(id)) ?? (yield* Effect.fail(new Error(\"missing\")))\n})\n"
+      "import * as Effect from \"effect/Effect\"\ndeclare const find: (id: string) => Effect.Effect<string | undefined>\nexport const f = Effect.fn(\"f\")(function*(id: string) {\n  return (yield* find(id)) ?? (yield* Effect.fail(new Error(\"missing\")))\n})\n"
     const back = toEffectScript(ts).code
     expect(back).toContain("return await find(id) ?? throw new Error(\"missing\")")
     expect(toTypeScript(back).code).toBe(ts)

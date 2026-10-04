@@ -16,8 +16,6 @@ The examples in the JSDoc of `packages/effect/src/testing/TestClock.ts`, in Effe
 **Testing timeouts deterministically**
 
 ```efx
-import { TestClock } from "effect/testing"
-
 const program = effect {
   const fiber = await sleep("5 minutes")
     |> timeout("1 minute")

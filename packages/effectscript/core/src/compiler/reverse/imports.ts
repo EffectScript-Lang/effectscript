@@ -2,7 +2,8 @@
  * Prelude sugar that depends on the whole file, verified by recompiling (ADR-0030 amendment). Per
  * prelude name `X`, one group holds:
  *
- * - its import specifier (`import { X } from "<prelude module>"`);
+ * - its import specifier (`import { X } from "<prelude module>"`, or `import * as X from
+ *   "effect/X"`, ADR-0089);
  * - its bare types (`X.X<…>` → `X<…>`, spec §4.5);
  * - its awaited service tags (`await X.X` → `await X`).
  *
@@ -15,10 +16,11 @@ import { MagicString } from "magic-string"
 import { analyze } from "../analyze/scope.ts"
 import { children, type Node } from "../ast.ts"
 import { parse } from "../parser/parse.ts"
+import { importsExport } from "../prelude/files.ts"
 import { bareTypes, excludedNames, preludeFunctions, preludeModules, serviceTags } from "../prelude/tables.ts"
 import type { ConvertOptions } from "./context.ts"
 import { runtimes } from "./main.ts"
-import { verdict } from "./verify.ts"
+import { compilesBackModuloImports, verdict } from "./verify.ts"
 
 /** Imports the forward compiler adds itself: `main`'s runtime, the test constructs and globals. */
 const runtimeImports = new Map<string, string>([
@@ -56,12 +58,11 @@ const groupsOf = (program: Node): Array<Group> => {
     if (statement.type !== "ImportDeclaration") continue
     for (const specifier of statement.specifiers as Array<Node>) {
       imported.add(specifier.local.name)
-      if (statement.importKind === "type" || specifier.type !== "ImportSpecifier") continue
-      if (specifier.importKind === "type") continue
-      const name = importedName(specifier)
+      if (statement.importKind === "type" || specifier.importKind === "type") continue
+      const name = specifier.type === "ImportSpecifier" ? importedName(specifier) : specifier.local.name
       if (specifier.local.name !== name) continue
       const module = preludeModules.get(name) ?? preludeFunctions.get(name) ?? runtimeImports.get(name)
-      if (module !== statement.source.value) continue
+      if (module === undefined || !importsExport(statement, specifier, module, name)) continue
       groups.set(name, { ...group(name), specifier: { statement, node: specifier } })
     }
   }
@@ -121,21 +122,35 @@ const apply = (code: string, chosen: ReadonlyArray<Group>): string => {
 
 /**
  * Applies the prelude groups of `code` that keep it compiling back to `original` (ADR-0030):
- * never losing byte identity where it holds.
+ * never losing byte identity where it holds. Groups imported from the `effect` index that the
+ * compiler would bring back from the module's own file are then applied as a canonicalization
+ * (ADR-0089), and `canonicalized` says so.
  *
  * @since 4.0.0
  * @category reverse
  */
-export const applyPrelude = (code: string, options: ConvertOptions, original: string): string => {
-  if (options.prelude === false) return code
+export const applyPrelude = (
+  code: string,
+  options: ConvertOptions,
+  original: string
+): { readonly code: string; readonly canonicalized: boolean } => {
+  const unchanged = { code, canonicalized: false }
+  if (options.prelude === false) return unchanged
   const parsed = parse(code)
-  if (parsed._tag === "Failure") return code
+  if (parsed._tag === "Failure") return unchanged
   const groups = groupsOf(parsed.program)
-  if (groups.length === 0) return code
+  if (groups.length === 0) return unchanged
   const judge = (chosen: ReadonlyArray<Group>) => verdict(original, apply(code, chosen), options)
-  if (judge(groups) === 2) return apply(code, groups)
-  // the prelude appends missing names at the end of an import: try the groups last-first
-  const ordered = [...groups].sort((a, b) => (b.specifier?.node.start ?? -1) - (a.specifier?.node.start ?? -1))
+  if (judge(groups) === 2) return { code: apply(code, groups), canonicalized: false }
+  // the prelude prepends missing namespace imports in order (ADR-0089): try those first-first, then
+  // the names it appends at the end of an import, last-first
+  const namespace = (group: Group) => group.specifier?.node.type === "ImportNamespaceSpecifier"
+  const ordered = [
+    ...groups.filter(namespace).sort((a, b) => a.specifier!.node.start - b.specifier!.node.start),
+    ...groups.filter((group) => !namespace(group)).sort((a, b) =>
+      (b.specifier?.node.start ?? -1) - (a.specifier?.node.start ?? -1)
+    )
+  ]
   const accepted: Array<Group> = []
   let current = judge([])
   for (const group of ordered) {
@@ -145,5 +160,11 @@ export const applyPrelude = (code: string, options: ConvertOptions, original: st
       current = next
     }
   }
-  return accepted.length === 0 ? code : apply(code, accepted)
+  // the rest may still come back, as imports of the modules' own files
+  const exact = accepted.length
+  for (const group of ordered) {
+    if (accepted.includes(group) || group.specifier === undefined) continue
+    if (compilesBackModuloImports(original, apply(code, [...accepted, group]), options)) accepted.push(group)
+  }
+  return accepted.length === 0 ? unchanged : { code: apply(code, accepted), canonicalized: accepted.length > exact }
 }

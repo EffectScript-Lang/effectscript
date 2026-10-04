@@ -19,7 +19,6 @@ Here is an example of a MCP server implementation:
 
 ```efx
 import { NodeRuntime, NodeStdio } from "@effect/platform-node"
-import { Effect } from "effect"
 import { McpProtocol } from "effect/ai"
 
 // Define a simple tool
@@ -236,7 +235,6 @@ Here's a complete, copy/pastable MCP server example that combines all the concep
 
 ```efx
 import { NodeRuntime, NodeStdio } from "@effect/platform-node"
-import { Effect } from "effect"
 import { McpProtocol } from "effect/ai"
 
 // Define tools

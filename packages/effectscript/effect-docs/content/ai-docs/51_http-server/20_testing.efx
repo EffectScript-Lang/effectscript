@@ -4,9 +4,7 @@
  * Test handlers through an in-memory typed client with `HttpApiTest`, without
  * starting an HTTP server or touching a real database.
  */
-import { Effect } from "effect"
 import { HttpClientRequest } from "effect/http"
-import { HttpApiMiddleware } from "effect/http-api"
 import { Api } from "./fixtures/api/Api.ts"
 import { Authorization } from "./fixtures/api/Authorization.ts"
 import { UserId } from "./fixtures/domain/User.ts"

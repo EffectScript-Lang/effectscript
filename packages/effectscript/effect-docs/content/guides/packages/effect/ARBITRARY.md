@@ -292,8 +292,6 @@ the result instead of immediately failing a Vitest test. It accepts a function t
 `Effect`, and it simplifies the first failing input:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const values = Arbitrary.schema(Schema.Array(Schema.Int))
 
 const program = Arbitrary.checkEffect(
@@ -309,8 +307,6 @@ await runPromise(program)
 A property may also return an `Effect`, so it can use Effect services or fail through the Effect error channel:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const program = Arbitrary.checkEffect(
   Arbitrary.schema(Schema.String),
   (value) => succeed(value.length >= 0)
@@ -689,8 +685,6 @@ token records enough information to generate the same initial input and repeat t
 reported counterexample:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const arbitrary = Arbitrary.schema(Schema.Int)
 
 const program = effect {
@@ -953,7 +947,6 @@ works needs no Arbitrary-specific annotation.
 ```efx
 import { assert, it } from "@effect/vitest"
 import { Effect } from "effect"
-import * as Arbitrary from "effect/Arbitrary"
 
 const Name = Arbitrary.schema(Schema.Literals(["Ada", "Grace"]))
 

@@ -84,7 +84,7 @@ await runPromise(resultsAsRecord) // => { key1: 1, key2: 2 }
 **Stopping on the first failure**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 const output: Array<unknown> = []
 const record = (value: unknown) => sync(() => { output.push(value) })
 
@@ -136,7 +136,7 @@ output // => ["Adding 1 at index 0", "Adding 2 at index 1", "Adding 3 at index 2
 **Validating every element**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = validate([0, 1, 2, 3], (n) =>
   n % 2 === 0 ? fail(`${n} is even`) : succeed(n)
@@ -150,7 +150,7 @@ await runPromiseExit(program) // => Exit.fail(["0 is even", "2 is even"])
 **Finding the first successful match**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = findFirst([1, 2, 3, 4], (n) => succeed(n > 2))
 
@@ -196,7 +196,7 @@ output // => ["Currently at index 0", "Currently at index 1", "Currently at inde
 **Getting the first element**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const first = await runPromise(head(succeed([1, 2, 3])))
 first // => 1
@@ -289,7 +289,7 @@ runSync(success) // => 42
 **Succeeding with Option.none**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = succeedNone
 
@@ -301,7 +301,7 @@ runSync(program) // => Option.none()
 **Succeeding with Option.some**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = succeedSome(42)
 
@@ -417,7 +417,7 @@ output // => ["callback completed"]
 **Creating a never-ending effect**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = timeoutOption(never, 0)
 await runPromise(program) // => Option.none()
@@ -527,7 +527,7 @@ runSync(flip(program)) // => "Error computed at runtime"
 **Failing on division by zero**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const defect = new Error("Cannot divide by zero")
 const divide = (a: number, b: number) =>
@@ -852,7 +852,7 @@ output // => ["Apply a discount to: 100", 95]
 **Capturing success or failure as Result**
 
 ```efx
-import { Effect, Result } from "effect"
+import { Result } from "effect"
 
 const success = succeed(42)
 const failure = fail("Something went wrong")
@@ -870,7 +870,7 @@ runSync(program2) // => Result.fail("Something went wrong")
 **Capturing success or failure as Option**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = all([
   option(succeed(1)),
@@ -885,7 +885,7 @@ runSync(program) // => [Option.some(1), Option.none()]
 **Capturing completion as Exit**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const success = succeed(42)
 const failure = fail("Something went wrong")
@@ -949,7 +949,7 @@ runSync(program) // => "new value"
 **Wrapping success in Option.some**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = asSome(succeed(42))
 
@@ -1254,7 +1254,7 @@ runSync(all([recovered, recovered2])) // => ['missing:user-1', 'missing:user-1']
 **Recovering from missing Option values**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 const output: Array<unknown> = []
 
 const some = fromNullishOr(1).pipe(catchNoSuchElement)
@@ -1334,7 +1334,7 @@ runSync(flip(modified)).message // => "Oh no!"
 **Converting typed failures into defects**
 
 ```efx
-import { Data, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 class DivideByZeroError extends Data.TaggedError("DivideByZeroError")<{}> {}
 
@@ -1355,11 +1355,11 @@ runSyncExit(program) // => Exit.die(new DivideByZeroError())
 **Running effects on failure**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 const output: Array<unknown> = []
 
 // Simulate a task that fails with an error
-const task: Effect.Effect<number, string> = fail("NetworkError")
+const task: Effect<number, string> = fail("NetworkError")
 
 // Use tapError to log the error message when the task fails
 const tapping = tapError(
@@ -1376,7 +1376,7 @@ output // => ["expected error: NetworkError", Exit.fail("NetworkError")]
 **Running effects for tagged failures**
 
 ```efx
-import { Data, Effect, Exit } from "effect"
+import { Exit } from "effect"
 const output: Array<unknown> = []
 
 class NetworkError extends Data.TaggedError("NetworkError")<{
@@ -1387,7 +1387,7 @@ class ValidationError extends Data.TaggedError("ValidationError")<{
   field: string
 }> {}
 
-const task: Effect.Effect<number, NetworkError | ValidationError> =
+const task: Effect<number, NetworkError | ValidationError> =
   fail(new NetworkError({ statusCode: 504 }))
 
 const program = tapErrorTag(task, "NetworkError", (error) =>
@@ -1403,7 +1403,7 @@ output // => ["expected error: 504", Exit.fail(new NetworkError({ statusCode: 50
 **Observing full failure causes**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 const output: Array<unknown> = []
 
 const task = fail("Something went wrong")
@@ -1422,7 +1422,7 @@ output // => ["Logging cause: Something went wrong", Exit.fail("Something went w
 **Observing selected failure causes**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 const output: Array<unknown> = []
 
 const task = fail("Network timeout")
@@ -1443,11 +1443,11 @@ output // => ["Logging failure cause: Network timeout", Exit.fail("Network timeo
 **Observing defects**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 const output: Array<unknown> = []
 
 // Simulate a severe failure in the system
-const task2: Effect.Effect<number> = die(
+const task2: Effect<number> = die(
   "Something went wrong"
 )
 
@@ -1650,9 +1650,9 @@ events // => ["AttemptStart:0", "AttemptFailure:0", "AttemptStart:1", "AttemptSu
 **Replacing failures with a value**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
-const validate = (age: number): Effect.Effect<number, string> => {
+const validate = (age: number): Effect<number, string> => {
   if (age < 0) {
     return fail("NegativeAgeError")
   } else if (age < 18) {
@@ -1702,7 +1702,7 @@ error._tag // => "TimeoutError"
 **Returning None on timeout**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const timedOutEffect = never.pipe(timeoutOption(0))
 await runPromise(timedOutEffect) // => Option.none()
@@ -1893,7 +1893,7 @@ runSync(flip(filtered)) // => "Expected even number, got 5"
 **Conditionally running an effect**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 const output: Array<unknown> = []
 
 const shouldLog = true
@@ -2687,7 +2687,7 @@ output // => ["Task started", "Task completed", "Cleanup: This always runs!", 42
 **Running cleanup on failure**
 
 ```efx
-import { Cause, Data, Effect, Exit } from "effect"
+import { Exit } from "effect"
 const output: Array<unknown> = []
 
 class TaskError extends Data.TaggedError("TaskError")<{ readonly message: string }> {}
@@ -2709,7 +2709,7 @@ output // => ["Cleanup on error: TaskError: Something went wrong", Exit.fail(err
 **Running cleanup for selected failures**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 const output: Array<unknown> = []
 
 const task = fail("boom")
@@ -2885,7 +2885,7 @@ runSyncExit(program)._tag // => "Failure"
 **Allowing interruption**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = interruptible(never).pipe(
   timeoutOption(0)
@@ -2985,7 +2985,7 @@ output // => ["Interruptible phase...", "Uninterruptible phase...", "Back to int
 **Repeating forever**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = forever(never).pipe(timeoutOption(0))
 await runPromise(program) // => Option.none()
@@ -2997,7 +2997,6 @@ await runPromise(program) // => Option.none()
 
 ```efx
 // Success Example
-import { Effect } from "effect"
 const output: Array<unknown> = []
 
 const action = sync(() => { output.push("success") })
@@ -3012,7 +3011,6 @@ output // => ["success", "success", "success", 2]
 
 ```efx
 // Failure Example
-import { Effect } from "effect"
 const output: Array<unknown> = []
 
 let count = 0
@@ -3394,7 +3392,7 @@ runSync(program) // => "completed"
 **Executing a request through a resolver**
 
 ```efx
-import { Effect, Exit, Request } from "effect"
+import { Request } from "effect"
 const output: Array<unknown> = []
 
 interface GetUser extends Request.Request<string> {
@@ -3636,7 +3634,6 @@ await runPromise(succeed(1)) // => 1
 
 ```efx
 //Example: Handling a Failing Effect as a Rejected Promise
-import { Effect } from "effect"
 const output: Array<unknown> = []
 
 await runPromise(fail("my error")).catch(() => {
@@ -3673,7 +3670,7 @@ await runPromiseWith(context)(program) // => "Connecting to https://api.example.
 **Observing promise results as Exit**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Execute a successful effect and get the Exit result as a Promise
 await runPromiseExit(succeed(1)) // => Exit.succeed(1)
@@ -3777,7 +3774,7 @@ result // => 5
 **Observing synchronous results as Exit**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 runSyncExit(succeed(1)) // => Exit.succeed(1)
 

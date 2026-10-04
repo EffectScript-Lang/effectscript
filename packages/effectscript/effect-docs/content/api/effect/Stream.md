@@ -335,7 +335,7 @@ await runPromise(Stream.suspend(() => Stream.make(1, 2, 3)).pipe(Stream.runColle
 **Failing a stream**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 await runPromise(exit(Stream.runCollect(Stream.fail("Uh oh!")))) // => Exit.fail("Uh oh!")
 ```
@@ -345,7 +345,7 @@ await runPromise(exit(Stream.runCollect(Stream.fail("Uh oh!")))) // => Exit.fail
 **Failing a stream lazily**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const stream = Stream.failSync(() => "Uh oh!")
 
@@ -369,7 +369,7 @@ await runPromise(Stream.runCollect(stream)) // => ["recovered"]
 **Dying with a defect**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Cause, Exit } from "effect"
 
 const defect = new Error("Boom")
 const stream = Stream.die(defect)
@@ -382,7 +382,7 @@ await runPromise(exit(Stream.runCollect(stream))) // => Exit.failCause(Cause.die
 **Failing with a lazy cause**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const stream = Stream.failCauseSync(() =>
   Cause.fail("Connection timeout after retries")
@@ -804,7 +804,7 @@ events // => ["acquire", "release"]
 **Mapping stream values**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const stream = Stream.fromArray([1, 2, 3]).pipe(Stream.map((n, i) => n + i))
 await runPromise(Stream.runCollect(stream)) // => [1, 3, 5]
@@ -1555,7 +1555,7 @@ await runPromise(program)
 **Zipping elements with next values**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const stream = Stream.zipWithNext(Stream.make(1, 2, 3, 4))
 
@@ -1570,7 +1570,7 @@ await runPromise(effect {
 **Zipping elements with previous values**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const stream = Stream.zipWithPrevious(Stream.make(1, 2, 3, 4))
 
@@ -1587,7 +1587,7 @@ await runPromise(program)
 **Zipping elements with neighbors**
 
 ```efx
-import { Console, Effect, Option } from "effect"
+import { Console, Option } from "effect"
 
 const program = effect {
   const values = await Stream.make(1, 2, 3).pipe(
@@ -1659,7 +1659,7 @@ await runPromise(effect {
 **Racing multiple streams**
 
 ```efx
-import { Effect, Schedule } from "effect"
+import { Schedule } from "effect"
 
 const program = effect {
   const result = await Stream.raceAll(
@@ -2579,8 +2579,6 @@ await runPromise(program)
 **Emitting sliding windows**
 
 ```efx
-import { Effect, pipe } from "effect"
-
 await runPromise(effect {
   const result = await Stream.make(1, 2, 3, 4, 5)
     |> Stream.sliding(2)
@@ -3656,8 +3654,6 @@ await runPromise(
 **Starting stream do notation**
 
 ```efx
-import { Effect, pipe } from "effect"
-
 const program = Stream.Do
   |> Stream.bind("value", () => Stream.fromArray([1, 2]))
   |> Stream.let("next", ({ value }) => value + 1)

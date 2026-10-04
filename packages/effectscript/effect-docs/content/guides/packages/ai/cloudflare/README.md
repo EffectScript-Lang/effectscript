@@ -23,9 +23,7 @@ Set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`, then provide a Cloudflar
 
 ```efx
 import { CloudflareClient, CloudflareDecisionModel } from "@effect/ai-cloudflare"
-import { Effect } from "effect"
 import { Decision } from "effect/ai"
-import { FetchHttpClient } from "effect/http"
 
 const Triage = Decision.make({
   input: Schema.String,

@@ -45,7 +45,7 @@ describe("efx-tsc (ADR-0019)", () => {
       encoding: "utf8"
     })
     fs.rmSync(dir, { recursive: true, force: true })
-    expect(result.stdout).toMatch(/src\/plain\.efx\(1,1\): error TS2307: Cannot find module 'effect'/)
+    expect(result.stdout).toMatch(/src\/plain\.efx\(1,1\): error TS2307: Cannot find module 'effect\/Effect'/)
     expect(result.status).toBe(2)
   }, 120_000)
 })

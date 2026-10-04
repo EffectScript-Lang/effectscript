@@ -308,7 +308,7 @@ logs // => ["ready"]
 **Disabling optional lifecycle work**
 
 ```efx
-import { Context, Effect, Layer, Option } from "effect"
+import { Option } from "effect"
 
 const Service = Context.Service<string>("Service")
 const context = runSync(scoped(Layer.build(Layer.empty)))
@@ -689,14 +689,14 @@ logs // => ["[DEBUG] Starting database query"]
 **Converting layer failures to defects**
 
 ```efx
-import { Context, Data, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 class DatabaseError extends Data.TaggedError("DatabaseError")<{
   message: string
 }> {}
 
 service Database {
-  readonly query: (sql: string) => Effect.Effect<string>
+  readonly query: (sql: string) => Effect<string>
 }
 
 // Layer that can fail during construction

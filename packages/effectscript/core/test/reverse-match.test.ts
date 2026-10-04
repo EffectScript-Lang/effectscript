@@ -47,7 +47,7 @@ describe("reverse: match (Plan 6 Task 9)", () => {
 
   it("keeps a predicate arm as TypeScript", () => {
     const ts =
-      "import { Match } from \"effect\"\ndeclare const n: number\nexport const sign = Match.value(n).pipe(Match.when((x: number) => x > 0, () => \"+\"), Match.orElse(() => \"-\"))\n"
+      "import * as Match from \"effect/Match\"\ndeclare const n: number\nexport const sign = Match.value(n).pipe(Match.when((x: number) => x > 0, () => \"+\"), Match.orElse(() => \"-\"))\n"
     expect(toEffectScript(ts).code).toBe(ts)
   })
 })

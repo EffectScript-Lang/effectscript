@@ -1,4 +1,7 @@
-import { Effect, Queue, Schema, Stream } from "effect"
+import * as Effect from "effect/Effect"
+import * as Queue from "effect/Queue"
+import * as Schema from "effect/Schema"
+import * as Stream from "effect/Stream"
 class Exhausted extends Schema.TaggedError<Exhausted>()("Exhausted", { after: Schema.Number }) {}
 
 export const countdown = (from: number): Stream.Stream<number> => Stream.callback((queue) => Effect.gen(function*() {

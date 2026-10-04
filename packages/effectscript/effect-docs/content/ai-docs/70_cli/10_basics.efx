@@ -5,7 +5,6 @@
  * handlers into a single executable command.
  */
 import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Console } from "effect"
 import { Argument } from "effect/cli"
 
 // You can define flags outside of commands and reuse them across multiple

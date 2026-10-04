@@ -143,7 +143,7 @@ runSync(port.parse(provider)) // => 3000
 **Reading optional config**
 
 ```efx
-import { Config, ConfigProvider, Effect, Option } from "effect"
+import { Option } from "effect"
 
 const maybePort = Config.option(Config.Number("port"))
 

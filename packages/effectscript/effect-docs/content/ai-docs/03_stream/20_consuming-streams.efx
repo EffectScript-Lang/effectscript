@@ -3,7 +3,6 @@
  *
  * How to transform and consume streams using operators like `map`, `flatMap`, `filter`, `mapEffect`, and various `run*` methods.
  */
-import { Effect } from "effect"
 
 interface Order {
   readonly id: string

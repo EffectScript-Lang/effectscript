@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 /** A product. */
 export class Product extends Schema.Class<Product>("Product")({
   // the sku

@@ -47,8 +47,7 @@ const result = [MyRpcs.requests.size, Layer.isLayer(ApiLayer)] // => [3, true]
 **Deriving HTTP API endpoints from workflows**
 
 ```efx
-import { HttpApi } from "effect/http-api"
-import { Workflow, WorkflowProxy } from "effect/workflow"
+import { WorkflowProxy } from "effect/workflow"
 
 const EmailWorkflow = Workflow.make("EmailWorkflow", {
   payload: {

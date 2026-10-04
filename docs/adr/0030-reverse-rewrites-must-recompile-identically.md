@@ -1,6 +1,6 @@
 # ADR-0030: A reverse rewrite applies only where the forward compiler reproduces its input
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by ADR-0089 (a third canonicalization: index imports come back as module files)
 - **Date:** 2026-10-03
 - **Deciders:** agent ruling for Plan 6
 - **Related:** spec §6.4, ADR-0023, review R07

@@ -9,7 +9,8 @@ describe("reverse: atom (Plan 7 Task 4)", () => {
   })
 
   it("keeps Atom.make with options as TypeScript", () => {
-    const ts = "import { Atom } from \"effect/reactivity\"\nexport const a = Atom.make(0, { initialValue: 1 } as any)\n"
+    const ts =
+      "import * as Atom from \"effect/reactivity/Atom\"\nexport const a = Atom.make(0, { initialValue: 1 } as any)\n"
     expect(expectSafe(ts).code).toContain("Atom.make(")
   })
 })

@@ -256,6 +256,16 @@ out.push(
   }\n])`,
   ""
 )
+doc("Prelude modules (name → the module's own file, ADR-0089).")
+out.push(
+  `export const preludeModuleFiles: ReadonlyMap<string, string> = new Map([\n${
+    list(modules.map(([n]) => {
+      const file = path.relative(path.join(effectDir, "src"), moduleFiles.get(n)!).replace(/\.ts$/, "")
+      return `[${JSON.stringify(n)}, ${JSON.stringify(`effect/${file.split(path.sep).join("/")}`)}]`
+    }))
+  }\n])`,
+  ""
+)
 doc("Prelude functions (name → module specifier).")
 out.push(
   `export const preludeFunctions: ReadonlyMap<string, string> = new Map([\n${

@@ -1,5 +1,8 @@
 import { assert, describe, expect, it, layer } from "@effect/vitest"
-import { Clock, Context, Effect, Layer } from "effect"
+import * as Clock from "effect/Clock"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 class Users extends Context.Service<Users, {
   find(id: string): Effect.Effect<string>
 }>()("fixtures/test/Users") {

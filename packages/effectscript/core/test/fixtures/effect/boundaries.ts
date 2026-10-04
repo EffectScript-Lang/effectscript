@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 const outer = Effect.fn("outer")(function*() {
   const plain = [1, 2].map((n) => n + 1)
   const promise = async () => {

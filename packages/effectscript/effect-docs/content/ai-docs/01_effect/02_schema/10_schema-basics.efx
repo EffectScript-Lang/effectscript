@@ -4,7 +4,6 @@
  * Define `Schema.Class`s, decode unknown input into typed values, and
  * encode typed values back into their external representation.
  */
-import { Effect } from "effect"
 
 // Schema.Class defines both a runtime validator and a TypeScript class.
 // This is useful for domain models that should only be constructed from valid

@@ -16,8 +16,6 @@ The examples in the JSDoc of `packages/effect/src/cli/CliOutput.ts`, in EffectSc
 **Customizing CLI output formatting**
 
 ```efx
-import { CliOutput } from "effect/cli"
-
 // Create a custom formatter implementation
 const customFormatter: CliOutput.Formatter = {
   formatHelpDoc: (doc) => `Custom Help: ${doc.usage}`,
@@ -180,8 +178,6 @@ const optionsPresent = [output.includes("--foo"), output.includes("--required")]
 **Providing a custom formatter**
 
 ```efx
-import { CliOutput } from "effect/cli"
-
 // Create a custom formatter without colors
 const noColorFormatter = CliOutput.defaultFormatter({ colors: false })
 const NoColorLayer = CliOutput.layer(noColorFormatter)

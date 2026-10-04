@@ -5,9 +5,7 @@
  * and pass them to `LanguageModel.generateText`.
  */
 import { OpenAiClient, OpenAiLanguageModel, OpenAiTool } from "@effect/ai-openai"
-import { Config } from "effect"
 import { AiError } from "effect/ai"
-import { FetchHttpClient } from "effect/http"
 
 // ---------------------------------------------------------------------------
 // 1. Defining tools

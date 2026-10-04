@@ -409,7 +409,7 @@ context.mapUnsafe.size // => 3
 **Picking services from a context**
 
 ```efx
-import { Context, Option } from "effect"
+import { Option } from "effect"
 
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
@@ -428,7 +428,7 @@ Context.getOption(context, Timeout) // => Option.none()
 **Omitting services from a context**
 
 ```efx
-import { Context, Option } from "effect"
+import { Option } from "effect"
 
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")

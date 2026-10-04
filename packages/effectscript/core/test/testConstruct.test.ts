@@ -8,7 +8,7 @@ describe("test / describe (§4.14)", () => {
     )
     expect(diagnostics).toEqual([])
     expect(code).toBe(
-      "import { assert, describe, expect, it } from \"@effect/vitest\"\nimport { Effect } from \"effect\"\n" +
+      "import { assert, describe, expect, it } from \"@effect/vitest\"\nimport * as Effect from \"effect/Effect\"\n" +
         "describe(\"A\", () => {\n  it.effect(\"x\", () => Effect.gen(function*() {\n    assert.ok(true)\n  }).pipe(Effect.provide(L)))\n" +
         "  it.effect.only(\"y\", () => Effect.gen(function*() {\n    expect(1).toBe(1)\n  }))\n})\n"
     )

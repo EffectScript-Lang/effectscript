@@ -6,11 +6,11 @@
  */
 
 import { PgClient } from "@effect/sql-pg"
-import { Array, Config, Context, Effect, Layer, type Option } from "effect"
+import { Array, type Option } from "effect"
 import { SqlClient } from "effect/sql"
 
 // Define a layer for the SqlClient service
-export const SqlClientLayer: Layer.Layer<
+export const SqlClientLayer: Layer<
   PgClient.PgClient | SqlClient.SqlClient,
   Config.ConfigError | SqlError
 > = PgClient.layerConfig({
@@ -22,14 +22,14 @@ export error UserRespositoryError {
 }
 
 export class UserRepository extends Context.Service<UserRepository, {
-  findById(id: string): Effect.Effect<
+  findById(id: string): Effect<
     Option.Option<{ readonly id: string; readonly name: string }>,
     UserRespositoryError
   >
 }>()("myapp/UserRepository") {
   // Implement the layer for the UserRepository service, which depends on the
   // SqlClient service
-  static readonly layerNoDeps: Layer.Layer<
+  static readonly layerNoDeps: Layer<
     UserRepository,
     never,
     SqlClient.SqlClient
@@ -52,7 +52,7 @@ export class UserRepository extends Context.Service<UserRepository, {
 
   // Use Layer.provide to compose the UserRepository layer with the SqlClient
   // layer, exposing only the UserRepository service
-  static readonly layer: Layer.Layer<
+  static readonly layer: Layer<
     UserRepository,
     Config.ConfigError | SqlError
   > = this.layerNoDeps.pipe(
@@ -61,7 +61,7 @@ export class UserRepository extends Context.Service<UserRepository, {
 
   // Use Layer.provideMerge to compose the UserRepository layer with the SqlClient
   // layer, exposing both the UserRepository and SqlClient services
-  static readonly layerWithSqlClient: Layer.Layer<
+  static readonly layerWithSqlClient: Layer<
     UserRepository | SqlClient.SqlClient,
     Config.ConfigError | SqlError
   > = this.layerNoDeps.pipe(

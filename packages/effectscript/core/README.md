@@ -13,7 +13,7 @@ export effect getUser(id: UserId): User throws UserNotFound {
 compiles to
 
 ```ts
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 export const getUser = Effect.fn("getUser")(function*(id: UserId): Effect.fn.Return<User, UserNotFound> {
   const users = yield* Users
   return yield* users.find(id)

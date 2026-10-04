@@ -346,7 +346,7 @@ Channel.isChannel(conditionalChannel(false)) // => true
 **Failing with an error**
 
 ```efx
-import { Channel, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const failedChannel = Channel.fail("Something went wrong")
 runSync(exit(Channel.runCollect(failedChannel))) // => Exit.fail("Something went wrong")
@@ -357,7 +357,7 @@ runSync(exit(Channel.runCollect(failedChannel))) // => Exit.fail("Something went
 **Failing with a lazy error**
 
 ```efx
-import { Channel, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 let attempts = 0
 const conditionalError = Channel.failSync(() => {
@@ -375,7 +375,7 @@ const observed = [
 **Failing with causes**
 
 ```efx
-import { Cause, Channel, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const simpleCause = Cause.fail("Simple error")
 const failedChannel = Channel.failCause(simpleCause)
@@ -387,7 +387,7 @@ runSync(exit(Channel.runCollect(failedChannel))) // => Exit.failCause(simpleCaus
 **Failing with lazy causes**
 
 ```efx
-import { Cause, Channel, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Create a channel that fails with a lazily computed cause
 let attempts = 0
@@ -407,7 +407,7 @@ const observed = [
 **Dying with defects**
 
 ```efx
-import { Cause, Channel, Effect, Exit } from "effect"
+import { Cause, Exit } from "effect"
 
 const defect = "Unrecoverable error"
 const diedChannel = Channel.die(defect)
@@ -460,7 +460,7 @@ await runPromise(program) // => [[1, 2, 3, 4]]
 **Creating channels from subscriptions**
 
 ```efx
-import { Channel, Data, Effect, Option } from "effect"
+import { Option } from "effect"
 
 class SubscriptionError extends Data.TaggedError("SubscriptionError")<{
   readonly reason: string
@@ -502,7 +502,7 @@ const notificationChannel = effect {
 **Batching subscription values**
 
 ```efx
-import { Channel, Data, Effect, Option } from "effect"
+import { Option } from "effect"
 
 class StreamError extends Data.TaggedError("StreamError")<{
   readonly message: string
@@ -531,7 +531,7 @@ await runPromise(result) // => Option.some([1, 2, 3, 4])
 **Processing subscription values in batches**
 
 ```efx
-import { Channel, Data, Effect, Option } from "effect"
+import { Option } from "effect"
 
 class BatchProcessingError extends Data.TaggedError("BatchProcessingError")<{
   readonly reason: string
@@ -600,7 +600,7 @@ Option.map(result, ({ count, sum, average, min, max }) => ({ count, sum, average
 **Creating channels from PubSubs**
 
 ```efx
-import { Channel, Data, Effect, Option } from "effect"
+import { Option } from "effect"
 
 class StreamError extends Data.TaggedError("StreamError")<{
   readonly message: string
@@ -627,7 +627,7 @@ await runPromise(result) // => Option.some(1)
 **Streaming PubSub notifications**
 
 ```efx
-import { Channel, Effect, Option } from "effect"
+import { Option } from "effect"
 
 const notificationService = effect {
   const notificationPubSub = await PubSub.unbounded<string>({ replay: 1 })
@@ -653,7 +653,7 @@ await runPromise(notification) // => Option.some({ message: "ready", receivedAt:
 **Processing PubSub events**
 
 ```efx
-import { Channel, Effect, Option } from "effect"
+import { Option } from "effect"
 
 interface DomainEvent {
   readonly type: string
@@ -691,7 +691,7 @@ const result = await runPromise(event) // => Option.some({ type: "user.created",
 **Batching PubSub values**
 
 ```efx
-import { Channel, Data, Effect, Option } from "effect"
+import { Option } from "effect"
 
 class BatchError extends Data.TaggedError("BatchError")<{
   readonly message: string
@@ -1277,7 +1277,7 @@ runSync(Channel.runCollect(recovered)) // => ["retry: 60"]
 **Promoting nested reasons**
 
 ```efx
-import { Channel, Data, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 class RateLimitError extends Data.TaggedError("RateLimitError")<{
   retryAfter: number
@@ -1303,7 +1303,7 @@ runSync(exit(Channel.runCollect(unwrapped))) // => Exit.fail(reason)
 **Converting failures to defects**
 
 ```efx
-import { Cause, Channel, Data, Effect, Exit } from "effect"
+import { Cause, Exit } from "effect"
 
 class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly field: string
@@ -1427,7 +1427,7 @@ runSync(Channel.runCollect(pipedChannel)) // => [2, 4, 6]
 **Piping while preserving failures**
 
 ```efx
-import { Channel, Data, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 class SourceError extends Data.TaggedError("SourceError")<{
   readonly code: number
@@ -1660,7 +1660,7 @@ await runPromise(program) // => [1, 2, 3]
 **Converting channels to scoped pulls**
 
 ```efx
-import { Channel, Data, Effect, Scope } from "effect"
+import { Scope } from "effect"
 
 class ScopedPullError extends Data.TaggedError("ScopedPullError")<{
   readonly reason: string

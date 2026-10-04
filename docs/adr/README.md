@@ -18,7 +18,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0004](0004-acorn-parser-no-typescript-fork.md)       | Parse with acorn plugins; no TypeScript fork, no wasm         | Accepted |
 | [0005](0005-effect-keyword.md)                        | `effect` is the keyword                                       | Accepted |
 | [0006](0006-await-as-effect-bind.md)                  | `await` binds effects, with guardrails                        | Accepted |
-| [0007](0007-prelude-and-bare-builtins.md)             | Automatic prelude and bare Effect builtins                    | Accepted |
+| [0007](0007-prelude-and-bare-builtins.md)             | Automatic prelude and bare Effect builtins                    | Accepted, import shape amended by 0089 |
 | [0008](0008-monorepo-fork-and-public-org.md)          | Live in a public fork of the Effect monorepo                  | Accepted |
 | [0009](0009-hygienic-generated-references.md)         | Generated references are hygienic                             | Accepted |
 | [0010](0010-try-catch-contract.md)                    | One `try`/`catch` contract inside `effect` code               | Accepted |
@@ -41,7 +41,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0027](0027-ambient-process-env-preserves-undefined.md) | Ambient `process.env.NAME` keeps its `string \| undefined` meaning | Accepted |
 | [0028](0028-strict-mode-syntactic-rules.md)          | Strict-mode rules are syntactic; warnings never affect the superset guarantee | Accepted |
 | [0029](0029-otlp-through-layer-from-config.md)        | `main` telemetry uses `Otlp.layerFromConfig`                  | Accepted |
-| [0030](0030-reverse-rewrites-must-recompile-identically.md) | A reverse rewrite applies only where the forward compiler reproduces its input | Accepted |
+| [0030](0030-reverse-rewrites-must-recompile-identically.md) | A reverse rewrite applies only where the forward compiler reproduces its input | Accepted, amended by 0089 |
 | [0031](0031-reverse-compiler-in-two-plans.md) | Deliver the full reverse compiler in two plans | Accepted |
 | [0032](0032-cli-integrations-distribution-in-three-plans.md) | Deliver phase 7 in three plans, with a dogfooded CLI that depends on `effect` | Accepted |
 | [0033](0033-cli-conventions-and-convert-verification.md) | CLI argument passthrough and `efx convert` verification | Accepted |
@@ -96,6 +96,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0086](0086-the-infra-extension-sketched-on-alchemy.md) | The infra extension, sketched: resources, workers that serve an `api`, and stacks on Alchemy v2 | Proposed |
 | [0087](0087-is-tests-a-tag.md) | `is` tests a value's tag, and `is T` on its own is a predicate | Accepted |
 | [0088](0088-the-playground-is-a-workspace-both-ways-with-docs.md) | The playground is a workspace of example files, converts both ways with either side on the left, and shows docs on hover | Accepted |
+| [0089](0089-prelude-imports-name-the-module-file.md) | Prelude imports name the module's own file, not the package index | Accepted |
 | [0090](0090-a-convex-extension-sketched-on-confect.md) | A Convex extension, sketched on Confect: tables, function specs and their impls | Proposed |
 
 ## Template

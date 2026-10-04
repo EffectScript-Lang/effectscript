@@ -4,7 +4,7 @@
  * This example shows how to collect process output, compose pipelines, and stream long-running command output.
  */
 import { NodeServices } from "@effect/platform-node"
-import { Console, Context, Effect, Layer, Schema, Stream, String } from "effect"
+import { String } from "effect"
 import { ChildProcess } from "effect/process"
 
 export error DevToolsError {
@@ -12,10 +12,10 @@ export error DevToolsError {
 }
 
 export service DevTools as "docs/DevTools" {
-  readonly nodeVersion: Effect.Effect<string, DevToolsError>
-  readonly recentCommitSubjects: Effect.Effect<ReadonlyArray<string>, DevToolsError>
-  readonly runLintFix: Effect.Effect<void, DevToolsError>
-  changedTypeScriptFiles(baseRef: string): Effect.Effect<ReadonlyArray<string>, DevToolsError>
+  readonly nodeVersion: Effect<string, DevToolsError>
+  readonly recentCommitSubjects: Effect<ReadonlyArray<string>, DevToolsError>
+  readonly runLintFix: Effect<void, DevToolsError>
+  changedTypeScriptFiles(baseRef: string): Effect<ReadonlyArray<string>, DevToolsError>
   layer = effect {
       // To run child processes, we need access to a `ChildProcessSpawner`.
       const spawner = await ChildProcessSpawner.ChildProcessSpawner

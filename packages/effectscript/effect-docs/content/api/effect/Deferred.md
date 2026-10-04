@@ -121,7 +121,7 @@ await runPromise(program) // => Exit.succeed(42)
 **Failing a Deferred with an error**
 
 ```efx
-import { Deferred, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const deferred = await Deferred.make<number, string>()
@@ -138,7 +138,7 @@ await runPromise(program) // => [true, Exit.fail("Operation failed")]
 **Failing a Deferred with a lazy error**
 
 ```efx
-import { Deferred, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const deferred = await Deferred.make<number, string>()
@@ -155,7 +155,7 @@ await runPromise(program) // => [true, Exit.fail("Lazy error")]
 **Failing a Deferred with a Cause**
 
 ```efx
-import { Cause, Deferred, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const deferred = await Deferred.make<number, string>()
@@ -172,7 +172,7 @@ await runPromise(program) // => [true, Exit.failCause(Cause.fail("Operation fail
 **Failing a Deferred with a lazy Cause**
 
 ```efx
-import { Cause, Deferred, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const deferred = await Deferred.make<number, string>()
@@ -189,7 +189,7 @@ await runPromise(program) // => [true, Exit.failCause(Cause.fail("Lazy error"))]
 **Killing a Deferred with a defect**
 
 ```efx
-import { Deferred, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const defect = new Error("Something went wrong")
 const program = effect {
@@ -207,7 +207,7 @@ await runPromise(program) // => [true, Exit.die(defect)]
 **Killing a Deferred with a lazy defect**
 
 ```efx
-import { Deferred, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const defect = new Error("Lazy error")
 const program = effect {
@@ -242,7 +242,7 @@ Exit.hasInterrupts(exit) // => true
 **Interrupting a Deferred with a fiber id**
 
 ```efx
-import { Deferred, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const deferred = await Deferred.make<number>()
@@ -275,7 +275,7 @@ await runPromise(program) // => [false, true]
 **Polling Deferred completion**
 
 ```efx
-import { Deferred, Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const deferred = await Deferred.make<number>()
