@@ -72,8 +72,19 @@ describe("efx init (Plan 8 Task 5)", { timeout: 120_000 }, () => {
     })
     expect(init(dir).status).toBe(0)
     const config = read(dir, "docs/blume.config.ts")
-    expect(config).toContain("import { effectscript } from \"effectscript/blume\"")
+    expect(config).toContain("import { effectscript, frontmatter, markdown, theme } from \"effectscript/blume\"")
+    expect(config).toContain("  theme,\n  markdown,\n  frontmatter,\n  integrations: [effectscript()]")
     expect(config).toContain("title: \"bank\"")
+    // the theme's page parts and styles (ADR-0079); Blume reads components.ts statically
+    expect(read(dir, "docs/components.ts")).toBe(
+      "import { defineComponents } from \"blume\"\n" +
+        "import Footer from \"effectscript/blume/components/Footer.astro\"\n" +
+        "import Logo from \"effectscript/blume/components/Logo.astro\"\n" +
+        "import PageHeader from \"effectscript/blume/components/PageHeader.astro\"\n\n" +
+        "export default defineComponents({ layout: { Footer, Logo, PageHeader } })\n"
+    )
+    expect(read(dir, "docs/theme.css")).toBe("@import \"effectscript/blume/theme.css\";\n")
+    expect(init(dir).stdout).toContain("blume@2.1.1")
     expect(config).toContain(
       "content: { root: \".\", exclude: [\"**/_*\", \"**/.*\", \"dist/**\", \"node_modules/**\"] }"
     )
@@ -86,6 +97,9 @@ describe("efx init (Plan 8 Task 5)", { timeout: 120_000 }, () => {
     fs.writeFileSync(path.join(dir, "docs/blume.config.ts"), "// mine\n")
     expect(init(dir).status).toBe(0)
     expect(read(dir, "docs/blume.config.ts")).toBe("// mine\n")
+    fs.writeFileSync(path.join(dir, "docs/theme.css"), "/* mine */\n")
+    expect(init(dir).status).toBe(0)
+    expect(read(dir, "docs/theme.css")).toBe("/* mine */\n")
     expect(init(dir).stdout).toContain("blume")
   })
 })

@@ -55,10 +55,19 @@ const scripts: ReadonlyArray<readonly [string, string]> = [
 
 /** The Blume site lives in `docs/`: Blume always builds into `dist/` next to its config (ADR-0043). */
 const blumeConfig = (title: string): string =>
-  `import { defineConfig } from "blume"\nimport { effectscript } from "effectscript/blume"\n\n` +
+  `import { defineConfig } from "blume"\nimport { effectscript, frontmatter, markdown, theme } from "effectscript/blume"\n\n` +
   `export default defineConfig({\n  title: ${JSON.stringify(title)},\n` +
   `  content: { root: ".", exclude: ["**/_*", "**/.*", "dist/**", "node_modules/**"] },\n` +
-  `  integrations: [effectscript()]\n})\n`
+  `  theme,\n  markdown,\n  frontmatter,\n  integrations: [effectscript()]\n})\n`
+
+/** The EffectScript theme's page parts (ADR-0079). Blume reads this file statically, so it lists each. */
+const blumeComponents = `import { defineComponents } from "blume"\n` +
+  `import Footer from "effectscript/blume/components/Footer.astro"\n` +
+  `import Logo from "effectscript/blume/components/Logo.astro"\n` +
+  `import PageHeader from "effectscript/blume/components/PageHeader.astro"\n\n` +
+  `export default defineComponents({ layout: { Footer, Logo, PageHeader } })\n`
+
+const blumeTheme = `@import "effectscript/blume/theme.css";\n`
 
 const docsHome = (title: string, description: string | undefined): string =>
   `---\ntitle: ${JSON.stringify(title)}\n${
@@ -84,6 +93,17 @@ const setUpDocs = (
     fs.mkdirSync(docs, { recursive: true })
     fs.writeFileSync(config, blumeConfig(title))
     out("docs/blume.config.ts: added a Blume site (efx docs writes the API pages to docs/api)")
+    changed = true
+  }
+  for (
+    const [file, text, what] of [
+      ["components.ts", blumeComponents, "the EffectScript theme's logo, page header and footer"],
+      ["theme.css", blumeTheme, "the EffectScript theme's styles"]
+    ] as const
+  ) {
+    if (fs.existsSync(path.join(docs, file))) continue
+    fs.writeFileSync(path.join(docs, file), text)
+    out(`docs/${file}: added ${what}`)
     changed = true
   }
   if (!fs.existsSync(path.join(docs, "index.md")) && !fs.existsSync(path.join(docs, "index.mdx"))) {
@@ -134,7 +154,14 @@ const newTsconfig = `{
 const installCommand = (missing: ReadonlyArray<string>): string => {
   const runtime = missing.filter((name) => name === "effect" || name.startsWith("@effect/"))
   const dev = missing.filter((name) => !runtime.includes(name)).map((name) =>
-    name === "typescript" ? "typescript@6" : name === "effectscript" || name === plugin ? `${name}@${version}` : name
+    name === "typescript"
+      ? "typescript@6"
+      : name === "effectscript" || name === plugin
+      ? `${name}@${version}`
+      // pinned: the theme depends on Blume's component props (ADR-0079)
+      : name === "blume"
+      ? "blume@2.1.1"
+      : name
   )
   return [
     ...(runtime.length > 0 ? [`npm i ${runtime.join(" ")}`] : []),
