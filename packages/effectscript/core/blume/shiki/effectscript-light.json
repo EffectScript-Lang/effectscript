@@ -1,0 +1,110 @@
+{
+  "name": "effectscript-light",
+  "type": "light",
+  "colors": {
+    "editor.background": "#fafafa",
+    "editor.foreground": "#27272a"
+  },
+  "tokenColors": [
+    {
+      "scope": [
+        "comment",
+        "punctuation.definition.comment"
+      ],
+      "settings": {
+        "foreground": "#71717a",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "scope": [
+        "keyword",
+        "storage",
+        "storage.type",
+        "storage.modifier",
+        "keyword.control.effect.efx",
+        "keyword.other.throws.efx",
+        "keyword.operator.pipeline.efx",
+        "keyword.operator.new",
+        "keyword.operator.expression"
+      ],
+      "settings": {
+        "foreground": "#09090b",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": [
+        "entity.name.type",
+        "support.type",
+        "support.class",
+        "entity.name.class",
+        "entity.other.inherited-class"
+      ],
+      "settings": {
+        "foreground": "#18181b"
+      }
+    },
+    {
+      "scope": [
+        "entity.name.function",
+        "support.function"
+      ],
+      "settings": {
+        "foreground": "#09090b"
+      }
+    },
+    {
+      "scope": [
+        "string",
+        "constant.numeric",
+        "constant.language",
+        "constant.character",
+        "string.template"
+      ],
+      "settings": {
+        "foreground": "#52525b"
+      }
+    },
+    {
+      "scope": [
+        "variable",
+        "variable.parameter",
+        "meta.object-literal.key",
+        "variable.other.property"
+      ],
+      "settings": {
+        "foreground": "#3f3f46"
+      }
+    },
+    {
+      "scope": [
+        "punctuation",
+        "meta.brace",
+        "keyword.operator",
+        "keyword.operator.type.efx"
+      ],
+      "settings": {
+        "foreground": "#71717a"
+      }
+    },
+    {
+      "scope": "meta.return-type.efx",
+      "settings": {
+        "foreground": "#15803d"
+      }
+    },
+    {
+      "scope": "meta.throws-clause.efx",
+      "settings": {
+        "foreground": "#b91c1c"
+      }
+    },
+    {
+      "scope": "meta.needs-clause.efx",
+      "settings": {
+        "foreground": "#1d4ed8"
+      }
+    }
+  ]
+}
