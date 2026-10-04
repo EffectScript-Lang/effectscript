@@ -1,6 +1,7 @@
 /**
  * Starting points for the playground: the language, then extensions (ADR-0083), then every gallery
- * scenario. A proposed preset shows syntax an ADR has decided but the compiler doesn't accept yet,
+ * scenario. Each follows the docs (ADR-0086): the syntax reference, the spec and the ADRs. A
+ * proposed preset shows syntax an ADR has decided or sketched but the compiler doesn't accept yet,
  * next to the lowering that ADR specifies; it compiles for real once it is edited.
  */
 import { scenarios } from "../samples/scenarios.ts"
@@ -71,17 +72,18 @@ export effect profile(id: string) {
   },
   {
     id: "brands",
-    title: "Brands and checks",
-    code: `// A brand is a type the checker tells apart: an Email is not just any string.
-// Checks run whenever data is decoded, so a Signup is valid wherever it appears.
-export schema Email = string & Brand<"Email">
-export schema UserId = string & Brand<"UserId">
+    title: "Brands and where checks (next)",
+    code: `// \`brand\` takes its key from its name; \`where\` adds checks to a type or a field.
+// Accepted in ADR-0077, not built yet: the TypeScript is the lowering it specifies.
+// Checks run on decode and in \`make\`, reach JSON Schema, shape generated tests.
+export brand Email = string where isPattern(/^[^@\\s]+@[^@\\s]+$/)
+export brand UserId = string where isUUID()
 
 export schema Signup {
   id: UserId
   email: Email
-  name = Trimmed.check(isMinLength(1), isMaxLength(64))
-  age = Int.check(isBetween({ minimum: 13, maximum: 130 }))
+  name: string where isTrimmed(), isNonEmpty(), isMaxLength(64)
+  nickname?: string where isMaxLength(20)
 }
 
 export error InvalidSignup { reason: string }
@@ -93,45 +95,35 @@ export effect register(input: unknown): Signup throws InvalidSignup {
   console.log(\`welcome, \${signup.name}\`)
   return signup
 }
-`
-  },
-  {
-    id: "brands-where",
-    title: "Brands with where (next)",
-    code: `// \`brand\` takes its key from its name, and \`where\` adds checks to a type or a field.
-// Accepted in ADR-0077 and not built yet: the TypeScript is the lowering the ADR specifies.
-export brand Email = string where isPattern(/^[^@\\s]+@[^@\\s]+$/)
-export brand UserId = string where isUUID()
-export brand Cents = Int where isGreaterThanOrEqualTo(0)
-
-export schema Order {
-  customer: UserId
-  email: Email
-  total: Cents
-  quantity: Int where isBetween({ minimum: 1, maximum: 99 })
-  note?: string where isTrimmed(), isMaxLength(280)
-}
 `,
     proposal: {
       adr: "ADR-0077",
       status: "accepted, not built yet",
-      lowering: `import { Schema } from "effect"
-// \`brand\` takes its key from its name, and \`where\` adds checks to a type or a field.
-// Accepted in ADR-0077 and not built yet: the TypeScript is the lowering the ADR specifies.
+      lowering: `import { Effect, Schema, pipe } from "effect"
+// \`brand\` takes its key from its name; \`where\` adds checks to a type or a field.
+// Accepted in ADR-0077, not built yet: the TypeScript is the lowering it specifies.
+// Checks run on decode and in \`make\`, reach JSON Schema, shape generated tests.
 export const Email = Schema.String.check(Schema.isPattern(/^[^@\\s]+@[^@\\s]+$/)).pipe(Schema.brand("Email"))
 export type Email = typeof Email.Type
 export const UserId = Schema.String.check(Schema.isUUID()).pipe(Schema.brand("UserId"))
 export type UserId = typeof UserId.Type
-export const Cents = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)).pipe(Schema.brand("Cents"))
-export type Cents = typeof Cents.Type
 
-export class Order extends Schema.Class<Order>("Order")({
-  customer: UserId,
+export class Signup extends Schema.Class<Signup>("Signup")({
+  id: UserId,
   email: Email,
-  total: Cents,
-  quantity: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 99 })),
-  note: Schema.optionalKey(Schema.String.check(Schema.isTrimmed(), Schema.isMaxLength(280)))
+  name: Schema.String.check(Schema.isTrimmed(), Schema.isNonEmpty(), Schema.isMaxLength(64)),
+  nickname: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(20)))
 }) {}
+
+export class InvalidSignup extends Schema.TaggedError<InvalidSignup>()("InvalidSignup", { reason: Schema.String }) {}
+
+// decoding runs every check, then hands back typed data or a typed error
+export const register = Effect.fn("register")(function*(input: unknown): Effect.fn.Return<Signup, InvalidSignup> {
+  const signup = yield* pipe(Schema.decodeUnknownEffect(Signup)(input),
+    Effect.mapError((e) => new InvalidSignup({ reason: e.message })))
+  yield* Effect.log(\`welcome, \${signup.name}\`)
+  return signup
+})
 `
     }
   },
@@ -146,7 +138,8 @@ service Payments {
   layer = { charge: effect (cartId: string, cents: number) => \`receipt-\${cartId}-\${cents}\` }
 }
 
-// every effect function is a span named after it, and its logs land inside that span
+// every effect function is a span named after it ("checkout", "Payments.charge"),
+// and its logs land inside that span
 export effect checkout(cartId: string, cents: number): string throws PaymentDeclined needs Payments {
   console.log(\`charging \${cents} for \${cartId}\`)
   const receipt = await Payments.charge(cartId, cents)
@@ -154,7 +147,7 @@ export effect checkout(cartId: string, cents: number): string throws PaymentDecl
   return receipt
 } |> retry({ times: 2 })
 
-// OTEL_EXPORTER_OTLP_ENDPOINT points the exporter at a collector: nothing else to wire
+// the exporter reads the standard OTEL_* variables, and does nothing without an endpoint
 main {
   await checkout("cart-1", 4200)
 } |> provide(Payments.layer)
@@ -165,47 +158,52 @@ main {
 const extensions: ReadonlyArray<Omit<Preset, "group">> = [
   {
     id: "law",
-    title: "Proofs: a law for Bend2 (proposed)",
-    code: `// A \`law\` is a rule the program must keep. It runs as a property test today, and it is
-// the statement a Bend2 proof proves (ADR-0074). Proposed in ADR-0075 and not built yet:
-// the TypeScript is the lowering the ADR specifies.
+    title: "Proofs: laws for Bend2 (proposed)",
+    code: `// A \`law\` is a rule the program must keep. It runs as a property test today,
+// and it is what a Bend2 proof proves (ADR-0074). Proposed in ADR-0075, not built:
+// the TypeScript is the lowering it specifies. Tests run them: \`laws "./bank.efx"\`.
+
+/** An amount of money in whole cents. */
 export schema Money = Int & Brand<"Money">
 
-export error InsufficientFunds { balance: Money; amount: Money }
+/** An account has less money than a withdrawal needs. */
+export error InsufficientFunds { needed: Money; available: Money }
 
+/** Takes money out of a balance. */
 export effect withdraw(balance: Money, amount: Money): Money throws InsufficientFunds {
-  if (amount > balance) throw new InsufficientFunds({ balance, amount })
+  if (amount > balance) throw new InsufficientFunds({ needed: amount, available: balance })
   return Money.make(balance - amount)
 }
 
 /** Withdrawing never leaves a negative balance. */
-law withdrawNeverNegative(balance: Money, amount: Money)
-  requires balance >= 0 && amount >= 0
-{
+law withdrawNeverNegative(balance: Money, amount: Money) {
   const exit = await Effect.exit(withdraw(balance, amount))
   return Exit.isFailure(exit) || exit.value >= 0
 }
 
-/** A withdrawal is refused only when it asks for more than the balance. */
-law refusesOnlyOverdrafts(balance: Money, amount: Money) {
-  const exit = await Effect.exit(withdraw(balance, amount))
-  return Exit.isSuccess(exit) || amount > balance
+/** A withdrawal fails exactly when it asks for more than the balance. */
+law withdrawFailsExactlyWhenShort(balance: Money, amount: Money) {
+  return Exit.isFailure(await Effect.exit(withdraw(balance, amount))) === amount > balance
 }
 `,
     proposal: {
       adr: "ADR-0075",
       status: "proposed, not built yet",
       lowering: `import { Effect, Exit, Schema } from "effect"
-// A \`law\` is a rule the program must keep. It runs as a property test today, and it is
-// the statement a Bend2 proof proves (ADR-0074). Proposed in ADR-0075 and not built yet:
-// the TypeScript is the lowering the ADR specifies.
+// A \`law\` is a rule the program must keep. It runs as a property test today,
+// and it is what a Bend2 proof proves (ADR-0074). Proposed in ADR-0075, not built:
+// the TypeScript is the lowering it specifies. Tests run them: \`laws "./bank.efx"\`.
+
+/** An amount of money in whole cents. */
 export const Money = Schema.Int.pipe(Schema.brand("Money"))
 export type Money = typeof Money.Type
 
-export class InsufficientFunds extends Schema.TaggedError<InsufficientFunds>()("InsufficientFunds", { balance: Money, amount: Money }) {}
+/** An account has less money than a withdrawal needs. */
+export class InsufficientFunds extends Schema.TaggedError<InsufficientFunds>()("InsufficientFunds", { needed: Money, available: Money }) {}
 
+/** Takes money out of a balance. */
 export const withdraw = Effect.fn("withdraw")(function*(balance: Money, amount: Money): Effect.fn.Return<Money, InsufficientFunds> {
-  if (amount > balance) return yield* new InsufficientFunds({ balance, amount })
+  if (amount > balance) return yield* new InsufficientFunds({ needed: amount, available: balance })
   return Money.make(balance - amount)
 })
 
@@ -215,91 +213,177 @@ const withdrawNeverNegative = /*#__PURE__*/ Object.assign(
     const exit = yield* Effect.exit(withdraw(balance, amount))
     return Exit.isFailure(exit) || exit.value >= 0
   }),
-  {
-    law: "withdrawNeverNegative",
-    inputs: { balance: Money, amount: Money },
-    requires: ({ balance, amount }: { readonly balance: Money; readonly amount: Money }) => balance >= 0 && amount >= 0
-  }
+  { law: "withdrawNeverNegative", inputs: { balance: Money, amount: Money } }
 )
 void withdrawNeverNegative
 
-/** A withdrawal is refused only when it asks for more than the balance. */
-const refusesOnlyOverdrafts = /*#__PURE__*/ Object.assign(
+/** A withdrawal fails exactly when it asks for more than the balance. */
+const withdrawFailsExactlyWhenShort = /*#__PURE__*/ Object.assign(
   Effect.fnUntraced(function*({ balance, amount }: { readonly balance: Money; readonly amount: Money }) {
-    const exit = yield* Effect.exit(withdraw(balance, amount))
-    return Exit.isSuccess(exit) || amount > balance
+    return Exit.isFailure(yield* Effect.exit(withdraw(balance, amount))) === amount > balance
   }),
-  { law: "refusesOnlyOverdrafts", inputs: { balance: Money, amount: Money } }
+  { law: "withdrawFailsExactlyWhenShort", inputs: { balance: Money, amount: Money } }
 )
-void refusesOnlyOverdrafts
+void withdrawFailsExactlyWhenShort
 `
     }
   },
   {
-    id: "foldkit",
-    title: "App: Foldkit's model, today",
-    code: `// Foldkit's counter (foldkit.dev) in today's EffectScript: the model and the messages are
-// schemas, the update is a match, and a command is an effect that ends in a message.
-// An \`app\` extension on Foldkit's model is on the roadmap (ADR-0083).
-import { Command, Update } from "foldkit"
-
-export schema Model = { count: number; isResetting: boolean; resetDuration: number }
+    id: "elm",
+    title: "Apps: The Elm Architecture, today",
+    code: `// The Elm Architecture, as Foldkit applies it to Effect, in today's EffectScript.
+// Messages are a union, the update is a match, a command is an effect that ends in
+// a message, the state is an atom, the view is JSX. An \`app\` extension is planned.
+import { useAtomSet, useAtomValue } from "@effect/atom-react"
 
 export schema Message =
-  | ClickedIncrement {}
-  | ChangedResetDuration { seconds: number }
-  | ClickedResetAfterDelay {}
-  | CompletedDelayReset {}
+  | Increment {}
+  | Decrement {}
+  | ResetLater { seconds: number }
+  | Reset {}
 
-export const DelayReset = Command.define("DelayReset", {
-  args: { seconds: Schema.Number },
-  messages: [CompletedDelayReset],
-  execute: ({ seconds }) => effect {
-    await sleep(\`\${seconds} seconds\`)
-    return new CompletedDelayReset()
-  }
-})
+export atom count = 0
 
-export const update = (model: Model, message: Message): Update.Return<Model, Message> =>
+// the update is pure: the next state for each message
+export const update = (count: number, message: Message): number =>
   match (message) {
-    when ClickedIncrement: ({ model: { ...model, count: model.count + 1 } })
-    when ChangedResetDuration({ seconds }): ({ model: { ...model, resetDuration: seconds } })
-    when ClickedResetAfterDelay: ({
-      model: { ...model, isResetting: true },
-      commands: [DelayReset({ seconds: model.resetDuration })]
-    })
-    when CompletedDelayReset: ({ model: { ...model, count: 0, isResetting: false } })
+    when Increment: count + 1
+    when Decrement: count - 1
+    when ResetLater: count
+    when Reset: 0
   }
+
+// a message's command: an effect whose result is the next message
+const command = (message: Message): Effect<Message> | undefined =>
+  match (message) {
+    when ResetLater({ seconds }): sleep(\`\${seconds} seconds\`) |> as(new Reset())
+    default: undefined
+  }
+
+// applies a message, then runs its command and the message that comes back
+effect run(message: Message, get: Atom.FnContext): void {
+  get.set(count, update(get(count), message))
+  const next = command(message)
+  if (next !== undefined) await run(await next, get)
+}
+
+export const dispatch = Atom.fn(run)
+
+export const Counter = () => {
+  const value = useAtomValue(count)
+  const send = useAtomSet(dispatch)
+  return (
+    <p>
+      <button onClick={() => send(new Decrement())}>−</button>
+      <output>{value}</output>
+      <button onClick={() => send(new Increment())}>+</button>
+      <button onClick={() => send(new ResetLater({ seconds: 2 }))}>Reset in 2s</button>
+    </p>
+  )
+}
 `
   },
   {
-    id: "alchemy",
-    title: "Infra: an Alchemy v2 stack, today",
-    code: `// An Alchemy v2 stack (alchemy.run) in today's EffectScript: resources and workers are effects.
-// An \`infra\` extension that declares them directly is on the roadmap (ADR-0083).
-import * as Alchemy from "alchemy"
-import * as Cloudflare from "alchemy/Cloudflare"
-import * as HttpServerResponse from "effect/http/HttpServerResponse"
+    id: "infra",
+    title: "Infra: a Cloudflare Worker (proposed)",
+    code: `// @efx infra
+// The infra extension on Alchemy v2, sketched in ADR-0086 (proposed, not built):
+// the TypeScript is the lowering it specifies, in the shape of Alchemy's guide.
+// \`Cloudflare\` comes with the extension. Deploy with \`stack App { Site }\`.
 
-export const Uploads = Cloudflare.R2.Bucket("Uploads")
+// a Cloudflare resource, named after its declaration
+export resource Uploads = Cloudflare.R2.Bucket()
 
-export const Api = Cloudflare.Worker("Api", { main: import.meta.url }, effect {
-  const bucket = await Cloudflare.R2.ReadWriteBucket(Uploads)
+export error FileNotFound status 404 { key: string }
+
+export group FilesApi {
+  get read "/:key" (params: { key: string }): string throws FileNotFound
+  put write "/:key" (params: { key: string }, payload: string)
+}
+
+export api Api { FilesApi }
+
+export const FilesLive = impl Api.files {
+  // awaiting a resource binds it to the worker this runs in
+  const bucket = await Uploads
   return {
-    fetch: effect {
-      const object = await bucket.get("hello.txt")
-      return object
-        ? HttpServerResponse.text(await object.text())
-        : HttpServerResponse.text("Not found", { status: 404 })
+    effect read({ params }) {
+      // a storage failure is a defect (500), a missing file is FileNotFound (404)
+      const file = await bucket.get(params.key) |> orDie
+      if (file === null) throw new FileNotFound({ key: params.key })
+      return await file.text() |> orDie
+    },
+    effect write({ params, payload }) {
+      await bucket.put(params.key, payload) |> orDie
     }
   }
-} |> provide(Cloudflare.R2.ReadWriteBucketBinding))
+}
 
-export default Alchemy.Stack("MyApp", { providers: Cloudflare.providers(), state: Cloudflare.state() }, effect {
-  const api = await Api
-  return { url: api.url }
+// a Worker that serves the API: its responses are the API's schemas and statuses
+export default worker Site serves Api with FilesLive
+`,
+    proposal: {
+      adr: "ADR-0086",
+      status: "a proposed sketch, not built",
+      lowering: `import * as Cloudflare from "alchemy/Cloudflare"
+import { Effect, Layer, Path, Schema, pipe } from "effect"
+import { Etag, HttpPlatform, HttpRouter } from "effect/http"
+import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
+// @efx infra
+// The infra extension on Alchemy v2, sketched in ADR-0086 (proposed, not built):
+// the TypeScript is the lowering it specifies, in the shape of Alchemy's guide.
+// \`Cloudflare\` comes with the extension. Deploy with \`stack App { Site }\`.
+
+// a Cloudflare resource, named after its declaration
+export const Uploads = Cloudflare.R2.Bucket("Uploads")
+
+export class FileNotFound extends Schema.TaggedError<FileNotFound>()("FileNotFound", { key: Schema.String }, { httpApiStatus: 404 }) {}
+
+export class FilesApi extends HttpApiGroup.make("files").add(
+  HttpApiEndpoint.get("read", "/:key", { params: { key: Schema.String }, success: Schema.String, error: FileNotFound }),
+  HttpApiEndpoint.put("write", "/:key", { params: { key: Schema.String }, payload: Schema.String })
+) {}
+
+export class Api extends HttpApi.make("api").add(FilesApi) {}
+
+export const FilesLive = HttpApiBuilder.group(Api, "files", Effect.fn("Api.files")(function*(handlers) {
+  // awaiting a resource binds it to the worker this runs in
+  const bucket = yield* Cloudflare.R2.ReadWriteBucket(Uploads)
+  return handlers.handleAll({
+    read: Effect.fn("Api.files.read")(function*({ params }) {
+      // a storage failure is a defect (500), a missing file is FileNotFound (404)
+      const file = yield* pipe(bucket.get(params.key), Effect.orDie)
+      if (file === null) return yield* new FileNotFound({ key: params.key })
+      return yield* pipe(file.text(), Effect.orDie)
+    }),
+    write: Effect.fn("Api.files.write")(function*({ params, payload }) {
+      yield* pipe(bucket.put(params.key, payload), Effect.orDie)
+    })
+  })
+})).pipe(Layer.provide(Cloudflare.R2.ReadWriteBucketBinding))
+
+// a Worker that serves the API: its responses are the API's schemas and statuses
+const HttpPlatformStub = Layer.succeed(HttpPlatform.HttpPlatform, {
+  fileResponse: () => Effect.die("HttpPlatform.fileResponse not supported"),
+  fileWebResponse: () => Effect.die("HttpPlatform.fileWebResponse not supported")
 })
+const Site = Cloudflare.Worker(
+  "Site",
+  { main: import.meta.url },
+  Effect.gen(function*() {
+    return {
+      fetch: yield* HttpRouter.toHttpEffect(
+        HttpApiBuilder.layer(Api).pipe(
+          Layer.provide(FilesLive),
+          Layer.provide([Etag.layer, HttpPlatformStub, Path.layer])
+        )
+      )
+    }
+  })
+)
+export default Site
 `
+    }
   }
 ]
 

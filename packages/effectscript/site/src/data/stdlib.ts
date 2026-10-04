@@ -179,9 +179,9 @@ export const keywords = {
       id: "infra",
       name: "Infrastructure",
       on: "Alchemy",
-      adds: ["infra", "resource"],
+      adds: ["resource", "worker", "stack", "serves"],
       what:
-        "infra and resource declarations compile to Alchemy's Effect-based resources, so the deployment is .efx too."
+        "resource, worker and stack declarations compile to Alchemy's Effect-based resources: a worker serves an api and binds what its handlers use, so the deployment is .efx too."
     },
     {
       id: "app",

@@ -92,7 +92,8 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0082](0082-the-landing-page-as-an-exhibition.md) | The landing page is an exhibition: computed rooms, vgpu WebGPU scenes and generated photography | Accepted |
 | [0083](0083-language-extensions.md) | Abstractions outside Effect come as language extensions that never overlap | Accepted (mechanism open) |
 | [0084](0084-the-playground-maps-each-part-live.md) | The playground is a full-screen editor that links each EffectScript part to its TypeScript | Accepted, partly superseded by 0085 |
-| [0085](0085-the-playground-maps-concepts-and-colours-intent.md) | The playground maps whole concepts, colours code by intent, and previews decided syntax | Accepted |
+| [0085](0085-the-playground-maps-concepts-and-colours-intent.md) | The playground maps whole concepts, colours code by intent, and previews decided syntax | Accepted, partly superseded by 0086 |
+| [0086](0086-the-infra-extension-sketched-on-alchemy.md) | The infra extension, sketched: resources, workers that serve an `api`, and stacks on Alchemy v2 | Proposed |
 
 ## Template
 

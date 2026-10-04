@@ -42,7 +42,7 @@ export const namesOf = (...texts: ReadonlyArray<string>): Names => {
     collect(text, /\berror\s+([A-Z][\w$]*)/g, errors)
     collect(text, /\b(?:schema|brand)\s+([A-Z][\w$]*)/g, data)
     collect(text, /^\s*\|\s*([A-Z][\w$]*)\s*\{/gm, data)
-    collect(text, /\b(?:service|config)\s+([A-Z][\w$]*)/g, services)
+    collect(text, /\b(?:service|config|resource)\s+([A-Z][\w$]*)/g, services)
     collect(text, /\bclass\s+([\w$]+)\s+extends\s+Schema\.(?:TaggedError|TaggedErrorClass|ErrorClass)\b/g, errors)
     collect(text, /\bclass\s+([\w$]+)\s+extends\s+Schema\.(?:Class|TaggedClass)\b/g, data)
     collect(text, /\bclass\s+([\w$]+)\s+extends\s+Context\.\w+/g, services)
@@ -79,6 +79,11 @@ const declarations = new Set([
   "requires",
   "brand",
   "where",
+  "atom",
+  "resource",
+  "worker",
+  "stack",
+  "serves",
   "get",
   "set"
 ])
@@ -153,7 +158,12 @@ const structure = new Set([
   "law",
   "requires",
   "brand",
-  "where"
+  "where",
+  "atom",
+  "resource",
+  "worker",
+  "stack",
+  "serves"
 ])
 
 /** JavaScript's own keywords: the structure words of the TypeScript pane. */

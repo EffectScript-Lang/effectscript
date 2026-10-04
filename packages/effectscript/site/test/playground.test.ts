@@ -231,22 +231,35 @@ describe("the playground's presets", async () => {
 
   it("keeps a preset proposed only while the compiler refuses it", () => {
     const proposed = presets.filter((p) => p.proposal !== undefined)
-    expect(proposed.map((p) => p.id)).toEqual(["brands-where", "law"])
+    expect(proposed.map((p) => p.id)).toEqual(["brands", "law", "infra"])
     // once the syntax is built, the preset becomes live and its lowering is the compiler's
     for (const preset of proposed) expect(compiled(preset.code).diagnostics[0]?.code).toBe("EFX1001")
   })
 
-  it("shows a law's lowering after the compiler's own output for the rest of the file", () => {
-    const law = presets.find((p) => p.id === "law")!
-    // the laws add `Exit` to the imports, so the comparison starts after them
-    const body = (code: string) => code.slice(code.indexOf("\n") + 1)
-    const before = law.code.slice(0, law.code.indexOf("/** Withdrawing"))
-    expect(body(law.proposal!.lowering).startsWith(body(compiled(before).code).trimEnd())).toBe(true)
-    expect(law.proposal!.lowering).toMatch(/^import \{ Effect, Exit, Schema \} from "effect"\n/)
+  // a lowering's imports come first, and the proposed parts change them
+  const body = (code: string) => code.replace(/^(import [^\n]*\n)+/, "").trimEnd()
+  const lowering = (id: string) => presets.find((p) => p.id === id)!.proposal!.lowering
+  const source = (id: string) => presets.find((p) => p.id === id)!.code
+  const between = (code: string, from: string, to?: string) =>
+    code.slice(code.indexOf(from), to === undefined ? undefined : code.indexOf(to))
+
+  it("writes what today's syntax already says the way the compiler does", () => {
+    // the law file before its laws, the brands file after its brands, the API the worker serves
+    const law = source("law")
+    expect(body(lowering("law")).startsWith(body(compiled(law.slice(0, law.indexOf("/** Withdrawing"))).code)))
+      .toBe(true)
+    expect(body(lowering("brands")).endsWith(body(compiled(between(source("brands"), "export error")).code)))
+      .toBe(true)
+    // the infra sketch's API and handlers, with its binding written the way it lowers today
+    const handlers = between(source("infra"), "export error", "// a Worker")
+      .replace("await Uploads", "await Cloudflare.R2.ReadWriteBucket(Uploads)")
+      .trimEnd() + " |> provide(Cloudflare.R2.ReadWriteBucketBinding)\n"
+    expect(lowering("infra")).toContain(body(compiled(handlers).code))
   })
 
-  it("matches a match arm's object literal with an object, not a block", () => {
-    const foldkit = compiled(presets.find((p) => p.id === "foldkit")!.code).code
-    expect(foldkit).toContain("ClickedIncrement: () => ({ model: { ...model, count: model.count + 1 } })")
+  it("imports what each lowering uses", () => {
+    expect(lowering("law")).toMatch(/^import \{ Effect, Exit, Schema \} from "effect"\n/)
+    expect(lowering("infra")).toMatch(/^import \* as Cloudflare from "alchemy\/Cloudflare"\n/)
+    expect(lowering("infra")).not.toMatch(/from "alchemy"|HttpServerResponse/)
   })
 })

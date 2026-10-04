@@ -1954,8 +1954,9 @@ The order was revised after the plan review (ADR-0016).
   `.efx` source: `law` declarations (ADR-0075) run as property tests, and `efx verify` models the
   code in Bend2 (ADR-0076) so agent-written proofs can show a law holds for every input. Lean 4 is
   not pursued. Contracts (`requires`/`ensures` on functions) come later as sugar for laws.
-- **Alchemy integration.** `infra`/`resource` constructs compile to Alchemy's Effect-based
-  resources, so infrastructure is written in `.efx` as well.
+- **Alchemy integration.** `resource`, `worker` and `stack` declarations compile to Alchemy's
+  Effect-based resources, so infrastructure is written in `.efx` as well: a `worker` serves an
+  `api`, and awaiting a resource binds it (sketched in ADR-0086, proposed).
 - **Linting `.efx` directly.** Run oxlint on the compiled TS, mapping diagnostics back through
   source maps. Then, if worthwhile, contribute or fork a parser so oxlint lints `.efx` natively.
 - **Performance profile.**

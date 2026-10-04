@@ -124,6 +124,7 @@ export default function Playground() {
       if (disposed) return
       monaco.languages.register({ id: "efx" })
       monaco.languages.register({ id: "typescript" })
+      monaco.languages.register({ id: "tsx" })
       shikiToMonaco(highlighter, monaco)
       const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         theme: "efx-playground",
@@ -406,6 +407,8 @@ export default function Playground() {
             target.setValue(code)
             if (state !== null) target.restoreViewState(state)
           }
+          // JSX in, TSX out: the parser's own test for JSX (spec §3.2) picks the grammar
+          if (pane === "ts") monaco.editor.setModelLanguage(tsModel, /<\/|\/>/.test(code) ? "tsx" : "typescript")
           applying = false
         }
         // the compiler refuses a proposal's syntax, so its problems and its mapping aren't shown

@@ -1,6 +1,6 @@
 # ADR-0085: The playground maps whole concepts, colours code by intent, and previews decided syntax
 
-- **Status:** Accepted
+- **Status:** Accepted, partly superseded by ADR-0086 (the extension examples)
 - **Date:** 2026-10-05
 - **Deciders:** the user, in conversation, three asks: "the mapping shall be more of a block … its
   like a concept to another concept. so we shall embed/highlight the whole phrase for each"; the
