@@ -6,7 +6,7 @@ import { runCompiled } from "./utils/run.ts"
 
 const fixture = fs.readFileSync(path.join(import.meta.dirname, "fixtures/rpc/users.efx"), "utf8")
 
-describe("rpc groups and impl (ADR-0068)", () => {
+describe("rpc groups and impl (ADR-0069)", () => {
   it("serve calls, typed failures and streams through an in-memory client", async () => {
     const mod = await runCompiled(`${fixture}
 import { RpcTest } from "effect/rpc"

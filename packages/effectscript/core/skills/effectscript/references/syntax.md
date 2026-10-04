@@ -2048,7 +2048,7 @@ const SendWelcomeWorkflow = Workflow.make("SendWelcome", {
   payload: { email: Schema.String, name: Schema.optionalKey(Schema.String) },
   success: Schema.String,
   error: EmailFailed,
-  idempotencyKey: ({ email, name }) => email
+  idempotencyKey: ({ email }) => email
 })
 export const SendWelcome = Object.assign(SendWelcomeWorkflow, {
   layer: SendWelcomeWorkflow.toLayer(

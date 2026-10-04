@@ -367,9 +367,23 @@ export const convertWorkflow = (
   const result = resultText(ctx, options)
   const key: Node = options.get("idempotencyKey")!
   if (fields === undefined || fields === "" || result === undefined || key.type !== "ArrowFunctionExpression") return 0
-  const names = `{ ${(options.get("payload")!.properties as Array<Node>).map((p) => p.key.name).join(", ")} }`
-  if (key.params.length !== 1 || ctx.source.slice(key.params[0].start, key.params[0].end) !== names) return 0
-  if (key.body.type === "BlockStatement" || ctx.source.slice(key.start, key.body.start) !== `(${names}) => `) return 0
+  // the forward compiler destructures the fields the key and the body read, in field order
+  const fieldNames = (options.get("payload")!.properties as Array<Node>).map((p) => p.key.name as string)
+  const paramsText = (fn: Node): string | undefined => {
+    if (fn.params.length === 0) return ""
+    const pattern: Node = fn.params[0]
+    if (fn.params.length !== 1 || pattern.type !== "ObjectPattern") return undefined
+    const names = (pattern.properties as Array<Node>).map((p) =>
+      p.type === "Property" && p.shorthand && p.value.type === "Identifier" ? p.value.name as string : undefined
+    )
+    if (names.some((n) => n === undefined) || names.join() !== fieldNames.filter((f) => names.includes(f)).join()) {
+      return undefined
+    }
+    return `{ ${names.join(", ")} }`
+  }
+  const keyParams = paramsText(key)
+  if (keyParams === undefined || key.body.type === "BlockStatement") return 0
+  if (ctx.source.slice(key.start, key.body.start) !== `(${keyParams}) => `) return 0
   // the second statement: the layer built from the body
   const object: Node = assign.init
   const layer = object.callee?.type === "MemberExpression" && slice(ctx, object.callee) === "Object.assign" &&
@@ -382,8 +396,10 @@ export const convertWorkflow = (
   const fn: Node | undefined = fnCall?.type === "CallExpression" && fnCall.arguments.length === 1
     ? fnCall.arguments[0]
     : undefined
-  if (fn === undefined || fn.type !== "FunctionExpression" || !fn.generator || fn.params.length !== 1) return 0
-  const head = `${ctx.effect}.fn(${JSON.stringify(name)})(function*(${names}) `
+  if (fn === undefined || fn.type !== "FunctionExpression" || !fn.generator) return 0
+  const bodyParams = paramsText(fn)
+  if (bodyParams === undefined) return 0
+  const head = `${ctx.effect}.fn(${JSON.stringify(name)})(function*(${bodyParams}) `
   if (
     ctx.source.slice(key.body.end, fn.body.start) !==
       ` })\n${
@@ -422,11 +438,19 @@ export const convertActivity = (ctx: ReverseCtx, call: Node, visit: Visit): bool
   if (call.arguments.length !== 1 || options === undefined) return false
   const order = ["name", ...["success", "error"].filter((k) => options.has(k)), "execute"]
   if ([...options.keys()].join() !== order.join()) return false
-  const name = options.get("name")!
+  const nameNode = options.get("name")!
   const gen = options.get("execute")!
-  if (!isCanonicalString(ctx, name) || !/^[A-Za-z_$][\w$]*$/.test(name.value) || gen.type !== "CallExpression") {
-    return false
+  // `"send"`, or `` `send/${key}` `` for a keyed activity
+  let activityHead: string | undefined
+  if (isCanonicalString(ctx, nameNode) && /^[A-Za-z_$][\w$]*$/.test(nameNode.value)) {
+    activityHead = `activity ${nameNode.value}()`
+  } else if (
+    nameNode.type === "TemplateLiteral" && nameNode.expressions.length === 1 && nameNode.quasis.length === 2 &&
+    nameNode.quasis[1].value.raw === "" && /^[A-Za-z_$][\w$]*\/$/.test(nameNode.quasis[0].value.raw)
+  ) {
+    activityHead = `activity ${nameNode.quasis[0].value.raw.slice(0, -1)}(${slice(ctx, nameNode.expressions[0])})`
   }
+  if (activityHead === undefined || gen.type !== "CallExpression") return false
   const shape = genShape(ctx, gen, call)
   const result = resultText(ctx, options)
   if (shape === undefined || !("fn" in shape) || gen.arguments.length !== 1 || result === undefined) return false
@@ -437,7 +461,7 @@ export const convertActivity = (ctx: ReverseCtx, call: Node, visit: Visit): bool
   ) {
     return false
   }
-  ctx.s.update(call.start, body.start, `activity ${name.value}()${result} `)
+  ctx.s.update(call.start, body.start, `${activityHead}${result} `)
   ctx.s.remove(body.end, call.end)
   within(ctx, "Effect", () => inFrame(ctx, false, () => visit(body, shape.fn, true)))
   return true

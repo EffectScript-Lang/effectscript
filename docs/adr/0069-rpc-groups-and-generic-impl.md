@@ -28,8 +28,14 @@ and implements them with `impl Api.group { … }`.
   `toLayer` and `of` works. `effect` methods are spanned `Name.method`, the layer owns the scope,
   and `|>` pipes apply to the layer. `impl Api.group { … }` keeps its HttpApi meaning.
 - `rpc` and `impl` are contextual: `const rpc = …` and `rpc.call()` stay TypeScript.
-- The reverse compiler gives `rpc` back from `RpcGroup.make(Rpc.make(…), …)` with options in the
-  forward order, and `impl Name` from the exact `toLayer`/`of` shape.
+- The reverse compiler gives `rpc Name { … }` back from the canonical
+  `const Name = RpcGroup.make(Rpc.make(…), …)` shape, and `impl Name` from the exact `toLayer`/`of`
+  shape. RPC recognition requires `Rpc` and `RpcGroup` to resolve to value imports from
+  `effect/rpc`; every member must be a `Rpc.make` with a canonical string tag, and options must use
+  the forward order (`payload`, `success`, `error`, `stream`). Payload fields and schemas must have
+  reverse type mappings. Unsupported options, unmappable schemas, and comments inside the group
+  leave the declaration as TypeScript. A stream's error schema is written after `throws`, so
+  `Stream<A, E>` canonicalizes to `Stream<A> throws E`.
 
 ## Consequences
 
@@ -48,3 +54,16 @@ and implements them with `impl Api.group { … }`.
 - **PascalCase tags derived from the name:** the line's own name is what the client calls.
 - **A separate `impl` keyword per module (`handlers`, `implement`):** one `impl` reads the same for
   HttpApi groups, RPC groups, toolkits and entities.
+
+## Amendment 1 (Plan 23 final review)
+
+- `impl` followed by `as`, `satisfies`, `in`, `instanceof` or `of` is a variable named `impl`, not a
+  construct.
+- A streaming line's own error (`Stream<A, E>`) and its `throws F` are both its error:
+  `Schema.Union([E, F])`.
+- **Known gaps**, for `rpc`, `entity`, `tool`, `toolkit` and `workflow` signatures, as for HttpApi
+  `group`: the declaration is regenerated whole, so comments inside it don't reach the compiled
+  TypeScript, and the names and types in it have no editor navigation (go-to-definition, rename)
+  in `.efx` files. Bodies (`impl`, workflow and activity bodies, the workflow key) keep both. The
+  fix is to emit names, fields and types around the user's text instead of replacing the
+  declaration; it is left for a later plan.

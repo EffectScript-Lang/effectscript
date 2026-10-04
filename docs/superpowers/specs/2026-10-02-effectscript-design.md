@@ -884,8 +884,11 @@ on a `WorkflowEngine` (`WorkflowEngine.layerMemory` in tests).
 
 - `key <expression>` is required: the idempotency key, with the payload's fields in scope.
 - `activity name(): A throws E { … }` is an expression, a durable step: `Activity.make({ name:
-  "name", success: A, error: E, execute: Effect.gen(function*() { … }) })`. It takes no
-  parameters; its body reads the workflow's values.
+  "name", success: A, error: E, execute: Effect.gen(function*() { … }) })`. Its body reads the
+  workflow's values. An activity is recorded by its name, so one that runs more than once takes a
+  key: `activity send(id)` is named `` `send/${id}` ``; a keyless activity in a loop (**EFX9201**) or
+  two keyless ones with one name (**EFX9202**) are errors.
+- The key and the body destructure only the fields they read.
 
 #### `command` (CLI, `effect/cli`)
 
@@ -1079,7 +1082,13 @@ the roadmap.
 | `schema` `error` `service` `group` `api` `rpc` `command` `config` `atom` `layer` | Statement position (optionally after `export`), followed on the same line by an identifier |
 | `test` `describe` (+ `.live/.skip/.only`) | Statement position, followed on the same line by a string literal |
 | `doctest`         | Statement position, followed on the same line by a string literal (docs spec §2.3)      |
-| `impl`            | Expression position, followed on the same line by `Ident.ident {`                        |
+| `impl`            | Expression position, followed on the same line by `Ident.ident {` or `Ident {` (not `as`, `satisfies`, `in`, `instanceof`, `of`) |
+| `entity` `toolkit` | Statement position, followed on the same line by an identifier and `{`                  |
+| `tool` `workflow` | Statement position, followed on the same line by an identifier and `(`                   |
+| `key`             | After a `workflow` signature only                                                        |
+| `activity`        | Expression position, followed on the same line by an identifier and `(`                  |
+| `status`          | Between an `error`'s name and its body only                                              |
+| `effect*`         | Statement position, when `:` or `{` (same line) follows the parameters                   |
 | `main`            | Statement position, followed by `{` on the same line                                     |
 | `defer`           | Statement position inside `effect`, followed by an expression on the same line              |
 | `layer` (member)  | `service` body member position                                                           |

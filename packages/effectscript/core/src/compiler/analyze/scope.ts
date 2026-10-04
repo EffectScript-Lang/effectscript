@@ -287,7 +287,8 @@ export const analyze = (program: Node): ScopeAnalysis => {
         return
       }
       case "ActivityExpression": {
-        // the activity's name is a label, not a reference
+        // the activity's name is a label, not a reference; its key is an expression
+        if (node.key !== null && node.key !== undefined) visit(node.key, scope)
         const inner = makeScope(scope, "function")
         scopeOf.set(node.body, inner)
         visitChildren(node.body, inner)

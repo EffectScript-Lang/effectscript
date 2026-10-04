@@ -397,7 +397,8 @@ export const CartLive = impl Cart {
 ## Durable workflows
 
 A `workflow` survives restarts: `key` names an execution, and each `activity` is a step whose
-result is recorded, so it doesn't run twice. Run it with `Name.execute({ … })` on a
+result is recorded by its name, so it doesn't run twice. An activity that runs more than once (in a
+loop) takes a key in its parentheses, `activity send(id)`, so each run is recorded apart. Run it with `Name.execute({ … })` on a
 `WorkflowEngine`, with `Name.layer` provided.
 
 ```efx
@@ -408,8 +409,10 @@ export workflow Checkout(orderId: string, amount: number): string throws Payment
     if (amount <= 0) throw new PaymentDeclined({ orderId })
     return `receipt:${orderId}`
   }
-  await activity notify(): void {
-    console.log(`charged ${receipt}`)
+  for (const channel of ["email", "sms"]) {
+    await activity notify(channel): void {
+      console.log(`sent ${receipt} by ${channel}`)
+    }
   }
   return receipt
 }

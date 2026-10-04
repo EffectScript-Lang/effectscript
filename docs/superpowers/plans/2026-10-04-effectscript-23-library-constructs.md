@@ -125,3 +125,37 @@ E { … }` → `Activity.make({ name: "name", success: A, error: E, execute: Eff
 
 - The spec gets the four constructs in §4.14 and §14 drops them; the skill gets a pattern for
   each, type-checked; the generated reference picks up the fixtures.
+
+---
+
+## Execution record
+
+**Rulings:**
+
+- **ADR numbers:** another session took ADR-0068 at the same time; this plan uses ADR-0069…0072,
+  announced to the other sessions on this repository, and commits only its own index rows.
+- **Task 1:** the generic `impl Name { … }` serves `RpcGroup`, `Toolkit` and `Entity` alike
+  (ADR-0069).
+- **Task 2:** a tool's doc comment is its description and stays in the output; the runtime test
+  calls tools through the toolkit's own `handle` instead of a fake model (ADR-0070).
+- **Task 3:** entity handlers take the envelope as Effect passes it (ADR-0071).
+- **Task 4:** a workflow keeps its body as `Name.layer` through `Object.assign`; `key` is required
+  (ADR-0072).
+- **Found by the full suite:** the Effect docs corpus, generated with the reverse compiler, now
+  reads toolkits as `toolkit` and `impl`; regenerated.
+- **TDD gaps:** the `rpc` tree-sitter corpus entry and the `entity` compile golden weren't watched
+  failing; the runtime tests were written after their transforms.
+
+**Final review (fresh reviewer, 0 Critical, 7 Important), fixed in one pass with tests that failed
+first (`core/test/plan23-review.test.ts`):** an activity in a loop replayed its first result (now
+`activity send(id)` takes a key, and a keyless one in a loop or a repeated name is an error);
+`impl as { … }` was miscompiled; workflow fields named with reserved words, and (regraded) unused
+fields, broke the output (now only the fields read are destructured); a stream's error was dropped
+when the line also had `throws`; near-miss reverse cases are pinned by tests. **Known gaps,
+recorded in ADR-0069:** comments and editor navigation inside the regenerated declarations.
+
+**Deferred minors:** a zero-field workflow round-trips as TypeScript; `key` takes a binary
+expression (`a ? b : c` needs parentheses, `await` is invalid there); `Stream` is matched by name;
+`Object.assign` isn't hygienic; `impl` without `return`; less sugary reverse output for pipes and
+finalizers in these bodies; tab-indented workflow bodies; `export default` forms.
+

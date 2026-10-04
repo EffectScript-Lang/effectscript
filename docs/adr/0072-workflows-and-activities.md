@@ -51,3 +51,13 @@ and the body is where the workflow is read.
 - **Activities with parameters (`activity send(to: string)`):** an activity is a step at one
   place in the body, not a reusable function; a reusable step is an `effect` function returning an
   activity.
+
+## Amendment 1 (Plan 23 final review)
+
+- **An activity is recorded by its name**, so a second run with the same name replays the first
+  result. `activity name(key)` takes a key in its parentheses and is named `` `name/${key}` ``, one
+  record per key. A keyless activity in a loop is error EFX9201, and two keyless activities with
+  one name in a workflow are error EFX9202. (The decision "activities take no parameters" is
+  replaced by this: the parentheses hold the key.)
+- The key and the body destructure only the fields they read: an unused field would be an error
+  under `noUnusedParameters`, and a field named with a reserved word can't be a binding.

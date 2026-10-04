@@ -22,6 +22,9 @@ export const pipelineToken: acorn.TokenType & { readonly binop: number } = new (
 
 const lineBreak = /[\n\r\u2028\u2029]/
 
+/** Words that follow an expression as operators, so they can't be a construct's name. */
+const typeOperators = new Set(["as", "satisfies", "in", "instanceof", "of"])
+
 /** The first `await` in an expression, for refusing one in a guard. */
 const efxFindAwait = (node: any): any => {
   if (node === null || typeof node !== "object") return undefined
@@ -737,6 +740,7 @@ export const efxPlugin = (Base: any): any =>
     efxIsActivityAhead(): boolean {
       if (!this.efxIsWord("activity") || !this.efxNextIsNameSameLine()) return false
       const name = this.lookahead()
+      if (typeOperators.has(name.value)) return false
       return this.input[skipSpace(this.input, name.end)] === "("
     }
 
@@ -746,9 +750,8 @@ export const efxPlugin = (Base: any): any =>
       this.next()
       node.name = this.parseIdent(true)
       this.expect(tt.parenL)
-      if (this.type !== tt.parenR) {
-        this.raise(this.start, "An activity takes no parameters: it reads the workflow's values directly")
-      }
+      // an optional key, for an activity that runs more than once (Plan 23 review): `send(id)`
+      node.key = this.type === tt.parenR ? null : this.parseMaybeAssign()
       this.expect(tt.parenR)
       node.success = this.eat(tt.colon) ? this.tsInType(() => this.tsParseType()) : null
       node.error = null
@@ -809,7 +812,9 @@ export const efxPlugin = (Base: any): any =>
       const lineEnd = this.input.indexOf("\n", this.end)
       const rest = this.input.slice(this.end, lineEnd === -1 ? undefined : lineEnd)
       // `impl Api.group {` (HttpApi) or `impl Name {` (anything with `toLayer` and `of`, ADR-0069)
-      return /^\s*[A-Za-z_$][\w$]*\s*(\.\s*[A-Za-z_$][\w$]*\s*)?\{/.test(rest)
+      const match = /^\s*([A-Za-z_$][\w$]*)\s*(\.\s*[A-Za-z_$][\w$]*\s*)?\{/.exec(rest)
+      // `impl as { … }`: a variable named `impl` and a type operator (Plan 23 review)
+      return match !== null && !typeOperators.has(match[1]!)
     }
 
     efxParseImpl(): any {

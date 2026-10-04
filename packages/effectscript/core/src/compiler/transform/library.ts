@@ -6,6 +6,7 @@
  */
 import { children, type Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
+import { diagnosticError } from "../diagnostics.ts"
 import { fresh, ref } from "../names.ts"
 import { optionalField, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
@@ -45,8 +46,15 @@ export const rpcOf = (ctx: Ctx, line: Node): string => {
   const stream = streamOf(line.success)
   if (stream !== undefined) options.push(`success: ${typeToSchema(ctx, stream.element)}`)
   else if (line.success !== null) options.push(`success: ${typeToSchema(ctx, line.success)}`)
-  const error: Node | undefined = line.error ?? stream?.error
-  if (error !== undefined && error !== null) options.push(`error: ${errorUnion(ctx, error)}`)
+  // a stream's own error and the line's `throws` both fail the RPC (Plan 23 review)
+  const errors = [stream?.error, line.error].filter((e): e is Node => e !== undefined && e !== null)
+  if (errors.length === 1) options.push(`error: ${errorUnion(ctx, errors[0]!)}`)
+  else if (errors.length === 2) {
+    const members = errors.flatMap((e) => (e.type === "TSUnionType" ? e.types as Array<Node> : [e]))
+    options.push(
+      `error: ${ref(ctx, "effect", "Schema")}.Union([${members.map((t) => typeToSchema(ctx, t)).join(", ")}])`
+    )
+  }
   if (stream !== undefined) options.push("stream: true")
   const name = JSON.stringify(line.name.name)
   return `${ref(ctx, "effect/rpc", "Rpc")}.make(${name}${options.length > 0 ? `, { ${options.join(", ")} }` : ""})`
@@ -93,7 +101,16 @@ const workflowDeclaration: Handler = (node, parent, ctx) => {
   const exported = parent?.type === "ExportNamedDeclaration"
   const workflow = fresh(ctx, `${name}Workflow`)
   const E = ref(ctx, "effect", "Effect")
-  const fields = `{ ${(line.fields as Array<Node>).map((f) => f.key.name).join(", ")} }`
+  // only the fields the key or the body read: unused bindings would be errors under
+  // `noUnusedParameters`, and a reserved word can't be one (Plan 23 review)
+  const used = (node: Node): string => {
+    const names = referencedNames(node)
+    const read = (line.fields as Array<Node>).map((f) => f.key.name as string).filter((n) => names.has(n))
+    return read.length === 0 ? "" : `{ ${read.join(", ")} }`
+  }
+  const keyFields = used(node.key)
+  const bodyFields = used(node.body)
+  checkActivities(ctx, node.body)
   const options = [`payload: ${signatureFields(ctx, line)}`]
   if (line.success !== null) options.push(`success: ${typeToSchema(ctx, line.success)}`)
   if (line.error !== null) options.push(`error: ${errorUnion(ctx, line.error)}`)
@@ -103,7 +120,7 @@ const workflowDeclaration: Handler = (node, parent, ctx) => {
     node.key.start,
     `const ${workflow} = ${ref(ctx, "effect/workflow", "Workflow")}.make(${JSON.stringify(name)}, { ${
       options.join(", ")
-    }, idempotencyKey: (${fields}) => `
+    }, idempotencyKey: (${keyFields}) => `
   )
   ctx.s.update(
     node.key.end,
@@ -112,7 +129,7 @@ const workflowDeclaration: Handler = (node, parent, ctx) => {
       exported ? "export " : ""
     }const ${name} = Object.assign(${workflow}, {\n  layer: ${workflow}.toLayer(${E}.fn(${
       JSON.stringify(name)
-    })(function*(${fields}) `
+    })(function*(${bodyFields}) `
   )
   for (const start of lineStartsToIndent(ctx, node.body, node.body.start, node.body.end)) {
     ctx.s.prependRight(start, "  ")
@@ -128,15 +145,20 @@ const workflowDeclaration: Handler = (node, parent, ctx) => {
  * Effect.gen(function*() { … }) })` (ADR-0072): a durable step, awaited in a workflow.
  */
 const activityExpression: Handler = (node, _parent, ctx) => {
-  const options = [`name: ${JSON.stringify(node.name.name)}`]
+  const options: Array<string> = []
   if (node.success !== null) options.push(`success: ${typeToSchema(ctx, node.success)}`)
   if (node.error !== null) options.push(`error: ${errorUnion(ctx, node.error)}`)
   const E = ref(ctx, "effect", "Effect")
-  ctx.s.update(
-    node.start,
-    node.body.start,
-    `${ref(ctx, "effect/workflow", "Activity")}.make({ ${options.join(", ")}, execute: ${E}.gen(function*() `
-  )
+  const rest = `${options.map((o) => `, ${o}`).join("")}, execute: ${E}.gen(function*() `
+  const make = `${ref(ctx, "effect/workflow", "Activity")}.make({ name: `
+  const key: Node | null = node.key
+  if (key === null) ctx.s.update(node.start, node.body.start, `${make}${JSON.stringify(node.name.name)}${rest}`)
+  else {
+    // `activity send(id)` is named `send/${id}`: one recorded result per key (Plan 23 review)
+    ctx.s.update(node.start, key.start, `${make}\`${node.name.name}/\${`)
+    ctx.s.update(key.end, node.body.start, `}\`${rest}`)
+    withEffect(ctx, undefined, () => walk(key, node, ctx))
+  }
   withEffect(ctx, makeFrame(node, "block"), () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
   ctx.s.appendLeft(node.body.end, ") })")
   return true
@@ -174,6 +196,76 @@ const toolkitDeclaration: Handler = (node, _parent, ctx) => {
   const tools = (node.tools as Array<Node>).map((t) => ctx.source.slice(t.start, t.end)).join(", ")
   ctx.s.update(node.start, node.end, `const ${node.id.name} = ${ref(ctx, "effect/ai", "Toolkit")}.make(${tools})`)
   return true
+}
+
+/** Identifier names read under `node` (not property names or member properties). */
+const referencedNames = (node: Node): Set<string> => {
+  const names = new Set<string>()
+  const visit = (n: Node, parent: Node | undefined, key: string): void => {
+    if (n === null || typeof n !== "object") return
+    if (n.type === "Identifier") {
+      const property = parent?.type === "MemberExpression" && key === "property" && !parent.computed
+      const objectKey = parent?.type === "Property" && key === "key" && !parent.computed && !parent.shorthand
+      if (!property && !objectKey) names.add(n.name)
+      return
+    }
+    for (const [k, value] of Object.entries(n)) {
+      if (k === "loc") continue
+      for (const child of Array.isArray(value) ? value : [value]) {
+        if (child !== null && typeof child === "object" && typeof child.type === "string") visit(child, n, k)
+      }
+    }
+  }
+  visit(node, undefined, "")
+  return names
+}
+
+const loops = /^(ForStatement|ForInStatement|ForOfStatement|WhileStatement|DoWhileStatement)$/
+
+/**
+ * An activity is recorded by its name: a keyless one in a loop, or two keyless ones with one name,
+ * would replay the first result (Plan 23 review).
+ */
+const checkActivities = (ctx: Ctx, body: Node): void => {
+  const seen = new Set<string>()
+  const visit = (node: Node, inLoop: boolean): void => {
+    if (node === null || typeof node !== "object") return
+    if (node.type === "ActivityExpression" && node.key === null) {
+      const name: string = node.name.name
+      if (inLoop) {
+        ctx.diagnostics.push(
+          diagnosticError(
+            "EFX9201",
+            "An activity in a loop needs a key: each run is recorded by its name",
+            node.start,
+            node.body.start,
+            `write \`activity ${name}(key)\` with a value that differs per run`
+          )
+        )
+      } else if (seen.has(name)) {
+        ctx.diagnostics.push(
+          diagnosticError(
+            "EFX9202",
+            `A workflow can't have two activities named \`${name}\`: the second would replay the first`,
+            node.start,
+            node.body.start,
+            "give each a different name, or a key"
+          )
+        )
+      }
+      seen.add(name)
+    }
+    const nested = loops.test(node.type ?? "")
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "loc") continue
+      for (const child of Array.isArray(value) ? value : [value]) {
+        if (child !== null && typeof child === "object" && typeof child.type === "string") {
+          visit(child, inLoop || (nested && key === "body"))
+        }
+      }
+    }
+  }
+  visit(body, false)
 }
 
 /** Return statements of a body, not crossing into nested functions or classes. */

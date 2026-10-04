@@ -22,10 +22,13 @@ export const result = await Effect.runPromise(effect {
     expect(mod.result).toEqual(["Welcome, Ada", "EmailFailed", true])
   }, 180_000)
 
-  it("needs a key, takes no activity parameters, and keeps the names elsewhere", () => {
+  it("needs a key, names a keyed activity by its key, and keeps the names elsewhere", () => {
     const message = (source: string) => toTypeScript(source).diagnostics[0]?.message
     expect(message("workflow A(x: string): void { }")).toMatch(/needs `key <expression>`/)
-    expect(message("workflow A(x: string) key x { await activity a(y: number) { } }")).toMatch(/takes no parameters/)
+    // an activity's parentheses hold its key: one recorded result per key (Plan 23 review)
+    expect(toTypeScript("workflow A(x: string): void key x { await activity a(x): void { } }").code).toContain(
+      "name: `a/${x}`"
+    )
     const source = "const workflow = { key: 1 }\nconst activity = (n: number) => n\nactivity(workflow.key)\n"
     expect(toTypeScript(source).code).toBe(source)
   })

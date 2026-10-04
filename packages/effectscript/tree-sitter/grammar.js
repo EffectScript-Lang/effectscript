@@ -684,6 +684,8 @@ export default grammar(TypeScript, {
           "activity",
           field("name", $.identifier),
           "(",
+          // the key, for an activity that runs more than once
+          optional(field("key", $.expression)),
           ")",
           optional(field("type", $.type_annotation)),
           optional($.effect_clauses),
