@@ -272,6 +272,27 @@ export const analyze = (program: Node): ScopeAnalysis => {
         scope.types.add(node.id.name)
         return visitChildren(node, scope)
       }
+      case "WorkflowDeclaration": {
+        scope.values.add(node.id.name)
+        bindings.add(node.id)
+        // the payload's fields are in scope for the key and the body (ADR-0072)
+        const fn = makeScope(scope, "function")
+        for (const field of node.line.fields as Array<Node>) {
+          fn.values.add(field.key.name)
+          bindings.add(field.key)
+        }
+        scopeOf.set(node.body, fn)
+        visit(node.key, fn)
+        visitChildren(node.body, fn)
+        return
+      }
+      case "ActivityExpression": {
+        // the activity's name is a label, not a reference
+        const inner = makeScope(scope, "function")
+        scopeOf.set(node.body, inner)
+        visitChildren(node.body, inner)
+        return
+      }
       case "CommandDeclaration": {
         scope.values.add(node.id.name)
         bindings.add(node.id)

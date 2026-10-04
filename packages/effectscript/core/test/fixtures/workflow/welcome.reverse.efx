@@ -1,0 +1,11 @@
+export error EmailFailed { to: string }
+
+export workflow SendWelcome(email: string, name?: string): string throws EmailFailed key email {
+  const body = await activity render(): string {
+    return `Welcome, ${name ?? email}`
+  }
+  await activity send(): void throws EmailFailed {
+    if (email.endsWith("@invalid")) throw new EmailFailed({ to: email })
+  }
+  return body
+}

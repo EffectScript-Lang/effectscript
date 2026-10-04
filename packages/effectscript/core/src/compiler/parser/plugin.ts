@@ -217,6 +217,7 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsHttpApiStart("api")) return this.efxParseApi()
       if (this.efxIsSignatureBlockStart("rpc")) return this.efxParseSignatureBlock("RpcDeclaration")
       if (this.efxIsSignatureBlockStart("entity")) return this.efxParseSignatureBlock("EntityDeclaration")
+      if (this.efxIsWorkflowStart()) return this.efxParseWorkflow()
       if (this.efxIsToolStart()) return this.efxParseTool()
       if (this.efxIsSignatureBlockStart("toolkit")) return this.efxParseToolkit()
       if (this.efxIsDescribeStart()) return this.efxParseDescribe()
@@ -229,7 +230,8 @@ export const efxPlugin = (Base: any): any =>
       return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() ||
         this.efxIsBindingDeclarationStart("layer") || this.efxIsBindingDeclarationStart("atom") ||
         this.efxIsHttpApiStart("group") || this.efxIsHttpApiStart("api") || this.efxIsCommandStart() ||
-        this.efxIsSignatureBlockStart("rpc") || this.efxIsSignatureBlockStart("entity") || this.efxIsToolStart() ||
+        this.efxIsSignatureBlockStart("rpc") || this.efxIsSignatureBlockStart("entity") || this.efxIsWorkflowStart() ||
+        this.efxIsToolStart() ||
         this.efxIsSignatureBlockStart("toolkit") ||
         super.shouldParseExportStatement()
     }
@@ -307,6 +309,7 @@ export const efxPlugin = (Base: any): any =>
     parseExprAtom(refDestructuringErrors: unknown, forInit: unknown, forNew: unknown): any {
       if (this.efxIsMatchAhead()) return this.efxParseMatch()
       if (this.efxIsImplAhead()) return this.efxParseImpl()
+      if (this.efxIsActivityAhead()) return this.efxParseActivity()
       if (this.efxIsWord("effect")) {
         const next = this.lookahead()
         if (this.efxSameLine(next)) {
@@ -705,6 +708,56 @@ export const efxPlugin = (Base: any): any =>
         if (this.type !== tt.braceR) this.expect(tt.comma)
       }
       return this.finishNode(node, "ToolkitDeclaration")
+    }
+
+    /** `workflow Name(fields): A throws E key <expression> { … }` (ADR-0072). */
+    efxIsWorkflowStart(): boolean {
+      if (!this.efxIsWord("workflow") || !this.efxNextIsNameSameLine()) return false
+      const name = this.lookahead()
+      return this.input[skipSpace(this.input, name.end)] === "("
+    }
+
+    efxParseWorkflow(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.line = this.efxParseSignatureLine()
+      node.id = node.line.name
+      if (!this.efxIsWord("key")) {
+        this.raise(this.start, "A workflow needs `key <expression>`: the idempotency key of an execution")
+      }
+      node.keyKeyword = { start: this.start, end: this.end }
+      this.next()
+      node.key = this.parseExprOps(false, null)
+      node.body = this.efxParseAsyncBlock()
+      return this.finishNode(node, "WorkflowDeclaration")
+    }
+
+    /** `activity name(): A throws E { … }` (ADR-0072): a durable step, as an expression. */
+    efxIsActivityAhead(): boolean {
+      if (!this.efxIsWord("activity") || !this.efxNextIsNameSameLine()) return false
+      const name = this.lookahead()
+      return this.input[skipSpace(this.input, name.end)] === "("
+    }
+
+    efxParseActivity(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.name = this.parseIdent(true)
+      this.expect(tt.parenL)
+      if (this.type !== tt.parenR) {
+        this.raise(this.start, "An activity takes no parameters: it reads the workflow's values directly")
+      }
+      this.expect(tt.parenR)
+      node.success = this.eat(tt.colon) ? this.tsInType(() => this.tsParseType()) : null
+      node.error = null
+      if (this.efxIsWord("throws")) {
+        this.next()
+        node.error = this.tsInType(() => this.tsParseType())
+      }
+      node.body = this.efxParseAsyncBlock()
+      return this.finishNode(node, "ActivityExpression")
     }
 
     efxParseApi(): any {

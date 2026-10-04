@@ -34,7 +34,10 @@ const keywords = [
   "rpc",
   "tool",
   "toolkit",
-  "entity"
+  "entity",
+  "workflow",
+  "activity",
+  "key"
 ]
 
 /** One or more `rule`, separated by `separator`. */
@@ -63,6 +66,8 @@ export default grammar(TypeScript, {
       [$._property_name, $.effect_declaration],
       // `effect * name(…)` is a multiplication until a `:` or `{` makes it a stream (ADR-0067)
       [$.primary_expression, $.effect_declaration],
+      // `activity name() …` is a durable step; `activity` alone stays an identifier (ADR-0072)
+      [$.primary_expression, $.activity_expression],
       [$.method_definition, $._property_name],
       [$.method_definition, $._property_name, $.effect_method],
       [$.method_definition, $._property_name, $.schema_field],
@@ -259,6 +264,7 @@ export default grammar(TypeScript, {
         $.group_declaration,
         $.rpc_declaration,
         $.entity_declaration,
+        $.workflow_declaration,
         $.tool_declaration,
         $.toolkit_declaration,
         $.api_declaration,
@@ -342,6 +348,7 @@ export default grammar(TypeScript, {
         $.effect_arrow_function,
         $.match_expression,
         $.impl_expression,
+        $.activity_expression,
         $.topic_reference
       ),
 
@@ -665,6 +672,24 @@ export default grammar(TypeScript, {
 
     // `entity Name { name(fields): A throws E … }` (ADR-0071)
     entity_declaration: ($) => seq("entity", field("name", $.identifier), "{", repeat(choice($.signature, ";")), "}"),
+
+    // `workflow Name(fields): A throws E key <expression> { … }` (ADR-0072)
+    workflow_declaration: ($) =>
+      seq("workflow", $.signature, "key", field("key", $.expression), field("body", $.statement_block)),
+
+    // `activity name(): A throws E { … }`, a durable step (ADR-0072)
+    activity_expression: ($) =>
+      prec.right(
+        seq(
+          "activity",
+          field("name", $.identifier),
+          "(",
+          ")",
+          optional(field("type", $.type_annotation)),
+          optional($.effect_clauses),
+          field("body", $.statement_block)
+        )
+      ),
 
     signature: ($) =>
       prec.right(

@@ -311,8 +311,13 @@ const superOrArguments = (node: Node): Node | undefined => {
   return undefined
 }
 
-/** Line starts inside `[from, to)` that aren't inside a template literal or string. */
-const lineStartsToIndent = (ctx: Ctx, body: Node, from: number, to: number): Array<number> => {
+/**
+ * Line starts inside `[from, to)` that aren't inside a template literal or string.
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const lineStartsToIndent = (ctx: Ctx, body: Node, from: number, to: number): Array<number> => {
   const verbatim: Array<readonly [number, number]> = []
   const collect = (node: Node): void => {
     if (node === null || typeof node !== "object") return

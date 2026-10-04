@@ -2017,6 +2017,63 @@ export const CounterLive = Counter.toLayer(Effect.gen(function*() {
 }))
 ```
 
+## `workflow` / `activity`: durable workflows on `effect/workflow`
+
+<!-- fixtures/workflow -->
+
+### Welcome
+
+```efx
+export error EmailFailed { to: string }
+
+export workflow SendWelcome(email: string, name?: string): string throws EmailFailed key email {
+  const body = await activity render(): string {
+    return `Welcome, ${name ?? email}`
+  }
+  await activity send(): void throws EmailFailed {
+    if (email.endsWith("@invalid")) throw new EmailFailed({ to: email })
+  }
+  return body
+}
+```
+
+Compiles to:
+
+```ts
+import { Effect, Schema } from "effect"
+import { Activity, Workflow } from "effect/workflow"
+export class EmailFailed extends Schema.TaggedError<EmailFailed>()("EmailFailed", { to: Schema.String }) {}
+
+const SendWelcomeWorkflow = Workflow.make("SendWelcome", {
+  payload: { email: Schema.String, name: Schema.optionalKey(Schema.String) },
+  success: Schema.String,
+  error: EmailFailed,
+  idempotencyKey: ({ email, name }) => email
+})
+export const SendWelcome = Object.assign(SendWelcomeWorkflow, {
+  layer: SendWelcomeWorkflow.toLayer(
+    Effect.fn("SendWelcome")(function*({ email, name }) {
+      const body = yield* Activity.make({
+        name: "render",
+        success: Schema.String,
+        execute: Effect.gen(function*() {
+          return `Welcome, ${name ?? email}`
+        })
+      })
+      yield* Activity.make({
+        name: "send",
+        success: Schema.Void,
+        error: EmailFailed,
+        execute: Effect.gen(function*() {
+          if (email.endsWith("@invalid")) return yield* new EmailFailed({ to: email })
+        })
+      })
+      return body
+    })
+  )
+})
+```
+
 ## `atom`: reactive state
 
 <!-- fixtures/atom -->

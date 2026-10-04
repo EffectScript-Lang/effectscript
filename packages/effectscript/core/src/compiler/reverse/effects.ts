@@ -26,7 +26,15 @@ import {
 } from "./context.ts"
 import { convertImpl } from "./httpApi.ts"
 import { convertLayer } from "./layer.ts"
-import { convertEntity, convertGenericImpl, convertRpcGroup, convertTool, convertToolkit } from "./library.ts"
+import {
+  convertActivity,
+  convertEntity,
+  convertGenericImpl,
+  convertRpcGroup,
+  convertTool,
+  convertToolkit,
+  convertWorkflow
+} from "./library.ts"
 import { convertMain } from "./main.ts"
 import { convertMatch, matchShape } from "./match.ts"
 import { importedLocal, isMember } from "./origin.ts"
@@ -555,7 +563,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
     if (
       node.type === "CallExpression" &&
       (convertPipe(ctx, node, parent, visit, generator) || convertImpl(ctx, node, visit) ||
-        convertGenericImpl(ctx, node, visit) ||
+        convertGenericImpl(ctx, node, visit) || convertActivity(ctx, node, visit) ||
         convertGen(ctx, node, parent, visit) ||
         convertUntraced(ctx, node, visit))
     ) {
@@ -604,7 +612,8 @@ export const visitProgram = (ctx: ReverseCtx, program: Node, visit: Visit): void
     }
     if (ctx.only !== undefined && !ctx.only.has(i)) return
     if (i === body.length - 1 && convertMain(ctx, program, visit)) return
-    const consumed = convertSchemaRun(ctx, body, i) || convertReferenceService(ctx, body, i, visit)
+    const consumed = convertSchemaRun(ctx, body, i) || convertReferenceService(ctx, body, i, visit) ||
+      convertWorkflow(ctx, body, i, visit)
     if (consumed > 0) {
       skip = consumed - 1
       return

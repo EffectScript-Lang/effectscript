@@ -55,3 +55,31 @@ const throws = 1, needs = 2
     (variable_declarator
       (identifier)
       (number))))
+
+====================================================
+Library construct keywords stay identifiers (Plan 23)
+====================================================
+
+const rpc = 1, tool = 2, key = 3
+activity(workflow.key)
+
+---
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (number))
+    (variable_declarator
+      (identifier)
+      (number))
+    (variable_declarator
+      (identifier)
+      (number)))
+  (expression_statement
+    (call_expression
+      (identifier)
+      (arguments
+        (member_expression
+          (identifier)
+          (property_identifier))))))

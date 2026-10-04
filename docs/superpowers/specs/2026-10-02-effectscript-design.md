@@ -865,6 +865,28 @@ success: Schema.Number, error: TooLarge }), …])`, with lines as for `rpc`. The
 once per entity, so its locals are that entity's state; handlers get the message's envelope
 (`{ payload }`), as `Entity` passes it.
 
+#### `workflow` and `activity` (`effect/workflow`, ADR-0072)
+
+```ts
+export workflow SendWelcome(email: string, name?: string): string throws EmailFailed key email {
+  const body = await activity render(): string { return `Welcome, ${name ?? email}` }
+  await activity send(): void throws EmailFailed { … }
+  return body
+}
+```
+
+→ `const SendWelcomeWorkflow = Workflow.make("SendWelcome", { payload: { … }, success:
+Schema.String, error: EmailFailed, idempotencyKey: ({ email, name }) => email })` and `export const
+SendWelcome = Object.assign(SendWelcomeWorkflow, { layer: SendWelcomeWorkflow.toLayer(Effect.fn(
+"SendWelcome")(function*({ email, name }) { … })) })`: the body is the workflow's layer, kept on it
+as `SendWelcome.layer` the way a service keeps its layers. Run it with `SendWelcome.execute({ … })`
+on a `WorkflowEngine` (`WorkflowEngine.layerMemory` in tests).
+
+- `key <expression>` is required: the idempotency key, with the payload's fields in scope.
+- `activity name(): A throws E { … }` is an expression, a durable step: `Activity.make({ name:
+  "name", success: A, error: E, execute: Effect.gen(function*() { … }) })`. It takes no
+  parameters; its body reads the workflow's values.
+
 #### `command` (CLI, `effect/cli`)
 
 ```ts
@@ -1790,8 +1812,8 @@ The order was revised after the plan review (ADR-0016).
 
 ## 14. Roadmap (explicitly out of v0.1)
 
-- More library constructs: `rpc` (RpcGroup), `workflow` (effect/workflow), `tool`/`toolkit`
-  (effect/ai), `entity` (cluster), and a Foldkit-style `app` (Model/Message/update/view).
+- More library constructs: a Foldkit-style `app` (Model/Message/update/view). (`rpc`, `tool`/
+  `toolkit`, `entity` and `workflow` are in §4.14, ADR-0069…0072.)
 - Automatic layer wiring for `main` (whole-program analysis of which services are used).
 - Error-tolerant parsing that recovers at the statement level, for a smoother editor experience
   while typing.

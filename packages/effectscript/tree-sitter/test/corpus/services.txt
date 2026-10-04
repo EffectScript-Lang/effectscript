@@ -217,3 +217,36 @@ entity Counter {
             (predefined_type))))
       (type_annotation
         (predefined_type)))))
+
+======================
+Workflow and activity
+======================
+
+workflow SendWelcome(email: string): string key email {
+  return await activity render(): string { return email }
+}
+
+---
+
+(program
+  (workflow_declaration
+    (signature
+      (identifier)
+      (formal_parameters
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))))
+      (type_annotation
+        (predefined_type)))
+    (identifier)
+    (statement_block
+      (return_statement
+        (await_expression
+          (activity_expression
+            (identifier)
+            (type_annotation
+              (predefined_type))
+            (statement_block
+              (return_statement
+                (identifier)))))))))

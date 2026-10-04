@@ -36,6 +36,7 @@ const constructs: ReadonlyArray<readonly [dir: string, title: string]> = [
   ["rpc", "`rpc` / `impl`: RPC groups on `effect/rpc`"],
   ["ai", "`tool` / `toolkit`: AI tools on `effect/ai`"],
   ["cluster", "`entity`: cluster entities on `effect/cluster`"],
+  ["workflow", "`workflow` / `activity`: durable workflows on `effect/workflow`"],
   ["atom", "`atom`: reactive state"],
   ["ambient", "Ambient capture: `console`, `Date`, `Math`, `process.env`"],
   ["hygiene", "Name hygiene: what the compiler generates never clashes with your names"]

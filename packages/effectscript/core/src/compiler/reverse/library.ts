@@ -8,7 +8,7 @@ import { children, type Node } from "../ast.ts"
 import { jsdocBefore } from "../transform/command.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
-import { commentsIn, isCanonicalString, type ReverseCtx, within } from "./context.ts"
+import { commentsIn, isCanonicalString, type ReverseCtx, slice, within } from "./context.ts"
 import { importedLocal, isMember } from "./origin.ts"
 import { inFrame } from "./resources.ts"
 import { fieldType, schemaToType } from "./types.ts"
@@ -285,5 +285,160 @@ export const convertEntity = (ctx: ReverseCtx, statement: Node): boolean => {
   if (lines.some((l) => l === undefined)) return false
   const body = lines.length === 0 ? "" : `\n${lines.map((l) => `  ${l}`).join("\n")}\n`
   ctx.s.update(statement.start, statement.end, `entity ${declarator.id.name} {${body}}`)
+  return true
+}
+
+/** `{ a: …, b: … }` options as a map, when every property is a plain `key: value`; `undefined` otherwise. */
+const optionsOf = (node: Node | undefined): Map<string, Node> | undefined => {
+  if (node?.type !== "ObjectExpression") return undefined
+  const options = new Map<string, Node>()
+  for (const property of node.properties as Array<Node>) {
+    if (property.type !== "Property" || property.computed || property.method || property.shorthand) return undefined
+    if (property.key.type !== "Identifier") return undefined
+    options.set(property.key.name, property.value)
+  }
+  return options
+}
+
+/** `success: A, error: E` options as `: A throws E`, or `undefined` when a schema has no type. */
+const resultText = (ctx: ReverseCtx, options: Map<string, Node>): string | undefined => {
+  const success = options.get("success")
+  const error = options.get("error")
+  const successType = success === undefined ? "" : typeOf(ctx, success)
+  const errorType = error === undefined ? "" : errorText(ctx, error)
+  if (successType === undefined || errorType === undefined) return undefined
+  return `${successType === "" ? "" : `: ${successType}`}${errorType === "" ? "" : ` throws ${errorType}`}`
+}
+
+/** Line starts in `[from, to)` outside template literals and strings. */
+const lineStarts = (ctx: ReverseCtx, root: Node, from: number, to: number): Array<number> => {
+  const verbatim: Array<readonly [number, number]> = []
+  const collect = (node: Node): void => {
+    if (node.type === "TemplateLiteral" || (node.type === "Literal" && typeof node.value === "string")) {
+      verbatim.push([node.start, node.end])
+      return
+    }
+    for (const child of children(node)) collect(child)
+  }
+  collect(root)
+  const starts: Array<number> = []
+  for (let i = ctx.source.indexOf("\n", from); i !== -1 && i < to; i = ctx.source.indexOf("\n", i + 1)) {
+    const start = i + 1
+    if (start < to && !verbatim.some(([a, b]) => start > a && start < b)) starts.push(start)
+  }
+  return starts
+}
+
+/**
+ * `const NWorkflow = Workflow.make("N", { payload, success, error, idempotencyKey: ({ … }) => K })`
+ * and `const N = Object.assign(NWorkflow, { layer: NWorkflow.toLayer(Effect.fn("N")(function*({ … })
+ * { … })) })` → `workflow N(fields): A throws E key K { … }`. Returns how many statements it
+ * consumed.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertWorkflow = (
+  ctx: ReverseCtx,
+  body: ReadonlyArray<Node>,
+  index: number,
+  visit: Visit
+): number => {
+  const Workflow = importedLocal(ctx.analysis, "effect/workflow", "Workflow")
+  const first = body[index]
+  const second: Node | undefined = body[index + 1]
+  if (Workflow === undefined || first?.type !== "VariableDeclaration" || second === undefined) return 0
+  const exported = second.type === "ExportNamedDeclaration" && second.declaration !== null
+  const assignment: Node = exported ? second.declaration : second
+  const make = constDeclarator(first)
+  const assign = assignment.type === "VariableDeclaration" ? constDeclarator(assignment) : undefined
+  if (make === undefined || assign === undefined) return 0
+  const call: Node = make.init
+  const [tag, optionsNode]: Array<Node> = call.arguments
+  if (!isMember(call.callee, Workflow, "make") || call.arguments.length !== 2 || !isCanonicalString(ctx, tag)) return 0
+  const name: string = tag.value
+  const workflow: string = make.id.name
+  const options = optionsOf(optionsNode)
+  if (assign.id.name !== name || options === undefined || commentsIn(ctx, first.start, second.end).length > 0) return 0
+  const order = [...options.keys()]
+  const expectedOrder = ["payload", ...["success", "error"].filter((k) => options.has(k)), "idempotencyKey"]
+  if (order.join() !== expectedOrder.join()) return 0
+  const fields = fieldsText(ctx, options.get("payload")!)
+  const result = resultText(ctx, options)
+  const key: Node = options.get("idempotencyKey")!
+  if (fields === undefined || fields === "" || result === undefined || key.type !== "ArrowFunctionExpression") return 0
+  const names = `{ ${(options.get("payload")!.properties as Array<Node>).map((p) => p.key.name).join(", ")} }`
+  if (key.params.length !== 1 || ctx.source.slice(key.params[0].start, key.params[0].end) !== names) return 0
+  if (key.body.type === "BlockStatement" || ctx.source.slice(key.start, key.body.start) !== `(${names}) => `) return 0
+  // the second statement: the layer built from the body
+  const object: Node = assign.init
+  const layer = object.callee?.type === "MemberExpression" && slice(ctx, object.callee) === "Object.assign" &&
+      object.arguments.length === 2 && slice(ctx, object.arguments[0]) === workflow
+    ? optionsOf(object.arguments[1])?.get("layer")
+    : undefined
+  const fnCall: Node | undefined = layer?.type === "CallExpression" && isMember(layer.callee, workflow, "toLayer")
+    ? layer.arguments[0]
+    : undefined
+  const fn: Node | undefined = fnCall?.type === "CallExpression" && fnCall.arguments.length === 1
+    ? fnCall.arguments[0]
+    : undefined
+  if (fn === undefined || fn.type !== "FunctionExpression" || !fn.generator || fn.params.length !== 1) return 0
+  const head = `${ctx.effect}.fn(${JSON.stringify(name)})(function*(${names}) `
+  if (
+    ctx.source.slice(key.body.end, fn.body.start) !==
+      ` })\n${
+        exported ? "export " : ""
+      }const ${name} = Object.assign(${workflow}, {\n  layer: ${workflow}.toLayer(${head}` ||
+    ctx.source.slice(fn.body.end, second.end) !== "))\n})"
+  ) {
+    return 0
+  }
+  ctx.s.update(
+    first.start,
+    key.body.start,
+    `${exported ? "export " : ""}workflow ${name}(${fields})${result} key `
+  )
+  ctx.s.update(key.body.end, fn.body.start, " ")
+  for (const start of lineStarts(ctx, fn.body, fn.body.start, fn.body.end)) {
+    if (ctx.source.startsWith("  ", start)) ctx.s.remove(start, start + 2)
+  }
+  ctx.s.remove(fn.body.end, second.end)
+  visit(key.body, key, false)
+  within(ctx, "Effect", () => inFrame(ctx, false, () => visit(fn.body, fn, true)))
+  return 2
+}
+
+/**
+ * `Activity.make({ name: "x", success, error, execute: Effect.gen(function*() { … }) })` →
+ * `activity x(): A throws E { … }`.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertActivity = (ctx: ReverseCtx, call: Node, visit: Visit): boolean => {
+  const Activity = importedLocal(ctx.analysis, "effect/workflow", "Activity")
+  if (Activity === undefined || call.type !== "CallExpression" || !isMember(call.callee, Activity, "make")) return false
+  const options = optionsOf(call.arguments[0])
+  if (call.arguments.length !== 1 || options === undefined) return false
+  const order = ["name", ...["success", "error"].filter((k) => options.has(k)), "execute"]
+  if ([...options.keys()].join() !== order.join()) return false
+  const name = options.get("name")!
+  const gen = options.get("execute")!
+  if (!isCanonicalString(ctx, name) || !/^[A-Za-z_$][\w$]*$/.test(name.value) || gen.type !== "CallExpression") {
+    return false
+  }
+  const shape = genShape(ctx, gen, call)
+  const result = resultText(ctx, options)
+  if (shape === undefined || !("fn" in shape) || gen.arguments.length !== 1 || result === undefined) return false
+  const body: Node = shape.fn.body
+  if (
+    ctx.source.slice(gen.start, body.start) !== `${ctx.effect}.gen(function*() ` ||
+    ctx.source.slice(body.end, call.end) !== ") })" || commentsIn(ctx, call.start, body.start).length > 0
+  ) {
+    return false
+  }
+  ctx.s.update(call.start, body.start, `activity ${name.value}()${result} `)
+  ctx.s.remove(body.end, call.end)
+  within(ctx, "Effect", () => inFrame(ctx, false, () => visit(body, shape.fn, true)))
   return true
 }

@@ -276,6 +276,8 @@
   "tool"
   "toolkit"
   "entity"
+  "workflow"
+  "activity"
 ] @keyword
 
 (match_arm "default" @keyword)
@@ -332,3 +334,5 @@
   method: (identifier) @keyword
   name: (identifier) @function.method
   path: (string) @string.special)
+
+(workflow_declaration "key" @keyword)

@@ -6,10 +6,11 @@
  */
 import { children, type Node } from "../ast.ts"
 import { type Ctx, type Handler, makeFrame, withEffect, withNamespace } from "../context.ts"
-import { ref } from "../names.ts"
+import { fresh, ref } from "../names.ts"
 import { optionalField, typeToSchema } from "../schema/mapping.ts"
 import { walk } from "../walk.ts"
 import { jsdocBefore } from "./command.ts"
+import { lineStartsToIndent } from "./effect.ts"
 import type { HandlerGroup } from "./registry.ts"
 
 /** A signature line's fields as struct fields: `{ id: Schema.String, limit: Schema.optionalKey(…) }`. */
@@ -77,6 +78,67 @@ const entityDeclaration: Handler = (node, _parent, ctx) => {
       lines.length > 0 ? `\n${lines.join(",\n")}\n` : ""
     }])`
   )
+  return true
+}
+
+/**
+ * `workflow Name(fields): A throws E key K { … }` → `const NameWorkflow = Workflow.make("Name", {
+ * payload, success, error, idempotencyKey: ({ fields }) => K })` and `Name = Object.assign(…, {
+ * layer: NameWorkflow.toLayer(Effect.fn("Name")(function*({ fields }) { … })) })` (ADR-0072): the
+ * body is the workflow's layer, kept on it as a service keeps its layers.
+ */
+const workflowDeclaration: Handler = (node, parent, ctx) => {
+  const line: Node = node.line
+  const name: string = line.name.name
+  const exported = parent?.type === "ExportNamedDeclaration"
+  const workflow = fresh(ctx, `${name}Workflow`)
+  const E = ref(ctx, "effect", "Effect")
+  const fields = `{ ${(line.fields as Array<Node>).map((f) => f.key.name).join(", ")} }`
+  const options = [`payload: ${signatureFields(ctx, line)}`]
+  if (line.success !== null) options.push(`success: ${typeToSchema(ctx, line.success)}`)
+  if (line.error !== null) options.push(`error: ${errorUnion(ctx, line.error)}`)
+  // the workflow constant isn't exported: the `Object.assign` below is
+  ctx.s.update(
+    exported ? parent!.start : node.start,
+    node.key.start,
+    `const ${workflow} = ${ref(ctx, "effect/workflow", "Workflow")}.make(${JSON.stringify(name)}, { ${
+      options.join(", ")
+    }, idempotencyKey: (${fields}) => `
+  )
+  ctx.s.update(
+    node.key.end,
+    node.body.start,
+    ` })\n${
+      exported ? "export " : ""
+    }const ${name} = Object.assign(${workflow}, {\n  layer: ${workflow}.toLayer(${E}.fn(${
+      JSON.stringify(name)
+    })(function*(${fields}) `
+  )
+  for (const start of lineStartsToIndent(ctx, node.body, node.body.start, node.body.end)) {
+    ctx.s.prependRight(start, "  ")
+  }
+  withEffect(ctx, undefined, () => walk(node.key, node, ctx))
+  withEffect(ctx, makeFrame(node, "declaration"), () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
+  ctx.s.appendLeft(node.body.end, "))\n})")
+  return true
+}
+
+/**
+ * `activity name(): A throws E { … }` → `Activity.make({ name: "name", success, error, execute:
+ * Effect.gen(function*() { … }) })` (ADR-0072): a durable step, awaited in a workflow.
+ */
+const activityExpression: Handler = (node, _parent, ctx) => {
+  const options = [`name: ${JSON.stringify(node.name.name)}`]
+  if (node.success !== null) options.push(`success: ${typeToSchema(ctx, node.success)}`)
+  if (node.error !== null) options.push(`error: ${errorUnion(ctx, node.error)}`)
+  const E = ref(ctx, "effect", "Effect")
+  ctx.s.update(
+    node.start,
+    node.body.start,
+    `${ref(ctx, "effect/workflow", "Activity")}.make({ ${options.join(", ")}, execute: ${E}.gen(function*() `
+  )
+  withEffect(ctx, makeFrame(node, "block"), () => withNamespace(ctx, "Effect", () => walk(node.body, node, ctx)))
+  ctx.s.appendLeft(node.body.end, ") })")
   return true
 }
 
@@ -154,6 +216,8 @@ export const genericImpl: Handler = (node, _parent, ctx) => {
 export const libraryHandlers: HandlerGroup = {
   RpcDeclaration: rpcDeclaration,
   EntityDeclaration: entityDeclaration,
+  WorkflowDeclaration: workflowDeclaration,
+  ActivityExpression: activityExpression,
   ToolDeclaration: toolDeclaration,
   ToolkitDeclaration: toolkitDeclaration
 }
