@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest"
 import { banner, type Env, handle } from "../src/gate.ts"
 
-/** Static assets: `/soon/` is the teaser, `/docs/` a page, `/_astro/a.css` a file. */
+/** Static assets: `/soon` is the teaser, `/docs` a page, `/_astro/a.css` a file (slashless, ADR-0079). */
 const assets: Env["ASSETS"] = {
   fetch: async (request) => {
     const { pathname } = new URL(request.url)
-    if (pathname === "/soon/") {
+    if (pathname === "/soon") {
       return new Response("<html><body>teaser</body></html>", { headers: { "content-type": "text/html" } })
     }
     if (pathname.endsWith(".css")) return new Response("body{}", { headers: { "content-type": "text/css" } })
@@ -32,6 +32,19 @@ describe("the private-preview gate (ADR-0073)", () => {
 
   it("serves the files the teaser needs to everyone", async () => {
     expect(await (await get("/_astro/a.css")).text()).toBe("body{}")
+  })
+
+  it("serves the teaser at /soon, and lets assets redirect /soon/ to it (ADR-0079)", async () => {
+    expect(await (await get("/soon")).text()).toBe("<html><body>teaser</body></html>")
+    const slashed = await get("/soon/")
+    expect(slashed.status).not.toBe(302)
+  })
+
+  it("passes slashed and slashless docs URLs to assets for an invited visitor", async () => {
+    const cookie = await inviteCookie()
+    for (const path of ["/docs", "/docs/", "/docs/start/install", "/docs/start/install/"]) {
+      expect(await (await get(path, { headers: { cookie } })).text(), path).toContain(`page ${path}`)
+    }
   })
 
   it("lets an invite in: a cookie with a hash of the code, a clean URL, then the site with a banner", async () => {

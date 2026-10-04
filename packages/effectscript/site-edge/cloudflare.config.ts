@@ -10,7 +10,8 @@ export default defineConfig({
     name: "effectscript-site",
     entrypoint,
     compatibilityDate: "2026-10-01",
-    assets: { runWorkerFirst: true, htmlHandling: "auto-trailing-slash", notFoundHandling: "404-page" },
+    // Blume links pages without a trailing slash; a slashed URL redirects to it (ADR-0079)
+    assets: { runWorkerFirst: true, htmlHandling: "drop-trailing-slash", notFoundHandling: "404-page" },
     // the invite code: `.dev.vars` locally, uploaded with the version on deploy
     env: { ASSETS: bindings.assets(), INVITE_CODE: bindings.secret() },
     // a Workers Custom Domain: Cloudflare creates the DNS record and the certificate

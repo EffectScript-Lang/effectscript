@@ -1,7 +1,7 @@
 /**
  * The private-preview gate in front of effectscript.dev (ADR-0073). A visitor with the invite
  * cookie sees the site, with a banner saying it isn't released yet; anyone else sees the teaser
- * (`/soon/`) and the files it needs. `?invite=<code>` sets the cookie. Nothing is indexed.
+ * (`/soon`) and the files it needs. `?invite=<code>` sets the cookie. Nothing is indexed.
  *
  * @since 4.0.0
  */
@@ -18,7 +18,8 @@ const maxAge = 60 * 24 * 60 * 60
 
 /** Files the teaser itself loads, served to everyone. */
 const teaserFiles = [
-  /^\/soon\/$/,
+  // the teaser; assets redirect /soon/ to /soon (htmlHandling "drop-trailing-slash", ADR-0079)
+  /^\/soon\/?$/,
   /^\/_astro\//,
   /^\/fonts\//,
   /^\/favicon\.(ico|svg)$/,
@@ -80,7 +81,7 @@ const withBanner = async (response: Response): Promise<Response> => {
 }
 
 const teaser = (request: Request, env: Env): Promise<Response> =>
-  env.ASSETS.fetch(new Request(new URL("/soon/", request.url), { headers: request.headers }))
+  env.ASSETS.fetch(new Request(new URL("/soon", request.url), { headers: request.headers }))
 
 /**
  * Handles one request.
