@@ -1,6 +1,9 @@
 /* The EffectScript brand (packages/effectscript/brand/README.md): Effect's zinc on ink, Inter and
    JetBrains Mono. Fonts and marks are copied from brand/ by scripts/content.ts. */
 @import "tailwindcss";
+/* Blume runs Tailwind from its own runtime directory, so the site's sources are named (ADR-0079) */
+@source "../../pages";
+@source "../";
 
 @font-face {
   font-family: "Inter Display";

@@ -53,6 +53,14 @@ describe("the site build (Plan 16 Task 1, ADR-0054; Blume since Plan 28, ADR-007
     expect(JSON.parse(pkg).dependencies.blume).toBe("2.1.1")
   })
 
+  it("keeps the custom pages' Tailwind layout: Blume's Tailwind scans src/ and pages/", () => {
+    const sheets = [...read("index.html").matchAll(/href="(\/_astro\/[^"]+\.css)"/g)].map((m) => read(m[1]!.slice(1)))
+    const css = sheets.join("\n")
+    for (const utility of [".bg-ink", ".text-subtle", ".max-w-7xl", ".border-line", ".font-display"]) {
+      expect(css, utility).toContain(utility)
+    }
+  })
+
   it("shows the construct badge on reference pages (spec §4.3)", () => {
     expect(read("docs/reference/error/index.html")).toMatch(/class="efx-kind[^"]*"[^>]*data-signal="fail"/)
     expect(read("docs/reference/schema/index.html")).toMatch(/class="efx-kind/)
