@@ -94,6 +94,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0084](0084-the-playground-maps-each-part-live.md) | The playground is a full-screen editor that links each EffectScript part to its TypeScript | Accepted, partly superseded by 0085 |
 | [0085](0085-the-playground-maps-concepts-and-colours-intent.md) | The playground maps whole concepts, colours code by intent, and previews decided syntax | Accepted, partly superseded by 0086 |
 | [0086](0086-the-infra-extension-sketched-on-alchemy.md) | The infra extension, sketched: resources, workers that serve an `api`, and stacks on Alchemy v2 | Proposed |
+| [0087](0087-is-tests-a-tag.md) | `is` tests a value's tag, and `is T` on its own is a predicate | Accepted |
 
 ## Template
 

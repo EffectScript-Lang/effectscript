@@ -331,7 +331,7 @@ Rules:
 - **Tags.** A local `error`, or a `schema` with `_tag`, contributes its declared tag (custom
   `_tag` values included). Any other type uses the last segment of its name
   (`Errors.NotFound` → `"NotFound"`); `catchTag`'s signature makes the type check reject a tag that
-  isn't in the error channel.
+  isn't in the error channel. The `is` operator takes its tags by the same rule (§4.11, ADR-0087).
 - **Control flow.** If every path of the `try` and `catch` blocks ends in `return`/`throw`, emit
   `return yield* …`. If no path does, emit `yield* …;`. Anything mixed is an error (**EFX2020**,
   with a refactoring hint). `break`/`continue` that cross the `try` boundary, and `return` in
@@ -637,7 +637,7 @@ The runtime comes from options (`node` by default; `bun`, `deno`, or `browser`).
 `@effect/platform-{node,bun,deno,browser}`, imported automatically. Only one `main` is allowed per
 module (**EFX6001**).
 
-### 4.11 `match` (TC39 pattern-matching shape → Effect `Match`)
+### 4.11 `match` and `is` (TC39 pattern matching → Effect `Match` and tag tests)
 
 ```ts
 const area = match (shape) {
@@ -683,12 +683,49 @@ const label = Match.value(status).pipe(
   `(binding) => Effect.gen(function*() { return arm })` and the whole match is yielded.
 - **Syntax:** `match (x) {` requires the `{` on the same line as `)`.
 
+**`is`** (ADR-0087), TC39's `is` operator for tags. A test, `subject is pattern`, is a boolean. A
+predicate, `is pattern` where an expression starts, is a function that tests its argument:
+
+```ts
+const user = await fetchUser(id) |> retry({ times: 2, while: is TimeoutError })
+if (error is RateLimited or TimeoutError) { … }
+const open = sessions.filter(is not Closed)
+```
+
+| EffectScript        | TypeScript                                    |
+| ------------------- | --------------------------------------------- |
+| `s is A`            | `s._tag === "A"`                              |
+| `s is A or B`       | `s._tag === "A" \|\| s._tag === "B"`          |
+| `s is not A`        | `s._tag !== "A"`                              |
+| `s is not (A or B)` | `s._tag !== "A" && s._tag !== "B"`            |
+| `is A`              | `(e) => e._tag === "A"`                       |
+
+- **Patterns:** a tag name (`TimeoutError`, `Cause.TimeoutError`) without type arguments, several
+  joined by `or`, and `not` in front. `not` with `or` needs parentheses (**EFX7003**). Any other
+  pattern, such as `x is 404`, is **EFX7004**; literals, object patterns, bindings, `and` and guards
+  can follow `match`'s grammar later.
+- **Tags** follow the `catch` rule (§4.4): a local `error` or tagged `schema` gives its declared
+  tag, and any other name its last segment. The name isn't emitted, so `is TimeoutError` needs no
+  `Cause.`.
+- **Checking** is TypeScript's own: a tag the subject can't have is TS2367, and the comparison
+  narrows in `if`, in `filter`, and in `retry({ while })` without `times`. A subject that may be
+  `null`, or a union with an untagged member, is a type error rather than `false`.
+- **Precedence and layout:** a test binds like `instanceof`. `is` is on the same line as the end
+  of its subject, and the pattern starts on the same line as `is`. `is (`, `is as`, `is satisfies`
+  and `is of` keep their TypeScript meaning. Output and subject get parentheses only where
+  precedence needs them: `a && s is A or B` → `a && (s._tag === "A" || s._tag === "B")`, and
+  `await load() is A` → `(yield* load())._tag === "A"`.
+- The subject of `or`, or of `not (…)`, is read once per tag, so it must be a name, `this`, or
+  property reads without calls (**EFX7002**: bind it to a `const` first). A predicate on its own
+  as a statement is **EFX7005**: it is what a line starting with `is` becomes after automatic
+  semicolon insertion.
+
 ### 4.12 Other adopted proposals
 
 | Proposal                         | Status   | In EffectScript                                                                 |
 | -------------------------------- | -------- | ------------------------------------------------------------------------------- |
 | Pipeline operator                | Stage 2  | §4.9, both function and Hack styles                                             |
-| Pattern matching                 | Stage 1  | §4.11, compiled to Effect `Match`                                               |
+| Pattern matching                 | Stage 1  | §4.11: `match` compiled to Effect `Match`, and the `is` operator for tags (ADR-0087) |
 | Throw expressions                | Stage 2  | Inside `effect` → typed failure. Outside → `(() => { throw e })()`                  |
 | Do expressions                   | Stage 1  | `do { … }` in expression position → IIFE. Inside `effect` with `await` → `(yield* Effect.gen(…))`. The completion value is the last expression statement, recursing through `if`/`else` and blocks. `return`/`break`/`continue` that escape are errors (**EFX7001**) |
 | Explicit resource management     | Stage 3+ | Native outside `effect`. `using x = await e` in `effect` → scoped acquisition (§4.3)   |
@@ -1262,6 +1299,7 @@ library constructs and ambient forms in Plan 7 (ADR-0031).
 | `class X extends Schema.TaggedError<X>()("X", {…}) {…}`                             | `error X {…}` (or a `_tag` field when the tag differs) |
 | `class S extends Context.Service<S, {…}>()("key") { static readonly layer… }`       | `service S [as "key"] { … layer … }` |
 | `Match.valueTags(x, {…})` / `Match.value(x).pipe(Match.tag/when…, orElse/exhaustive)` with expression arrows | `match (x) { when … }` |
+| `s._tag === "A"` / `!==`; a `\|\|` chain of `===` (or `&&` chain of `!==`) on one subject; `(e) => e._tag === "A"` | `s is A` / `s is not A`; `s is A or B` (`s is not (A or B)`); `is A` (ADR-0087) |
 | `<Runtime>.runMain(e)` as the last statement                                         | `main {…} \|> …`                      |
 | `describe(…, () => {…})` with `it.effect(name, () => Effect.gen(…))`                 | `describe "…" { test "…" {…} }`       |
 | `HttpApiGroup.make(…).add(HttpApiEndpoint.<m>(…), …)` class / `HttpApi.make(…).add(…)` class | `group …` / `api …`         |
