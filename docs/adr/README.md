@@ -81,6 +81,9 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0071](0071-cluster-entities.md) | `entity` declares a cluster entity whose `impl` holds its state | Accepted |
 | [0072](0072-workflows-and-activities.md) | A `workflow` declaration carries its body as its layer; `activity` is an expression | Accepted |
 | [0073](0073-private-preview-of-the-site.md) | The site launches as a private preview behind an invite link, on Workers with `cf` | Accepted |
+| [0074](0074-proofs-through-bend2-from-one-source.md) | Proofs go through Bend2, from one `.efx` source; Lean 4 is dropped | Accepted |
+| [0075](0075-law-declarations.md) | `law` declares a rule the program must keep; it runs as a property test and is what a proof proves | Proposed |
+| [0076](0076-the-bend-model.md) | The Bend model: what translates, how it's encoded, and what stays opaque | Proposed |
 
 ## Template
 
