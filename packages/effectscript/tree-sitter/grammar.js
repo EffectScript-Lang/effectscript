@@ -33,7 +33,8 @@ const keywords = [
   "status",
   "rpc",
   "tool",
-  "toolkit"
+  "toolkit",
+  "entity"
 ]
 
 /** One or more `rule`, separated by `separator`. */
@@ -257,6 +258,7 @@ export default grammar(TypeScript, {
         $.atom_declaration,
         $.group_declaration,
         $.rpc_declaration,
+        $.entity_declaration,
         $.tool_declaration,
         $.toolkit_declaration,
         $.api_declaration,
@@ -660,6 +662,9 @@ export default grammar(TypeScript, {
 
     toolkit_declaration: ($) =>
       seq("toolkit", field("name", $.identifier), "{", optional(seq(sep1($.identifier, ","), optional(","))), "}"),
+
+    // `entity Name { name(fields): A throws E … }` (ADR-0071)
+    entity_declaration: ($) => seq("entity", field("name", $.identifier), "{", repeat(choice($.signature, ";")), "}"),
 
     signature: ($) =>
       prec.right(

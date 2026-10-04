@@ -847,6 +847,24 @@ city.", parameters: Schema.Struct({ city: Schema.String, days: Schema.optionalKe
 GetTime)`. The doc comment is the description the model reads; the comment stays in the output.
 Tool handlers get the parameters; `impl` is as for `rpc`.
 
+#### `entity` (`effect/cluster`, ADR-0071)
+
+```ts
+export entity Counter {
+  increment(by: number): number throws TooLarge
+  current(): number
+}
+export const CounterLive = impl Counter {
+  let count = 0
+  return { increment: effect ({ payload }) => { count += payload.by; return count }, … }
+}
+```
+
+→ `const Counter = Entity.make("Counter", [Rpc.make("increment", { payload: { by: Schema.Number },
+success: Schema.Number, error: TooLarge }), …])`, with lines as for `rpc`. The `impl` body runs
+once per entity, so its locals are that entity's state; handlers get the message's envelope
+(`{ payload }`), as `Entity` passes it.
+
 #### `command` (CLI, `effect/cli`)
 
 ```ts

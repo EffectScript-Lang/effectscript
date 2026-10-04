@@ -258,3 +258,32 @@ export const convertToolkit = (ctx: ReverseCtx, statement: Node): boolean => {
   )
   return true
 }
+
+/**
+ * `const X = Entity.make("X", [Rpc.make(…), …])` → `entity X { … }`.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertEntity = (ctx: ReverseCtx, statement: Node): boolean => {
+  const rpc = importedLocal(ctx.analysis, "effect/rpc", "Rpc")
+  const entity = importedLocal(ctx.analysis, "effect/cluster", "Entity")
+  const declarator = constDeclarator(statement)
+  if (rpc === undefined || entity === undefined || declarator === undefined) return false
+  const call: Node = declarator.init
+  const [type, protocol]: Array<Node> = call.arguments
+  if (
+    !isMember(call.callee, entity, "make") || call.arguments.length !== 2 || !isCanonicalString(ctx, type) ||
+    type.value !== declarator.id.name || protocol?.type !== "ArrayExpression" ||
+    commentsIn(ctx, statement.start, statement.end).length > 0
+  ) {
+    return false
+  }
+  const lines = (protocol.elements as Array<Node | null>).map((
+    e
+  ) => (e === null ? undefined : signatureLine(ctx, rpc, e)))
+  if (lines.some((l) => l === undefined)) return false
+  const body = lines.length === 0 ? "" : `\n${lines.map((l) => `  ${l}`).join("\n")}\n`
+  ctx.s.update(statement.start, statement.end, `entity ${declarator.id.name} {${body}}`)
+  return true
+}

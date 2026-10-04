@@ -1,0 +1,19 @@
+export error TooLarge { by: number }
+
+export entity Counter {
+  increment(by: number): number throws TooLarge
+  current(): number
+}
+
+// the body runs once per entity: `count` is that entity's state
+export const CounterLive = impl Counter {
+  let count = 0
+  return {
+    effect increment({ payload }) {
+      if (payload.by > 100) throw new TooLarge({ by: payload.by })
+      count += payload.by
+      return count
+    },
+    current: effect () => count
+  }
+}

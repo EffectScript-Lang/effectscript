@@ -65,6 +65,22 @@ const rpcDeclaration: Handler = (node, _parent, ctx) => {
 }
 
 /**
+ * `entity Name { lines }` → `const Name = Entity.make("Name", [Rpc.make(…), …])` (ADR-0071). Its
+ * handlers, written with `impl Name`, get each message's envelope (`{ payload }`).
+ */
+const entityDeclaration: Handler = (node, _parent, ctx) => {
+  const lines = (node.lines as Array<Node>).map((line) => `  ${rpcOf(ctx, line)}`)
+  ctx.s.update(
+    node.start,
+    node.end,
+    `const ${node.id.name} = ${ref(ctx, "effect/cluster", "Entity")}.make(${JSON.stringify(node.id.name)}, [${
+      lines.length > 0 ? `\n${lines.join(",\n")}\n` : ""
+    }])`
+  )
+  return true
+}
+
+/**
  * `tool Name(fields): A throws E` → `const Name = Tool.make("Name", { description, parameters:
  * Schema.Struct({ … }), success, failure })` (ADR-0070). The doc comment above it is the
  * description the model reads.
@@ -137,6 +153,7 @@ export const genericImpl: Handler = (node, _parent, ctx) => {
  */
 export const libraryHandlers: HandlerGroup = {
   RpcDeclaration: rpcDeclaration,
+  EntityDeclaration: entityDeclaration,
   ToolDeclaration: toolDeclaration,
   ToolkitDeclaration: toolkitDeclaration
 }

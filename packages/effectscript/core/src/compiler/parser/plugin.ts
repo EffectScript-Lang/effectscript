@@ -216,6 +216,7 @@ export const efxPlugin = (Base: any): any =>
       if (this.efxIsHttpApiStart("group")) return this.efxParseGroup()
       if (this.efxIsHttpApiStart("api")) return this.efxParseApi()
       if (this.efxIsSignatureBlockStart("rpc")) return this.efxParseSignatureBlock("RpcDeclaration")
+      if (this.efxIsSignatureBlockStart("entity")) return this.efxParseSignatureBlock("EntityDeclaration")
       if (this.efxIsToolStart()) return this.efxParseTool()
       if (this.efxIsSignatureBlockStart("toolkit")) return this.efxParseToolkit()
       if (this.efxIsDescribeStart()) return this.efxParseDescribe()
@@ -228,7 +229,8 @@ export const efxPlugin = (Base: any): any =>
       return this.efxIsEffectDeclarationStart() || this.efxIsClassLikeStart() ||
         this.efxIsBindingDeclarationStart("layer") || this.efxIsBindingDeclarationStart("atom") ||
         this.efxIsHttpApiStart("group") || this.efxIsHttpApiStart("api") || this.efxIsCommandStart() ||
-        this.efxIsSignatureBlockStart("rpc") || this.efxIsToolStart() || this.efxIsSignatureBlockStart("toolkit") ||
+        this.efxIsSignatureBlockStart("rpc") || this.efxIsSignatureBlockStart("entity") || this.efxIsToolStart() ||
+        this.efxIsSignatureBlockStart("toolkit") ||
         super.shouldParseExportStatement()
     }
 

@@ -295,6 +295,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
       }
       // a library construct declares a constant (ADR-0069…0072)
       case "RpcDeclaration":
+      case "EntityDeclaration":
       case "ToolDeclaration":
       case "ToolkitDeclaration": {
         scope.values.add(node.id.name)

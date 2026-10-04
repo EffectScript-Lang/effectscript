@@ -27,6 +27,7 @@
   "rpc"
   "tool"
   "toolkit"
+  "entity"
 ] @keyword
 
 (match_arm "default" @keyword)

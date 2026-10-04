@@ -26,7 +26,7 @@ import {
 } from "./context.ts"
 import { convertImpl } from "./httpApi.ts"
 import { convertLayer } from "./layer.ts"
-import { convertGenericImpl, convertRpcGroup, convertTool, convertToolkit } from "./library.ts"
+import { convertEntity, convertGenericImpl, convertRpcGroup, convertTool, convertToolkit } from "./library.ts"
 import { convertMain } from "./main.ts"
 import { convertMatch, matchShape } from "./match.ts"
 import { importedLocal, isMember } from "./origin.ts"
@@ -534,7 +534,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
       node.type === "VariableDeclaration" &&
       (parent?.type === "Program" || parent?.type === "ExportNamedDeclaration") &&
       (convertConfig(ctx, node, visit) || convertLayer(ctx, node, visit) || convertAtom(ctx, node, visit) ||
-        convertRpcGroup(ctx, node) || convertToolkit(ctx, node) ||
+        convertRpcGroup(ctx, node) || convertEntity(ctx, node) || convertToolkit(ctx, node) ||
         convertTool(ctx, node, parent.type === "ExportNamedDeclaration" ? parent.start : node.start) ||
         convertCommand(ctx, node, parent.type === "ExportNamedDeclaration" ? parent.start : node.start, visit))
     ) {

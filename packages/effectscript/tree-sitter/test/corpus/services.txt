@@ -194,3 +194,26 @@ toolkit Assistant { GetForecast, Ping }
     (identifier)
     (identifier)
     (identifier)))
+
+==========
+Entity
+==========
+
+entity Counter {
+  increment(by: number): number
+}
+
+---
+
+(program
+  (entity_declaration
+    (identifier)
+    (signature
+      (identifier)
+      (formal_parameters
+        (required_parameter
+          (identifier)
+          (type_annotation
+            (predefined_type))))
+      (type_annotation
+        (predefined_type)))))

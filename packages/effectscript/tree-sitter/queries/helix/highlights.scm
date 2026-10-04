@@ -82,6 +82,7 @@
   "rpc"
   "tool"
   "toolkit"
+  "entity"
 ] @keyword
 
 [ "abstract"
