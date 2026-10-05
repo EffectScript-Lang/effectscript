@@ -50,8 +50,12 @@ const withDirectives = (options: ResolvedOptions, source: string): ResolvedOptio
   prelude: options.prelude && !directive(source, "no-prelude"),
   ambient: options.ambient && !directive(source, "no-ambient"),
   strict: options.strict || directive(source, "strict"),
-  observability: options.observability ?? (directive(source, "observability\\s+otlp") ? "otlp" : undefined)
+  observability: options.observability ?? (directive(source, "observability\\s+otlp") ? "otlp" : undefined),
+  spans: spansDirective.exec(leadingComments(source))?.[1] ?? options.spans
 })
+
+/** `// @efx spans Prefix` (ADR-0097): its line, and the prefix. */
+const spansDirective = /^[ \t]*\/\/\s*@efx\s+spans\s+([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)[ \t]*(?:\n|$)/m
 
 /** EFX1003: a `// @effect X.Y` header that disagrees with the installed `effect` (§7.6). */
 const headerDiagnostics = (source: string, options: ResolvedOptions): Array<Diagnostic> => {
@@ -145,6 +149,9 @@ const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): Co
     namespace: "Effect",
     testIt: undefined
   }
+  // the spans directive is spent on the span names: it leaves no comment behind (ADR-0097)
+  const spans = resolved.spans === undefined ? null : spansDirective.exec(leadingComments(source))
+  if (spans !== null) s.remove(spans.index, spans.index + spans[0].length)
   try {
     walk(parsed.program, undefined, ctx)
     emitImports(ctx)

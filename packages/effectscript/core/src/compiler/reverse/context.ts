@@ -71,6 +71,10 @@ export interface ReverseCtx {
   readonly binders: Set<Node>
   /** Sugar turned off for a rerun, when a file-wide check fails after converting. */
   readonly disabled: ReadonlySet<"try" | "main">
+  /** The prefix of a `// @efx spans` directive this conversion writes (ADR-0097). */
+  spans: string | undefined
+  /** Whether a conversion relied on `spans`, so the directive is written. */
+  spansUsed: boolean
   /** `main` telemetry depends on a directive that only becomes leading once imports are removed. */
   telemetryDirective: boolean
   /** The namespace the forward compiler resolves bare builtins in at the visited position. */

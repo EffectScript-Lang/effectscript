@@ -17,7 +17,12 @@ import { rewriteReturnType, rewriteReturnTypeAs } from "./returnType.ts"
  * @since 0.1.0
  * @category utils
  */
-export const spanName = (ctx: Ctx, name: string): string => ctx.service === undefined ? name : `${ctx.service}.${name}`
+export const spanName = (ctx: Ctx, name: string): string =>
+  ctx.service !== undefined
+    ? `${ctx.service}.${name}`
+    : ctx.options.spans !== undefined
+    ? `${ctx.options.spans}.${name}`
+    : name
 
 /**
  * Removes a `|>` token (and one following space) and appends `text` right after the previous item.

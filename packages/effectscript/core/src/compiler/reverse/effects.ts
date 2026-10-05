@@ -114,6 +114,15 @@ const blocked = (ctx: ReverseCtx, node: Node, what: string, fn: Node, kind: Para
 /** `const f = Effect.fn(…)` statements converted to `effect` declarations. */
 const declarations = new WeakSet<Node>()
 
+/** The span name the forward compiler gives `name` here (ADR-0097). */
+const expectedSpan = (ctx: ReverseCtx, name: string): string =>
+  ctx.service !== undefined ? `${ctx.service}.${name}` : ctx.spans !== undefined ? `${ctx.spans}.${name}` : name
+
+/** A conversion relied on the spans directive, so it is written (ADR-0097). */
+const usedSpans = (ctx: ReverseCtx): void => {
+  if (ctx.service === undefined && ctx.spans !== undefined) ctx.spansUsed = true
+}
+
 /**
  * `const f = Effect.fn("f")(function*(…) {…}, …pipes)` → `effect f(…) {…} |> …pipes`.
  *
@@ -135,7 +144,7 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
   const pipes = scope === undefined ? allPipes : allPipes.slice(1)
   const span: Node | undefined = head.arguments[0]
   // inside a service layer the forward compiler names it `Svc.name`
-  const expected = ctx.service === undefined ? name : `${ctx.service}.${name}`
+  const expected = expectedSpan(ctx, name)
   if (span?.type !== "Literal" || span.value !== expected) {
     note(
       ctx,
@@ -146,6 +155,7 @@ export const convertDeclaration = (ctx: ReverseCtx, statement: Node, outerStart:
     )
     return false
   }
+  usedSpans(ctx)
   if (head.arguments.length !== 1) {
     note(ctx, statement, `\`${name}\` stays TypeScript: it passes span options`)
     return false
@@ -385,9 +395,11 @@ const convertProperty = (ctx: ReverseCtx, property: Node, visit: Visit): boolean
     const head: Node = call.callee
     if (head.type !== "CallExpression" || !isMember(head.callee, ctx.effect, "fn")) return false
     const name = propertyName(property.key)
+    if (name === undefined) return false
     const span: Node | undefined = head.arguments[0]
-    const expected = ctx.service === undefined ? name : `${ctx.service}.${name}`
+    const expected = expectedSpan(ctx, name)
     if (head.arguments.length !== 1 || span?.type !== "Literal" || span.value !== expected) return false
+    usedSpans(ctx)
     keyEnd = property.key.end
   }
   if (blocked(ctx, property, "this method", fn, "method")) return false

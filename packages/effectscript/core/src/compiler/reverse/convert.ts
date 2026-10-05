@@ -100,6 +100,47 @@ const guarded = (source: string, options: ConvertOptions): ConvertResult => {
   return { code: best.code, notes: [...best.notes, ...failed] }
 }
 
+/**
+ * The prefix of a `// @efx spans` directive (ADR-0097): when every span the file names through
+ * `Effect.fn("…")` on a binding is `Prefix.binding`, with one prefix.
+ */
+const spansPrefix = (program: Node, effect: string | undefined): string | undefined => {
+  if (effect === undefined) return undefined
+  const prefixes = new Set<string>()
+  let plain = false
+  const visit = (node: Node, parent: Node | undefined): void => {
+    if (
+      node.type === "CallExpression" && node.callee.type === "MemberExpression" && !node.callee.computed &&
+      node.callee.object.type === "Identifier" && node.callee.object.name === effect &&
+      node.callee.property.name === "fn" && node.arguments[0]?.type === "Literal" &&
+      typeof node.arguments[0].value === "string"
+    ) {
+      // the binding: `const name = Effect.fn("…")(…)` or `name: Effect.fn("…")(…)`
+      const call: Node | undefined = parent?.type === "CallExpression" && parent.callee === node ? parent : undefined
+      const holder = call === undefined ? undefined : bindings.get(call)
+      if (holder !== undefined) {
+        const span: string = node.arguments[0].value
+        if (span === holder) plain = true
+        else if (span.endsWith(`.${holder}`)) prefixes.add(span.slice(0, -holder.length - 1))
+        else plain = true
+      }
+    }
+    if (node.type === "VariableDeclarator" && node.id.type === "Identifier" && node.init?.type === "CallExpression") {
+      bindings.set(node.init, node.id.name)
+    }
+    if (
+      node.type === "Property" && !node.computed && node.key.type === "Identifier" &&
+      node.value?.type === "CallExpression"
+    ) {
+      bindings.set(node.value, node.key.name)
+    }
+    for (const child of children(node)) visit(child, node)
+  }
+  const bindings = new Map<Node, string>()
+  visit(program, undefined)
+  return !plain && prefixes.size === 1 ? [...prefixes][0] : undefined
+}
+
 const binderNames = new Set(["defect", "error"])
 
 /** Whether a generated binder name is also used by another identifier (see `ReverseCtx.binders`). */
@@ -151,6 +192,8 @@ const convert = (
     binders: new Set(),
     disabled,
     telemetryDirective: false,
+    spans: undefined,
+    spansUsed: false,
     namespace: "Effect",
     service: undefined,
     testIt: undefined,
@@ -185,6 +228,7 @@ const convert = (
     if (name !== undefined) ctx.effects.add(name)
   }
   ctx.topics = topicsRoundTrip(ctx)
+  ctx.spans = spansPrefix(parsed.program, ctx.effect)
   // `export default class` has no declaration spelling (`export default schema` doesn't parse)
   const topLevel = new Set(
     (parsed.program.body as Array<Node>).flatMap((
@@ -205,6 +249,11 @@ const convert = (
     return convert(source, options, new Set([...disabled, "try"]), only, prelude)
   }
   if (!ctx.s.hasChanged()) return { code: source, notes: ctx.notes }
+  // the spans directive goes first, where directives count (after a shebang)
+  if (ctx.spans !== undefined && ctx.spansUsed) {
+    const at = source.startsWith("#!") ? source.indexOf("\n") + 1 : 0
+    ctx.s.prependLeft(at, `// @efx spans ${ctx.spans}\n`)
+  }
   const applied = prelude ? applyPrelude(ctx.s.toString(), options, source) : undefined
   const code = applied?.code ?? ctx.s.toString()
   if (applied?.canonicalized === true) {

@@ -104,6 +104,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0094](0094-a-corpus-of-real-effect-projects.md) | Real Effect v4 projects as a corpus, converted and measured | Accepted |
 | [0095](0095-a-layer-for-a-service-declared-anywhere.md) | `layer Name for Service` implements a service declared anywhere | Accepted |
 | [0096](0096-performance-stays-in-typescript-first.md) | Make the compiler faster in TypeScript before porting it | Accepted |
+| [0097](0097-a-spans-directive.md) | `// @efx spans Prefix` names a file's spans after its module | Accepted |
 
 ## Template
 

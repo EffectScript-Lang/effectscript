@@ -582,6 +582,9 @@ Rules:
   and `src/a.efx` → `"myapp/a/Users"`. A relative filename keeps its directories; an absolute one outside the package root keeps only
   its file name, so keys never contain absolute paths (ADR-0018). Without package information, the key is `"<Name>"`. To override:
   `service Users as "acme/Users" { … }`.
+- **Span prefix** (ADR-0097): `// @efx spans Prefix` in the leading comments names every span the
+  file names after a binding `Prefix.name` (services and `layer … for` keep their own). The
+  directive's line is removed from the output.
 - **Layers for a service declared anywhere** (ADR-0095): `[export] layer Name for Service = …`
   lowers like a body's `layer`: `effect { … }` to `Layer.effect(Service, Effect.gen(…))` with
   returned objects in `Service.of(…)`, `{ … }` to `Layer.succeed(Service, Service.of({ … }))`, and

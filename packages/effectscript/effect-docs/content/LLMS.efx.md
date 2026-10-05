@@ -150,10 +150,10 @@ export class Database extends Context.Service<Database, {
     Database,
     effect {
       // Define the service methods using Effect.fn
-      const query = Effect.fn("Database.query")(function*(sql: string) {
-        yield* log("Executing SQL query:", sql)
+      effect query(sql: string) {
+        console.log("Executing SQL query:", sql)
         return [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }]
-      })
+      }
 
       // Return an instance of the service using Database.of, passing in an
       // object that implements the service interface.

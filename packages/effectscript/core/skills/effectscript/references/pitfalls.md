@@ -191,6 +191,20 @@ A scoped resource must live as long as the whole `effect`. Inside a nested block
 `Effect.runPromise` and its siblings inside `effect` code are errors (EFX8003). Use `await`, and
 keep a single `main` (or the framework's runtime) at the edge.
 
+## Span names follow the binding, or the file's prefix
+
+`effect poll()` is traced as `poll`; inside a `service` or a `layer … for Users`, as `Users.poll`.
+To name a file's spans after its module, as much Effect code does, say so once at the top:
+
+```efx
+// @efx spans CodexAuth
+export effect poll(id: string) {
+  return id
+}
+```
+
+`poll` is traced as `CodexAuth.poll`. The directive leaves no comment in the output.
+
 ## `is` stays on the line of the value it tests
 
 `error is RateLimited` tests a tag, and `is RateLimited` alone is a predicate. A line that starts

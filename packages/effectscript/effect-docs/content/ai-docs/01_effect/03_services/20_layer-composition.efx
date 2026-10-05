@@ -1,3 +1,4 @@
+// @efx spans UserRepository
 /**
  * @title Composing services with the Layer module
  *
@@ -38,13 +39,13 @@ export class UserRepository extends Context.Service<UserRepository, {
     effect {
       const sql = await SqlClient.SqlClient
 
-      const findById = Effect.fn("UserRepository.findById")(function*(id: string) {
-        const results = yield* sql<{
+      effect findById(id: string) {
+        const results = await sql<{
           readonly id: string
           readonly name: string
         }>`SELECT * FROM users WHERE id = '${id}'`
         return Array.head(results)
-      }, mapError((reason) => new UserRespositoryError({ reason })))
+      } |> mapError((reason) => new UserRespositoryError({ reason }))
 
       return UserRepository.of({ findById })
     }

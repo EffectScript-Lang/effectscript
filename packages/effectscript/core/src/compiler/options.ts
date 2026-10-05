@@ -51,6 +51,8 @@ export interface ResolvedOptions {
   readonly strict: boolean
   readonly effectVersion: string | undefined
   readonly observability: "otlp" | undefined
+  /** `// @efx spans Prefix` names spans `Prefix.name` outside services (ADR-0097). Directive only. */
+  readonly spans: string | undefined
 }
 
 /**
@@ -69,7 +71,8 @@ export const resolveOptions = (options: CompileOptions): ResolvedOptions => ({
   ambient: options.ambient ?? true,
   strict: options.strict ?? false,
   effectVersion: options.effectVersion,
-  observability: options.observability
+  observability: options.observability,
+  spans: undefined
 })
 
 /**
