@@ -48,4 +48,25 @@ describe("reverse: service (Plan 6 Task 8)", () => {
     expect(result.code).toContain("class Clock")
     expect(result.notes.map((n) => n.message).join("\n")).toMatch(/Clock/)
   })
+  it("converts a service however its declaration is laid out, and keeps one with a comment there", () => {
+    const prettier = `import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+
+export class Generator extends Context.Service<
+  Generator,
+  { readonly generate: (spec: string) => Effect.Effect<string> }
+>()("Generator") {}
+`
+    expect(toEffectScript(prettier, { filename: "a.ts" }).code).toContain(
+      "export service Generator { readonly generate: (spec: string) => Effect<string> }"
+    )
+    const commented = `import * as Context from "effect/Context"
+
+export class Keyed extends Context.Service<Keyed, { readonly n: number }>()(
+  // the key
+  "Keyed"
+) {}
+`
+    expect(toEffectScript(commented, { filename: "a.ts" }).code).toContain("class Keyed")
+  })
 })

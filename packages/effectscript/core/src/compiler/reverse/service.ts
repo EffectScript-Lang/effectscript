@@ -264,7 +264,12 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
   const literalClose = shape.end - 1
   const bodyOpen = cls.body.start
   const keyText = JSON.stringify(key.value)
-  if (ctx.source.slice(literalClose, bodyOpen + 1) !== `}>()(${keyText}) {`) {
+  // any layout of `}>()("key") {` reads the same (ADR-0030: hand-written code comes back token for
+  // token); a comment there would be lost
+  if (
+    ctx.source.slice(literalClose, bodyOpen + 1).replace(/\s+/g, "") !== `}>()(${keyText}){` ||
+    commentsIn(ctx, literalClose, bodyOpen + 1).length > 0
+  ) {
     return explain("its declaration isn't laid out as generated")
   }
   if (commentsIn(ctx, cls.start, shape.start).length > 0) return false

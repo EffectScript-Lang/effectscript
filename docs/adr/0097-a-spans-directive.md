@@ -50,3 +50,19 @@ a function stayed TypeScript (736 files).
   once, and adds a string between `effect` and the name.
 - **Keep the directive in the output:** the reverse compiler could then never add it, and none of
   these 736 files would convert.
+
+## Amendment 1: `// @efx no-ambient` is spent too, and the reverse compiler writes it
+
+- **Status:** Accepted
+- **Date:** 2026-10-06
+- **Deciders:** agent ruling, from the real-projects corpus
+
+Real code calls `console.log`, `Date.now()` and `Math.random()` inside generators as plain
+JavaScript. In `effect` code EffectScript captures them as Effect services (spec §4.15), so the
+reverse compiler left those generators as TypeScript: 358 files in the corpus.
+
+- `// @efx no-ambient` leaves no comment in the output either. A directive the reverse compiler may
+  introduce has to be spent, for the reason given above.
+- When capture is what keeps code TypeScript, the reverse compiler converts the file again with
+  capture off, and keeps that version, with `// @efx no-ambient` at the top, if it converts more.
+- A file that already says `no-ambient` compiles as before, minus the comment line.

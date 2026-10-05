@@ -54,6 +54,9 @@ const withDirectives = (options: ResolvedOptions, source: string): ResolvedOptio
   spans: spansDirective.exec(leadingComments(source))?.[1] ?? options.spans
 })
 
+/** `// @efx no-ambient`, as a whole line. */
+const noAmbientDirective = /^[ \t]*\/\/\s*@efx\s+no-ambient[ \t]*(?:\n|$)/m
+
 /** `// @efx spans Prefix` (ADR-0097): its line, and the prefix. */
 const spansDirective = /^[ \t]*\/\/\s*@efx\s+spans\s+([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)[ \t]*(?:\n|$)/m
 
@@ -149,9 +152,12 @@ const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): Co
     namespace: "Effect",
     testIt: undefined
   }
-  // the spans directive is spent on the span names: it leaves no comment behind (ADR-0097)
-  const spans = resolved.spans === undefined ? null : spansDirective.exec(leadingComments(source))
-  if (spans !== null) s.remove(spans.index, spans.index + spans[0].length)
+  // the directives the reverse compiler may introduce are spent: they leave no comment behind,
+  // since their effect is in the output (ADR-0097)
+  for (const spent of [resolved.spans === undefined ? null : spansDirective, noAmbientDirective]) {
+    const found = spent?.exec(leadingComments(source))
+    if (found) s.remove(found.index, found.index + found[0].length)
+  }
   try {
     walk(parsed.program, undefined, ctx)
     emitImports(ctx)

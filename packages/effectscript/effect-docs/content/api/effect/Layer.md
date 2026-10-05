@@ -371,10 +371,7 @@ runSync(provide(program, layer)) // => "Query: SELECT 1"
 **Creating a layer from an effectful context**
 
 ```efx
-class Database extends Context.Service<
-  Database,
-  { readonly query: (sql: string) => Effect<string> }
->()("Database") {}
+service Database { readonly query: (sql: string) => Effect<string> }
 
 const layer = Layer.effectContext(
   succeed(Context.make(Database, {

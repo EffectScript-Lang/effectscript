@@ -1,3 +1,4 @@
+// @efx no-ambient
 /**
  * @title Writing Effect tests with @effect/vitest
  *
@@ -34,12 +35,11 @@ describe "@effect/vitest basics" {
       assert.strictEqual(value, "done")
     }
 
-  it.live("uses real runtime services", () =>
-    Effect.gen(function*() {
+  test.live "uses real runtime services" {
       const startedAt = Date.now()
-      yield* sleep(1)
+      await sleep(1)
       assert.isTrue(Date.now() >= startedAt)
-    }))
+    }
 
   // For property-based testing, use `it.effect.prop` with Schema-based
   // arbitraries

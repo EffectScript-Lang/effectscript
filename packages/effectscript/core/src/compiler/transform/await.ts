@@ -65,6 +65,23 @@ export const parenthesizeIfNeeded = (ctx: Ctx, node: Node, parent: Node | undefi
   }
 }
 
+/**
+ * Arguments that bind looser than `await` but not looser than `yield*`: `await (x as T)` is
+ * `yield* x as T`, so their parentheses go (a comma expression keeps them).
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const looseAwaitArguments: ReadonlySet<string> = new Set([
+  "TSAsExpression",
+  "TSSatisfiesExpression",
+  "BinaryExpression",
+  "LogicalExpression",
+  "ConditionalExpression",
+  "ArrowFunctionExpression",
+  "AssignmentExpression"
+])
+
 const awaitExpression: Handler = (node, parent, ctx) => {
   if (ctx.effect === undefined) return
   parenthesizeIfNeeded(ctx, node, parent)
@@ -75,6 +92,13 @@ const awaitExpression: Handler = (node, parent, ctx) => {
     ctx.s.prependLeft(argument.end, ", { concurrency: \"unbounded\" })")
   } else {
     ctx.s.update(node.start, node.start + 5, "yield*")
+    if (looseAwaitArguments.has(argument.type) && isParenthesized(ctx.source, argument)) {
+      let open = argument.start - 1
+      while (/\s/.test(ctx.source[open]!)) open--
+      const close = skipSpace(ctx.source, argument.end)
+      ctx.s.remove(open, argument.start)
+      ctx.s.remove(argument.end, close + 1)
+    }
   }
 }
 

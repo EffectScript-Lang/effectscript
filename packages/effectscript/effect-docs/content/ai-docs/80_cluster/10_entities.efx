@@ -1,3 +1,4 @@
+// @efx no-ambient
 /**
  * @title Defining cluster entities
  *
@@ -48,15 +49,15 @@ export const CounterEntityLayer = Counter.toLayer(
 
 // If you ever need to access an entity client, you can use the `client`
 // property on the entity definition.
-export const useCounter = Effect.gen(function*() {
-  const clientFor = yield* Counter.client
+export const useCounter = effect {
+  const clientFor = await Counter.client
   const counter = clientFor("counter-123")
 
-  const afterIncrement = yield* counter.Increment({ amount: 1 })
-  const currentCount = yield* counter.GetCount()
+  const afterIncrement = await counter.Increment({ amount: 1 })
+  const currentCount = await counter.GetCount()
 
   console.log(`Count after increment: ${afterIncrement}, current count: ${currentCount}`)
-})
+}
 
 // `SingleRunner.layer` is useful for local development / tests where you still
 // want the cluster entity runtime model.

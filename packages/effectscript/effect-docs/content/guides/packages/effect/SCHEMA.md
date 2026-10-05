@@ -3096,9 +3096,7 @@ SchemaParser.makeEffect(schema)({}).pipe(runPromise).then(console.log)
 
 ```efx
 // Define a service that may provide a default value
-class ConstructorService extends Context.Service<ConstructorService, { defaultValue: Effect<number> }>()(
-  "ConstructorService"
-) {}
+service ConstructorService { defaultValue: Effect<number> }
 
 const schema = Schema.Struct({
   a: Schema.Number
@@ -4528,6 +4526,8 @@ const recovered = program
 **Example** (Multiple tagged errors in a union)
 
 ```efx
+// @efx no-ambient
+
 error NotFound {
   path: string
 }
@@ -4536,13 +4536,13 @@ error Unauthorized {
   reason: string
 }
 
-const program = Effect.gen(function*() {
+const program = effect {
   if (Math.random() < 0.5) {
-    yield* new Unauthorized({ reason: "Unauthorized" })
+    await new Unauthorized({ reason: "Unauthorized" })
   } else {
-    yield* new NotFound({ path: "/missing" })
+    await new NotFound({ path: "/missing" })
   }
-})
+}
 
 // Each error can be caught independently by its tag
 const recovered = program
@@ -6959,15 +6959,11 @@ This makes it easier to work with schemas in contexts where one direction has no
 
 ```efx
 import type { Effect } from "effect"
-import { Context, Schema } from "effect"
 
 // A service that retrieves full user info from an ID
-class UserDatabase extends Context.Service<
-  UserDatabase,
-  {
+service UserDatabase {
     getUserById: (id: string) => Effect.Effect<{ readonly id: string; readonly name: string }>
   }
->()("UserDatabase") {}
 
 // Schema that decodes from an ID to a user object using the database,
 // but encodes just the ID

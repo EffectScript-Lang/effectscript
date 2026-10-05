@@ -42,7 +42,19 @@ export interface ConvertResult {
  */
 export const toEffectScript = (source: string, options: ConvertOptions = {}): ConvertResult => {
   try {
-    return guarded(source, options)
+    const result = guarded(source, options)
+    // code that ambient capture would change stays TypeScript; without capture, more may convert,
+    // and the file says so (ADR-0097)
+    if (
+      options.ambient === false || /^\s*\/\/\s*@efx\s+no-ambient\b/m.test(leadingComments(source)) ||
+      !result.notes.some((n) => n.message.includes("would be captured as an Effect"))
+    ) {
+      return result
+    }
+    const off = guarded(source, { ...options, ambient: false })
+    if (off.code === source || off.code.length >= result.code.length) return result
+    const at = off.code.startsWith("#!") ? off.code.indexOf("\n") + 1 : 0
+    return { code: `${off.code.slice(0, at)}// @efx no-ambient\n${off.code.slice(at)}`, notes: off.notes }
   } catch (error) {
     // a converter bug must never break the caller: the input is valid EffectScript as it is
     return {

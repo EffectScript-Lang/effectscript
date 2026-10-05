@@ -28,6 +28,14 @@ describe("reverse: schema forms (Plan 6 Task 7)", () => {
     expect(roundTrip(efx)).toBe(efx)
   })
 
+  it("keeps a union of literals as its schema: `1 | 2` compiles to the other spelling", () => {
+    const ts =
+      "import * as Schema from \"effect/Schema\"\nexport class A extends Schema.Class<A>(\"A\")({\n  kind: Schema.Union([Schema.Literal(\"a\"), Schema.Literal(\"b\")])\n}) {}\n"
+    const back = toEffectScript(ts).code
+    expect(back).toContain("kind = Union([Literal(\"a\"), Literal(\"b\")])")
+    expect(toTypeScript(back).code).toBe(ts)
+  })
+
   it("keeps a class with an instance property as TypeScript", () => {
     const ts =
       "import * as Schema from \"effect/Schema\"\nexport class A extends Schema.Class<A>(\"A\")({ a: Schema.String }) {\n  readonly cache = new Map()\n}\n"

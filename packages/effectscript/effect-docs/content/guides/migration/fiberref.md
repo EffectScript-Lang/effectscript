@@ -48,12 +48,12 @@ const program = Effect.gen(function*() {
 **v4**
 
 ```efx
-import { Effect, References } from "effect"
+// @efx no-ambient
 
-const program = Effect.gen(function*() {
-  const level = yield* References.CurrentLogLevel
+const program = effect {
+  const level = await References.CurrentLogLevel
   console.log(level) // "Info" (default)
-})
+}
 ```
 
 ## Scoped Updates (`Effect.locally` → `Effect.provideService`)
@@ -102,11 +102,13 @@ const program = Effect.gen(function*() {
 **v4**
 
 ```efx
+// @efx no-ambient
+
 const program = provideService(
-  Effect.gen(function*() {
-    const maxOps = yield* References.MaxOpsBeforeYield
+  effect {
+    const maxOps = await References.MaxOpsBeforeYield
     console.log(maxOps) // 500
-  }),
+  },
   References.MaxOpsBeforeYield,
   500
 )

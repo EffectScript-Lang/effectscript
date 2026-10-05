@@ -92,6 +92,15 @@ export const schemaToType = (source: string, schema: string, node: Node, where?:
           ? args[0].elements.map(slice).join(" | ")
           : undefined
       case "Union": {
+        // literals only: `1 | 2` compiles to `Schema.Literals([1, 2])`, the other spelling, so the
+        // union keeps no type form (its field becomes an `=` field)
+        const elements: Array<Node> = args[0]?.type === "ArrayExpression" ? args[0].elements : []
+        if (
+          elements.length > 0 &&
+          elements.every((e) => e?.type === "CallExpression" && isMember(e.callee, schema, "Literal"))
+        ) {
+          return undefined
+        }
         const members = list(args[0])
         return members === undefined || members.length < 2 ? undefined : members.join(" | ")
       }

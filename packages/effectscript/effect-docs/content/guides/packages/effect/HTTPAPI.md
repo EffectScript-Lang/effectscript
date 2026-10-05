@@ -156,6 +156,7 @@ Once you've defined an API, you can generate a fully typed client from it using 
 **Example** (Deriving and Using a Client)
 
 ```efx
+// @efx no-ambient
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
@@ -184,15 +185,15 @@ const ApiLayer = HttpApiBuilder.layer(Api)
 Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // Create a program that derives and uses the client
-const program = Effect.gen(function*() {
+const program = effect {
   // Derive the client
-  const client = yield* HttpApiClient.make(Api, {
+  const client = await HttpApiClient.make(Api, {
     baseUrl: "http://localhost:3000"
   })
   // Call the "hello-world" endpoint
-  const hello = yield* client.Greetings.hello()
+  const hello = await client.Greetings.hello()
   console.log(hello)
-})
+}
 
 // Provide a Fetch-based HTTP client and run the program
 runFork(program.pipe(provide(FetchHttpClient.layer)))
@@ -1198,9 +1199,7 @@ import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
 // Define the service providing the current user
-class CurrentUser
-  extends Context.Service<CurrentUser, { readonly id: number; readonly name: string }>()("CurrentUser")
-{}
+service CurrentUser { readonly id: number; readonly name: string }
 
 // Define the security scheme: read the "session" cookie
 const sessionCookie = HttpApiSecurity.apiKey({ in: "cookie", key: "session" })
@@ -3201,6 +3200,7 @@ The `HttpApiClient` module generates a fully typed client from your API definiti
 **Example** (Deriving and Using a Client)
 
 ```efx
+// @efx no-ambient
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
@@ -3229,15 +3229,15 @@ const ApiLayer = HttpApiBuilder.layer(Api)
 Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
 // Create a program that derives and uses the client
-const program = Effect.gen(function*() {
+const program = effect {
   // Derive the client
-  const client = yield* HttpApiClient.make(Api, {
+  const client = await HttpApiClient.make(Api, {
     baseUrl: "http://localhost:3000"
   })
   // Call the "hello-world" endpoint
-  const hello = yield* client.Greetings.hello()
+  const hello = await client.Greetings.hello()
   console.log(hello)
-})
+}
 
 // Provide a Fetch-based HTTP client and run the program
 runFork(program.pipe(provide(FetchHttpClient.layer)))
@@ -3256,6 +3256,7 @@ When a group is `topLevel`, its endpoints are exposed as top-level methods on th
 **Example** (Using a Top-Level Group in the Client)
 
 ```efx
+// @efx no-ambient
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
@@ -3283,14 +3284,14 @@ const ApiLayer = HttpApiBuilder.layer(Api)
 
 Layer.launch(ApiLayer) |> NodeRuntime.runMain
 
-const program = Effect.gen(function*() {
-  const client = yield* HttpApiClient.make(Api, {
+const program = effect {
+  const client = await HttpApiClient.make(Api, {
     baseUrl: "http://localhost:3000"
   })
   // The `hello` method is not nested under the "group" name
-  const hello = yield* client.hello()
+  const hello = await client.hello()
   console.log(hello)
-})
+}
 
 runFork(program.pipe(provide(FetchHttpClient.layer)))
 ```

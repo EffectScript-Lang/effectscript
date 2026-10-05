@@ -23,10 +23,12 @@ You describe _what_ you need with `Config`, and the library figures out _how_ to
 The simplest case: read one value from an environment variable.
 
 ```efx
-const program = Effect.gen(function*() {
-  const host = yield* Config.String("HOST")
+// @efx no-ambient
+
+const program = effect {
+  const host = await Config.String("HOST")
   console.log(host)
-})
+}
 
 runSync(program)
 // reads HOST from process.env
@@ -690,6 +692,8 @@ const program = Config.Int("PORT").parse(
 ## Practical Example: Web Server Config
 
 ```efx
+// @efx no-ambient
+
 // Define your config shape
 const ServerConfig = Config.schema(
   Schema.Struct({
@@ -715,10 +719,10 @@ const AppConfig = Config.all({
 })
 
 // In production, just yield it — reads from process.env
-const program = Effect.gen(function*() {
-  const config = yield* AppConfig
+const program = effect {
+  const config = await AppConfig
   console.log(config)
-})
+}
 
 // For testing, provide a specific provider
 const testProvider = ConfigProvider.fromUnknown({

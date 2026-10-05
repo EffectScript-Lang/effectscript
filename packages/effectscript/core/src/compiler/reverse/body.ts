@@ -6,7 +6,7 @@
  */
 import type { Node } from "../ast.ts"
 import { excludedNames, namespaceExports, preludeFunctions, preludeModules } from "../prelude/tables.ts"
-import { isParenthesized } from "../transform/await.ts"
+import { isParenthesized, looseAwaitArguments } from "../transform/await.ts"
 import { convertAmbient } from "./ambient.ts"
 import { commentsIn, removeKeepingComments, type ReverseCtx, streamOffers } from "./context.ts"
 import { convertMatch, matchShape } from "./match.ts"
@@ -182,6 +182,11 @@ export const convertGeneratorNode = (ctx: ReverseCtx, node: Node, parent: Node |
     ctx.s.remove(all.end, argument.end)
   } else {
     ctx.s.update(node.start, node.start + "yield*".length, "await")
+    // `yield* x as T` is `yield* (x as T)`, so it is `await (x as T)`: `await` binds tighter
+    if (looseAwaitArguments.has(argument.type) && !isParenthesized(ctx.source, argument)) {
+      ctx.s.appendLeft(argument.start, "(")
+      ctx.s.appendRight(argument.end, ")")
+    }
   }
   // parentheses the forward compiler puts back (`x + (yield* t)` ← `x + await t`) are dropped,
   // unless the argument becomes a pipeline or `match`, which bind looser than `await`

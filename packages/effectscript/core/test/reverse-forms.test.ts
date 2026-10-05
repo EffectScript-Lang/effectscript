@@ -56,6 +56,16 @@ describe("reverse: effect forms (Plan 6 Task 2)", () => {
       "export const both = effect {\n  const [a, b] = await [task, task]\n  return a + b\n}\n"
     ],
     [
+      "an awaited assertion, whose parentheses `await` needs and `yield*` doesn't",
+      "export const p = Effect.gen(function*() {\n  return yield* task as Effect.Effect<1>\n})\n",
+      "export const p = effect {\n  return await (task as Effect<1>)\n}\n"
+    ],
+    [
+      "an awaited conditional",
+      "export const p = (b: boolean) => Effect.gen(function*() {\n  return yield* b ? task : task\n})\n",
+      "export const p = (b: boolean) => effect {\n  return await (b ? task : task)\n}\n"
+    ],
+    [
       "nested forms",
       "export const outer = Effect.fn(\"outer\")(function*() {\n  const inner = Effect.gen(function*() { return yield* task })\n  return yield* inner\n})\n",
       "export effect outer() {\n  const inner = effect { return await task }\n  return await inner\n}\n"
@@ -106,21 +116,22 @@ describe("reverse: blockers (§6.3)", () => {
       "a using declaration",
       "export const f = Effect.gen(function*() {\n  using r = { [Symbol.dispose]() {} }\n  return yield* task\n})\n",
       /`using`/
-    ],
-    [
-      "ambient console",
-      "export const f = Effect.gen(function*() {\n  console.log(\"hi\")\n  return yield* task\n})\n",
-      /captured/
-    ],
-    [
-      "ambient Date.now",
-      "export const f = Effect.gen(function*() {\n  return Date.now() + (yield* task)\n})\n",
-      /captured/
     ]
   ])("%s stays TypeScript with a note", (_name, body, note) => {
     const result = convert(body)
     expect(result.code).toBe(body)
     expect(result.notes.join("\n")).toMatch(note)
+  })
+
+  it.each([
+    ["console", "export const f = Effect.gen(function*() {\n  console.log(\"hi\")\n  return yield* task\n})\n"],
+    ["Date.now", "export const f = Effect.gen(function*() {\n  return Date.now() + (yield* task)\n})\n"]
+  ])("converts ambient %s that capture would change under `// @efx no-ambient` (ADR-0097)", (_name, body) => {
+    const ts = `${head}${body}`
+    const back = toEffectScript(ts)
+    expect(back.code.startsWith("// @efx no-ambient\n")).toBe(true)
+    expect(back.code).toContain("export const f = effect {")
+    expect(toTypeScript(back.code).code).toBe(ts)
   })
 
   it("converts generators nested inside a blocked one", () => {

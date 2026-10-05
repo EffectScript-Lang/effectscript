@@ -171,11 +171,13 @@ Here are examples that demonstrate how you can work with time in your tests usin
 3. **Using `it.effect` and adjusting time**: In this test, we simulate the passage of time by advancing the clock by 1000 milliseconds (1 second).
 
 ```efx
+// @efx no-ambient
+
 // Effect to log the current time
-const logNow = Effect.gen(function*() {
-  const now = yield* Clock.currentTimeMillis // Fetch the current time from the clock
+const logNow = effect {
+  const now = await Clock.currentTimeMillis // Fetch the current time from the clock
   console.log(now) // Log the current time
-})
+}
 
 // Example of using the real system clock with `it.live`
 test.live "runs the test with the live Effect environment" {
