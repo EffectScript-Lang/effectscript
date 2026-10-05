@@ -190,8 +190,6 @@ export type DatabaseService = Database["Service"]
 Defining custom errors and handling them with Effect.catch and Effect.catchTag.
 
 ```efx
-import { Effect } from "effect"
-
 // Define custom errors using Schema.TaggedError
 export error ParseError {
   input: string
@@ -202,19 +200,17 @@ export error ReservedPortError {
   port: Int
 }
 
-declare const loadPort: (input: string) => Effect.Effect<number, ParseError | ReservedPortError>
+declare const loadPort: (input: string) => Effect<number, ParseError | ReservedPortError>
 
-export const recovered = loadPort("80").pipe(
+export const recovered = loadPort("80")
   // Catch multiple errors with Effect.catchTag, and return a default port number.
-  catchTag(["ParseError", "ReservedPortError"], (_) => succeed(3000))
-)
+  |> catchTag(["ParseError", "ReservedPortError"], (_) => succeed(3000))
 
-export const withFinalFallback = loadPort("invalid").pipe(
+export const withFinalFallback = loadPort("invalid")
   // Catch a specific error with Effect.catchTag
-  catchTag("ReservedPortError", (_) => succeed(3000)),
+  |> catchTag("ReservedPortError", (_) => succeed(3000))
   // Catch all errors with Effect.catch
-  Effect.catch((_) => succeed(3000))
-)
+  |> Effect.catch((_) => succeed(3000))
 ```
 
 ### More examples

@@ -5,27 +5,29 @@
  *
  * @since 4.0.0
  */
-import { pipeableExports } from "./tables.ts"
+import { pipeableExports, pipeableSteps } from "./tables.ts"
 
-let parsed: Map<string, Map<string, string>> | undefined
-
-const specOf = (module: string, name: string): string | undefined => {
-  if (parsed === undefined) {
-    parsed = new Map()
-    for (const [m, entries] of pipeableExports) {
-      parsed.set(
-        m,
-        new Map(
-          entries.split(" ").map((entry) => {
-            const colon = entry.lastIndexOf(":")
-            return [entry.slice(0, colon), entry.slice(colon + 1)]
-          })
-        )
+const parse = (table: ReadonlyMap<string, string>): Map<string, Map<string, string>> =>
+  new Map(
+    [...table].map(([module, entries]) => [
+      module,
+      new Map(
+        entries.split(" ").map((entry) => {
+          const colon = entry.lastIndexOf(":")
+          return [entry.slice(0, colon), entry.slice(colon + 1)]
+        })
       )
-    }
-  }
-  return parsed.get(module)?.get(name)
-}
+    ])
+  )
+
+let exportsTable: Map<string, Map<string, string>> | undefined
+let stepsTable: Map<string, Map<string, string>> | undefined
+
+const specOf = (module: string, name: string): string | undefined =>
+  (exportsTable ??= parse(pipeableExports)).get(module)?.get(name)
+
+const stepSpecOf = (module: string, name: string): string | undefined =>
+  (stepsTable ??= parse(pipeableSteps)).get(module)?.get(name)
 
 /**
  * Whether `Module.name`, as a value, is a `Pipeable` (`Schema.String`, `Effect.void`).
@@ -44,3 +46,14 @@ export const pipeableValue = (module: string, name: string): boolean => specOf(m
  */
 export const pipeableCall = (module: string, name: string, args: number): boolean =>
   specOf(module, name)?.includes(String(Math.min(args, 9))) === true
+
+/**
+ * Whether `Module.name` is a step over a `Pipeable` (ADR-0091 A7): written as a value (`Effect.orDie`,
+ * `args` undefined), or called with `args` arguments (`Effect.map(f)`). A pipeline whose first step is
+ * one only type-checks on a `Pipeable`, so its head takes `.pipe(…)` whatever it is.
+ *
+ * @since 4.0.0
+ * @category pipeable
+ */
+export const pipeableStep = (module: string, name: string, args: number | undefined): boolean =>
+  stepSpecOf(module, name)?.includes(args === undefined ? "v" : String(Math.min(args, 9))) === true

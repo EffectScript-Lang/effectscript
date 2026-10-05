@@ -367,11 +367,9 @@ Option.void // => Option.some(undefined)
 **Chaining optional lookups**
 
 ```efx
-import { Option } from "effect"
-
 interface User {
   readonly name: string
-  readonly address: Option.Option<{ readonly street: Option.Option<string> }>
+  readonly address: Option<{ readonly street: Option<string> }>
 }
 
 const user: User = {
@@ -379,9 +377,8 @@ const user: User = {
   address: Option.some({ street: Option.some("123 Main St") })
 }
 
-user.address.pipe(
-  Option.flatMap((addr) => addr.street)
-) // => Option.some("123 Main St")
+user.address
+  |> Option.flatMap((addr) => addr.street) // => Option.some("123 Main St")
 ```
 
 ## andThen

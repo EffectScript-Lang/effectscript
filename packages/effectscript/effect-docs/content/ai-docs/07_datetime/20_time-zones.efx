@@ -12,16 +12,14 @@ effect {
   const now = await DateTime.now
 
   // To attach a named IANA zone to a DateTime value
-  const nowInAuckland = now.pipe(
+  const nowInAuckland = now
     // Use DateTime.setZoneNamedUnsafe when you know the zone is valid.
-    DateTime.setZoneNamedUnsafe("Pacific/Auckland")
-  )
+    |> DateTime.setZoneNamedUnsafe("Pacific/Auckland")
   console.log("Now in Auckland:", nowInAuckland)
 
   // Use DateTime.setZoneNamed when you don't know the zone is valid.
-  const nowInSydneyOption: Option<DateTime.Zoned> = now.pipe(
-    DateTime.setZoneNamed("Australia/Sydney")
-  )
+  const nowInSydneyOption: Option<DateTime.Zoned> = now
+    |> DateTime.setZoneNamed("Australia/Sydney")
 
   console.log("Now in Sydney:", Option.getOrUndefined(nowInSydneyOption))
 

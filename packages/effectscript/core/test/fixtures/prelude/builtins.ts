@@ -1,8 +1,8 @@
-import { Effect, FileSystem, Option, Schedule, pipe } from "effect"
+import { Effect, FileSystem, Option, Schedule } from "effect"
 declare const fetchUser: (id: string) => Effect.Effect<string, Error>
 
 export const profile = Effect.fn("profile")(function*(id: string): Effect.fn.Return<string, Error> {
-  const name = yield* pipe(fetchUser(id), Effect.retry({ times: 2 }), Effect.orElseSucceed(() => "anonymous"))
+  const name = yield* fetchUser(id).pipe(Effect.retry({ times: 2 }), Effect.orElseSucceed(() => "anonymous"))
   yield* Effect.sleep("10 millis")
   const [a, b] = yield* Effect.all([Effect.succeed(1), Effect.succeed(2)])
   return `${name}:${a + b}`

@@ -22,7 +22,7 @@ Effect.gen(function*() {
 
   // Calendar/date-time math returns a new DateTime value; the original value is
   // immutable.
-  const endsAt = now.pipe(DateTime.add({ hours: 2 }))
+  const endsAt = now |> DateTime.add({ hours: 2 })
 
   // The DateTime.format* functions can be used to convert a DateTime value to
   // differen formats.

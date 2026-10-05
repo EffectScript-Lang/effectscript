@@ -611,7 +611,7 @@ const schema = Schema.Struct({
   a: Schema.optionalKey(Schema.NullOr(Schema.NumberFromString))
     |> Schema.decodeTo(Schema.Number, {
       decode: SchemaGetter.transformOptional((o) =>
-        o.pipe(Option.filter(Predicate.isNotNull), Option.orElseSome(() => -1))
+        o |> Option.filter(Predicate.isNotNull) |> Option.orElseSome(() => -1)
       ),
       encode: SchemaGetter.required()
     })

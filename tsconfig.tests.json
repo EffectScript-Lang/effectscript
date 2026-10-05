@@ -23,7 +23,8 @@
     "**/node_modules/**",
     "**/dist/**",
     "./packages/platform/deno/**",
-    "./packages/effectscript/**/fixtures/**"
+    "./packages/effectscript/**/fixtures/**",
+    "./packages/effectscript/corpus/out/**"
   ],
   "compilerOptions": {
     "rootDir": ".",

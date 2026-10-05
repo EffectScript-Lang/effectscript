@@ -9,7 +9,7 @@ import { type Ctx, type Handler, withNamespace } from "../context.ts"
 import { diagnosticError } from "../diagnostics.ts"
 import { ref, unused } from "../names.ts"
 import { skipSpace } from "../parser/scan.ts"
-import { pipeableCall, pipeableValue } from "../prelude/pipeable.ts"
+import { pipeableCall, pipeableStep, pipeableValue } from "../prelude/pipeable.ts"
 import { resolveValue } from "../prelude/resolve.ts"
 import { preludeModules } from "../prelude/tables.ts"
 import { walk } from "../walk.ts"
@@ -80,6 +80,19 @@ const effectModule = (ctx: Ctx, name: string): string | undefined => {
   return isModuleBinding(ctx, name) ? importedModule(ctx, name) : undefined
 }
 
+/** The Effect export a name or `Module.name` refers to here: `[module, name]`, or `undefined`. */
+const effectExport = (ctx: Ctx, node: Node): readonly [string, string] | undefined => {
+  if (node.type === "MemberExpression" && !node.computed && node.object.type === "Identifier") {
+    const module = effectModule(ctx, node.object.name)
+    return module === undefined ? undefined : [module, node.property.name]
+  }
+  if (node.type === "Identifier") {
+    const resolution = resolveValue(ctx, node.name)
+    return resolution !== undefined && resolution.prefix !== "" ? [resolution.importName, node.name] : undefined
+  }
+  return undefined
+}
+
 /**
  * A call Effect's types say returns a `Pipeable` (ADR-0091 A1): `Stream.make(1)`, `Option.some(x)`,
  * or a builtin such as `succeed(1)`, by its number of arguments.
@@ -87,17 +100,23 @@ const effectModule = (ctx: Ctx, name: string): string | undefined => {
 const pipeableEffectCall = (ctx: Ctx, call: Node): boolean => {
   const args: Array<Node> = call.arguments
   if (args.some((a) => a.type === "SpreadElement")) return false
-  const callee: Node = call.callee
-  if (callee.type === "MemberExpression" && !callee.computed && callee.object.type === "Identifier") {
-    const module = effectModule(ctx, callee.object.name)
-    return module !== undefined && pipeableCall(module, callee.property.name, args.length)
+  const target = effectExport(ctx, call.callee)
+  return target !== undefined && pipeableCall(target[0], target[1], args.length)
+}
+
+/**
+ * A step Effect's types say takes a `Pipeable` (ADR-0091 A7): `Effect.map(f)`, `provide(layer)`,
+ * `Effect.orDie`. A pipeline that starts with one pipes its head with `.pipe(…)`.
+ */
+const pipeableEffectStep = (ctx: Ctx, step: Node): boolean => {
+  if (step.type === "CallExpression") {
+    const args: Array<Node> = step.arguments
+    if (args.some((a) => a.type === "SpreadElement")) return false
+    const target = effectExport(ctx, step.callee)
+    return target !== undefined && pipeableStep(target[0], target[1], args.length)
   }
-  if (callee.type === "Identifier") {
-    const resolution = resolveValue(ctx, callee.name)
-    return resolution !== undefined && resolution.prefix !== "" &&
-      pipeableCall(resolution.importName, callee.name, args.length)
-  }
-  return false
+  const target = effectExport(ctx, step)
+  return target !== undefined && pipeableStep(target[0], target[1], undefined)
 }
 
 /**
@@ -351,7 +370,11 @@ const inline = (ctx: Ctx, current: Current, step: Step): void => {
 const pipeline: Handler = (node, _parent, ctx) => {
   const { head, steps } = flatten(ctx, node)
   const headRange = outer(ctx, head)
-  let current: Current = { ...headRange, pipeable: knownPipeable(ctx, head), node: head }
+  // the head is a `Pipeable` when it's known to be one, or when the first step only takes one (A7)
+  const first = steps[0]
+  const pipeable = knownPipeable(ctx, head) ||
+    (first !== undefined && first.topics.length === 0 && pipeableEffectStep(ctx, first.rhs))
+  let current: Current = { ...headRange, pipeable, node: head }
   let i = 0
   while (i < steps.length) {
     // Inline only directly into the head: later steps would re-move ranges an earlier move split.

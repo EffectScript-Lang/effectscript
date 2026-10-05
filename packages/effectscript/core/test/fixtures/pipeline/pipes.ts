@@ -13,7 +13,7 @@ const viaLocal = loadUser("2").pipe(
   Effect.timeout("1 second"),
   Effect.orDie)
 
-const viaPipe = pipe(getUserName("3"), Effect.map((name) => name.length))
+const viaPipe = getUserName("3").pipe(Effect.map((name) => name.length))
 
 const hack = Effect.map(getUserName("4"), (name) => name.trim())
 

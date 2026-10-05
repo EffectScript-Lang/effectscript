@@ -29,9 +29,8 @@ const reader = new PeriodicExportingMetricReader({
   exporter,
   exportIntervalMillis: 60_000
 })
-const metricsLayer = OtelMetrics.layer(() => reader, { temporality: "delta" }).pipe(
-  Layer.provide(Resource.layerEmpty)
-)
+const metricsLayer = OtelMetrics.layer(() => reader, { temporality: "delta" })
+  |> Layer.provide(Resource.layerEmpty)
 
 const program = effect {
   await Metric.update(Metric.counter("docs.requests", { incremental: true }), 2)

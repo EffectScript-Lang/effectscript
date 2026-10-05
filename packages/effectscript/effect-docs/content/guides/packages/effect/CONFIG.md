@@ -482,7 +482,7 @@ const defaults = ConfigProvider.fromEnv({
   env: { APP_PORT: "3000" }
 }) |> ConfigProvider.nested("APP")
 
-const combined = envProvider.pipe(ConfigProvider.orElse(defaults))
+const combined = envProvider |> ConfigProvider.orElse(defaults)
 ```
 
 ### `ConfigProvider.nested` — Prefix All Lookups
@@ -673,8 +673,8 @@ Check `error.cause._tag` to distinguish:
 ```efx
 const program = Config.Int("PORT").parse(
   ConfigProvider.fromUnknown({ PORT: "not-a-number" })
-).pipe(
-  tapError((error) =>
+)
+  |> tapError((error) =>
     sync(() => {
       if (error.cause is SchemaError) {
         console.log("Validation failed:", error.message)
@@ -683,7 +683,6 @@ const program = Config.Int("PORT").parse(
       }
     })
   )
-)
 ```
 
 **Important**: `Config.withDefault` and `Config.option` recover only from semantic absence. They do not classify `SchemaIssue` values as “missing.” Validation and source errors still propagate unless explicitly recovered with `Config.orElse`.

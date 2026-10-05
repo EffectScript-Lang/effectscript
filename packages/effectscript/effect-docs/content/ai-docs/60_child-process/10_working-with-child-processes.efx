@@ -25,10 +25,9 @@ export service DevTools as "docs/DevTools" {
       // output.
       const nodeVersion = spawner.string(
         ChildProcess.make("node", ["--version"])
-      ).pipe(
-        map(String.trim),
-        mapError((cause) => new DevToolsError({ cause }))
       )
+        |> map(String.trim)
+        |> mapError((cause) => new DevToolsError({ cause }))
 
       effect changedTypeScriptFiles(baseRef: string) {
         await annotateCurrentSpan({ baseRef })
@@ -37,9 +36,8 @@ export service DevTools as "docs/DevTools" {
         // output.
         const files = await spawner.lines(
           ChildProcess.make("git", ["diff", "--name-only", `${baseRef}...HEAD`])
-        ).pipe(
-          mapError((cause) => new DevToolsError({ cause }))
         )
+          |> mapError((cause) => new DevToolsError({ cause }))
 
         return files.filter((file) => file.endsWith(".ts"))
       }
@@ -50,9 +48,8 @@ export service DevTools as "docs/DevTools" {
         ChildProcess.make("git", ["log", "--pretty=format:%s", "-n", "20"]).pipe(
           ChildProcess.pipeTo(ChildProcess.make("head", ["-n", "5"]))
         )
-      ).pipe(
-        mapError((cause) => new DevToolsError({ cause }))
       )
+        |> mapError((cause) => new DevToolsError({ cause }))
 
       const runLintFix = effect {
         // Use `spawn` when you want the process handle and stream output while
@@ -62,9 +59,8 @@ export service DevTools as "docs/DevTools" {
             env: { FORCE_COLOR: "1" },
             extendEnv: true
           })
-        ).pipe(
-          mapError((cause) => new DevToolsError({ cause }))
         )
+          |> mapError((cause) => new DevToolsError({ cause }))
 
         await handle.all.pipe(
           Stream.decodeText(),
@@ -73,9 +69,8 @@ export service DevTools as "docs/DevTools" {
           mapError((cause) => new DevToolsError({ cause }))
         )
 
-        const exitCode = await handle.exitCode.pipe(
-          mapError((cause) => new DevToolsError({ cause }))
-        )
+        const exitCode = await handle.exitCode
+          |> mapError((cause) => new DevToolsError({ cause }))
 
         if (exitCode !== ChildProcessSpawner.ExitCode(0)) {
           throw new DevToolsError({

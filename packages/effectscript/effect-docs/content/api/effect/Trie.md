@@ -94,9 +94,9 @@ trie // => Trie.fromIterable([["ca", 0], ["me", 1]])
 ```efx
 const trie1 = Trie.empty<number>()
   |> Trie.insert("call", 0)
-const trie2 = trie1.pipe(Trie.insert("me", 1))
-const trie3 = trie2.pipe(Trie.insert("mind", 2))
-const trie4 = trie3.pipe(Trie.insert("mid", 3))
+const trie2 = trie1 |> Trie.insert("me", 1)
+const trie3 = trie2 |> Trie.insert("mind", 2)
+const trie4 = trie3 |> Trie.insert("mid", 3)
 
 Array.from(trie1) // => [["call", 0]]
 Array.from(trie2) // => [["call", 0], ["me", 1]]
@@ -321,8 +321,8 @@ const trie = Trie.empty<number>()
   |> Trie.insert("mind", 2)
   |> Trie.insert("mid", 3)
 
-const trie1 = trie.pipe(Trie.remove("call"))
-const trie2 = trie1.pipe(Trie.remove("mea"))
+const trie1 = trie |> Trie.remove("call")
+const trie2 = trie1 |> Trie.remove("mea")
 
 Trie.get(trie, "call") // => Option.some(0)
 Trie.get(trie1, "call") // => Option.none()
@@ -339,9 +339,9 @@ const trie = Trie.empty<number>()
   |> Trie.insert("sells", 1)
   |> Trie.insert("she", 2)
 
-trie.pipe(Trie.reduce(0, (acc, n) => acc + n)) // => 3
-trie.pipe(Trie.reduce(10, (acc, n) => acc + n)) // => 13
-trie.pipe(Trie.reduce("", (acc, _, key) => acc + key)) // => "sellssheshells"
+trie |> Trie.reduce(0, (acc, n) => acc + n) // => 3
+trie |> Trie.reduce(10, (acc, n) => acc + n) // => 13
+trie |> Trie.reduce("", (acc, _, key) => acc + key) // => "sellssheshells"
 ```
 
 ## map
@@ -432,8 +432,8 @@ const trie = Trie.empty<number>()
   |> Trie.insert("sells", 1)
   |> Trie.insert("she", 2)
 
-trie.pipe(Trie.modify("she", (v) => v + 10), Trie.get("she")) // => Option.some(12)
-trie.pipe(Trie.modify("me", (v) => v)) // => trie
+trie |> Trie.modify("she", (v) => v + 10) |> Trie.get("she") // => Option.some(12)
+trie |> Trie.modify("me", (v) => v) // => trie
 ```
 
 ## removeMany
@@ -446,7 +446,7 @@ const trie = Trie.empty<number>()
   |> Trie.insert("sells", 1)
   |> Trie.insert("she", 2)
 
-trie.pipe(Trie.removeMany(["she", "sells"])) // => Trie.make(["shells", 0])
+trie |> Trie.removeMany(["she", "sells"]) // => Trie.make(["shells", 0])
 ```
 
 ## insertMany
@@ -457,7 +457,6 @@ trie.pipe(Trie.removeMany(["she", "sells"])) // => Trie.make(["shells", 0])
 const trie = Trie.empty<number>()
   |> Trie.insert("shells", 0)
 
-trie.pipe(
-  Trie.insertMany([["sells", 1], ["she", 2]])
-) // => Trie.make(["shells", 0], ["sells", 1], ["she", 2])
+trie
+  |> Trie.insertMany([["sells", 1], ["she", 2]]) // => Trie.make(["shells", 0], ["sells", 1], ["she", 2])
 ```

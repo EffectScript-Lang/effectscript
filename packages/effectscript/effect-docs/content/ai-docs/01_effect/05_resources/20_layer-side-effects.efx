@@ -24,7 +24,6 @@ layer BackgroundTask = effect {
 // Run the background task layer. It will start when the layer is launched and
 // will be automatically interrupted when the layer scope is closed (e.g. when
 // the program exits).
-BackgroundTask.pipe(
-  Layer.launch,
-  NodeRuntime.runMain
-)
+BackgroundTask
+  |> Layer.launch
+  |> NodeRuntime.runMain

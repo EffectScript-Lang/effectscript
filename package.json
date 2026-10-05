@@ -17,6 +17,8 @@
     "doctest": "vitest --config vitest.docs.ts",
     "coverage": "vitest --coverage",
     "check": "tsc -b tsconfig.json",
+    "corpus:convert": "pnpm --filter @effectscript/corpus convert",
+    "corpus:update": "pnpm --filter @effectscript/corpus update",
     "typeperf": "pnpm --dir packages/effect exec node typeperf/run.mjs",
     "typeperf-compare": "pnpm --dir packages/effect exec node typeperf/compare.mjs",
     "runtimeperf": "pnpm --dir packages/effect exec node runtimeperf/run.mts",

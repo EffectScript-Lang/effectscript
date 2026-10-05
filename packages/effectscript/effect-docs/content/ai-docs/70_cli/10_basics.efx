@@ -139,13 +139,12 @@ const list = Command.make(
   ])
 
 // Finally, compose the subcommands into a single command and then run it.
-tasks.pipe(
-  Command.withSubcommands([create, list]),
-  Command.run({
+tasks
+  |> Command.withSubcommands([create, list])
+  |> Command.run({
     version: "1.0.0"
-  }),
+  })
   // Provide the services for the platform you are targeting. In this case,
   // Node.js
-  provide(NodeServices.layer),
-  NodeRuntime.runMain
-)
+  |> provide(NodeServices.layer)
+  |> NodeRuntime.runMain

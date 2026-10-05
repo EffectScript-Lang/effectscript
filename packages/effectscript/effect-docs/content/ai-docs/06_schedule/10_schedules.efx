@@ -49,9 +49,8 @@ export const loadUserWithInferredInput = fetchUserProfile("user-123")
   // the input type. This is especially useful when the schedule needs to
   // inspect the error to determine retryability.
   |> retry(($) =>
-    $(Schedule.spaced("1 seconds")).pipe(
-      Schedule.while(({ input }) => input.retryable)
-    )
+    $(Schedule.spaced("1 seconds"))
+      |> Schedule.while(({ input }) => input.retryable)
   )
   |> orDie
 
@@ -93,11 +92,10 @@ export const retryableOnly = Schedule.exponential("200 millis")
   |> Schedule.while(({ input }) => input.retryable)
 
 // `tap` is useful for performing side effects like logging or metrics.
-export const instrumentedRetrySchedule = retryableOnly.pipe(
-  Schedule.setInputType<HttpError>(),
-  Schedule.tap((meta) =>
+export const instrumentedRetrySchedule = retryableOnly
+  |> Schedule.setInputType<HttpError>()
+  |> Schedule.tap((meta) =>
     logDebug(
       `Retrying after ${meta.input.status}: ${meta.input.message}. Next retry in ${Duration.toMillis(meta.duration)}ms`
     )
   )
-)

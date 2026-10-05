@@ -1697,7 +1697,7 @@ runSync(program) // => "secondary result"
 **Failing when work takes too long**
 
 ```efx
-const timedEffect = Effect.never.pipe(Effect.timeout(0))
+const timedEffect = never |> timeout(0)
 const error = await runPromise(flip(timedEffect))
 error._tag // => "TimeoutError"
 ```
@@ -1709,7 +1709,7 @@ error._tag // => "TimeoutError"
 ```efx
 import { Effect, Option } from "effect"
 
-const timedOutEffect = Effect.never.pipe(Effect.timeoutOption(0))
+const timedOutEffect = never |> timeoutOption(0)
 await runPromise(timedOutEffect) // => Option.none()
 ```
 
@@ -2304,11 +2304,10 @@ const program = service(Config)
   |> map((config) => `Hello ${config.name}!`)
 
 // Transform services by providing Config while keeping Logger requirement
-const configured = program.pipe(
-  updateContext((context: Context<Context.Service.Identifier<typeof Logger>>) =>
+const configured = program
+  |> updateContext((context: Context<Context.Service.Identifier<typeof Logger>>) =>
     Context.add(context, Config, { name: "World" })
   )
-)
 
 // The effect now requires only Logger service
 const result = provideService(configured, Logger, {
@@ -2790,8 +2789,8 @@ const program = effect {
   await expensiveTask |> andThen(record)
   void output.push("cached version:")
   const cached = await Effect.cached(expensiveTask)
-  await cached.pipe(andThen(record))
-  await cached.pipe(andThen(record))
+  await cached |> andThen(record)
+  await cached |> andThen(record)
 }
 
 await runPromise(program)
@@ -2814,9 +2813,9 @@ const expensiveTask = sync(() => {
 
 const program = effect {
   const cached = await cachedWithTTL(expensiveTask, "1 hour")
-  await cached.pipe(andThen(record))
-  await cached.pipe(andThen(record))
-  await cached.pipe(andThen(record))
+  await cached |> andThen(record)
+  await cached |> andThen(record)
+  await cached |> andThen(record)
 }
 
 runSync(program)
@@ -2859,10 +2858,10 @@ const program = effect {
     expensiveTask,
     "1 hour"
   )
-  await cached.pipe(andThen(record))
-  await cached.pipe(andThen(record))
+  await cached |> andThen(record)
+  await cached |> andThen(record)
   await invalidate
-  await cached.pipe(andThen(record))
+  await cached |> andThen(record)
 }
 
 runSync(program)
@@ -2988,7 +2987,7 @@ output // => ["Interruptible phase...", "Uninterruptible phase...", "Back to int
 ```efx
 import { Effect, Option } from "effect"
 
-const program = forever(never).pipe(timeoutOption(0))
+const program = forever(never) |> timeoutOption(0)
 await runPromise(program) // => Option.none()
 ```
 
@@ -3509,7 +3508,7 @@ output // => ["number"]
 **Accessing the current fiber id**
 
 ```efx
-const program = Effect.fiberId.pipe(Effect.map((id) => typeof id))
+const program = fiberId |> map((id) => typeof id)
 runSync(program) // => "number"
 ```
 
@@ -3884,7 +3883,7 @@ const f = Effect.fnUntraced(
     return yield* succeed(value.length)
   },
   (effect, value) =>
-    effect.pipe(map((length) => `${value}: ${length}`))
+    effect |> map((length) => `${value}: ${length}`)
 )
 
 //      ┌─── Effect.Effect<string>
@@ -3946,7 +3945,7 @@ const f = Effect.fn("formatLength")(
     return yield* succeed(value.length)
   },
   (effect, value) =>
-    effect.pipe(map((length) => `${value}: ${length}`))
+    effect |> map((length) => `${value}: ${length}`)
 )
 
 //      ┌─── Effect.Effect<string>
@@ -4014,9 +4013,8 @@ runSync(program) // => "hello"
 
 ```efx
 const program = clockWith((clock) =>
-  clock.currentTimeMillis.pipe(
-    map(() => "Clock is available")
-  )
+  clock.currentTimeMillis
+    |> map(() => "Clock is available")
 )
 
 runSync(program) // => "Clock is available"

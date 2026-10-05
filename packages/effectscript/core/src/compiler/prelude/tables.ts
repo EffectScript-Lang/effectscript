@@ -1951,6 +1951,319 @@ export const pipeableExports: ReadonlyMap<string, string> = new Map([
 ])
 
 /**
+ * Steps over a `Pipeable` (ADR-0091 A7): `name:spec`, where `v` is the value itself and digits are argument counts whose call returns a function taking one.
+ *
+ * @since 0.1.0
+ */
+export const pipeableSteps: ReadonlyMap<string, string> = new Map([
+  ["Activity", "retry:1"],
+  ["Arbitrary", "array:v checkEffect:v filter:1 filterMap:1 flatMap:1 map:1 sampleEffect:v"],
+  [
+    "Argument",
+    "atLeast:1 atMost:1 between:2 filter:2 filterMap:2 map:1 mapEffect:1 mapTryCatch:2 optional:v orElse:1 orElseResult:1 variadic:0 withDefault:1 withDescription:1 withFallbackConfig:v1 withFallbackPrompt:v1 withMetavar:1 withSchema:1"
+  ],
+  [
+    "AsyncResult",
+    "builder:v cause:v error:v failure:v failureWithPrevious:v flatMap:1 fromExit:v fromExitWithPrevious:v getOrElse:1 getOrThrow:v isFailure:v isInitial:v isInterrupted:v isNotInitial:v isSuccess:v isWaiting:v map:1 match:1 matchWithError:1 matchWithWaiting:1 replacePrevious:v1 toExit:v touch:v value:v waiting:0 waitingFrom:v"
+  ],
+  [
+    "Atom",
+    "autoDispose:v debounce:1 get:v getResult:v getServerValue:1 initialValue:1 isSerializable:v isWritable:v keepAlive:v makeRefreshOnSignal:v1 map:1 mapResult:1 modify:1 mount:v optimistic:v optimisticFn:1 refresh:v refreshOnWindowFocus:v serializable:1 set:1 setIdleTTL:1 setLazy:1 swr:1 toStream:v toStreamResult:v transform:1 update:1 withEquality:1 withFallback:v1 withLabel:1 withReactivity:1 withRefresh:1 withServerValue:1 withServerValueInitial:v"
+  ],
+  [
+    "BigDecimal",
+    "Equivalence:v Order:v abs:v between:1 clamp:1 digitAt:1 divide:v1 divideUnsafe:v1 equals:v1 format:v isGreaterThan:v1 isGreaterThanOrEqualTo:v1 isInteger:v isLessThan:v1 isLessThanOrEqualTo:v1 isNegative:v isPositive:v isZero:v max:v1 min:v1 multiply:v1 negate:v normalize:v remainder:v1 remainderUnsafe:v1 scale:1 sign:v subtract:v1 sum:v1 toExponential:v toNumberUnsafe:v"
+  ],
+  [
+    "Cache",
+    "entries:v get:1 getOption:1 getSuccess:1 has:1 invalidate:1 invalidateAll:v invalidateWhen:2 keys:v refresh:1 set:2 size:v values:v"
+  ],
+  [
+    "Cause",
+    "annotate:v1 annotations:v combine:v1 filterInterruptors:v findDefect:v findDie:v findError:v findErrorOption:v findFail:v findInterrupt:v hasDies:v hasFails:v hasInterrupts:v hasInterruptsOnly:v interruptors:v map:1 pretty:v prettyErrors:v squash:v"
+  ],
+  [
+    "Channel",
+    "acquireRelease:1 acquireUseRelease:v bind:2 bindTo:1 buffer:1 bufferArray:1 catch:1 catchCause:1 catchCauseFilter:2 catchCauseIf:2 catchDefect:1 catchFilter:2 catchIf:2 catchReason:3 catchReasons:2 catchTag:2 combine:v3 concat:v1 concatWith:1 drain:v embedInput:1 ensuring:v1 failCause:v filter:1 filterArray:1 filterArrayEffect:1 filterEffect:1 filterMap:1 filterMapArray:1 filterMapArrayEffect:1 filterMapEffect:1 flatMap:1 flatten:v flattenArray:v flattenTake:v forever:v fromChunk:v fromEffect:v fromEffectDone:v fromEffectDrain:v fromEffectTake:v fromPubSub:v fromPubSubArray:v fromPubSubTake:v fromPull:v fromSchedule:v fromSubscription:v fromSubscriptionArray:v haltWhen:v1 interruptWhen:v1 let:2 map:1 mapAccum:2 mapDone:1 mapDoneEffect:1 mapEffect:1 mapError:1 mapInput:1 mapInputError:1 merge:v1 mergeAll:1 mergeEffect:v1 mkUint8Array:v onEnd:v1 onError:1 onExit:1 onFirst:1 onStart:v1 orDie:v orElseIfEmpty:1 pipeTo:v1 pipeToOrFail:v1 provide:v1 provideContext:v1 provideService:v2 provideServiceEffect:v2 repeat:1 retry:1 runCollect:v runCount:v runDrain:v runFold:2 runFoldEffect:2 runForEach:1 runForEachWhile:1 runHead:v runIntoPubSub:v1 runIntoPubSubArray:v1 runIntoQueue:1 runIntoQueueArray:1 runLast:v scan:2 scanEffect:2 schedule:v1 scoped:v switchMap:1 tap:1 tapCause:1 tapError:1 toPubSub:1 toPubSubArray:1 toPubSubTake:1 toPull:v toPullScoped:v toQueue:1 toQueueArray:1 toTransform:v1 transformPull:v unwrap:v unwrapReason:1 updateContext:1 updateService:v2 withSpan:1"
+  ],
+  ["ChannelSchema", "duplex:1 duplexUnknown:1"],
+  ["ChildProcess", "isPipedCommand:v isStandardCommand:v pipeTo:v1 prefix:1456789 setCwd:1 setEnv:1"],
+  [
+    "Chunk",
+    "append:1 appendAll:v1 chunksOf:1 compact:v contains:1 dedupe:v dedupeAdjacent:v difference:v1 differenceWith:1 drop:1 dropRight:1 dropWhile:1 every:1 filter:1 filterMap:1 filterMapWhile:1 findFirst:1 findFirstIndex:1 findLast:1 findLastIndex:1 flatMap:1 flatten:v forEach:1 get:1 getUnsafe:1 head:v headNonEmpty:v headUnsafe:v intersection:v1 isEmpty:v isNonEmpty:v join:1 last:v lastNonEmpty:v lastUnsafe:v makeEquivalence:1 map:1 mapAccum:2 modify:2 partition:1 prepend:1 prependAll:v1 reduce:2 reduceRight:2 remove:1 replace:2 reverse:v separate:v size:v some:1 sort:1 sortWith:2 split:1 splitAt:1 splitNonEmptyAt:1 splitWhere:1 tail:v tailNonEmpty:v take:1 takeRight:1 takeWhile:1 toArray:v toReadonlyArray:v union:v1 unzip:v zip:v1 zipWith:v2"
+  ],
+  ["ClusterSchema", "isUninterruptibleForClient:v isUninterruptibleForServer:v"],
+  [
+    "Command",
+    "annotate:v2 annotateMerge:v1 provide:1 provideEffect:v2 provideEffectDiscard:1 provideSync:v2 run:1 runWith:v unlisted:v withAlias:1 withDescription:1 withExamples:1 withGlobalFlags:1 withHandler:1 withSharedFlags:1 withShortDescription:1 withSubcommands:1 wizard:v"
+  ],
+  ["Config", "Record:v fail:v flatMap:1 map:1 mapEffect:1 nested:1 option:v orElse:1 unwrap:v withDefault:1"],
+  ["ConfigProvider", "constantCase:v layer:v layerAdd:v mapInput:1 nested:1 orElse:v1"],
+  ["Console", "withGroup:0 withTime:0"],
+  [
+    "Context",
+    "add:v2 addOrOmit:v2 addUnsafe:v get:v1 getOption:v1 getOrElse:v2 getOrUndefined:v1 getOrUndefinedUnsafe:v getUnsafe:v1 hasSameCache:v isReference:v make:v merge:v1 omit:0123456789 pick:0123456789"
+  ],
+  [
+    "Cookies",
+    "expireCookie:1 expireCookieUnsafe:1 get:1 getValue:1 isEmpty:v merge:v1 remove:1 set:2 setAll:1 setAllCookie:1 setAllUnsafe:1 setCookie:1 setUnsafe:2 toCookieHeader:v toRecord:v toSetCookieHeaders:v"
+  ],
+  ["Cron", "Equivalence:v equals:v1 format:v match:v next:v prev:v sequence:v"],
+  [
+    "DateTime",
+    "Equivalence:v Order:v add:1 addDuration:1 between:1 clamp:1 distance:v1 endOf:1 format:0 formatIntl:1 formatIso:v formatIsoDate:v formatIsoDateUtc:v formatIsoOffset:v formatIsoZoned:v formatLocal:0 formatUtc:0 getPart:1 getPartUtc:1 isFuture:v isFutureUnsafe:v isGreaterThan:v1 isGreaterThanOrEqualTo:v1 isLessThan:v1 isLessThanOrEqualTo:v1 isPast:v isPastUnsafe:v isUtc:v isZoned:v mapEpochMillis:1 match:1 max:v1 min:v1 mutate:1 mutateUtc:1 nearest:1 removeTime:v setParts:1 setPartsUtc:1 setZone:1 setZoneCurrent:v setZoneNamed:1 setZoneNamedUnsafe:1 setZoneOffset:1 startOf:1 subtract:1 subtractDuration:1 toDate:v toDateUtc:v toEpochMillis:v toEpochSeconds:v toParts:v toPartsUtc:v toUtc:v withCurrentZone:1 withCurrentZoneLocal:v withCurrentZoneNamed:1 withCurrentZoneOffset:1 withDate:1 withDateUtc:1 zonedOffset:v zonedOffsetIso:v"
+  ],
+  [
+    "Deferred",
+    "await:v complete:v1 completeWith:v1 die:1 dieSync:1 done:v1 doneUnsafe:v fail:1 failCause:v1 failCauseSync:1 failSync:1 interrupt:v interruptWith:1 into:v1 isDone:v isDoneUnsafe:v poll:v succeed:1 sync:1"
+  ],
+  ["DurableDeferred", "into:1"],
+  [
+    "Duration",
+    "Equivalence:v Order:v abs:v between:1 clamp:1 divide:1 divideUnsafe:1 equals:v1 format:v isFinite:v isGreaterThan:v1 isGreaterThanOrEqualTo:v1 isLessThan:v1 isLessThanOrEqualTo:v1 isNegative:v isPositive:v isZero:v match:1 matchPair:v2 max:v1 min:v1 negate:v parts:v subtract:v1 sum:v1 times:1"
+  ],
+  [
+    "Effect",
+    "acquireDisposable:v acquireRelease:v acquireUseRelease:v andThen:1 annotateLogs:1 annotateSpans:1 as:1 asSome:v asVoid:v awaitAllChildren:v bind:2 bindTo:1 cached:v cachedInvalidateWithTTL:1 cachedWithTTL:1 catch:1 catchCause:1 catchCauseFilter:2 catchCauseIf:2 catchDefect:1 catchEager:1 catchFilter:2 catchIf:2 catchNoSuchElement:v catchReason:3 catchReasons:2 catchTag:2 catchTags:1 delay:1 ensuring:v1 eventually:v exit:v failCause:v filterMapOrElse:2 filterMapOrFail:1 filterOrElse:2 filterOrFail:1 flatMap:1 flatMapEager:1 flatten:v flip:v forkIn:1 fromResult:v head:v interruptible:v isFailure:v isSuccess:v let:2 linkSpans:1 map:1 mapBoth:1 mapBothEager:1 mapEager:1 mapError:1 mapErrorEager:1 match:1 matchCause:1 matchCauseEager:1 matchCauseEffect:1 matchCauseEffectEager:1 matchEager:1 matchEffect:1 onError:1 onErrorFilter:2 onErrorIf:2 onExit:1 onExitFilter:2 onExitIf:2 onExitPrimitive:v onInterrupt:1 option:v orDie:v orElseSucceed:1 provide:1 provideContext:v1 provideService:v2 provideServiceEffect:v2 race:v1 raceFirst:v1 repeat:1 repeatOrElse:v2 replicate:1 replicateEffect:1 result:v retry:1 retryOrElse:v2 runCallback:v runCallbackWith:v1 runFork:v runForkWith:v1 runPromise:v runPromiseExit:v runPromiseExitWith:v1 runPromiseWith:v1 runSync:v runSyncExit:v runSyncExitWith:v1 runSyncWith:v1 sandbox:v satisfiesErrorType:0 satisfiesServicesType:0 satisfiesSuccessType:0 schedule:v1 scheduleFrom:2 scoped:v service:v serviceOption:v setContext:v1 tap:1 tapCause:1 tapCauseFilter:2 tapCauseIf:2 tapDefect:1 tapError:1 tapErrorTag:2 timed:v timeout:1 timeoutOption:1 timeoutOrElse:1 track:v1 trackDefects:v1 trackDuration:v1 trackErrors:v1 trackSuccesses:v1 transposeOption:v tx:v uninterruptible:v unwrapReason:1 updateContext:1 updateService:v2 updateServiceScoped:v when:v1 withExecutionPlan:v1 withLogSpan:1 withLogger:v1 withParentSpan:1 withSpan:1 withSpanScoped:1 withTracer:1 withTracerEnabled:1 withTracerTiming:1 zip:v1 zipWith:v2"
+  ],
+  ["EntityProxyServer", "layerHttpApi:v"],
+  ["ErrorReporter", "report:v"],
+  ["EventLog", "group:v groupCompaction:v groupReactivity:v"],
+  [
+    "Exit",
+    "asVoid:v failCause:v filterCause:v filterFailure:v filterSuccess:v filterValue:v findDefect:v findError:v findErrorOption:v getCause:v getSuccess:v hasDies:v hasFails:v hasInterrupts:v isFailure:v isSuccess:v map:1 mapBoth:1 mapError:1 match:1"
+  ],
+  ["Fiber", "await:v interrupt:v interruptAs:1 join:v runIn:1"],
+  [
+    "FiberHandle",
+    "awaitEmpty:v clear:v get:v getUnsafe:v join:v run:v1 runtime:v runtimePromise:v set:v1 setUnsafe:v1"
+  ],
+  [
+    "FiberMap",
+    "awaitEmpty:v clear:v get:1 getUnsafe:1 has:1 hasUnsafe:1 join:v remove:1 run:v2 runtime:v runtimePromise:v set:2 setUnsafe:2 size:v"
+  ],
+  ["FiberSet", "add:v1 addUnsafe:v1 awaitEmpty:v clear:v join:v run:v1 runtime:v runtimePromise:v size:v"],
+  [
+    "Flag",
+    "atLeast:1 atMost:1 between:2 filter:2 filterMap:2 map:1 mapEffect:1 mapTryCatch:2 optional:v orElse:1 orElseResult:1 withAlias:1 withDefault:1 withDescription:1 withFallbackConfig:v1 withFallbackPrompt:v1 withHidden:v withMetavar:1 withSchema:1"
+  ],
+  [
+    "Graph",
+    "addEdge:v addNode:v allShortestPaths:1 articulationPoints:v astar:1 beginMutation:v bellmanFord:1 bfs:0 biconnectedComponents:v bridges:v complement:1 compose:v1 connectedComponents:v degree:1 dfs:0 dfsPostOrder:0 difference:v1 dijkstra:1 edgeCount:v edges:v edgesBetween:2 endMutation:v externals:0 filterEdges:v filterMapEdges:v filterMapNodes:v filterNodes:v findCycle:v findEdge:1 findEdges:1 findNode:1 findNodes:1 floydWarshall:1 getEdge:1 getNode:1 hasEdge:2 hasNode:1 hasPath:2 inDegree:1 incidentEdges:1 incomingEdges:1 inducedSubgraph:1 intersection:v1 isAcyclic:v isBipartite:v isConnected:v isStronglyConnected:v isTree:v isWeaklyConnected:v mapEdges:v mapNodes:v maximumBipartiteMatching:v maximumFlow:1 minimumCut:1 minimumSpanningForest:1 mutate:1 neighborhood:1 neighbors:1 neighborsDirected:2 nodeCount:v nodes:v outDegree:1 outgoingEdges:1 predecessors:1 removeEdge:v removeEdges:v removeNode:v removeNodes:v reverse:v simplePaths:1 stronglyConnectedComponents:v successors:1 sum:v1 symmetricDifference:v1 toGraphViz:0 toMermaid:0 toSnapshot:v topo:0 transitiveReduction:v unweightedDistances:1 updateEdge:v updateNode:v weaklyConnectedComponents:v"
+  ],
+  [
+    "HashMap",
+    "beginMutation:v compact:v endMutation:v entries:v every:1 filter:1 filterMap:1 findFirst:1 flatMap:1 forEach:1 get:1 getHash:2 getUnsafe:1 has:1 hasBy:1 hasHash:2 isEmpty:v keys:v map:1 modify:2 modifyAt:2 modifyHash:3 mutate:1 reduce:2 remove:1 removeMany:1 set:2 setMany:1 size:v some:1 toEntries:v toValues:v union:v1 values:v"
+  ],
+  ["HashRing", "add:1 addMany:1 get:v getShards:v has:1 remove:1"],
+  [
+    "HashSet",
+    "add:1 difference:v1 every:1 filter:1 has:1 intersection:v1 isEmpty:v isSubset:v1 map:1 reduce:2 remove:1 size:v some:1 union:v1"
+  ],
+  ["HttpApi", "getSlotParseOptions:v reflect:v"],
+  ["HttpApiBuilder", "endpoint:v group:v handler:v layer:v securityDecode:v securitySetCookie:v"],
+  ["HttpApiClient", "endpoint:v group:v make:v makeClient:v makeWith:v"],
+  ["HttpApiEndpoint", "getErrorSchemas:v getPayloadSchemas:v getSuccessSchemas:v"],
+  ["HttpApiMiddleware", "isSecurity:v layerClient:v layerSchemaErrorTransform:v"],
+  ["HttpApiScalar", "layer:v layerCdn:v"],
+  [
+    "HttpApiSchema",
+    "WithHeaders:v asFormUrlEncoded:01 asJson:01 asMultipart:01 asMultipartStream:01 asText:01 asUint8Array:01 encodeToWithHeaders:2 rebuildWithHeaders:v status:1"
+  ],
+  ["HttpApiSecurity", "annotate:v2 annotateMerge:v1"],
+  ["HttpApiSwagger", "layer:v"],
+  ["HttpBody", "stream:v"],
+  [
+    "HttpClient",
+    "catch:1 catchTag:2 catchTags:1 execute:v filterOrElse:2 filterOrFail:2 filterStatus:1 filterStatusOk:v followRedirects:0 layerMergedContext:v mapRequest:1 mapRequestEffect:1 mapRequestInput:1 mapRequestInputEffect:1 retry:1 retryTransient:1 tap:1 tapError:1 tapRequest:1 transform:1 transformResponse:1 withCookiesRef:v1 withRateLimiter:1 withScope:v"
+  ],
+  [
+    "HttpClientRequest",
+    "accept:1 acceptJson:v appendUrl:1 appendUrlParam:2 appendUrlParams:1 basicAuth:2 bearerToken:1 bodyFile:1 bodyFormData:1 bodyFormDataRecord:1 bodyJson:1 bodyJsonUnsafe:1 bodyStream:v1 bodyText:1 bodyUint8Array:1 bodyUrlParams:1 modify:1 prependUrl:1 removeHash:v removeHeader:1 setBody:1 setHash:1 setHeader:2 setHeaders:1 setMethod:1 setUrl:1 setUrlParam:2 setUrlParams:1 toUrl:v toWeb:v toWebResult:v updateHeaders:1 updateUrl:1"
+  ],
+  [
+    "HttpClientResponse",
+    "filterStatus:1 filterStatusOk:v fromWeb:v matchStatus:1 schemaJson:12 schemaNoBody:v12 stream:v"
+  ],
+  [
+    "HttpEffect",
+    "scopeTransferToStream:v toHandled:v toWebHandler:v toWebHandlerLayer:v toWebHandlerLayerWith:v toWebHandlerWith:v1 withPreResponseHandler:1"
+  ],
+  [
+    "HttpMiddleware",
+    "compression:01 cors:01 isTracerDisabledUnsafe:v logger:v make:1 searchParamsParser:v tracer:v withLoggerDisabled:v xForwardedHeaders:v"
+  ],
+  ["HttpRouter", "provideRequest:v1 serve:v toHttpEffect:v toWebHandler:v"],
+  ["HttpServer", "serve:0 serveEffect:0 withLogAddress:v"],
+  ["HttpServerError", "causeResponse:v causeResponseStripped:v exitResponse:v"],
+  ["HttpServerRequest", "fromClientRequest:v"],
+  [
+    "HttpServerResponse",
+    "expireCookie:1 expireCookieUnsafe:1 fromClientResponse:v mergeCookies:v1 omitsBody:v removeCookie:1 removeHeader:1 replaceCookies:v1 setBody:1 setBodyKeepHeaders:v setCookie:2 setCookieUnsafe:2 setCookies:1 setCookiesUnsafe:1 setHeader:2 setHeaders:1 setStatus:1 stream:v toClientResponse:v toWeb:v updateCookies:1"
+  ],
+  ["Latch", "whenOpen:1"],
+  [
+    "Layer",
+    "build:v buildWithMemoMap:2 buildWithScope:1 catch:1 catchCause:1 catchTag:2 effect:v1 effectContext:v effectDiscard:v flatMap:1 fresh:v launch:v merge:1 mock:v orDie:v provide:1 provideMerge:1 satisfiesErrorType:0 satisfiesServicesType:0 satisfiesSuccessType:0 succeed:v succeedContext:v sync:v tap:1 tapCause:1 tapError:1 unwrap:v updateService:v2 withParentSpan:1 withSpan:1"
+  ],
+  ["Logger", "batched:1 map:1 toFile:1 withConsoleError:v withConsoleLog:v withLeveledConsole:v"],
+  ["ManagedRuntime", "make:v"],
+  [
+    "Match",
+    "exhaustive:v not:2 option:v orElse:1 orElseAbsurd:v result:v tag:0123456789 tagStartsWith:2 tags:1 tagsExhaustive:1 when:2 whenAnd:0123456789 whenOr:0123456789 withReturnType:0"
+  ],
+  ["McpServer", "registerToolkit:v toolkit:v"],
+  ["Message", "deserializeLocal:v incomingLocalFromOutgoing:v serialize:v serializeEnvelope:v serializeRequest:v"],
+  [
+    "Metric",
+    "disableRuntimeMetrics:v enableRuntimeMetrics:v mapInput:1 modify:1 snapshotUnsafe:v update:1 value:v withAttributes:1 withConstantInput:1"
+  ],
+  ["Multipart", "collectUint8Array:v toPersisted:v"],
+  [
+    "MutableHashMap",
+    "clear:v forEach:1 get:1 has:1 isEmpty:v keys:v modify:2 modifyAt:2 remove:1 set:2 size:v values:v"
+  ],
+  ["MutableHashSet", "add:1 clear:v has:1 remove:1 size:v"],
+  [
+    "MutableRef",
+    "compareAndSet:2 decrement:v decrementAndGet:v get:v getAndDecrement:v getAndIncrement:v getAndSet:1 getAndUpdate:1 increment:v incrementAndGet:v set:1 setAndGet:1 toggle:v update:1 updateAndGet:1"
+  ],
+  ["Ndjson", "duplex:0 duplexSchema:1 duplexSchemaString:1 duplexString:0"],
+  ["OpenApi", "fromApi:v"],
+  [
+    "Option",
+    "andThen:1 as:1 asVoid:v bind:2 bindTo:1 contains:1 exists:1 filter:1 filterMap:1 flatMap:1 flatMapNullishOr:1 flatten:v getFailure:v getOrElse:1 getOrNull:v getOrThrow:v getOrThrowWith:1 getOrUndefined:v getSuccess:v isNone:v isSome:v let:2 lift2:1 makeEquivalence:1 makeOrder:1 map:1 match:1 orElse:1 orElseResult:1 orElseSome:1 partitionMap:1 product:v1 productMany:1 tap:1 toArray:v zipLeft:v1 zipRight:v1 zipWith:v2"
+  ],
+  [
+    "Param",
+    "atLeast:1 atMost:1 between:2 extractSingleParams:v filter:2 filterMap:2 getParamMetadata:v getUnderlyingSingleOrThrow:v isFlagParam:v isSingle:v map:1 mapEffect:1 mapTryCatch:2 optional:v orElse:1 orElseResult:1 variadic:v withAlias:1 withDefault:1 withDescription:1 withFallbackConfig:v1 withFallbackPrompt:v1 withHidden:v withMetavar:1 withSchema:1"
+  ],
+  ["PartitionedSemaphore", "withPermit:2 withPermits:3 withPermitsIfAvailable:2"],
+  ["Pool", "get:v invalidate:1 reserve:1 use:1"],
+  ["PrometheusMetrics", "formatUnsafe:v"],
+  ["Prompt", "appendSystem:1 concat:1 prependSystem:1 setSystem:1"],
+  [
+    "PubSub",
+    "awaitShutdown:v capacity:v end:1 endUnsafe:1 isEmpty:v isFull:v isShutdown:v isShutdownUnsafe:v publish:1 publishAll:1 publishUnsafe:1 remaining:v remainingUnsafe:v shutdown:v size:v sizeUnsafe:v subscribe:v take:v takeAll:v takeBetween:2 takeUpTo:1"
+  ],
+  [
+    "Pull",
+    "catchDone:1 doneExitFromCause:v filterDone:v filterDoneLeftover:v filterDoneVoid:v filterNoDone:v isDoneCause:v matchEffect:1"
+  ],
+  ["Queue", "into:1"],
+  ["Random", "withSeed:1"],
+  ["RcMap", "get:1 getOption:1 has:1 invalidate:1 keys:v touch:1"],
+  ["RcRef", "get:v invalidate:v"],
+  ["Reactivity", "mutation:1 query:1 stream:1"],
+  ["Redacted", "makeEquivalence:1 value:v wipeUnsafe:v"],
+  [
+    "Ref",
+    "get:v getAndSet:1 getAndUpdate:1 getAndUpdateSome:1 getUnsafe:v modify:1 modifySome:1 set:1 setAndGet:1 update:1 updateAndGet:1 updateSome:1 updateSomeAndGet:1"
+  ],
+  ["Reply", "Reply:v serialize:v serializeLastReceived:v serializeOrDefect:v"],
+  [
+    "RequestResolver",
+    "around:2 asCache:1 batchN:1 grouped:1 persisted:1 race:v1 setDelay:1 setDelayEffect:v1 withCache:1 withSpan:1"
+  ],
+  ["Resource", "auto:v get:v manual:v refresh:v"],
+  [
+    "Result",
+    "andThen:1 bind:2 bindTo:1 filterOrFail:2 flatMap:1 flip:v fromOption:1 getFailure:v getOrElse:1 getOrNull:v getOrThrow:v getOrThrowWith:1 getOrUndefined:v getSuccess:v isFailure:v isSuccess:v let:2 makeEquivalence:2 map:1 mapBoth:1 mapError:1 match:1 merge:v orElse:1 tap:1 transposeMapOption:1 transposeOption:v"
+  ],
+  ["Rpc", "exitSchema:v"],
+  ["RpcClient", "make:v makeNoSerialization:v makeProtocolHttp:v withHeaders:1"],
+  ["RpcMiddleware", "layerClient:v"],
+  ["RpcServer", "layer:v make:v makeNoSerialization:v toHttpEffect:v toHttpEffectWebsocket:v"],
+  ["RpcTest", "makeClient:v"],
+  ["Runtime", "defaultTeardown:v"],
+  [
+    "Schedule",
+    "addDelay:1 concat:v1 concatResult:v1 fromStep:v fromStepWithMetadata:v jittered:v map:1 modifyDelay:1 passthrough:v setInputType:0 tap:1 toStep:v toStepWithMetadata:v toStepWithSleep:v upTo:1 while:1"
+  ],
+  [
+    "Schema",
+    "Opaque:0 Record:v TupleWithRest:v annotate:1 annotateEncoded:1 annotateKey:1 check:0123456789 extendTo:2 fieldsAssign:1 flip:v fromBrand:2 isGreaterThanBigDecimal:v isGreaterThanOrEqualToBigDecimal:v isLessThanBigDecimal:v isLessThanOrEqualToBigDecimal:v overrideToEquivalence:1 overrideToFormatter:1 readonlyKey:v required:v requiredKey:v revealBottom:v revealCodec:v toEquivalence:v toTaggedUnion:1 withArrayLengthConstraints:v withConstructorDefault:v withDecodingDefault:v withDecodingDefaultKey:v withDecodingDefaultType:v withDecodingDefaultTypeKey:v"
+  ],
+  ["SchemaBinary", "duplex:1 fieldId:1"],
+  ["SchemaGetter", "compose:v1 map:1 run:v2 withDefault:v"],
+  ["SchemaTransformation", "composeTransformation:v1"],
+  ["Scope", "provide:1 use:1"],
+  [
+    "ScopedCache",
+    "entries:v get:1 getOption:1 getSuccess:1 has:1 invalidate:1 invalidateAll:v invalidateWhen:2 keys:v refresh:1 set:2 size:v values:v"
+  ],
+  ["ScopedRef", "fromAcquire:v get:v getUnsafe:v set:v1"],
+  ["Semaphore", "withPermit:1 withPermits:2 withPermitsIfAvailable:2"],
+  [
+    "Sink",
+    "as:1 catch:1 catchCause:1 ensuring:v1 failCause:v flatMap:1 fromChannel:v fromEffect:v fromEffectEnd:v fromPubSub:v ignoreLeftover:v map:1 mapEffect:1 mapEffectEnd:1 mapEnd:1 mapError:1 mapInput:1 mapInputArray:1 mapInputArrayEffect:1 mapInputEffect:1 mapLeftover:1 onExit:1 orElse:1 provideContext:v1 provideService:v2 summarized:v2 toChannel:v unwrap:v withDuration:v"
+  ],
+  ["Socket", "fromTransformStream:v fromWebSocket:v"],
+  ["SqlClient", "makeWithTransaction:1"],
+  ["SqlModel", "makeRepository:v makeResolvers:v"],
+  ["Statement", "make:v statement:v"],
+  [
+    "Stream",
+    "accumulate:v aggregate:v1 aggregateWithin:v2 as:1 bind:2 bindEffect:2 bindTo:1 broadcast:1 broadcastN:1 buffer:1 bufferArray:1 catch:1 catchCause:1 catchCauseFilter:2 catchCauseIf:2 catchDefect:1 catchFilter:2 catchIf:2 catchReason:3 catchReasons:2 catchTag:2 catchTags:1 changes:v changesWith:1 changesWithEffect:1 chunks:v collect:v combine:v3 combineArray:v3 concat:v1 cross:v1 crossWith:v2 debounce:1 drain:v drainFork:v1 drop:1 dropRight:1 dropUntil:1 dropUntilEffect:1 dropWhile:1 dropWhileEffect:1 dropWhileFilter:1 encodeText:v ensuring:v1 failCause:v filter:1 filterEffect:1 filterMap:1 filterMapEffect:1 flatMap:1 flattenArray:v flattenIterable:v flattenTake:v forever:v fromArrayEffect:v fromChannel:v fromEffect:v fromEffectDrain:v fromEffectRepeat:v fromEffectSchedule:v fromIterableEffect:v fromIterableEffectRepeat:v fromPubSub:v fromPubSubTake:v fromPull:v fromSchedule:v fromSubscription:v groupAdjacentBy:1 groupBy:1 groupByKey:1 grouped:1 groupedWithin:2 haltWhen:v1 interleave:v1 interleaveWith:v2 interruptWhen:v1 intersperse:1 intersperseAffixes:1 let:2 limitBytes:2 map:1 mapAccum:2 mapAccumArray:2 mapAccumArrayEffect:2 mapAccumEffect:2 mapArray:1 mapArrayEffect:1 mapBoth:1 mapEffect:1 mapError:1 merge:v1 mergeEffect:v1 mergeLeft:v1 mergeResult:v1 mergeRight:v1 mkArrayBuffer:v mkString:v mkUint8Array:v onEnd:v1 onError:1 onExit:1 onFirst:1 onStart:v1 orDie:v orElseIfEmpty:1 orElseSucceed:1 partition:1 partitionEffect:1 partitionQueue:1 peel:v1 pipeThrough:v1 pipeThroughChannel:v1 pipeThroughChannelOrFail:v1 prepend:1 provide:v1 provideContext:v1 provideService:v2 provideServiceEffect:v2 race:v1 rechunk:1 repeat:1 repeatElements:v1 result:v retry:1 run:v1 runCollect:v runCount:v runDrain:v runFold:2 runFoldEffect:2 runForEach:1 runForEachArray:1 runForEachWhile:1 runHead:v runIntoPubSub:v1 runIntoQueue:1 runLast:v runSum:v scan:2 scanEffect:2 schedule:v1 scoped:v service:v serviceOption:v share:1 sliding:1 slidingSize:2 split:1 splitLines:v switchMap:1 take:1 takeRight:1 takeUntil:1 takeUntilEffect:1 takeWhile:1 takeWhileEffect:1 takeWhileFilter:1 tap:1 tapBoth:1 tapCause:1 tapDefect:1 tapError:1 tapErrorTag:2 tapSink:v1 throttle:1 throttleEffect:1 timeout:1 timeoutOrElse:1 toAsyncIterable:v toAsyncIterableEffect:v toAsyncIterableWith:v1 toChannel:v toPubSub:1 toPubSubTake:1 toPull:v toQueue:1 toReadableStream:0 toReadableStreamEffect:0 toReadableStreamWith:v1 transduce:v1 transformPull:v transformPullBracket:v unwrap:v unwrapReason:1 updateContext:1 updateService:v2 when:v1 withExecutionPlan:v1 withSpan:1 zip:v1 zipFlatten:v1 zipLatest:v1 zipLatestWith:v2 zipLeft:v1 zipRight:v1 zipWith:v2 zipWithArray:v2 zipWithIndex:v zipWithNext:v zipWithPrevious:v zipWithPreviousAndNext:v"
+  ],
+  [
+    "SubscriptionRef",
+    "changes:v get:v getAndSet:1 getAndUpdate:1 getAndUpdateEffect:1 getAndUpdateSome:1 getAndUpdateSomeEffect:1 getUnsafe:v modify:1 modifyEffect:1 modifySome:1 modifySomeEffect:1 set:1 setAndGet:1 update:1 updateAndGet:1 updateAndGetEffect:1 updateEffect:1 updateSome:1 updateSomeAndGet:1 updateSomeAndGetEffect:1 updateSomeEffect:1"
+  ],
+  [
+    "SynchronizedRef",
+    "get:v getAndSet:1 getAndUpdate:1 getAndUpdateEffect:1 getAndUpdateSome:1 getAndUpdateSomeEffect:1 getUnsafe:v modify:1 modifyEffect:1 modifySome:1 modifySomeEffect:1 set:1 setAndGet:1 update:1 updateAndGet:1 updateAndGetEffect:1 updateEffect:1 updateSome:1 updateSomeAndGet:1 updateSomeAndGetEffect:1 updateSomeEffect:1"
+  ],
+  ["TestClock", "withLive:v"],
+  ["Transferable", "schema:1"],
+  [
+    "Trie",
+    "compact:v entries:v entriesWithPrefix:1 filter:1 filterMap:1 forEach:1 get:1 getUnsafe:1 has:1 insert:2 insertMany:1 isEmpty:v keys:v keysWithPrefix:1 longestPrefixOf:1 map:1 modify:2 reduce:2 remove:1 removeMany:1 size:v toEntries:v toEntriesWithPrefix:1 values:v valuesWithPrefix:1"
+  ],
+  [
+    "TxChunk",
+    "append:1 appendAll:v1 concat:v1 drop:1 filter:1 get:v isEmpty:v isNonEmpty:v make:v makeUnsafe:v map:1 modify:1 prepend:1 prependAll:v1 set:v1 size:v slice:2 take:1 update:1"
+  ],
+  ["TxDeferred", "await:v done:v1 fail:1 poll:v succeed:1"],
+  [
+    "TxHashMap",
+    "clear:v compact:v entries:v every:1 filter:1 filterMap:1 findFirst:1 flatMap:1 forEach:1 get:1 getHash:2 has:1 hasBy:1 hasHash:2 isEmpty:v isNonEmpty:v keys:v map:1 modify:2 modifyAt:2 reduce:2 remove:1 removeMany:1 set:2 setMany:1 size:v snapshot:v some:1 toEntries:v toValues:v union:v1 values:v"
+  ],
+  [
+    "TxHashSet",
+    "add:1 clear:v difference:v1 every:1 filter:1 fromHashSet:v has:1 intersection:v1 isEmpty:v isNonEmpty:v isSubset:v1 map:1 reduce:2 remove:1 size:v some:1 toHashSet:v union:v1"
+  ],
+  [
+    "TxPriorityQueue",
+    "isEmpty:v isNonEmpty:v offer:1 offerAll:1 peek:v peekOption:v removeIf:1 retainIf:1 size:v take:v takeAll:v takeOption:v takeUpTo:1 toArray:v"
+  ],
+  [
+    "TxPubSub",
+    "acquireSubscriber:v awaitShutdown:v capacity:v isEmpty:v isFull:v isNonEmpty:v isShutdown:v publish:1 publishAll:1 releaseSubscriber:1 shutdown:v size:v subscribe:v"
+  ],
+  [
+    "TxReentrantLock",
+    "acquireRead:v acquireWrite:v locked:v readLock:v readLocked:v readLocks:v releaseRead:v releaseWrite:v withLock:v1 withReadLock:v1 withWriteLock:v1 writeLock:v writeLocked:v writeLocks:v"
+  ],
+  ["TxRef", "get:v modify:1 set:1 update:1"],
+  [
+    "TxSemaphore",
+    "acquire:v acquireN:1 available:v capacity:v release:v releaseN:1 tryAcquire:v tryAcquireN:1 withPermit:v1 withPermitScoped:v withPermits:v2"
+  ],
+  [
+    "TxSubscriptionRef",
+    "changes:v changesStream:v get:v getAndSet:1 getAndUpdate:1 modify:1 set:1 update:1 updateAndGet:1"
+  ],
+  [
+    "UrlParams",
+    "Equivalence:v append:2 appendAll:1 getAll:1 getFirst:1 getLast:1 remove:1 set:2 setAll:1 toReadonlyRecord:v toRecord:v transform:1"
+  ],
+  ["VariantSchema", "Overrideable:v fields:v"],
+  ["Workflow", "intoResult:v provideScope:v withCompensation:1 wrapActivityResult:v"],
+  ["WorkflowProxyServer", "layerHttpApi:v"]
+])
+
+/**
  * Names that always keep their JavaScript meaning.
  *
  * @since 0.1.0

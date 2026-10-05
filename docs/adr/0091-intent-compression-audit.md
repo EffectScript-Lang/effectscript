@@ -209,3 +209,29 @@ Measured after A1–A6, Plan 29 and Plan 30 landed, A5 failed the rubric:
 So a service field means what TypeScript says: `readonly size: number` and `size: number` are two
 intents, not two spellings of one, and both convert both ways.
 
+## Amendment 2: A7, a first step that only takes a `Pipeable`
+
+- **Status:** Accepted
+- **Date:** 2026-10-05
+- **Deciders:** agent ruling, on the real-projects corpus (ADR-0093)
+
+Converting 16 real Effect v4 projects (20,926 files) showed what the docs corpus couldn't: after
+A1, 32,473 `.pipe(…)` calls were still TypeScript, and about 95% of them start with an Effect
+combinator (`Effect.*`, `Stream.*`, `Layer.*`, or a builtin such as `mapError`, `orDie`,
+`provide`). Their heads are the projects' own services (`LLM.generate(…)`), which A1's table can't
+know.
+
+- **A7:** when a pipeline's first step is an Effect export that only takes a `Pipeable`, the head
+  is one, whatever it is, so `x |> step |> …` compiles to `x.pipe(step, …)`. "Only takes a
+  `Pipeable`" is read from `effect`'s types at codegen (`pipeableSteps`): a call whose every
+  signature for that many arguments returns a function whose first parameter is a `Pipeable`
+  (`Effect.map(f)`, `provide(layer)`, `Effect.catchTag(tag, f)`), or a value that is such a
+  function (`Effect.orDie`, `Effect.asVoid`). A head that needs it is parenthesized. Node's
+  `readable.pipe(dest)` isn't touched: its argument isn't an Effect step.
+- The reverse compiler mirrors it, so those `.pipe(…)` calls come back as `|>`, and a
+  `pipe(x, Effect.orDie)` call stays TypeScript, since `|>` would now compile to `.pipe`.
+- Measured: 2,361 more real-project files convert (8,072 → 10,433), `.pipe(` left in them falls
+  by 79% overall, and the docs corpus is about 190 tokens smaller in every vocabulary. The compiled
+  output reads as hand-written Effect: `fetchUser(id).pipe(Effect.retry(…))`, not
+  `pipe(fetchUser(id), Effect.retry(…))`.
+

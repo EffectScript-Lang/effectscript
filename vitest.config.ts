@@ -141,6 +141,10 @@ export default defineConfig({
       ...project("@effectscript/zed", "packages/effectscript/zed"),
       ...project("@effectscript/effect-docs", "packages/effectscript/effect-docs"),
       ...project("@effectscript/tokens", "packages/effectscript/tokens"),
+      // the converter's own tests only: never the projects under `repos/` (ADR-0093)
+      ...project("@effectscript/corpus", "packages/effectscript/corpus", true, undefined, undefined, [
+        "test/**/*.test.ts"
+      ]),
       ...project("@effectscript/site", "packages/effectscript/site"),
       ...project("@effectscript/site-edge", "packages/effectscript/site-edge"),
       ...project("@effectscript/examples", "packages/effectscript/examples", true, { plugins: [efx()] }, undefined, [

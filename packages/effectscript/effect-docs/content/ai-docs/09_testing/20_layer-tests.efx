@@ -55,9 +55,8 @@ service TodoService as "app/TodoService" {
         return todos.length
       }
 
-      const titles = repo.list.pipe(
-        map((todos) => todos.map((todo) => todo.title))
-      )
+      const titles = repo.list
+        |> map((todos) => todos.map((todo) => todo.title))
 
       return {
         addAndCount,

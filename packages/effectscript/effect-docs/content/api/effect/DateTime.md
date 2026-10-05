@@ -358,10 +358,8 @@ DateTime.zoneToString(DateTime.zoneMakeNamedUnsafe("Europe/London")) // => "Euro
 **Setting named time zones safely**
 
 ```efx
-import { DateTime, Option } from "effect"
-
 const dateTime = DateTime.makeUnsafe("2024-01-01")
-const result = DateTime.setZoneNamed(dateTime, "Europe/London").pipe(Option.map(DateTime.formatIsoZoned))
+const result = DateTime.setZoneNamed(dateTime, "Europe/London") |> Option.map(DateTime.formatIsoZoned)
 
 result // => Option.some("2024-01-01T00:00:00.000+00:00[Europe/London]")
 ```

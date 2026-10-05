@@ -90,10 +90,9 @@ fiber's shared one. The layer and all its sublayers are built from scratch and
 are not shared with other `provide` calls.
 
 ```efx
-const main = program.pipe(
-  provide(MyServiceLayer),
-  provide(MyServiceLayer, { local: true })
-)
+const main = program
+  |> provide(MyServiceLayer)
+  |> provide(MyServiceLayer, { local: true })
 // "Building MyService" is logged TWICE — local creates its own memo map
 ```
 

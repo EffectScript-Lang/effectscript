@@ -59,6 +59,6 @@ describe("await over a pipeline inside an operand (Plan 6 final review)", () => 
       "declare const a: Effect<number>\nexport const p = effect {\n  return 1 + (await a |> map((n) => n))\n}\n"
     )
     expect(diagnostics).toEqual([])
-    expect(code).toContain("return 1 + (yield* pipe(a, Effect.map((n) => n)))")
+    expect(code).toContain("return 1 + (yield* a.pipe(Effect.map((n) => n)))")
   })
 })

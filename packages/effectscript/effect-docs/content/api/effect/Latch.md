@@ -33,7 +33,7 @@ await runPromise(program) // => "opened"
 
 ```efx
 const latch = Latch.makeUnsafe(false)
-const waiter = latch.await.pipe(as("opened"))
+const waiter = latch.await |> as("opened")
 
 const program = effect {
   const fiber = await forkChild(waiter)
@@ -51,7 +51,7 @@ await runPromise(program) // => "opened"
 ```efx
 const program = effect {
   const latch = await Latch.make(false)
-  const waiter = latch.await.pipe(as("opened"))
+  const waiter = latch.await |> as("opened")
 
   const fiber = await forkChild(waiter)
   await latch.open

@@ -1,0 +1,25 @@
+{
+  "name": "@effectscript/corpus",
+  "version": "4.0.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Real Effect v4 projects, converted to EffectScript and measured (ADR-0093)",
+  "exports": {
+    "./package.json": "./package.json",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "convert": "node scripts/convert.ts",
+    "update": "node scripts/update.ts",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@effectscript/tokens": "workspace:^",
+    "effectscript": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "vitest": "^5.0.2"
+  }
+}

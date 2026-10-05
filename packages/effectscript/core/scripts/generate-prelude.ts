@@ -287,12 +287,22 @@ const pipeable = (() => {
     const rest = declaration?.parameters.some((p) => p.dotDotDotToken !== undefined) ?? false
     return signature.minArgumentCount <= n && (rest || n <= signature.getParameters().length)
   }
+  /** A call that returns a function taking a `Pipeable`: a data-last step (`Effect.map(f)`). */
+  const isStep = (type: ts.Type): boolean => {
+    const signatures = type.getCallSignatures()
+    return signatures.length > 0 && signatures.every((s) => {
+      const first = s.getParameters()[0]
+      return first !== undefined && isPipeable(checker.getTypeOfSymbol(first))
+    })
+  }
   const table = new Map<string, string>()
+  const steps = new Map<string, string>()
   for (const [name, file] of files) {
     const source = program.getSourceFile(file)
     const symbol = source === undefined ? undefined : checker.getSymbolAtLocation(source)
     if (symbol === undefined) continue
     const entries: Array<string> = []
+    const stepEntries: Array<string> = []
     for (const exported of checker.getExportsOfModule(symbol)) {
       const target = exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported
       if (!(target.flags & ts.SymbolFlags.Value)) continue
@@ -304,10 +314,18 @@ const pipeable = (() => {
         if (applicable.length > 0 && applicable.every((s) => isPipeable(s.getReturnType()))) spec += String(n)
       }
       if (spec !== "") entries.push(`${exported.name}:${spec}`)
+      // `v`: the value itself is a step (`Effect.orDie`, `Effect.asVoid`)
+      let step = isStep(type) ? "v" : ""
+      for (let n = 0; n <= 9; n++) {
+        const applicable = signatures.filter((s) => accepts(s, n))
+        if (applicable.length > 0 && applicable.every((s) => isStep(s.getReturnType()))) step += String(n)
+      }
+      if (step !== "") stepEntries.push(`${exported.name}:${step}`)
     }
     if (entries.length > 0) table.set(name, entries.sort().join(" "))
+    if (stepEntries.length > 0) steps.set(name, stepEntries.sort().join(" "))
   }
-  return table
+  return { table, steps }
 })()
 
 const out: Array<string> = []
@@ -377,7 +395,16 @@ doc(
 )
 out.push(
   `export const pipeableExports: ReadonlyMap<string, string> = new Map([\n${
-    list([...pipeable].map(([n, spec]) => `[${JSON.stringify(n)}, ${JSON.stringify(spec)}]`))
+    list([...pipeable.table].map(([n, spec]) => `[${JSON.stringify(n)}, ${JSON.stringify(spec)}]`))
+  }\n])`,
+  ""
+)
+doc(
+  "Steps over a `Pipeable` (ADR-0091 A7): `name:spec`, where `v` is the value itself and digits are argument counts whose call returns a function taking one."
+)
+out.push(
+  `export const pipeableSteps: ReadonlyMap<string, string> = new Map([\n${
+    list([...pipeable.steps].map(([n, spec]) => `[${JSON.stringify(n)}, ${JSON.stringify(spec)}]`))
   }\n])`,
   ""
 )

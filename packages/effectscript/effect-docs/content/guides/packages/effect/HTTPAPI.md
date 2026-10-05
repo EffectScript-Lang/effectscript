@@ -1380,14 +1380,13 @@ const GroupLayer = HttpApiBuilder.group(
     // Use `handleRaw` to opt out of payload decoding and access the raw request
     handlers.handleRaw("acceptStream", (ctx) =>
       // Consume the request body as a stream of Uint8Array chunks
-      ctx.request.stream.pipe(
+      ctx.request.stream
         // Fold over the chunks as they arrive, without buffering the body
-        Stream.runFold(() => 0, (total, chunk) => total + chunk.length),
-        map((total) => `received ${total} bytes`),
+        |> Stream.runFold(() => 0, (total, chunk) => total + chunk.length)
+        |> map((total) => `received ${total} bytes`)
         // `request.stream` fails with `HttpServerError`, which the endpoint
         // does not declare, so treat it as a defect
-        orDie
-      ))
+        |> orDie)
 )
 
 const ApiLayer = HttpApiBuilder.layer(Api)
@@ -1614,8 +1613,8 @@ error UserNotFound {
   userId: Int
 }
 
-const UserNotFoundWithHeaders = UserNotFound.pipe(
-  HttpApiSchema.encodeToWithHeaders({
+const UserNotFoundWithHeaders = UserNotFound
+  |> HttpApiSchema.encodeToWithHeaders({
     // The body schema is authoritative for status and content type
     body: HttpApiSchema.Empty(404),
     headers: {
@@ -1629,7 +1628,6 @@ const UserNotFoundWithHeaders = UserNotFound.pipe(
       body: undefined
     })
   })
-)
 
 const User = Schema.Struct({
   id: Schema.Int,
@@ -2232,7 +2230,7 @@ error ValidationError {
 class SchemaErrorHandler extends HttpApiMiddleware.Service<SchemaErrorHandler>()(
   "api/SchemaErrorHandler",
   {
-    error: ValidationError.pipe(HttpApiSchema.status(422))
+    error: ValidationError |> HttpApiSchema.status(422)
   }
 ) {}
 

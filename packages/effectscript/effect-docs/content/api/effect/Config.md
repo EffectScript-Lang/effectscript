@@ -39,15 +39,13 @@ runSync(upper.parse(provider)) // => "ALICE"
 **fallback configs and branching**
 
 ```efx
-import { Config, Option } from "effect"
-
 const EnvVar = (name: string) =>
   Config.Literals([
     ...["prod", "production", "PROD", "PRODUCTION"] as const,
     ...["dev", "development", "DEV", "DEVELOPMENT"] as const
   ], name)
 
-const withAbsenceFallback = <A, B>(fallback: Config.Config<A>) => (self: Config.Config<B>): Config.Config<A | B> =>
+const withAbsenceFallback = <A, B>(fallback: Config<A>) => (self: Config<B>): Config<A | B> =>
   Config.flatMap(
     Config.option(self),
     Option.match({
@@ -65,8 +63,8 @@ const ENV = EnvVar("ENV").pipe(
 )
 
 // const hostConfig: Config.Config<string>
-const hostConfig = ENV.pipe(
-  Config.flatMap((env) =>
+const hostConfig = ENV
+  |> Config.flatMap((env) =>
     env === "dev"
       // dev is very forgiving
       ? Config.NonEmptyString("DEV_HOST").pipe(
@@ -78,7 +76,6 @@ const hostConfig = ENV.pipe(
         withAbsenceFallback(Config.NonEmptyString("HOST"))
       )
   )
-)
 ```
 
 ## mapEffect

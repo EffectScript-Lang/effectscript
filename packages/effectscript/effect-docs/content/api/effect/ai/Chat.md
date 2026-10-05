@@ -124,6 +124,8 @@ await runPromise(chatWithAI.pipe(provide(FakeLanguageModel))) // => ["The capita
 **Streaming chat responses**
 
 ```efx
+import { Chat } from "effect/ai"
+
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -140,10 +142,9 @@ const streamingChat = effect {
   const chat = await Chat.empty
   const story = await chat.streamText({
     prompt: "Write a short story about space exploration"
-  }).pipe(
-    Stream.runFold(() => "", (text, part) =>
+  })
+    |> Stream.runFold(() => "", (text, part) =>
       part.type === "text-delta" ? text + part.delta : text)
-  )
   return story
 }
 

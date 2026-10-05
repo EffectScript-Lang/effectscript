@@ -30,10 +30,10 @@ const SummarizeText = Tool.make("SummarizeText", {
 
 toolkit AiToolkit { SearchDocs, SummarizeText }
 
-const ready = AiToolkit.pipe(Effect.provide(AiToolkit.toLayer({
-  SearchDocs: ({ query }) => Effect.succeed([query]),
-  SummarizeText: ({ text }) => Effect.succeed(text)
-})))
+const ready = AiToolkit |> provide(AiToolkit.toLayer({
+  SearchDocs: ({ query }) => succeed([query]),
+  SummarizeText: ({ text }) => succeed(text)
+}))
 
 Object.keys((await runPromise(ready)).tools) // => ["SearchDocs", "SummarizeText"]
 ```
@@ -52,7 +52,7 @@ const toolkit = Toolkit.make(Tool.make("Lookup", {
 
 const program = effect {
   const handlers = await toolkit
-  await handlers.handle("Lookup", {}).pipe(flatMap(Stream.runDrain))
+  await handlers.handle("Lookup", {}) |> flatMap(Stream.runDrain)
 }
   |> catchCause((cause) =>
     succeed(Context.get(Cause.annotations(cause), Toolkit.FailureOrigin))
@@ -82,10 +82,10 @@ const GetWeather = Tool.make("get_weather", {
 })
 
 toolkit toolkit { GetCurrentTime, GetWeather }
-const ready = toolkit.pipe(Effect.provide(toolkit.toLayer({
-  GetCurrentTime: () => Effect.succeed(0),
-  get_weather: () => Effect.succeed({ temperature: 20, condition: "clear" })
-})))
+const ready = toolkit |> provide(toolkit.toLayer({
+  GetCurrentTime: () => succeed(0),
+  get_weather: () => succeed({ temperature: 20, condition: "clear" })
+}))
 
 Object.keys((await runPromise(ready)).tools) // => ["GetCurrentTime", "get_weather"]
 ```

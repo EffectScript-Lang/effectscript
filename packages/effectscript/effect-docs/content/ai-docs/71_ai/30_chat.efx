@@ -15,7 +15,7 @@ import { FetchHttpClient } from "effect/http"
 
 const OpenAiClientLayer = OpenAiClient.layerConfig({
   apiKey: Config.Redacted("OPENAI_API_KEY")
-}).pipe(Layer.provide(FetchHttpClient.layer))
+}) |> Layer.provide(FetchHttpClient.layer)
 
 // ---------------------------------------------------------------------------
 // Tools for the agentic loop
@@ -77,12 +77,11 @@ export service AiAssistant as "acme/AiAssistant" {
       effect chat(message: string) {
           // Create a new turn in the conversation by passing the user's message
           // to `session.generateText`.
-          const response = await session.generateText({ prompt: message }).pipe(
+          const response = await session.generateText({ prompt: message })
             // Provide the model layer to use.
             // You could potentially use different models for different turns,
             // or even switch models in the middle of a conversation.
-            provide(modelLayer)
-          )
+            |> provide(modelLayer)
 
           // You can inspect the accumulated history at any point through the
           // `history` ref on the chat instance.
@@ -113,12 +112,11 @@ export service AiAssistant as "acme/AiAssistant" {
             const response = await session.generateText({
               prompt: [], // No additional prompt — the model has full access to the conversation history
               toolkit: tools // Provide the tools to the model
-            }).pipe(
+            })
               // Provide the model layer to use.
               // You could potentially use different models for different turns,
               // or even switch models in the middle of a conversation.
-              provide(modelLayer)
-            )
+              |> provide(modelLayer)
             if (response.toolCalls.length > 0) {
               // If the model called any tools, execute them and the Chat module
               // will automatically add the tool results to the conversation

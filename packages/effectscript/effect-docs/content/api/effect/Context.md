@@ -282,9 +282,8 @@ const Port = Context.Service<{ PORT: number }>("Port")
 const withPort = Context.empty()
   |> Context.addOrOmit(Port, Option.some({ PORT: 8080 }))
 
-const withoutPort = withPort.pipe(
-  Context.addOrOmit(Port, Option.none())
-)
+const withoutPort = withPort
+  |> Context.addOrOmit(Port, Option.none())
 Context.getOption(withPort, Port) // => Option.some({ PORT: 8080 })
 Context.getOption(withoutPort, Port) // => Option.none()
 ```
@@ -412,7 +411,7 @@ context.mapUnsafe.size // => 3
 **Picking services from a context**
 
 ```efx
-import { Context, Option } from "effect"
+import { Context, Option, pipe } from "effect"
 
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
@@ -422,7 +421,7 @@ const someContext = pipe(
   Context.add(Timeout, { TIMEOUT: 5000 })
 )
 
-const context = someContext |> Context.pick(Port)
+const context = pipe(someContext, Context.pick(Port))
 
 Context.getOption(context, Port) // => Option.some({ PORT: 8080 })
 Context.getOption(context, Timeout) // => Option.none()
@@ -433,7 +432,7 @@ Context.getOption(context, Timeout) // => Option.none()
 **Omitting services from a context**
 
 ```efx
-import { Context, Option } from "effect"
+import { Context, Option, pipe } from "effect"
 
 const Port = Context.Service<{ PORT: number }>("Port")
 const Timeout = Context.Service<{ TIMEOUT: number }>("Timeout")
@@ -443,7 +442,7 @@ const someContext = pipe(
   Context.add(Timeout, { TIMEOUT: 5000 })
 )
 
-const context = someContext |> Context.omit(Timeout)
+const context = pipe(someContext, Context.omit(Timeout))
 
 Context.getOption(context, Port) // => Option.some({ PORT: 8080 })
 Context.getOption(context, Timeout) // => Option.none()

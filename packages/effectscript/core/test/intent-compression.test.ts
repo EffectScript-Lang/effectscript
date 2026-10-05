@@ -35,6 +35,29 @@ describe("one form per intent (ADR-0091)", () => {
     })
   })
 
+  describe("A7: a first step that only takes a Pipeable proves the head pipeable", () => {
+    const head = "declare const svc: { load: (id: string) => Effect<string> }\ndeclare const layer: Layer<never>\n"
+
+    it("pipes any head with `.pipe(…)` when its first step is an Effect step", () => {
+      const code = compile(
+        `${head}export const a = svc.load("1") |> provide(layer) |> orDie\nexport const b = (svc.load("1") ?? svc.load("2")) |> Effect.asVoid\n`
+      )
+      expect(code).toContain("svc.load(\"1\").pipe(Effect.provide(layer), Effect.orDie)")
+      expect(code).toContain("(svc.load(\"1\") ?? svc.load(\"2\")).pipe(Effect.asVoid)")
+    })
+
+    it("keeps `pipe(…)` when the first step isn't one: a plain function, or a step that takes a function", () => {
+      const code = compile(`${head}export const a = [1] |> JSON.stringify\nexport const b = svc.load |> Effect.map\n`)
+      expect(code).toContain("pipe([1], JSON.stringify)")
+      expect(code).toContain("pipe(svc.load, Effect.map)")
+    })
+
+    it("gives `|>` back for those `.pipe(…)` calls, and round-trips", () => {
+      const efx = `${head}export const a = svc.load("1") |> provide(layer) |> orDie\n`
+      expect(back(compile(efx))).toBe(efx)
+    })
+  })
+
   describe("A2: implementations take their parameter types from their declaration", () => {
     const service = (impl: string) =>
       `service S {\n  effect find(id: string, limit?: number): string\n  effect all(...tags: string[]): number\n  effect named({ name }: { name: string }): string\n  layer test = ${impl}\n}\n`

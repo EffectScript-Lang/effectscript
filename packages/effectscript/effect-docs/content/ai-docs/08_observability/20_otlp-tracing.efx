@@ -75,11 +75,10 @@ const CheckoutTest = Layer.effectDiscard(
   |> Layer.withSpan("checkout-test")
   |> Layer.provide(Checkout.layer)
 
-const Main = CheckoutTest.pipe(
+const Main = CheckoutTest
   // Provide the observability layer at the very end, so that all spans created
   // by the app are exported.
-  Layer.provide(ObservabilityLayer)
-)
+  |> Layer.provide(ObservabilityLayer)
 
 // Launch the app
 Layer.launch(Main)

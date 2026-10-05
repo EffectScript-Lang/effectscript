@@ -55,16 +55,14 @@ export class UserRepository extends Context.Service<UserRepository, {
   static readonly layer: Layer.Layer<
     UserRepository,
     Config.ConfigError | SqlError
-  > = this.layerNoDeps.pipe(
-    Layer.provide(SqlClientLayer)
-  )
+  > = this.layerNoDeps
+    |> Layer.provide(SqlClientLayer)
 
   // Use Layer.provideMerge to compose the UserRepository layer with the SqlClient
   // layer, exposing both the UserRepository and SqlClient services
   static readonly layerWithSqlClient: Layer.Layer<
     UserRepository | SqlClient.SqlClient,
     Config.ConfigError | SqlError
-  > = this.layerNoDeps.pipe(
-    Layer.provideMerge(SqlClientLayer)
-  )
+  > = this.layerNoDeps
+    |> Layer.provideMerge(SqlClientLayer)
 }

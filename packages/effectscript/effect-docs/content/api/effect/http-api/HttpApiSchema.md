@@ -53,12 +53,14 @@ HttpApiSchema.isWithHeaders(Schema.String) // => false
 **Encoding an error with headers**
 
 ```efx
+import { HttpApiSchema } from "effect/http-api"
+
 error UserNotFound {
   userId: Int
 }
 
-const UserNotFoundWithHeaders = UserNotFound.pipe(
-  HttpApiSchema.encodeToWithHeaders({
+const UserNotFoundWithHeaders = UserNotFound
+  |> HttpApiSchema.encodeToWithHeaders({
     body: HttpApiSchema.Empty(404),
     headers: {
       "x-user-id": Schema.Int
@@ -70,7 +72,6 @@ const UserNotFoundWithHeaders = UserNotFound.pipe(
       body: undefined
     })
   })
-)
 
 const encoded = Schema.encodeSync(UserNotFoundWithHeaders)(new UserNotFound({ userId: 123 }))
 encoded // => { body: undefined, headers: { "x-user-id": 123 } }

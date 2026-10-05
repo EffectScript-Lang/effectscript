@@ -78,9 +78,8 @@ export service Mailer as "app/Mailer" {
           to,
           subject: "Welcome to Acme Cloud!",
           body: "Thanks for signing up for Acme Cloud. We're glad to have you!"
-        }).pipe(
-          mapError((reason) => new MailerError({ reason }))
-        )
+        })
+          |> mapError((reason) => new MailerError({ reason }))
         console.info(`Sent welcome email to ${to}`)
       }
 

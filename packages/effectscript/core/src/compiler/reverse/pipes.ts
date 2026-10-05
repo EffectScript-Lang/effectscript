@@ -5,7 +5,7 @@
  * @since 4.0.0
  */
 import { children, type Node } from "../ast.ts"
-import { pipeableCall, pipeableValue } from "../prelude/pipeable.ts"
+import { pipeableCall, pipeableStep, pipeableValue } from "../prelude/pipeable.ts"
 import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
 import { commaToPipe, commentsIn, removeKeepingComments, type ReverseCtx, separatorComma, within } from "./context.ts"
@@ -56,6 +56,23 @@ export const pipeableInEfx = (ctx: ReverseCtx, node: Node, seen: ReadonlySet<str
     default:
       return false
   }
+}
+
+/**
+ * Mirrors the forward `pipeableEffectStep` (ADR-0091 A7): `Effect.map(f)`, `Effect.orDie`, an Effect
+ * step that only takes a `Pipeable`, recognized through its import.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const pipeableStepInEfx = (ctx: ReverseCtx, step: Node | undefined): boolean => {
+  if (step === undefined) return false
+  const called = step.type === "CallExpression"
+  const target: Node = called ? step.callee : step
+  if (target.type !== "MemberExpression" || target.computed || target.object.type !== "Identifier") return false
+  if (called && (step.arguments as Array<Node>).some((a) => a.type === "SpreadElement")) return false
+  const module = importedModule(ctx.analysis, target.object.name)
+  return module !== undefined && pipeableStep(module, target.property.name, called ? step.arguments.length : undefined)
 }
 
 /** Parents where a pipeline replaces a call without changing how the code parses. */
@@ -185,13 +202,14 @@ export const pipeShape = (
   let shape: PipeShape | undefined
   if (
     callee.type === "MemberExpression" && !callee.computed && callee.optional !== true && call.optional !== true &&
-    callee.property.name === "pipe" && pipeableInEfx(ctx, callee.object)
+    callee.property.name === "pipe" && (pipeableInEfx(ctx, callee.object) || pipeableStepInEfx(ctx, args[0]))
   ) {
     shape = { kind: "method", head: callee.object, steps: args }
   } else if (
     callee.type === "Identifier" && callee.name === "pipe" &&
     importedLocal(ctx.analysis, "effect", "pipe") === "pipe" &&
-    args.length >= 2 && !pipeableInEfx(ctx, args[0]!) && headTypes.has(args[0]!.type) &&
+    args.length >= 2 && !pipeableInEfx(ctx, args[0]!) && !pipeableStepInEfx(ctx, args[1]) &&
+    headTypes.has(args[0]!.type) &&
     (args[0]!.type !== "Literal" || args[0]!.regex === undefined) &&
     // exactly `pipe(` before the head: no parentheses or comments around it
     /^\(\s*$/.test(ctx.source.slice(callee.end, args[0]!.start))

@@ -6,7 +6,6 @@
  * the error channel with `Effect.unwrapReason`.
  */
 
-import { Effect } from "effect"
 
 export error RateLimitError {
   retryAfter: Finite
@@ -24,7 +23,7 @@ export error AiError {
   reason: RateLimitError | QuotaExceededError | SafetyBlockedError
 }
 
-declare const callModel: Effect.Effect<string, AiError>
+declare const callModel: Effect<string, AiError>
 
 export const handleOneReason = callModel.pipe(
   // Use `Effect.catchReason` to handle a specific reason type
@@ -38,10 +37,10 @@ export const handleOneReason = callModel.pipe(
   )
 )
 
-export const handleMultipleReasons = callModel.pipe(
+export const handleMultipleReasons = callModel
   // Use `Effect.catchReasons` to handle multiple reason types for a given error
   // in one go
-  catchReasons(
+  |> catchReasons(
     "AiError",
     {
       RateLimitError: (reason) => succeed(`Retry after ${reason.retryAfter} seconds`),
@@ -50,15 +49,13 @@ export const handleMultipleReasons = callModel.pipe(
     // Optionally handle all the other reasons with a catch-all handler
     // (reason) => Effect.succeed(`Unhandled reason: ${reason._tag}`)
   )
-)
 
-export const unwrapAndHandle = callModel.pipe(
+export const unwrapAndHandle = callModel
   // Use `Effect.unwrapReason` to move the reasons into the error channel, then
   // handle them all with `Effect.catchTags` or other error handling combinators
-  unwrapReason("AiError"),
-  catchTags({
+  |> unwrapReason("AiError")
+  |> catchTags({
     RateLimitError: (reason) => succeed(`Back off for ${reason.retryAfter} seconds`),
     QuotaExceededError: (reason) => succeed(`Increase quota beyond ${reason.limit}`),
     SafetyBlockedError: (reason) => succeed(`Blocked by safety category: ${reason.category}`)
   })
-)

@@ -18,6 +18,8 @@
     "**/build",
     "**/docs",
     "packages/effectscript/effect-docs/content",
+    "packages/effectscript/corpus/out",
+    "packages/effectscript/corpus/REPORT.md",
     "**/coverage",
     "packages/effectscript/**/fixtures",
     "**/*.tsbuildinfo",

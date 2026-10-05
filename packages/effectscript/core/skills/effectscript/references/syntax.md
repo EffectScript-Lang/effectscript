@@ -1238,7 +1238,7 @@ const viaLocal = loadUser("2").pipe(
   Effect.orDie
 )
 
-const viaPipe = pipe(getUserName("3"), Effect.map((name) => name.length))
+const viaPipe = getUserName("3").pipe(Effect.map((name) => name.length))
 
 const hack = Effect.map(getUserName("4"), (name) => name.trim())
 
@@ -1398,7 +1398,7 @@ export const waitFor = failure is RateLimited ? failure.retryAfter : 0
 Compiles to:
 
 ```ts
-import { Cause, Effect, pipe, Schema } from "effect"
+import { Cause, Effect, Schema } from "effect"
 class RateLimited extends Schema.TaggedError<RateLimited>()("RateLimited", { retryAfter: Schema.Number }) {}
 
 declare const fetchUser: (id: string) => Effect.Effect<string, RateLimited>
@@ -1406,8 +1406,7 @@ declare const failure: RateLimited | Cause.TimeoutError | Cause.NoSuchElementErr
 declare const failures: Array<RateLimited | Cause.TimeoutError>
 
 export const user = (id: string) =>
-  pipe(
-    fetchUser(id),
+  fetchUser(id).pipe(
     Effect.timeout("2 seconds"),
     Effect.retry({ times: 2, while: (e) => e._tag === "TimeoutError" || e._tag === "RateLimited" })
   )
@@ -1636,11 +1635,11 @@ export effect readConfig(path: string) {
 Compiles to:
 
 ```ts
-import { Effect, FileSystem, Option, pipe, Schedule } from "effect"
+import { Effect, FileSystem, Option, Schedule } from "effect"
 declare const fetchUser: (id: string) => Effect.Effect<string, Error>
 
 export const profile = Effect.fn("profile")(function*(id: string): Effect.fn.Return<string, Error> {
-  const name = yield* pipe(fetchUser(id), Effect.retry({ times: 2 }), Effect.orElseSucceed(() => "anonymous"))
+  const name = yield* fetchUser(id).pipe(Effect.retry({ times: 2 }), Effect.orElseSucceed(() => "anonymous"))
   yield* Effect.sleep("10 millis")
   const [a, b] = yield* Effect.all([Effect.succeed(1), Effect.succeed(2)])
   return `${name}:${a + b}`

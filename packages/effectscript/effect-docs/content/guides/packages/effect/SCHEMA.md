@@ -774,12 +774,11 @@ const schema = Schema.Struct({
   a: Schema.optionalKey(Schema.NullOr(Schema.String))
     |> Schema.decodeTo(Schema.FiniteFromString, {
       decode: SchemaGetter.transformOptional((oe) =>
-        oe.pipe(
+        oe
           // remove null values
-          Option.filter(Predicate.isNotNull),
+          |> Option.filter(Predicate.isNotNull)
           // default to "1" if none
-          Option.orElseSome(() => "1")
-        )
+          |> Option.orElseSome(() => "1")
       ),
       encode: SchemaGetter.passthrough()
     })
@@ -813,12 +812,11 @@ const schema = Schema.Struct({
   a: Schema.optional(Schema.NullOr(Schema.String))
     |> Schema.decodeTo(Schema.FiniteFromString, {
       decode: SchemaGetter.transformOptional((oe) =>
-        oe.pipe(
+        oe
           // remove null and undefined
-          Option.filter(Predicate.isNotNullish),
+          |> Option.filter(Predicate.isNotNullish)
           // default to "1" if none
-          Option.orElseSome(() => "1")
-        )
+          |> Option.orElseSome(() => "1")
       ),
       encode: SchemaGetter.passthrough()
     })
@@ -923,7 +921,7 @@ const Product = Schema.Struct({
     |> Schema.decodeTo(
       Schema.Option(Schema.Number),
       SchemaTransformation.transformOptional({
-        decode: (oe) => oe.pipe(Option.filter(Predicate.isNotNull), Option.some),
+        decode: (oe) => oe |> Option.filter(Predicate.isNotNull) |> Option.some,
         encode: Option.flatten
       })
     )
@@ -4549,12 +4547,11 @@ const program = Effect.gen(function*() {
 })
 
 // Each error can be caught independently by its tag
-const recovered = program.pipe(
-  catchTags({
+const recovered = program
+  |> catchTags({
     NotFound: (err) => succeed(`Not found: ${err.path}`),
     Unauthorized: (err) => succeed(`Unauthorized: ${err.reason}`)
   })
-)
 ```
 
 All features from `Error` are available: `extend`, `annotate`, and `check`.
@@ -7038,11 +7035,10 @@ function optional<S extends Schema.Top>(schema: S) {
 // or a human-friendly error message string.
 function decode<T, E>(schema: Schema.Codec<T, E>) {
   return function(value: unknown) {
-    return Schema.decodeUnknownEffect(schema)(value).pipe(
-      mapError((error) => error.message),
-      result,
-      runPromise
-    )
+    return Schema.decodeUnknownEffect(schema)(value)
+      |> mapError((error) => error.message)
+      |> result
+      |> runPromise
   }
 }
 

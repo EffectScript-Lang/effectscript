@@ -158,10 +158,9 @@ const program = effect {
 }.pipe(
   // Use the GreeterMap service to provide a variant of the Greeter service
   provide(GreeterMap.get("John"))
-).pipe(
-  // Provide the GreeterMap layer
-  provide(GreeterMap.layer)
 )
+  // Provide the GreeterMap layer
+  |> provide(GreeterMap.layer)
 
 await runPromise(program) // => "Hello, John!"
 ```

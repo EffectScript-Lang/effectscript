@@ -65,9 +65,8 @@ export const useCounter = Effect.gen(function*() {
 declare const SqlClientLayer: Layer<SqlClient.SqlClient>
 
 // Create the cluster layer using `NodeClusterSocket.layer`
-const ClusterLayer = NodeClusterSocket.layer().pipe(
-  Layer.provide(SqlClientLayer)
-)
+const ClusterLayer = NodeClusterSocket.layer()
+  |> Layer.provide(SqlClientLayer)
 
 // You can also use `TestRunner.layer` to run your entities in a single process,
 // without any network communication and in-memory storage. This is useful for testing and

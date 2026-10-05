@@ -1,0 +1,122 @@
+{
+  "$comment": "The projects (ADR-0093): each cloned without history into $EFFECTSCRIPT_CORPUS (default ~/.cache/effectscript/corpus) at its pinned commit. `pnpm corpus:update` moves every project to the tip of its branch and rewrites the pins. `exclude` leaves vendored or generated code out, with the reason; hidden folders, node_modules and build output are always left out.",
+  "projects": [
+    {
+      "name": "alchemy-run__alchemy",
+      "url": "https://github.com/alchemy-run/alchemy.git",
+      "branch": "main",
+      "commit": "6c7e69114c0bd9cea2de2eb04b004631b041bb08"
+    },
+    {
+      "name": "alchemy-run__distilled",
+      "url": "https://github.com/alchemy-run/distilled.git",
+      "branch": "main",
+      "commit": "2ae180ba02ec1831ff2ea826e63d3c247ec9323d"
+    },
+    {
+      "name": "anomalyco__effect-http-recorder",
+      "url": "https://github.com/anomalyco/effect-http-recorder.git",
+      "branch": "dev",
+      "commit": "89e1b85f7caa12ad076b8f9b65c804f89c60ecd0"
+    },
+    {
+      "name": "anomalyco__opencode",
+      "url": "https://github.com/anomalyco/opencode.git",
+      "branch": "dev",
+      "commit": "907b3bc518fa48e90e8ec24dd327d13eee71c36c"
+    },
+    {
+      "name": "cevr__effect-machine",
+      "url": "https://github.com/cevr/effect-machine.git",
+      "branch": "main",
+      "commit": "176697cf20006f5f539bf04ff2e609bfe1563e22"
+    },
+    {
+      "name": "crosshatch__crosshatch",
+      "url": "https://github.com/crosshatch/crosshatch.git",
+      "branch": "main",
+      "commit": "bf65390a9ea4ab85657864b3eebf5960c429b0fe"
+    },
+    {
+      "name": "Effectful-Tech__clanka",
+      "url": "https://github.com/Effectful-Tech/clanka.git",
+      "branch": "master",
+      "commit": "2b589dbc23ec443e71ee8f102b57fba202f4a11e"
+    },
+    {
+      "name": "kitlangton__ghui",
+      "url": "https://github.com/kitlangton/ghui.git",
+      "branch": "main",
+      "commit": "76c91b8621989dda6e5e6377c0452aa0394c22da"
+    },
+    {
+      "name": "kitlangton__motel",
+      "url": "https://github.com/kitlangton/motel.git",
+      "branch": "main",
+      "commit": "31186212365f705ba539c4befbf34a9b9e4bbcfe"
+    },
+    {
+      "name": "kitlangton__stack",
+      "url": "https://github.com/kitlangton/stack.git",
+      "branch": "main",
+      "commit": "cc918c499481993692c9859a4b61a91e4912a19c"
+    },
+    {
+      "name": "leonitousconforti__the-moby-effect",
+      "url": "https://github.com/leonitousconforti/the-moby-effect.git",
+      "branch": "main",
+      "commit": "440f5ec0af2363056dec81ea8b56a36c831ef4fa"
+    },
+    {
+      "name": "MapleTechLabs__maple",
+      "url": "https://github.com/MapleTechLabs/maple.git",
+      "branch": "main",
+      "commit": "b6c6092a14326550400f9428269a10df78a5702d"
+    },
+    {
+      "name": "pingdotgg__t3code",
+      "url": "https://github.com/pingdotgg/t3code.git",
+      "branch": "main",
+      "commit": "efecd3cf8bcec3d1891b5f5a27dc2f6d797c6448"
+    },
+    {
+      "name": "tim-smart__dfx",
+      "url": "https://github.com/tim-smart/dfx.git",
+      "branch": "main",
+      "commit": "f0b0b6e7b19a38f0a25a94d75857a14aaf63465a"
+    },
+    {
+      "name": "tim-smart__lalph",
+      "url": "https://github.com/tim-smart/lalph.git",
+      "branch": "master",
+      "commit": "ea5f0044a8ef439597f87308067bc7bd289cac42"
+    },
+    {
+      "name": "tim-smart__receipts",
+      "url": "https://github.com/tim-smart/receipts.git",
+      "branch": "main",
+      "commit": "3455ce200932cd8b145b441769f829ef715df8f3"
+    }
+  ],
+  "exclude": {
+    "tim-smart__lalph": {
+      "globs": [
+        "repos/**"
+      ],
+      "reason": "a vendored copy of Effect's own source"
+    },
+    "leonitousconforti__the-moby-effect": {
+      "globs": [
+        "repos/**"
+      ],
+      "reason": "vendored copies of Effect's own source"
+    },
+    "alchemy-run__distilled": {
+      "globs": [
+        "packages/*/src/services/**",
+        "packages/*/src/unstable-services/**"
+      ],
+      "reason": "SDK clients generated from API specs (Smithy and others), per its README"
+    }
+  }
+}

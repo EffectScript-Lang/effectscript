@@ -172,7 +172,7 @@ const child = Command.make("deploy", {
     await sync(() => output.push(`Target: ${config.target}`))
   })
 
-const app = parent.pipe(Command.withSubcommands([child]))
+const app = parent |> Command.withSubcommands([child])
 
 await runPromise(
   Command.runWith(app, { version: "1.0.0" })([
@@ -350,7 +350,7 @@ const clone = Command.make("clone", {
     await sync(() => output.push(`Cloning ${config.repository}`))
   })
 
-const app = git.pipe(Command.withSubcommands([clone]))
+const app = git |> Command.withSubcommands([clone])
 
 await runPromise(
   Command.runWith(app, { version: "1.0.0" })([

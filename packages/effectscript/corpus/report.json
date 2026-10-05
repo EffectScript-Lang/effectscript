@@ -1,0 +1,520 @@
+[
+  {
+    "name": "alchemy-run__alchemy",
+    "commit": "6c7e69114c0bd9cea2de2eb04b004631b041bb08",
+    "sources": 16948,
+    "generated": 6,
+    "effectFiles": 14497,
+    "converted": 6435,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 16836964,
+        "efx": 16775349
+      },
+      "qwen3": {
+        "ts": 16843938,
+        "efx": 16782196
+      },
+      "deepseek-v3": {
+        "ts": 17785803,
+        "efx": 17719871
+      },
+      "glm-4.6": {
+        "ts": 16724453,
+        "efx": 16662712
+      }
+    },
+    "notes": {
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 74,
+      "Unexpected token": 1,
+      "Export '…' is not defined": 3,
+      "`…` stays TypeScript: it isn't the `…` the node runtime option produces": 2,
+      "This syntax is reserved in files with the .mts or .cts extension. Add a trailing comma, as in `…`.": 1
+    }
+  },
+  {
+    "name": "alchemy-run__distilled",
+    "commit": "2ae180ba02ec1831ff2ea826e63d3c247ec9323d",
+    "sources": 1168,
+    "generated": 3,
+    "effectFiles": 634,
+    "converted": 120,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 645541,
+        "efx": 644552
+      },
+      "qwen3": {
+        "ts": 642464,
+        "efx": 641474
+      },
+      "deepseek-v3": {
+        "ts": 680584,
+        "efx": 679492
+      },
+      "glm-4.6": {
+        "ts": 638904,
+        "efx": 637914
+      }
+    },
+    "notes": {
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 1,
+      "`…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010)": 1,
+      "`…` stays TypeScript: it isn't the `…` the node runtime option produces": 4,
+      "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 1
+    }
+  },
+  {
+    "name": "anomalyco__effect-http-recorder",
+    "commit": "89e1b85f7caa12ad076b8f9b65c804f89c60ecd0",
+    "sources": 28,
+    "generated": 0,
+    "effectFiles": 21,
+    "converted": 13,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 28728,
+        "efx": 27682
+      },
+      "qwen3": {
+        "ts": 28604,
+        "efx": 27564
+      },
+      "deepseek-v3": {
+        "ts": 30165,
+        "efx": 29005
+      },
+      "glm-4.6": {
+        "ts": 28421,
+        "efx": 27381
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 3
+    }
+  },
+  {
+    "name": "anomalyco__opencode",
+    "commit": "907b3bc518fa48e90e8ec24dd327d13eee71c36c",
+    "sources": 3262,
+    "generated": 39,
+    "effectFiles": 1063,
+    "converted": 825,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 2002870,
+        "efx": 1952144
+      },
+      "qwen3": {
+        "ts": 1993916,
+        "efx": 1943382
+      },
+      "deepseek-v3": {
+        "ts": 2121989,
+        "efx": 2064161
+      },
+      "glm-4.6": {
+        "ts": 1984075,
+        "efx": 1933541
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 166,
+      "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 43,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 15,
+      "`…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 57,
+      "`…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010)": 9,
+      "`…` stays TypeScript: it uses `…`": 10,
+      "`…` stays TypeScript: its declaration isn't laid out as generated": 1
+    }
+  },
+  {
+    "name": "cevr__effect-machine",
+    "commit": "176697cf20006f5f539bf04ff2e609bfe1563e22",
+    "sources": 83,
+    "generated": 0,
+    "effectFiles": 73,
+    "converted": 66,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 176823,
+        "efx": 169003
+      },
+      "qwen3": {
+        "ts": 176084,
+        "efx": 168302
+      },
+      "deepseek-v3": {
+        "ts": 186974,
+        "efx": 178267
+      },
+      "glm-4.6": {
+        "ts": 175713,
+        "efx": 167931
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: its declaration isn't laid out as generated": 7,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 2,
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 8
+    }
+  },
+  {
+    "name": "crosshatch__crosshatch",
+    "commit": "bf65390a9ea4ab85657864b3eebf5960c429b0fe",
+    "sources": 179,
+    "generated": 0,
+    "effectFiles": 141,
+    "converted": 112,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 49112,
+        "efx": 47511
+      },
+      "qwen3": {
+        "ts": 50185,
+        "efx": 48630
+      },
+      "deepseek-v3": {
+        "ts": 52403,
+        "efx": 50485
+      },
+      "glm-4.6": {
+        "ts": 48676,
+        "efx": 47121
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: its declaration isn't laid out as generated": 8,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 2
+    }
+  },
+  {
+    "name": "Effectful-Tech__clanka",
+    "commit": "2b589dbc23ec443e71ee8f102b57fba202f4a11e",
+    "sources": 63,
+    "generated": 0,
+    "effectFiles": 55,
+    "converted": 47,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 140856,
+        "efx": 140204
+      },
+      "qwen3": {
+        "ts": 140450,
+        "efx": 139805
+      },
+      "deepseek-v3": {
+        "ts": 148139,
+        "efx": 147417
+      },
+      "glm-4.6": {
+        "ts": 139188,
+        "efx": 138543
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 1,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 2
+    }
+  },
+  {
+    "name": "kitlangton__ghui",
+    "commit": "76c91b8621989dda6e5e6377c0452aa0394c22da",
+    "sources": 300,
+    "generated": 0,
+    "effectFiles": 80,
+    "converted": 46,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 141840,
+        "efx": 140443
+      },
+      "qwen3": {
+        "ts": 141296,
+        "efx": 139824
+      },
+      "deepseek-v3": {
+        "ts": 151996,
+        "efx": 150320
+      },
+      "glm-4.6": {
+        "ts": 140639,
+        "efx": 139167
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 2,
+      "`…` stays TypeScript: its declaration isn't laid out as generated": 4,
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 5,
+      "`…` stays TypeScript: its `…` static isn't a layer or an accessor": 2,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 2
+    }
+  },
+  {
+    "name": "kitlangton__motel",
+    "commit": "31186212365f705ba539c4befbf34a9b9e4bbcfe",
+    "sources": 103,
+    "generated": 0,
+    "effectFiles": 47,
+    "converted": 34,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 126751,
+        "efx": 125868
+      },
+      "qwen3": {
+        "ts": 126285,
+        "efx": 125514
+      },
+      "deepseek-v3": {
+        "ts": 137121,
+        "efx": 135959
+      },
+      "glm-4.6": {
+        "ts": 125210,
+        "efx": 124439
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 2,
+      "`…` stays TypeScript: its declaration isn't laid out as generated": 4,
+      "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 1,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 1
+    }
+  },
+  {
+    "name": "kitlangton__stack",
+    "commit": "cc918c499481993692c9859a4b61a91e4912a19c",
+    "sources": 32,
+    "generated": 0,
+    "effectFiles": 22,
+    "converted": 19,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 98027,
+        "efx": 94522
+      },
+      "qwen3": {
+        "ts": 97205,
+        "efx": 93702
+      },
+      "deepseek-v3": {
+        "ts": 103195,
+        "efx": 99331
+      },
+      "glm-4.6": {
+        "ts": 96991,
+        "efx": 93488
+      }
+    },
+    "notes": {
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 1
+    }
+  },
+  {
+    "name": "leonitousconforti__the-moby-effect",
+    "commit": "440f5ec0af2363056dec81ea8b56a36c831ef4fa",
+    "sources": 328,
+    "generated": 0,
+    "effectFiles": 315,
+    "converted": 78,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 170993,
+        "efx": 169811
+      },
+      "qwen3": {
+        "ts": 171259,
+        "efx": 170092
+      },
+      "deepseek-v3": {
+        "ts": 183273,
+        "efx": 181783
+      },
+      "glm-4.6": {
+        "ts": 169643,
+        "efx": 168476
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 2
+    }
+  },
+  {
+    "name": "MapleTechLabs__maple",
+    "commit": "b6c6092a14326550400f9428269a10df78a5702d",
+    "sources": 4345,
+    "generated": 10,
+    "effectFiles": 1631,
+    "converted": 1118,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 4544956,
+        "efx": 4466339
+      },
+      "qwen3": {
+        "ts": 4564286,
+        "efx": 4485303
+      },
+      "deepseek-v3": {
+        "ts": 4909234,
+        "efx": 4816952
+      },
+      "glm-4.6": {
+        "ts": 4507003,
+        "efx": 4428027
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 170,
+      "`…` stays TypeScript: a pipe step wouldn't read the same after `…`": 1,
+      "`…` stays TypeScript: it uses `…`": 2,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 19,
+      "`…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 9,
+      "`…` stays TypeScript: a field can't be written as a schema field": 5,
+      "`…` stays TypeScript: an instance property would become a schema field": 2,
+      "`…` stays TypeScript: its declaration isn't laid out as generated": 3,
+      "`…` stays TypeScript: it isn't the `…` the node runtime option produces": 1,
+      "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 4,
+      "Type parameter list cannot be empty.": 1,
+      "Unexpected token": 6,
+      "`…` stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111)": 1
+    }
+  },
+  {
+    "name": "pingdotgg__t3code",
+    "commit": "efecd3cf8bcec3d1891b5f5a27dc2f6d797c6448",
+    "sources": 4571,
+    "generated": 7,
+    "effectFiles": 2198,
+    "converted": 1407,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 7892783,
+        "efx": 7868244
+      },
+      "qwen3": {
+        "ts": 7883513,
+        "efx": 7859015
+      },
+      "deepseek-v3": {
+        "ts": 8400086,
+        "efx": 8372569
+      },
+      "glm-4.6": {
+        "ts": 7817686,
+        "efx": 7793188
+      }
+    },
+    "notes": {
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 26,
+      "`…` stays TypeScript: it isn't the `…` the node runtime option produces": 2,
+      "`…` stays TypeScript: a field can't be written as a schema field": 1
+    }
+  },
+  {
+    "name": "tim-smart__dfx",
+    "commit": "f0b0b6e7b19a38f0a25a94d75857a14aaf63465a",
+    "sources": 49,
+    "generated": 0,
+    "effectFiles": 39,
+    "converted": 25,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 126828,
+        "efx": 126069
+      },
+      "qwen3": {
+        "ts": 125438,
+        "efx": 124681
+      },
+      "deepseek-v3": {
+        "ts": 133546,
+        "efx": 132647
+      },
+      "glm-4.6": {
+        "ts": 124602,
+        "efx": 123845
+      }
+    },
+    "notes": {}
+  },
+  {
+    "name": "tim-smart__lalph",
+    "commit": "ea5f0044a8ef439597f87308067bc7bd289cac42",
+    "sources": 69,
+    "generated": 0,
+    "effectFiles": 65,
+    "converted": 58,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 64771,
+        "efx": 62547
+      },
+      "qwen3": {
+        "ts": 64211,
+        "efx": 62037
+      },
+      "deepseek-v3": {
+        "ts": 67987,
+        "efx": 65461
+      },
+      "glm-4.6": {
+        "ts": 64114,
+        "efx": 61940
+      }
+    },
+    "notes": {
+      "`…` stays TypeScript: its `…` static isn't a layer or an accessor": 1,
+      "`…` stays TypeScript: its declaration isn't laid out as generated": 2,
+      "`…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 9,
+      "`…` stays TypeScript: it has a member a `…` can't hold": 1,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 2
+    }
+  },
+  {
+    "name": "tim-smart__receipts",
+    "commit": "3455ce200932cd8b145b441769f829ef715df8f3",
+    "sources": 68,
+    "generated": 0,
+    "effectFiles": 45,
+    "converted": 30,
+    "errors": 0,
+    "tokens": {
+      "o200k": {
+        "ts": 43783,
+        "efx": 43189
+      },
+      "qwen3": {
+        "ts": 44899,
+        "efx": 44316
+      },
+      "deepseek-v3": {
+        "ts": 44998,
+        "efx": 44321
+      },
+      "glm-4.6": {
+        "ts": 43729,
+        "efx": 43146
+      }
+    },
+    "notes": {}
+  }
+]

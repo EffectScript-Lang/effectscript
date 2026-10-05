@@ -77,7 +77,7 @@ const MigratorLayer = SqliteMigrator.layer({
 
 // Combine the database client with the migrations, so anything built on top of
 // `SqlLive` sees a fully migrated database.
-const SqlLive = MigratorLayer.pipe(Layer.provideMerge(SqlLayer))
+const SqlLive = MigratorLayer |> Layer.provideMerge(SqlLayer)
 
 // Wrap data access in a service, so the rest of the application depends on
 // `Groups` instead of the database directly.
@@ -110,36 +110,32 @@ export service Groups as "app/Groups" {
       const create = Effect.fn("Groups.create")((name: string, slug: string) =>
         // `Group.insert.makeEffect` fills in the generated id and timestamps
         // using the Effect clock, so tests can control them with `TestClock`.
-        Group.insert.makeEffect({ name, slug, notes: null }).pipe(
-          flatMap(repo.insert),
+        Group.insert.makeEffect({ name, slug, notes: null })
+          |> flatMap(repo.insert)
           // Database and encoding failures are unexpected here, so treat
           // them as defects to keep the service interface focused on domain
           // errors.
-          orDie
-        )
+          |> orDie
       )
 
       const rename = Effect.fn("Groups.rename")((id: GroupId, name: string) =>
-        Group.update.makeEffect({ id, name }).pipe(
-          flatMap(repo.update),
-          orDie
-        )
+        Group.update.makeEffect({ id, name })
+          |> flatMap(repo.update)
+          |> orDie
       )
 
       const findById = Effect.fn("Groups.findById")((id: GroupId) =>
-        repo.findById(id).pipe(
-          catchTags({
+        repo.findById(id)
+          |> catchTags({
             NoSuchElementError: () => new GroupNotFound({ id }),
             SchemaError: die,
             SqlError: die
           })
-        )
       )
 
-      const list = listAll().pipe(
-        orDie,
-        withSpan("Groups.list")
-      )
+      const list = listAll()
+        |> orDie
+        |> withSpan("Groups.list")
 
       return { create, rename, findById, list }
     }

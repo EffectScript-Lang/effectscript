@@ -18,10 +18,9 @@ import { UsersApiHandlersNoDeps } from "./fixtures/server/Users/http.ts"
 // HTTP pipeline is exercised without any SQL. The Authorization middleware is
 // provided with `Layer.provideMerge`, because the HTTP pipeline also resolves
 // it when the routes are built.
-const HandlersLayer = UsersApiHandlersNoDeps.pipe(
-  Layer.provide(Users.layerMemory),
-  Layer.provideMerge(AuthorizationLayer)
-)
+const HandlersLayer = UsersApiHandlersNoDeps
+  |> Layer.provide(Users.layerMemory)
+  |> Layer.provideMerge(AuthorizationLayer)
 
 // The client-side Authorization middleware supplies the bearer token.
 // Providing different middleware implementations lets the tests cover both
@@ -68,14 +67,14 @@ describe "UsersApi" with Layer.mergeAll(HandlersLayer, HttpServer.layerServices)
       // Use Effect.flip to assert on the error channel
       const error = await client.users.getById({
         params: { id: UserId.make("019845e1-682f-4b02-a706-3b2422d13aec") }
-      }).pipe(flip)
+      }) |> flip
       assert.strictEqual(error._tag, "UserNotFound")
     } |> provide(AuthorizationMiddlewareGood)
 
   test "rejects requests without a valid bearer token" {
       const client = await makeClient
 
-      const error = await client.users.list({ query: {} }).pipe(flip)
+      const error = await client.users.list({ query: {} }) |> flip
       assert.strictEqual(error._tag, "Unauthorized")
     } |> provide(AuthorizationMiddlewareBad)
 
@@ -84,7 +83,7 @@ describe "UsersApi" with Layer.mergeAll(HandlersLayer, HttpServer.layerServices)
 
       const error = await client.users.getById({
         params: { id: UserId.make("019845e1-682f-4b02-a706-3b2422d13aec") }
-      }).pipe(flip)
+      }) |> flip
       assert.strictEqual(error._tag, "Unauthorized")
     }
       |> provide(HttpApiMiddleware.layerClient(

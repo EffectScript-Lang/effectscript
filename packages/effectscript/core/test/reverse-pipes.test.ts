@@ -24,8 +24,9 @@ describe("reverse: pipelines (Plan 6 Task 4)", () => {
       "effect load(id: string) {\n  return await name(id)\n}\nexport const p = load(\"2\")\n  |> timeout(\"1 second\")\n  |> orDie\n"
     ],
     [
-      "pipe() on an unknown head",
-      "export const p = pipe(name(\"3\"), Effect.map((n) => n.length))\n",
+      // `.pipe(…)` on an unknown head whose first step proves it pipeable (ADR-0091 A7)
+      "pipe on an unknown head whose first step is an Effect step",
+      "export const p = name(\"3\").pipe(Effect.map((n) => n.length))\n",
       "export const p = name(\"3\") |> map((n) => n.length)\n"
     ],
     [
@@ -49,8 +50,13 @@ describe("reverse: pipelines (Plan 6 Task 4)", () => {
     expect(toEffectScript(ts).code).toContain("pipe(1, (x) => x + 1)")
   })
 
-  it("keeps .pipe on an Effect.gen that stays TypeScript", () => {
+  it("pipes an Effect.gen that stays TypeScript, since its first step proves it pipeable (A7)", () => {
     const body = "export const p = Effect.gen(function*() {\n  yield name(\"1\")\n}).pipe(Effect.orDie)\n"
-    expect(convert(body)).toContain(").pipe(orDie)")
+    expect(convert(body)).toContain("}) |> orDie")
+  })
+
+  it("keeps pipe() whose first step is an Effect step, since `|>` would compile to .pipe (A7)", () => {
+    const body = "export const p = pipe(name(\"3\"), Effect.map((n) => n.length))\n"
+    expect(convert(body)).toContain("pipe(name(\"3\"), map((n) => n.length))")
   })
 })

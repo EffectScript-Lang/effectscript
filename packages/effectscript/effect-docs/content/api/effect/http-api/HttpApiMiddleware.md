@@ -50,14 +50,13 @@ const Routes = HttpRouter.add(
     const schemaError = await HttpApiError.HttpApiSchemaError.wrap(
       "Body",
       Schema.decodeUnknownEffect(Schema.String)(42)
-    ).pipe(flip)
+    ) |> flip
     const failingResponse = fail(schemaError as unknown as Types.unhandled)
-    const result = await applySchemaErrorTransform(failingResponse, middlewareContext).pipe(
-      match({
+    const result = await applySchemaErrorTransform(failingResponse, middlewareContext)
+      |> match({
         onFailure: (error) => error instanceof CustomError ? error._tag : "UnexpectedError",
         onSuccess: () => "Success"
       })
-    )
     return HttpServerResponse.text(result)
   }
 ) |> HttpRouter.provideRequest(ErrorHandlerLayer)

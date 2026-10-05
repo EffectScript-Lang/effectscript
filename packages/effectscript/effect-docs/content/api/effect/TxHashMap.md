@@ -858,9 +858,8 @@ const program = effect {
   await TxHashMap.get(greetings, "alice") // => Option.some("Hello, Alice! (User: alice)")
 
   // Data-last usage with pipe
-  const ages = await profiles.pipe(
-    TxHashMap.map((profile) => profile.age)
-  )
+  const ages = await profiles
+    |> TxHashMap.map((profile) => profile.age)
 
   await TxHashMap.get(ages, "alice") // => Option.some(30)
 
@@ -894,9 +893,8 @@ const program = effect {
   await TxHashMap.size(electronicsInStock) // => 2
 
   // Data-last usage with pipe
-  const expensiveItems = await inventory.pipe(
-    TxHashMap.filter((product) => product.price > 500)
-  )
+  const expensiveItems = await inventory
+    |> TxHashMap.filter((product) => product.price > 500)
 
   await TxHashMap.size(expensiveItems) // => 2
 
@@ -934,8 +932,8 @@ const program = effect {
   totalSales // => 80000
 
   // Data-last usage with pipe
-  const quarterlyReport = await sales.pipe(
-    TxHashMap.reduce(
+  const quarterlyReport = await sales
+    |> TxHashMap.reduce(
       { quarters: 0, total: 0, max: 0 },
       (report, amount, quarter) => ({
         quarters: report.quarters + 1,
@@ -943,7 +941,6 @@ const program = effect {
         max: Math.max(report.max, amount)
       })
     )
-  )
   return quarterlyReport
 }
 
@@ -986,12 +983,11 @@ const program = effect {
   await TxHashMap.get(activeAdminAges, "charlie") // => Option.none()
 
   // Data-last usage with pipe
-  const validAges = await userData.pipe(
-    TxHashMap.filterMap((user) => {
+  const validAges = await userData
+    |> TxHashMap.filterMap((user) => {
       const age = parseInt(user.age)
       return isNaN(age) ? Result.failVoid : Result.succeed(age)
     })
-  )
 
   return await TxHashMap.size(validAges)
 }
@@ -1026,9 +1022,9 @@ const program = effect {
   ) // => false
 
   // Data-last usage with pipe
-  return await userStatuses.pipe(
-    TxHashMap.hasBy((user) => currentTime - user.lastSeen < 1_800_000) // 30 minutes
-  )
+  return await userStatuses
+    |> TxHashMap.hasBy((user) => currentTime - user.lastSeen < 1_800_000) // 30 minutes
+
 }
 
 await runPromise(program) // => true
@@ -1058,9 +1054,8 @@ const program = effect {
   highPriorityTask // => Option.some(["task3", { priority: 2, assignee: "alice", completed: false }])
 
   // Find first task assigned to specific user
-  return await tasks.pipe(
-    TxHashMap.findFirst((task) => task.assignee === "alice")
-  )
+  return await tasks
+    |> TxHashMap.findFirst((task) => task.assignee === "alice")
 }
 
 await runPromise(program) // => Option.some(["task1", { priority: 1, assignee: "alice", completed: false }])
@@ -1092,9 +1087,8 @@ const program = effect {
   ) // => true
 
   // Data-last usage with pipe
-  return await inventory.pipe(
-    TxHashMap.some((product) => product.price < 50)
-  )
+  return await inventory
+    |> TxHashMap.some((product) => product.price < 50)
 }
 
 await runPromise(program) // => true
@@ -1126,9 +1120,8 @@ const program = effect {
   ) // => false
 
   // Data-last usage with pipe
-  return await permissions.pipe(
-    TxHashMap.every((perms, username) => perms.canRead && username.length > 2)
-  )
+  return await permissions
+    |> TxHashMap.every((perms, username) => perms.canRead && username.length > 2)
 }
 
 await runPromise(program) // => true

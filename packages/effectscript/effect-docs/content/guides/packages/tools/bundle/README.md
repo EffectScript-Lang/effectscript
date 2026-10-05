@@ -201,7 +201,7 @@ const schema = Schema.Struct({
   name: Schema.String
 })
 
-Schema.decodeUnknownEffect(schema)({ name: "effect" }).pipe(Effect.runFork)
+Schema.decodeUnknownEffect(schema)({ name: "effect" }) |> Effect.runFork
 ```
 
 Prefer self-contained fixtures. The compare-selected workflow copies only the

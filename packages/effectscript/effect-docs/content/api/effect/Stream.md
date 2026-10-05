@@ -650,7 +650,7 @@ const program = scoped(effect {
   await PubSub.publish(pubsub, 2)
 
   const stream = Stream.fromSubscription(subscription)
-  const values = await stream.pipe(Stream.take(2), Stream.runCollect)
+  const values = await stream |> Stream.take(2) |> Stream.runCollect
   values // => [1, 2]
 })
 
@@ -1313,7 +1313,7 @@ await runPromise(program)
 const program = effect {
   const left = Stream.make(1, 2)
   const right = Stream.make("a", "b")
-  const values = await left.pipe(Stream.mergeLeft(right), Stream.runCollect)
+  const values = await left |> Stream.mergeLeft(right) |> Stream.runCollect
   values // => [ 1, 2 ]
 }
 
@@ -1795,9 +1795,8 @@ const stream = Stream.make(1, 2)
   |> Stream.concat(Stream.fail("Oops!"))
   |> Stream.concat(Stream.make(3, 4))
 
-const recovered = stream.pipe(
-  Stream.catchCause(() => Stream.make(999))
-)
+const recovered = stream
+  |> Stream.catchCause(() => Stream.make(999))
 
 const program = effect {
   const values = await Stream.runCollect(recovered)
@@ -2950,11 +2949,10 @@ const result = await runPromise(
         |> Stream.concat(Stream.make(1, 2, 3))
       const shared = await Stream.share(source, { capacity: 16, replay: 1 })
       const consume = (ready: Deferred<void>) =>
-        shared.pipe(
-          Stream.tap((value) => value === 0 ? Deferred.succeed(ready, void 0) : Effect.void),
-          Stream.filter((value) => value !== 0),
-          Stream.runCollect
-        )
+        shared
+          |> Stream.tap((value) => value === 0 ? Deferred.succeed(ready, void 0) : Effect.void)
+          |> Stream.filter((value) => value !== 0)
+          |> Stream.runCollect
 
       const values = await [consume(firstReady), consume(secondReady)]
       return { values, acquisitions: await Ref.get(acquisitions) }

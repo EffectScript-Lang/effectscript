@@ -102,7 +102,7 @@ const ProductToolkitLayer = impl ProductToolkit {
 // Provider setup (same pattern as the language-model example).
 const OpenAiClientLayer = OpenAiClient.layerConfig({
   apiKey: Config.Redacted("OPENAI_API_KEY")
-}).pipe(Layer.provide(FetchHttpClient.layer))
+}) |> Layer.provide(FetchHttpClient.layer)
 
 export error ProductAssistantError { reason = AiError.AiErrorReason }
 

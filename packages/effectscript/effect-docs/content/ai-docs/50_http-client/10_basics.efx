@@ -20,30 +20,28 @@ export service JsonPlaceholder as "app/JsonPlaceholder" {
   layer = effect {
       // Access the HttpClient service, and apply some common middleware to all
       // requests:
-      const client = (await HttpClient).pipe(
+      const client = (await HttpClient)
         // Add a base URL to all requests made with this client, and set the
         // Accept header to expect JSON responses
-        HttpClient.mapRequest(flow(
+        |> HttpClient.mapRequest(flow(
           HttpClientRequest.prependUrl("https://jsonplaceholder.typicode.com"),
           HttpClientRequest.acceptJson
-        )),
+        ))
         // Fail if the response status is not 2xx
-        HttpClient.filterStatusOk,
+        |> HttpClient.filterStatusOk
         // Retry transient errors (network issues, 5xx responses) with an
         // exponential backoff.
         //
         // See the schedule documentation for more complex retry strategies.
-        HttpClient.retryTransient({
+        |> HttpClient.retryTransient({
           schedule: Schedule.exponential(100),
           times: 3
         })
-      )
 
-      const allTodos = client.get("/todos").pipe(
-        flatMap(HttpClientResponse.schemaBodyJson(Schema.Array(Todo))),
-        mapError((cause) => new JsonPlaceholderError({ cause })),
-        withSpan("JsonPlaceholder.allTodos")
-      )
+      const allTodos = client.get("/todos")
+        |> flatMap(HttpClientResponse.schemaBodyJson(Schema.Array(Todo)))
+        |> mapError((cause) => new JsonPlaceholderError({ cause }))
+        |> withSpan("JsonPlaceholder.allTodos")
 
       // Use the HttpClient to fetch a todo item by id, and decode the response
       // using the Todo schema.
@@ -57,10 +55,9 @@ export service JsonPlaceholder as "app/JsonPlaceholder" {
           // There are options for query parameters, request body, headers, and
           // more.
           urlParams: { format: "json" }
-        }).pipe(
-          flatMap(HttpClientResponse.schemaBodyJson(Todo)),
-          mapError((cause) => new JsonPlaceholderError({ cause }))
-        )
+        })
+          |> flatMap(HttpClientResponse.schemaBodyJson(Todo))
+          |> mapError((cause) => new JsonPlaceholderError({ cause }))
 
         return todo
       }

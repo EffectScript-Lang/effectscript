@@ -36,10 +36,9 @@ const Triage = Decision.make({
   }
 })
 
-const Clef = CloudflareDecisionModel.layer({ model: "clef-flash" }).pipe(
-  Layer.provide(CloudflareClient.layerConfig()),
-  Layer.provide(FetchHttpClient.layer)
-)
+const Clef = CloudflareDecisionModel.layer({ model: "clef-flash" })
+  |> Layer.provide(CloudflareClient.layerConfig())
+  |> Layer.provide(FetchHttpClient.layer)
 
 const program = DecisionModel.decide(Triage, {
   input: "Checkout has been failing for every customer for an hour."

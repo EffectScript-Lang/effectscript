@@ -83,15 +83,14 @@ export class ApiClient extends Context.Service<ApiClient, HttpApiClient.ForApi<t
       // Use transformClient to apply middleware to the generated client. This
       // is useful for settings the base url and applying retry policies.
       transformClient: (client) =>
-        client.pipe(
-          HttpClient.mapRequest(flow(
+        client
+          |> HttpClient.mapRequest(flow(
             HttpClientRequest.prependUrl("http://localhost:3000")
-          )),
-          HttpClient.retryTransient({
+          ))
+          |> HttpClient.retryTransient({
             schedule: Schedule.exponential(100),
             times: 3
           })
-        )
     })
   )
     // Provide the client implementation of the Authorization middleware, which

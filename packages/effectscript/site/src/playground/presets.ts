@@ -311,7 +311,7 @@ export default worker Site serves Api with FilesLive
       adr: "ADR-0086",
       status: "a proposed sketch, not built",
       lowering: `import * as Cloudflare from "alchemy/Cloudflare"
-import { Effect, Layer, Path, Schema, pipe } from "effect"
+import { Effect, Layer, Path, Schema } from "effect"
 import { Etag, HttpPlatform, HttpRouter } from "effect/http"
 import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
 // @efx infra cloudflare
@@ -337,12 +337,12 @@ export const FilesLive = HttpApiBuilder.group(Api, "files", Effect.fn("Api.files
   return handlers.handleAll({
     read: Effect.fn("Api.files.read")(function*({ params }) {
       // a storage failure is a defect (500), a missing file is FileNotFound (404)
-      const file = yield* pipe(bucket.get(params.key), Effect.orDie)
+      const file = yield* bucket.get(params.key).pipe(Effect.orDie)
       if (file === null) return yield* new FileNotFound({ key: params.key })
-      return yield* pipe(file.text(), Effect.orDie)
+      return yield* file.text().pipe(Effect.orDie)
     }),
     write: Effect.fn("Api.files.write")(function*({ params, payload }) {
-      yield* pipe(bucket.put(params.key, payload), Effect.orDie)
+      yield* bucket.put(params.key, payload).pipe(Effect.orDie)
     })
   })
 })).pipe(Layer.provide(Cloudflare.R2.ReadWriteBucketBinding))
@@ -530,7 +530,6 @@ export default impl notes {
       status: "a proposed sketch, not built",
       lowering: `import { FunctionImpl, GroupImpl } from "@confect/server"
 import * as Effect from "effect/Effect"
-import { pipe } from "effect/Function"
 import * as Layer from "effect/Layer"
 import databaseSchema from "./_generated/schema"
 import { DatabaseReader, DatabaseWriter } from "./_generated/services"
@@ -542,25 +541,25 @@ import { NoteNotFound } from "./notes.spec.efx"
 
 const list = FunctionImpl.make(databaseSchema, notes, "list", Effect.fn("notes.list")(function*() {
   const reader = yield* DatabaseReader
-  return yield* pipe(reader.table("notes").index("by_creation_time", "desc").collect(),
+  return yield* reader.table("notes").index("by_creation_time", "desc").collect().pipe(
     Effect.orDie)
 }))
 
 const get = FunctionImpl.make(databaseSchema, notes, "get", Effect.fn("notes.get")(function*({ noteId }) {
   const reader = yield* DatabaseReader
-  return yield* pipe(reader.table("notes").get(noteId), Effect.mapError(() => new NoteNotFound({ noteId })))
+  return yield* reader.table("notes").get(noteId).pipe(Effect.mapError(() => new NoteNotFound({ noteId })))
 }))
 
 const create = FunctionImpl.make(databaseSchema, notes, "create", Effect.fn("notes.create")(function*({ text }) {
   const writer = yield* DatabaseWriter
-  return yield* pipe(writer.table("notes").insert({ text, pinned: false }), Effect.orDie)
+  return yield* writer.table("notes").insert({ text, pinned: false }).pipe(Effect.orDie)
 }))
 
 const remove = FunctionImpl.make(databaseSchema, notes, "remove", Effect.fn("notes.remove")(function*({ noteId }) {
   const reader = yield* DatabaseReader
-  yield* pipe(reader.table("notes").get(noteId), Effect.mapError(() => new NoteNotFound({ noteId })))
+  yield* reader.table("notes").get(noteId).pipe(Effect.mapError(() => new NoteNotFound({ noteId })))
   const writer = yield* DatabaseWriter
-  yield* pipe(writer.table("notes").delete(noteId), Effect.orDie)
+  yield* writer.table("notes").delete(noteId).pipe(Effect.orDie)
   return null
 }))
 
