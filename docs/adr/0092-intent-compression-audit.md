@@ -275,5 +275,8 @@ EffectScript keeps as written. So:
 - **`catch Tag {`** (an optional binding for typed clauses): no typed `catch` clause in the
   converted docs corpus; again only our samples would use it.
 - **Tuning the samples:** the gallery's `declare` stubs and types are what a reader needs to follow
-  each scenario, so they stay as written.
+  each scenario, so they stay as written. Measured on 2026-10-06, the gallery is 1,129 EffectScript
+  tokens against 2,149 (47.5%). Passing 50% takes 55 fewer, and its stubs alone are 123, so
+  dropping them, or leaving them out of the count, would reach 50% without changing the language.
+  That is the reason this is rejected: it would change the number, not the code.
 
