@@ -72,13 +72,7 @@ const urgent = Decision.probability({
 **Defining ticket triage**
 
 ```efx
-import { Schema } from "effect"
-import { Decision } from "effect/ai"
-
-const Ticket = Schema.Struct({
-  subject: Schema.String,
-  body: Schema.String
-})
+const Ticket = schema { subject: string; body: string }
 
 const TicketTriage = Decision.make({
   input: Ticket,

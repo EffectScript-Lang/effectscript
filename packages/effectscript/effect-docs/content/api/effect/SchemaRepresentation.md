@@ -35,9 +35,7 @@ document.schema.anyOf // => [{ type: "string", maxLength: 1 }, { type: "string",
 **Restoring a persisted schema**
 
 ```efx
-import { Schema, SchemaRepresentation } from "effect"
-
-const document = SchemaRepresentation.toRepresentation(Schema.Struct({ name: Schema.String }).ast)
+const document = SchemaRepresentation.toRepresentation(schema { name: string }.ast)
 const persisted = SchemaRepresentation.toJson(document)
 const restored = SchemaRepresentation.fromJson(persisted)
 const schema = SchemaRepresentation.fromRepresentation(restored, { revivers: [] })

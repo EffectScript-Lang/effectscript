@@ -221,20 +221,11 @@ important transition:
 ```efx
 const Key = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 20 }))
 
-const Insert = Schema.Struct({
-  _tag: Schema.Literal("Insert"),
-  value: Key
-})
+const Insert = schema { _tag: "Insert"; value: Key }
 
-const Remove = Schema.Struct({
-  _tag: Schema.Literal("Remove"),
-  value: Key
-})
+const Remove = schema { _tag: "Remove"; value: Key }
 
-const Contains = Schema.Struct({
-  _tag: Schema.Literal("Contains"),
-  value: Key
-})
+const Contains = schema { _tag: "Contains"; value: Key }
 
 const Command = Schema.Union([Insert, Remove, Contains])
 
@@ -605,17 +596,16 @@ sets directly, it generates command sequences and runs the same history against 
 
 ```efx
 import { it } from "@effect/vitest"
-import { HashSet, Schema } from "effect"
-import * as Arbitrary from "effect/Arbitrary"
+import { HashSet } from "effect"
 
 const Key = Schema.Int.check(
   Schema.isBetween({ minimum: 0, maximum: 20 })
 )
 
 const Command = Schema.Union([
-  Schema.Struct({ _tag: Schema.Literal("Insert"), value: Key }),
-  Schema.Struct({ _tag: Schema.Literal("Remove"), value: Key }),
-  Schema.Struct({ _tag: Schema.Literal("Contains"), value: Key })
+  schema { _tag: "Insert"; value: Key },
+  schema { _tag: "Remove"; value: Key },
+  schema { _tag: "Contains"; value: Key }
 ])
 
 const commands = Arbitrary.schema(
@@ -776,9 +766,6 @@ For example, an addition expression can be replaced directly by either side. The
 meaning from the object shape:
 
 ```efx
-import { Schema } from "effect"
-import * as Arbitrary from "effect/Arbitrary"
-
 interface Literal {
   readonly _tag: "Literal"
   readonly value: number
@@ -794,15 +781,8 @@ type Expression = Literal | Add
 
 const Expression: Schema.Codec<Expression> = Schema.suspend(() =>
   Schema.Union([
-    Schema.Struct({
-      _tag: Schema.Literal("Literal"),
-      value: Schema.Int
-    }),
-    Schema.Struct({
-      _tag: Schema.Literal("Add"),
-      left: Expression,
-      right: Expression
-    })
+    schema { _tag: "Literal"; value: Int },
+    schema { _tag: "Add"; left: Expression; right: Expression }
   ])
 )
 

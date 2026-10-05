@@ -10,33 +10,33 @@ project's saving, so the largest projects don't stand for the rest.
 
 | project | commit | Effect files | converted | errors | TS tokens | EffectScript tokens | saved |
 | ------- | ------ | -----------: | --------: | -----: | --------: | ------------------: | ----: |
-| alchemy-run__alchemy | `6c7e69114` | 14497 | 8134 | 0 | 16836964 | 16272615 | 3.4% |
-| alchemy-run__distilled | `2ae180ba0` | 634 | 458 | 0 | 645541 | 630275 | 2.4% |
-| anomalyco__effect-http-recorder | `89e1b85f7` | 21 | 13 | 0 | 28728 | 27601 | 3.9% |
-| anomalyco__opencode | `907b3bc51` | 1063 | 832 | 0 | 2002870 | 1940763 | 3.1% |
+| alchemy-run__alchemy | `6c7e69114` | 14497 | 8150 | 0 | 16836964 | 16269909 | 3.4% |
+| alchemy-run__distilled | `2ae180ba0` | 634 | 459 | 0 | 645541 | 629783 | 2.4% |
+| anomalyco__effect-http-recorder | `89e1b85f7` | 21 | 16 | 0 | 28728 | 27486 | 4.3% |
+| anomalyco__opencode | `907b3bc51` | 1063 | 885 | 0 | 2002870 | 1936841 | 3.3% |
 | cevr__effect-machine | `176697cf2` | 73 | 64 | 0 | 176823 | 169102 | 4.4% |
-| crosshatch__crosshatch | `bf65390a9` | 141 | 112 | 0 | 49112 | 46862 | 4.6% |
-| Effectful-Tech__clanka | `2b589dbc2` | 55 | 53 | 0 | 140856 | 132529 | 5.9% |
-| kitlangton__ghui | `76c91b862` | 80 | 46 | 0 | 141840 | 139806 | 1.4% |
-| kitlangton__motel | `311862123` | 47 | 34 | 0 | 126751 | 125647 | 0.9% |
-| kitlangton__stack | `cc918c499` | 22 | 22 | 0 | 98027 | 92237 | 5.9% |
-| leonitousconforti__the-moby-effect | `440f5ec0a` | 315 | 83 | 0 | 170993 | 166450 | 2.7% |
-| MapleTechLabs__maple | `b6c6092a1` | 1631 | 1137 | 0 | 4544956 | 4447010 | 2.2% |
-| pingdotgg__t3code | `efecd3cf8` | 2198 | 1711 | 0 | 7892783 | 7599021 | 3.7% |
+| crosshatch__crosshatch | `bf65390a9` | 141 | 115 | 0 | 49112 | 46800 | 4.7% |
+| Effectful-Tech__clanka | `2b589dbc2` | 55 | 54 | 0 | 140856 | 132176 | 6.2% |
+| kitlangton__ghui | `76c91b862` | 80 | 46 | 0 | 141840 | 139405 | 1.7% |
+| kitlangton__motel | `311862123` | 47 | 35 | 0 | 126751 | 125478 | 1.0% |
+| kitlangton__stack | `cc918c499` | 22 | 22 | 0 | 98027 | 92221 | 5.9% |
+| leonitousconforti__the-moby-effect | `440f5ec0a` | 315 | 85 | 0 | 170993 | 166211 | 2.8% |
+| MapleTechLabs__maple | `b6c6092a1` | 1631 | 1219 | 0 | 4544956 | 4438159 | 2.3% |
+| pingdotgg__t3code | `efecd3cf8` | 2198 | 1757 | 0 | 7892783 | 7589339 | 3.8% |
 | tim-smart__dfx | `f0b0b6e7b` | 39 | 35 | 0 | 126828 | 123159 | 2.9% |
-| tim-smart__lalph | `ea5f0044a` | 65 | 59 | 0 | 64771 | 61580 | 4.9% |
-| tim-smart__receipts | `3455ce200` | 45 | 30 | 0 | 43783 | 43059 | 1.7% |
-| **median project** | | | | | | | **3.2%** |
-| **total** | | **20926** | **12823** | **0** | **33091626** | **32017716** | **3.2%** |
+| tim-smart__lalph | `ea5f0044a` | 65 | 60 | 0 | 64771 | 61408 | 5.2% |
+| tim-smart__receipts | `3455ce200` | 45 | 30 | 0 | 43783 | 43051 | 1.7% |
+| **median project** | | | | | | | **3.3%** |
+| **total** | | **20926** | **13032** | **0** | **33091626** | **31990528** | **3.3%** |
 
 ## Every vocabulary of the panel
 
 | vocabulary | lab | TS tokens | EffectScript tokens | saved |
 | ---------- | --- | --------: | ------------------: | ----: |
-| o200k | OpenAI | 33091626 | 32017716 | 3.2% |
-| qwen3 | Qwen | 33094033 | 32031397 | 3.2% |
-| deepseek-v3 | DeepSeek | 35137493 | 33937291 | 3.4% |
-| glm-4.6 | Z.ai | 32829047 | 31766447 | 3.2% |
+| o200k | OpenAI | 33091626 | 31990528 | 3.3% |
+| qwen3 | Qwen | 33094033 | 32003947 | 3.3% |
+| deepseek-v3 | DeepSeek | 35137493 | 33900472 | 3.5% |
+| glm-4.6 | Z.ai | 32829047 | 31738997 | 3.3% |
 
 ## Why code stays TypeScript
 
@@ -45,8 +45,8 @@ the audit's work list (ADR-0092).
 
 | files | projects | note |
 | ----: | -------: | ---- |
+| 278 | 12 | This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030) |
 | 273 | 8 | `…` stays TypeScript: its span name "…" differs from the binding |
-| 252 | 12 | This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030) |
 | 115 | 6 | `…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030) |
 | 65 | 5 | `…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010) |
 | 33 | 5 | `…` stays TypeScript: it uses `…` |

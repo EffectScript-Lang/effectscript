@@ -443,12 +443,7 @@ console.log(message) // no focus
 **Example** (Generating an Optic from a Struct)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-})
+const schema = schema { a: string; b: number }
 
 /*
 const _b: Lens<{

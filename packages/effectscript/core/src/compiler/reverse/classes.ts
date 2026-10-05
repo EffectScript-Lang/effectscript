@@ -19,7 +19,7 @@ import {
   slice
 } from "./context.ts"
 import { isMember } from "./origin.ts"
-import { checkedOf, declarationType, fieldType } from "./types.ts"
+import { checkedOf, declarationType, fieldType, schemaToType } from "./types.ts"
 
 type Field =
   | { readonly kind: "typed"; readonly property: Node; readonly optional: "" | "?"; readonly type: string }
@@ -298,6 +298,23 @@ const isTypeOf = (statement: Node, name: string): boolean =>
   statement.typeAnnotation.exprName.left.type === "Identifier" &&
   statement.typeAnnotation.exprName.left.name === name &&
   statement.typeAnnotation.exprName.right.name === "Type" && !statement.typeAnnotation.typeArguments
+
+/**
+ * An inline `Schema.Struct({ … })` → `schema { … }`, when every field has a type spelling. Comments
+ * inside keep it TypeScript (the type spelling would drop them).
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const convertSchemaExpression = (ctx: ReverseCtx, node: Node): boolean => {
+  if (ctx.schema === undefined || !isMember(node.callee, ctx.schema, "Struct")) return false
+  if (node.arguments.length !== 1 || node.arguments[0].type !== "ObjectExpression") return false
+  if (commentsIn(ctx, node.start, node.end).length > 0) return false
+  const type = schemaToType(ctx.source, ctx.schema, node)
+  if (type === undefined || !type.startsWith("{")) return false
+  ctx.s.update(node.start, node.end, `schema ${type}`)
+  return true
+}
 
 /**
  * `const X = <schema>` + `type X = typeof X.Type` → `schema X = <type>`, and runs of tagged classes

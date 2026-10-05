@@ -604,11 +604,7 @@ type Type = typeof schema.Type
 You can use `Schema.Never` inside an optional key to represent a field that should never have a value but may still appear as a key in the type.
 
 ```efx
-import { Schema } from "effect"
-
-export const schema = Schema.Struct({
-  a: Schema.optionalKey(Schema.Never)
-})
+export const schema = schema { a?: never }
 
 /*
 type Encoded = {
@@ -1010,11 +1006,7 @@ You can annotate a struct with a custom message to use when a key is unexpected 
 **Example** (Annotating a struct with a custom message)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({
-  a: Schema.String
-}).annotate({ messageUnexpectedKey: "Custom message" })
+const schema = schema { a: string }.annotate({ messageUnexpectedKey: "Custom message" })
 
 console.log(String(Schema.decodeUnknownExit(schema)({ a: "a", b: "b" }, { onExcessProperty: "error" })))
 /*
@@ -1040,10 +1032,8 @@ Filters applied to either the struct or the record are preserved when combined.
 **Example** (Combining fixed properties with an index signature)
 
 ```efx
-import { Schema } from "effect"
-
 // Define a schema with one fixed key "a" and any number of string keys mapping to numbers
-export const schema = Schema.StructWithRest(Schema.Struct({ a: Schema.Number }), [
+export const schema = Schema.StructWithRest(schema { a: number }, [
   Schema.Record(Schema.String, Schema.Number)
 ])
 
@@ -1069,10 +1059,8 @@ If you want the record part to be mutable, apply `Schema.mutableKey` to its valu
 **Example** (Allowing dynamic keys to be mutable)
 
 ```efx
-import { Schema } from "effect"
-
 // Define a schema with one fixed key "a" and any number of string keys mapping to numbers
-export const schema = Schema.StructWithRest(Schema.Struct({ a: Schema.Number }), [
+export const schema = Schema.StructWithRest(schema { a: number }, [
   Schema.Record(Schema.String, Schema.mutableKey(Schema.Number))
 ])
 
@@ -1129,12 +1117,7 @@ Every `Schema.Struct` exposes a `.fields` property containing its field definiti
 **Example** (Single inheritance)
 
 ```efx
-import { Schema } from "effect"
-
-const Timestamped = Schema.Struct({
-  createdAt: Schema.Date,
-  updatedAt: Schema.Date
-})
+const Timestamped = schema { createdAt: Date; updatedAt: Date }
 
 const User = Schema.Struct({
   ...Timestamped.fields,
@@ -1152,16 +1135,9 @@ const Post = Schema.Struct({
 **Example** (Multiple inheritance)
 
 ```efx
-import { Schema } from "effect"
+const Timestamped = schema { createdAt: Date; updatedAt: Date }
 
-const Timestamped = Schema.Struct({
-  createdAt: Schema.Date,
-  updatedAt: Schema.Date
-})
-
-const SoftDeletable = Schema.Struct({
-  deletedAt: Schema.optionalKey(Schema.Date)
-})
+const SoftDeletable = schema { deletedAt?: Date }
 
 const User = Schema.Struct({
   ...Timestamped.fields,
@@ -1182,17 +1158,12 @@ Use `Struct.pick` to keep only a selected set of fields.
 **Example** (Picking specific fields from a struct)
 
 ```efx
-import { Schema, Struct } from "effect"
-
 /*
 const schema: Schema.Struct<{
   readonly a: Schema.String;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-}).mapFields(Struct.pick(["a"]))
+const schema = schema { a: string; b: number }.mapFields(Struct.pick(["a"]))
 ```
 
 #### Omit
@@ -1202,17 +1173,12 @@ Use `Struct.omit` to remove specified fields from a struct.
 **Example** (Omitting fields from a struct)
 
 ```efx
-import { Schema, Struct } from "effect"
-
 /*
 const schema: Schema.Struct<{
   readonly a: Schema.String;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-}).mapFields(Struct.omit(["b"]))
+const schema = schema { a: string; b: number }.mapFields(Struct.omit(["b"]))
 ```
 
 #### Merge
@@ -1229,10 +1195,7 @@ const schema: Schema.Struct<{
   readonly c: Schema.Boolean;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-}).mapFields(
+const schema = schema { a: string; b: number }.mapFields(
   Struct.assign({
     c: Schema.Boolean
   })
@@ -1242,7 +1205,7 @@ const schema = Schema.Struct({
 const schema2 = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
-}) |> Schema.fieldsAssign({ c: Schema.Boolean })
+}).pipe(Schema.fieldsAssign({ c: Schema.Boolean }))
 ```
 
 If you want to preserve the checks of the original struct, you can pass `{ unsafePreserveChecks: true }` to the `map` method.
@@ -1252,12 +1215,7 @@ If you want to preserve the checks of the original struct, you can pass `{ unsaf
 **Example** (Preserving checks when merging fields)
 
 ```efx
-import { Schema, Struct } from "effect"
-
-const original = Schema.Struct({
-  a: Schema.String,
-  b: Schema.String
-}).check(Schema.makeFilter(({ a, b }) => a === b, { title: "a === b" }))
+const original = schema { a: string; b: string }.check(Schema.makeFilter(({ a, b }) => a === b, { title: "a === b" }))
 
 const schema = original.mapFields(Struct.assign({ c: Schema.String }), {
   unsafePreserveChecks: true
@@ -1282,18 +1240,13 @@ Use `Struct.evolve` to transform the value schema of individual fields.
 **Example** (Modifying the type of a single field)
 
 ```efx
-import { Schema, Struct } from "effect"
-
 /*
 const schema: Schema.Struct<{
   readonly a: Schema.optionalKey<Schema.String>;
   readonly b: Schema.Number;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-}).mapFields(
+const schema = schema { a: string; b: number }.mapFields(
   Struct.evolve({
     a: (field) => Schema.optionalKey(field)
   })
@@ -1307,8 +1260,6 @@ If you want to transform the value schema of multiple fields at once, you can us
 **Example** (Making all fields optional)
 
 ```efx
-import { Schema, Struct } from "effect"
-
 /*
 const schema: Schema.Struct<{
     readonly a: Schema.optionalKey<Schema.String>;
@@ -1316,11 +1267,7 @@ const schema: Schema.Struct<{
     readonly c: Schema.optionalKey<Schema.Boolean>;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number,
-  c: Schema.Boolean
-}).mapFields(Struct.map(Schema.optionalKey))
+const schema = schema { a: string; b: number; c: boolean }.mapFields(Struct.map(Schema.optionalKey))
 ```
 
 #### Mapping a subset of fields at once
@@ -1330,8 +1277,6 @@ If you want to map a subset of elements, you can use `Struct.mapPick` or `Struct
 **Example** (Making a subset of fields optional)
 
 ```efx
-import { Schema, Struct } from "effect"
-
 /*
 const schema: Schema.Struct<{
     readonly a: Schema.optionalKey<Schema.String>;
@@ -1339,18 +1284,12 @@ const schema: Schema.Struct<{
     readonly c: Schema.optionalKey<Schema.Boolean>;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number,
-  c: Schema.Boolean
-}).mapFields(Struct.mapPick(["a", "c"], Schema.optionalKey))
+const schema = schema { a: string; b: number; c: boolean }.mapFields(Struct.mapPick(["a", "c"], Schema.optionalKey))
 ```
 
 Or if it's more convenient, you can use `Struct.mapOmit`.
 
 ```efx
-import { Schema, Struct } from "effect"
-
 /*
 const schema: Schema.Struct<{
     readonly a: Schema.optionalKey<Schema.String>;
@@ -1358,11 +1297,7 @@ const schema: Schema.Struct<{
     readonly c: Schema.optionalKey<Schema.Boolean>;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number,
-  c: Schema.Boolean
-}).mapFields(Struct.mapOmit(["b"], Schema.optionalKey))
+const schema = schema { a: string; b: number; c: boolean }.mapFields(Struct.mapOmit(["b"], Schema.optionalKey))
 ```
 
 #### Mapping individual keys
@@ -1373,7 +1308,6 @@ Use `Struct.evolveKeys` to rename field keys while keeping the corresponding val
 
 ```efx
 import { String } from "effect"
-import { Schema } from "effect"
 import { Struct } from "effect/data"
 
 /*
@@ -1382,10 +1316,7 @@ const schema: Schema.Struct<{
   readonly b: Schema.Number;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-}).mapFields(
+const schema = schema { a: string; b: number }.mapFields(
   Struct.evolveKeys({
     a: (key) => String.toUpperCase(key)
   })
@@ -1397,18 +1328,13 @@ If you simply want to rename keys with static keys, you can use `Struct.renameKe
 **Example** (Renaming keys in a struct)
 
 ```efx
-import { Schema, Struct } from "effect"
-
 /*
 const schema: Schema.Struct<{
   readonly A: Schema.String;
   readonly b: Schema.Number;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-}).mapFields(
+const schema = schema { a: string; b: number }.mapFields(
   Struct.renameKeys({
     a: "A"
   })
@@ -1422,7 +1348,7 @@ Use `Struct.evolveEntries` when you want to transform both the key and the value
 **Example** (Transforming keys and value schemas)
 
 ```efx
-import { Schema, String, Struct } from "effect"
+import { String } from "effect"
 
 /*
 const schema: Schema.Struct<{
@@ -1430,10 +1356,7 @@ const schema: Schema.Struct<{
   readonly A: Schema.optionalKey<Schema.String>;
 }>
 */
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-}).mapFields(
+const schema = schema { a: string; b: number }.mapFields(
   Struct.evolveEntries({
     a: (key, value) => [String.toUpperCase(key), Schema.optionalKey(value)]
   })
@@ -1445,13 +1368,8 @@ const schema = Schema.Struct({
 The previous examples can be applied to opaque structs as well.
 
 ```efx
-import { Schema, Struct } from "effect"
-
 class A extends Schema.Opaque<A>()(
-  Schema.Struct({
-    a: Schema.String,
-    b: Schema.Number
-  })
+  schema { a: string; b: number }
 ) {}
 
 /*
@@ -1963,9 +1881,7 @@ You can create an exclusive union, where the union matches if exactly one member
 **Example** (Exclusive Union)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Union([Schema.Struct({ a: Schema.String }), Schema.Struct({ b: Schema.Number })], {
+const schema = Schema.Union([schema { a: string }, schema { b: number }], {
   mode: "oneOf"
 })
 
@@ -2059,13 +1975,11 @@ const schema = Schema.Literals(["red", "green", "blue"])
 You can map the members of a `Schema.Literals` schema using the `mapMembers` method. The `mapMembers` method accepts a function from `Literals.members` to new members, and returns a new `Schema.Union` based on the result.
 
 ```efx
-import { Schema, Tuple } from "effect"
-
 const schema = Schema.Literals(["red", "green", "blue"]).mapMembers(
   Tuple.evolve([
-    (a) => Schema.Struct({ _tag: a, a: Schema.String }),
-    (b) => Schema.Struct({ _tag: b, b: Schema.Number }),
-    (c) => Schema.Struct({ _tag: c, c: Schema.Boolean })
+    (a) => schema { _tag: a; a: string },
+    (b) => schema { _tag: b; b: number },
+    (c) => schema { _tag: c; c: boolean }
   ])
 )
 
@@ -2259,8 +2173,6 @@ Using only `Schema.Codec<Category>` would force encoded and decoded types to be 
 **Example** (Recursive Union)
 
 ```efx
-import { Schema } from "effect"
-
 type U = A | B
 
 interface A {
@@ -2274,15 +2186,9 @@ interface B {
 
 const URef = Schema.suspend((): Schema.Codec<U> => U)
 
-const A: Schema.Codec<A> = Schema.Struct({
-  a: Schema.String,
-  next: URef
-})
+const A: Schema.Codec<A> = schema { a: string; next: URef }
 
-const B: Schema.Codec<B> = Schema.Struct({
-  b: Schema.Number,
-  next: URef
-})
+const B: Schema.Codec<B> = schema { b: number; next: URef }
 
 const U: Schema.Codec<U> = Schema.Union([A, B])
 ```
@@ -2575,9 +2481,7 @@ A filter predicate can return any of the shapes described by `Schema.FilterOutpu
 **Example** (Failure at a nested path)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({ password: Schema.String, confirmPassword: Schema.String }).check(
+const schema = schema { password: string; confirmPassword: string }.check(
   Schema.makeFilter((o) =>
     o.password === o.confirmPassword
       ? undefined
@@ -2593,9 +2497,7 @@ console.log(String(Schema.decodeUnknownExit(schema)({ password: "123456", confir
 **Example** (Reporting multiple failures at once)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({ a: Schema.Finite, b: Schema.Finite, c: Schema.Finite }).check(
+const schema = schema { a: Finite; b: Finite; c: Finite }.check(
   Schema.makeFilter((o) => {
     const issues: Array<Schema.FilterIssue> = []
     if (o.a > 0) {
@@ -2640,13 +2542,8 @@ Even after adding a filter and an annotation, the schema is still a `Schema.Stri
 **Example** (Accessing struct fields after filtering)
 
 ```efx
-import { Schema } from "effect"
-
 // Define a struct and apply a (dummy) filter
-const schema = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Number
-}).check(Schema.makeFilter(() => true))
+const schema = schema { name: string; age: number }.check(Schema.makeFilter(() => true))
 
 // The `.fields` property is still available
 const fields = schema.fields
@@ -2675,10 +2572,8 @@ console.log(String(Schema.decodeUnknownExit(schema)(" a")))
 **Example** (Using `isMinLength` with an object that has `length`)
 
 ```efx
-import { Schema } from "effect"
-
 // Object must have a numeric `length` field that is >= 3
-const schema = Schema.Struct({ length: Schema.Number }).check(Schema.isMinLength(3))
+const schema = schema { length: number }.check(Schema.isMinLength(3))
 
 console.log(String(Schema.decodeUnknownExit(schema)({ length: 2 })))
 // Failure(Cause([Fail(SchemaError: Expected a value with a length of at least 3)]))
@@ -2946,9 +2841,7 @@ console.log(parse({ a: 1 }))
 To support constructing values from composed schemas, `make` is now available on all schemas, including unions.
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Union([Schema.Struct({ a: Schema.String }), Schema.Struct({ b: Schema.Number })])
+const schema = Schema.Union([schema { a: string }, schema { b: number }])
 
 schema.make({ a: "hello" })
 schema.make({ b: 1 })
@@ -3369,16 +3262,14 @@ Use `passthrough` when the encoded output of the target schema matches the type 
 **Example** (When `To.Encoded === From.Type`)
 
 ```efx
-const From = Schema.Struct({
-  a: Schema.String
-})
+const From = schema { a: string }
 
 const To = Schema.Struct({
   a: Schema.FiniteFromString
 })
 
 // To.Encoded (string) = From.Type (string)
-const schema = From |> Schema.decodeTo(To, SchemaTransformation.passthrough())
+const schema = From.pipe(Schema.decodeTo(To, SchemaTransformation.passthrough()))
 ```
 
 ### passthroughSubtype
@@ -3418,18 +3309,12 @@ Strict mode ensures that decoding and encoding fully match. You can disable it b
 **Example** (Turning off strict mode)
 
 ```efx
-const From = Schema.Struct({
-  a: Schema.Literals(["a", "b"]),
-  b: Schema.Number
-})
+const From = schema { a: "a" | "b"; b: number }
 
-const To = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Literals([1, 2])
-})
+const To = schema { a: string; b: 1 | 2 }
 
 // Neither From.Type nor To.Encoded extends the other.
-const schema = From |> Schema.decodeTo(To, SchemaTransformation.passthrough({ strict: false }))
+const schema = From.pipe(Schema.decodeTo(To, SchemaTransformation.passthrough({ strict: false })))
 ```
 
 ## Managing Optional Keys
@@ -3467,9 +3352,7 @@ const OptionFromNonEmptyString = Schema.optionalKey(Schema.String)
     })
   )
 
-const schema = Schema.Struct({
-  foo: OptionFromNonEmptyString
-})
+const schema = schema { foo: OptionFromNonEmptyString }
 
 // Decoding examples
 
@@ -3648,12 +3531,8 @@ This is not enforced at the type level, but it may be enforced through a linter 
 **Example** (Creating an Opaque Struct)
 
 ```efx
-import { Schema } from "effect"
-
 class Person extends Schema.Opaque<Person>()(
-  Schema.Struct({
-    name: Schema.String
-  })
+  schema { name: string }
 ) {}
 
 //      ┌─── Codec<Person, { readonly name: string; }, never, never>
@@ -3678,7 +3557,7 @@ const another: Schema.Struct<{
     readonly name: typeof Person;
 }>
 */
-const another = Schema.Struct({ name: Person }) // You can use the opaque type inside other schemas
+const another = schema { name: Person } // You can use the opaque type inside other schemas
 
 /*
 type Type = {
@@ -3693,15 +3572,11 @@ Opaque structs can be used just like regular structs, with no other changes need
 **Example** (Retrieving Schema Fields)
 
 ```efx
-import { Schema } from "effect"
-
 // A function that takes a generic struct
 const getFields = <Fields extends Schema.Struct.Fields>(struct: Schema.Struct<Fields>) => struct.fields
 
 class Person extends Schema.Opaque<Person>()(
-  Schema.Struct({
-    name: Schema.String
-  })
+  schema { name: string }
 ) {}
 
 /*
@@ -3719,13 +3594,8 @@ You can add static members to an opaque struct class to extend its behavior.
 **Example** (Custom serializer via static method)
 
 ```efx
-import { Schema } from "effect"
-
 class Person extends Schema.Opaque<Person>()(
-  Schema.Struct({
-    name: Schema.String,
-    createdAt: Schema.Date
-  })
+  schema { name: string; createdAt: Date }
 ) {
   // Create a custom serializer using the class itself
   static readonly serializer = Schema.toCodecJson(this)
@@ -3755,12 +3625,8 @@ You can attach filters and annotations to the struct passed into `Opaque`.
 **Example** (Applying a filter and title annotation)
 
 ```efx
-import { Schema } from "effect"
-
 class Person extends Schema.Opaque<Person>()(
-  Schema.Struct({
-    name: Schema.String
-  }).annotate({ identifier: "Person" })
+  schema { name: string }.annotate({ identifier: "Person" })
 ) {}
 
 console.log(String(Schema.decodeUnknownExit(Person)(null)))
@@ -3770,12 +3636,8 @@ console.log(String(Schema.decodeUnknownExit(Person)(null)))
 When you call methods like `annotate` on an opaque struct, you get back the original struct, not a new class.
 
 ```efx
-import { Schema } from "effect"
-
 class Person extends Schema.Opaque<Person>()(
-  Schema.Struct({
-    name: Schema.String
-  })
+  schema { name: string }
 ) {}
 
 /*
@@ -3835,8 +3697,6 @@ export type Encoded = (typeof Category)["Encoded"]
 **Example** (Mutually Recursive Schemas)
 
 ```efx
-import { Schema } from "effect"
-
 class Expression extends Schema.Opaque<Expression>()(
   Schema.Struct({
     type: Schema.Literal("expression"),
@@ -3845,12 +3705,7 @@ class Expression extends Schema.Opaque<Expression>()(
 ) {}
 
 class Operation extends Schema.Opaque<Operation>()(
-  Schema.Struct({
-    type: Schema.Literal("operation"),
-    operator: Schema.Literals(["+", "-"]),
-    left: Expression,
-    right: Expression
-  })
+  schema { type: "operation"; operator: "+" | "-"; left: Expression; right: Expression }
 ) {}
 
 /*
@@ -3877,17 +3732,11 @@ You can brand an opaque struct using the `Brand` generic parameter.
 **Example** (Branded Opaque Struct)
 
 ```efx
-import { Schema } from "effect"
-
 class A extends Schema.Opaque<A, { readonly brand: unique symbol }>()(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 ) {}
 class B extends Schema.Opaque<B, { readonly brand: unique symbol }>()(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 ) {}
 
 const f = (a: A) => a
@@ -3903,18 +3752,13 @@ g(A.make({ a: "a" })) // error: Argument of type 'A' is not assignable to parame
 Like with branded classes, you can use the `Brand` module to create branded opaque structs.
 
 ```efx
-import { Schema } from "effect"
 import type { Brand } from "effect"
 
 class A extends Schema.Opaque<A, Brand.Brand<"A">>()(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 ) {}
 class B extends Schema.Opaque<B, Brand.Brand<"B">>()(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 ) {}
 
 const f = (a: A) => a
@@ -3949,9 +3793,7 @@ console.log(MyString.decodeUnknownSync("a"))
 ### Wrapping a Struct Schema
 
 ```efx
-import { Schema } from "effect"
-
-class MyStruct extends Schema.Struct({ name: Schema.String }) {
+class MyStruct extends schema { name: string } {
   static readonly decodeUnknownSync = Schema.decodeUnknownSync(this)
 }
 
@@ -4061,10 +3903,7 @@ const PersonSchema = Schema.instanceOf(Person, {
   // optional: explicit encoding
   
     |> Schema.encodeTo(
-      Schema.Struct({
-        name: Schema.String,
-        age: Schema.Number
-      }),
+      schema { name: string; age: number },
       SchemaTransformation.transform({
         decode: (args) => new Person(args.name, args.age),
         encode: (instance) => instance
@@ -4094,10 +3933,7 @@ const PersonSchema = Schema.instanceOf(Person, {
   // optional: explicit encoding
   
     |> Schema.encodeTo(
-      Schema.Struct({
-        name: Schema.String,
-        age: Schema.Number
-      }),
+      schema { name: string; age: number },
       SchemaTransformation.transform({
         decode: (args) => new Person(args.name, args.age),
         encode: (instance) => instance
@@ -4118,9 +3954,7 @@ class PersonWithEmail extends Person {
 **Example** (Extending Data.Error)
 
 ```efx
-const Props = Schema.Struct({
-  message: Schema.String
-})
+const Props = schema { message: string }
 
 class Err extends Data.Error<typeof Props.Type> {
   constructor(props: typeof Props.Type) {
@@ -4194,13 +4028,8 @@ To attach a filter to the whole class, pass a `Struct` instead of a field record
 **Example** (Validating a relationship between fields)
 
 ```efx
-import { Schema } from "effect"
-
 class A extends Schema.Class<A>("A")(
-  Schema.Struct({
-    a: Schema.String,
-    b: Schema.String
-  }).check(Schema.makeFilter(({ a, b }) => a === b, { title: "a === b" }))
+  schema { a: string; b: string }.check(Schema.makeFilter(({ a, b }) => a === b, { title: "a === b" }))
 ) {}
 
 try {
@@ -4295,13 +4124,9 @@ Use `extend` to create a subclass that adds fields to the base schema. Instance 
 **Example** (Extending a class with new fields)
 
 ```efx
-import { Schema } from "effect"
-
 // Base class with one schema field ("a") and one regular class field ("_a")
 class A extends Schema.Class<A>("A")(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 ) {
   readonly _a = 1
 }
@@ -4399,8 +4224,6 @@ export type Encoded = (typeof Category)["Encoded"]
 **Example** (Mutually recursive expression language)
 
 ```efx
-import { Schema } from "effect"
-
 class Expression extends Schema.Class<Expression>("Expression")(
   Schema.Struct({
     type: Schema.Literal("expression"),
@@ -4409,12 +4232,7 @@ class Expression extends Schema.Class<Expression>("Expression")(
 ) {}
 
 class Operation extends Schema.Class<Operation>("Operation")(
-  Schema.Struct({
-    type: Schema.Literal("operation"),
-    operator: Schema.Literals(["+", "-"]),
-    left: Expression,
-    right: Expression
-  })
+  schema { type: "operation"; operator: "+" | "-"; left: Expression; right: Expression }
 ) {}
 
 /*
@@ -4582,9 +4400,7 @@ Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Unknown))(`{"a":1,"b":2}`)
 **Example** (Parsing and validating a known structure)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({ a: Schema.Number })
+const schema = schema { a: number }
 const schemaFromJsonString = Schema.fromJsonString(schema)
 
 Schema.decodeUnknownSync(schemaFromJsonString)(`{"a":1,"b":2}`)
@@ -4609,7 +4425,7 @@ Schema.decodeUnknownSync(Schema.StringFromBase64)("aGVsbG8=")
 Compose with `fromJsonString` to decode Base64-encoded JSON into a validated struct:
 
 ```efx
-const schema = Schema.Struct({ a: Schema.Number })
+const schema = schema { a: number }
 
 // base64 string -> UTF-8 string -> parsed & validated struct
 const schemaFromBase64 = Schema.StringFromBase64
@@ -4643,10 +4459,7 @@ Schema.decodeUnknownSync(Schema.StringFromHex)("68656c6c6f")
 Decodes a URI-component-encoded string into a UTF-8 string. Useful for storing structured data in URL query parameters.
 
 ```efx
-const PaginationSchema = Schema.Struct({
-  maxItemPerPage: Schema.Number,
-  page: Schema.Number
-})
+const PaginationSchema = schema { maxItemPerPage: number; page: number }
 
 const UrlSchema = Schema.StringFromUriComponent
   |> Schema.decodeTo(Schema.fromJsonString(PaginationSchema))
@@ -4681,12 +4494,8 @@ The decoding process has two steps:
 **Example** (Decoding a flat structure)
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromFormData(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 )
 
 const formData = new FormData()
@@ -4702,16 +4511,8 @@ You can express nested values using bracket notation.
 **Example** (Nested fields)
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromFormData(
-  Schema.Struct({
-    a: Schema.String,
-    b: Schema.Struct({
-      c: Schema.String,
-      d: Schema.String
-    })
-  })
+  schema { a: string; b: { c: string; d: string } }
 )
 
 const formData = new FormData()
@@ -4728,13 +4529,9 @@ If you want to decode string fields into non-string primitive values, use `Schem
 **Example** (Parsing non-string values)
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromFormData(
   Schema.toCodecStringTree(
-    Schema.Struct({
-      a: Schema.Int
-    })
+    schema { a: Int }
   )
 )
 
@@ -4759,12 +4556,8 @@ The decoding process has two steps:
 **Example** (Decoding a flat structure)
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromURLSearchParams(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 )
 
 const urlSearchParams = new URLSearchParams("a=1&b=2")
@@ -4778,16 +4571,8 @@ You can express nested values using bracket notation.
 **Example** (Nested fields)
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromURLSearchParams(
-  Schema.Struct({
-    a: Schema.String,
-    b: Schema.Struct({
-      c: Schema.String,
-      d: Schema.String
-    })
-  })
+  schema { a: string; b: { c: string; d: string } }
 )
 
 const urlSearchParams = new URLSearchParams("a=1&b[c]=2&b[d]=3")
@@ -4801,13 +4586,9 @@ If you want to decode values that are not strings, use `Schema.toCodecStringTree
 **Example** (Parsing non-string values)
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromURLSearchParams(
   Schema.toCodecStringTree(
-    Schema.Struct({
-      a: Schema.Int
-    })
+    schema { a: Int }
   )
 )
 
@@ -4987,10 +4768,7 @@ const DateFromEpochMillis = Schema.Date
     })
   )
 
-const schema = Schema.Struct({
-  date1: DateFromEpochMillis,
-  date2: Schema.Date
-})
+const schema = schema { date1: DateFromEpochMillis; date2: Date }
 
 const toCodecJson = Schema.toCodecJson(schema)
 
@@ -5106,15 +4884,9 @@ It uses the `toCodecStringTree` serializer internally.
 **Example**
 
 ```efx
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Array(Schema.NullOr(Schema.String)),
-  c: Schema.Struct({
-    d: Schema.Option(Schema.String),
-    e: Schema.Date
-  }),
-  f: Schema.optional(Schema.String)
-})
+import { Schema } from "effect"
+
+const schema = schema { a: string; b: Array<string | null>; c: { d: Option<string>; e: Date }; f?: string | undefined }
 
 // const encoder: (t: {...}) => Effect<string, Schema.SchemaError, never>
 const xmlEncoder = Schema.toEncoderXml(schema)
@@ -5377,11 +5149,7 @@ Optional fields are converted to optional fields or elements in the JSON Schema.
 **Example**
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({
-  a: Schema.optionalKey(Schema.String)
-})
+const schema = schema { a?: string }
 
 const document = Schema.toJsonSchemaDocument(schema)
 
@@ -5408,11 +5176,7 @@ Fields including `undefined` (such as those defined unsing `Schema.optional` or 
 **Example**
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({
-  a: Schema.optional(Schema.String)
-})
+const schema = schema { a?: string | undefined }
 
 const document = Schema.toJsonSchemaDocument(schema)
 
@@ -5450,8 +5214,6 @@ This example shows how `Schema.toCodecJson` and `Schema.toJsonSchemaDocument` ca
 **Example** (Align a JSON serializer and JSON Schema for `Headers`)
 
 ```efx
-import { Schema, SchemaGetter } from "effect"
-
 const data = new Headers({ a: "b" })
 
 // `Headers` does not serialize to JSON in a useful way by default.
@@ -5472,9 +5234,7 @@ const MyHeaders = Schema.instanceOf(Headers, {
     )
 })
 
-const schema = Schema.Struct({
-  headers: MyHeaders
-})
+const schema = schema { headers: MyHeaders }
 
 // Build a serializer that produces JSON-safe values using the `toCodecJson` annotation.
 const serializer = Schema.toCodecJson(schema)
@@ -5594,10 +5354,8 @@ With `fromJsonString`, the generated schema uses `contentSchema` to embed the JS
 **Example** (Embedding `contentSchema` for JSON string content)
 
 ```efx
-import { Schema } from "effect"
-
 // Original value is an object with a string field 'a'
-const original = Schema.Struct({ a: Schema.String })
+const original = schema { a: string }
 
 // fromJsonString: the outer value is a string,
 // but its content must be valid JSON matching 'original'
@@ -5637,12 +5395,7 @@ An equivalence function checks whether two values are structurally equal accordi
 **Example** (Deriving equivalence for a basic schema)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-})
+const schema = schema { a: string; b: number }
 
 const equivalence = Schema.toEquivalence(schema)
 ```
@@ -5672,10 +5425,12 @@ You can override the derived equivalence for a schema using `overrideToEquivalen
 **Example** (Overriding equivalence for a struct)
 
 ```efx
+import { Equivalence, Schema } from "effect"
+
 const schema = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
-}) |> Schema.overrideToEquivalence(() => Equivalence.make((x, y) => x.a === y.a))
+}).pipe(Schema.overrideToEquivalence(() => Equivalence.make((x, y) => x.a === y.a)))
 
 const equivalence = Schema.toEquivalence(schema)
 ```
@@ -5743,14 +5498,8 @@ The `Differ` module lets you compute and apply JSON Patch (RFC 6902) changes for
 **Example** (Compare two values and apply the patch)
 
 ```efx
-import { Schema } from "effect"
-
 // Describe the shape of your data
-const schema = Schema.Struct({
-  id: Schema.Number,
-  name: Schema.String,
-  price: Schema.Number
-})
+const schema = schema { id: number; name: string; price: number }
 
 // Build a differ tied to the schema
 const differ = Schema.toDifferJsonPatch(schema)
@@ -5949,10 +5698,8 @@ there is no portable way to reconstruct its user code.
 Use `Schema.toRepresentation` when starting from a schema:
 
 ```efx
-import { Schema } from "effect"
-
 const document = Schema.toRepresentation(
-  Schema.Struct({ name: Schema.NonEmptyString })
+  schema { name: NonEmptyString }
 )
 ```
 
@@ -6003,9 +5750,7 @@ Return a reference name to move the candidate into `references`, or return `unde
 extracts anonymous candidates only when the same candidate occurs more than once, while still respecting identifiers:
 
 ```efx
-import { Schema, SchemaRepresentation } from "effect"
-
-const Item = Schema.Struct({ name: Schema.String })
+const Item = schema { name: string }
 
 const document = SchemaRepresentation.toRepresentations([Item.ast, Item.ast], {
   referencePolicy: ({ ast, identifier, occurrences }) => identifier ?? (occurrences > 1 ? `${ast._tag}_` : undefined)
@@ -6098,8 +5843,6 @@ There are separate reviver contracts for opaque declarations, leaf filters, and 
 Use `makeReviverDeclaration`, `makeReviverFilter`, and `makeReviverFilterGroup` to infer `P` from `payloadSchema`.
 
 ```efx
-import { Schema, SchemaRepresentation } from "effect"
-
 const id = "acme/schema/minLength"
 
 function minLength(
@@ -6114,7 +5857,7 @@ function minLength(
 
 const minLengthReviver = SchemaRepresentation.makeReviverFilter(
   id,
-  Schema.Struct({ minimum: Schema.Number }),
+  schema { minimum: number },
   ({ annotations, payload }) => minLength(payload.minimum, annotations)
 )
 ```
@@ -6413,10 +6156,7 @@ Default hooks are just for demo purposes:
 - CheckHook: returns the meta infos of the check as a string
 
 ```efx
-const schema = Schema.Struct({
-  a: Schema.NonEmptyString,
-  b: Schema.NonEmptyString
-})
+const schema = schema { a: NonEmptyString; b: NonEmptyString }
 
 Schema.decodeUnknownEffect(schema)({ b: "" }, { errors: "all" })
   .pipe(
@@ -7243,17 +6983,10 @@ new Elysia({ adapter: node() })
     },
     {
       params: decodingStringSchema(
-        Schema.Struct({
-          id: Schema.Int
-        })
+        schema { id: Int }
       ),
       query: decodingStringSchema(
-        Schema.Struct({
-          required: Schema.String,
-          optional: Schema.optionalKey(Schema.String),
-          array: Schema.Array(Schema.String),
-          tuple: Schema.Tuple([Schema.String, Schema.Int])
-        })
+        schema { required: string; optional?: string; array: string[]; tuple: [string, Int] }
       ),
       response: {
         200: encodingJsonSchema(
@@ -7272,15 +7005,11 @@ new Elysia({ adapter: node() })
     },
     {
       body: decodingJsonSchema(
-        Schema.Struct({
-          bigint: Schema.BigInt
-        })
+        schema { bigint: bigint }
       ),
       response: {
         200: encodingJsonSchema(
-          Schema.Struct({
-            bigint: Schema.BigInt
-          })
+          schema { bigint: bigint }
         )
       }
     }

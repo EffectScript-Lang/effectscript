@@ -319,12 +319,7 @@ Decoding failed:
 v4
 
 ```efx
-import { Schema, SchemaIssue } from "effect"
-
-const Person = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Number
-})
+const Person = schema { name: string; age: number }
 
 const decode = Schema.decodeUnknownSync(Person)
 
@@ -384,10 +379,8 @@ const omitted = Schema.Struct({ a: Schema.String, b: Schema.Number }).pipe(Schem
 v4
 
 ```efx
-import { Schema, Struct } from "effect"
-
-const picked = Schema.Struct({ a: Schema.String, b: Schema.Number }).mapFields(Struct.pick(["a"]))
-const omitted = Schema.Struct({ a: Schema.String, b: Schema.Number }).mapFields(Struct.omit(["b"]))
+const picked = schema { a: string; b: number }.mapFields(Struct.pick(["a"]))
+const omitted = schema { a: string; b: number }.mapFields(Struct.omit(["b"]))
 ```
 
 ### partial / partialWith
@@ -400,9 +393,7 @@ const omitted = Schema.Struct({ a: Schema.String, b: Schema.Number }).mapFields(
 - `Schema.partialWith({ exact: true })` → `mapFields(Struct.map(Schema.optionalKey))` (exact)
 
 ```efx
-import { Schema, Struct } from "effect"
-
-const struct = Schema.Struct({ a: Schema.String, b: Schema.Number })
+const struct = schema { a: string; b: number }
 
 // v3: struct.pipe(Schema.partial)
 const withUndefined = struct.mapFields(Struct.map(Schema.optional))
@@ -414,9 +405,7 @@ const exact = struct.mapFields(Struct.map(Schema.optionalKey))
 You can also make a subset of fields partial:
 
 ```efx
-import { Schema, Struct } from "effect"
-
-const schema = Schema.Struct({ a: Schema.String, b: Schema.Number })
+const schema = schema { a: string; b: number }
   .mapFields(Struct.mapPick(["a"], Schema.optional))
 ```
 
@@ -430,12 +419,7 @@ const schema = Schema.Struct({ a: Schema.String, b: Schema.Number })
 - `Schema.required`: makes `optional` fields required (removes `undefined`)
 
 ```efx
-import { Schema, Struct } from "effect"
-
-const original = Schema.Struct({
-  a: Schema.optionalKey(Schema.String),
-  b: Schema.optionalKey(Schema.Number)
-})
+const original = schema { a?: string; b?: number }
 
 // v3: Schema.required(original)
 const schema = original.mapFields(Struct.map(Schema.requiredKey))
@@ -635,6 +619,8 @@ const schema = Schema.Struct({ a: Schema.String, b: Schema.Number }).pipe(Schema
 v4
 
 ```efx
+import { Schema, SchemaGetter, Struct } from "effect"
+
 function pluck<P extends PropertyKey>(key: P) {
   return <S extends Schema.Top>(
     schema: Schema.Struct<{ [K in P]: S }>
@@ -648,7 +634,7 @@ function pluck<P extends PropertyKey>(key: P) {
   }
 }
 
-const schema = Schema.Struct({ a: Schema.String, b: Schema.Number }) |> pluck("a")
+const schema = Schema.Struct({ a: Schema.String, b: Schema.Number }).pipe(pluck("a"))
 ```
 
 ### extend
@@ -673,16 +659,13 @@ const schema = Schema.Struct({
 v4
 
 ```efx
-const schema = Schema.Struct({
-  a: Schema.String,
-  b: Schema.Number
-}).mapFields(Struct.assign({ c: Schema.Number }))
+const schema = schema { a: string; b: number }.mapFields(Struct.assign({ c: Schema.Number }))
 
 // or more succinctly
 const schema2 = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
-}) |> Schema.fieldsAssign({ c: Schema.Number })
+}).pipe(Schema.fieldsAssign({ c: Schema.Number }))
 ```
 
 #### Union extends Struct
@@ -701,11 +684,9 @@ const schema = Schema.Union(
 v4
 
 ```efx
-import { Schema, Tuple } from "effect"
-
 const schema = Schema.Union([
-  Schema.Struct({ a: Schema.String }),
-  Schema.Struct({ b: Schema.Number })
+  schema { a: string },
+  schema { b: number }
 ]).mapMembers(Tuple.map(Schema.fieldsAssign({ c: Schema.Number })))
 ```
 
@@ -747,9 +728,7 @@ In v4, a `makeFilter` predicate can return any of the shapes described by `Schem
 **Example** (Failure at a nested path)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({ password: Schema.String, confirmPassword: Schema.String }).check(
+const schema = schema { password: string; confirmPassword: string }.check(
   Schema.makeFilter((o) =>
     o.password === o.confirmPassword
       ? undefined
@@ -765,9 +744,7 @@ console.log(String(Schema.decodeUnknownExit(schema)({ password: "123456", confir
 **Example** (Reporting multiple failures at once)
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({ a: Schema.Finite, b: Schema.Finite, c: Schema.Finite }).check(
+const schema = schema { a: Finite; b: Finite; c: Finite }.check(
   Schema.makeFilter((o) => {
     const issues: Array<Schema.FilterIssue> = []
     if (o.a > 0) {
@@ -941,10 +918,8 @@ const DiscriminatedShape = Schema.Union(
 v4
 
 ```efx
-import { Schema } from "effect"
-
-const Circle = Schema.Struct({ radius: Schema.Number })
-const Square = Schema.Struct({ sideLength: Schema.Number })
+const Circle = schema { radius: number }
+const Square = schema { sideLength: number }
 
 const DiscriminatedShape = Schema.Union([
   Circle.mapFields((fields) => ({ ...fields, kind: Schema.tagDefaultOmit("circle") })),
@@ -992,11 +967,13 @@ const schema = Schema.Struct({
 v4
 
 ```efx
+import { Schema } from "effect"
+
 // experimental API
 const schema = Schema.Struct({
   a: Schema.String,
   b: Schema.Number
-}) |> Schema.encodeKeys({ a: "c" })
+}).pipe(Schema.encodeKeys({ a: "c" }))
 ```
 
 ### Capitalize / Lowercase / Uppercase / Uncapitalize
@@ -1104,13 +1081,9 @@ from `"fast-check"`. Do not import it through Effect.
 Previously, `Schema.toArbitrary` returned a factory that needed the fast-check module:
 
 ```efx
-import { Schema } from "effect"
 import { FastCheck } from "effect/testing"
 
-const Person = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Int
-})
+const Person = schema { name: string; age: Int }
 
 const personArbitrary = Schema.toArbitrary(Person)(FastCheck)
 const samples = FastCheck.sample(personArbitrary, { numRuns: 20, seed: 42 })
@@ -1119,10 +1092,7 @@ const samples = FastCheck.sample(personArbitrary, { numRuns: 20, seed: 42 })
 Now derive and sample through the Effect-native module:
 
 ```efx
-const Person = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Int
-})
+const Person = schema { name: string; age: Int }
 
 const personArbitrary = Arbitrary.schema(Person)
 const samples = await runPromise(

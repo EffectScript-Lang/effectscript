@@ -335,10 +335,7 @@ import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
 // Define a schema representing a User entity
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -389,10 +386,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -459,10 +453,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const IdParam = Schema.Int
 
@@ -535,10 +526,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const IdParam = Schema.Int
 
@@ -626,10 +614,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -688,10 +673,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const IdParam = Schema.Int
 
@@ -721,9 +703,7 @@ const Api = HttpApi.make("MyApi")
           params: {
             id: IdParam
           },
-          payload: Schema.Struct({
-            name: Schema.String
-          }),
+          payload: schema { name: string },
           success: User
         }),
         // catch-all endpoint
@@ -848,10 +828,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Page = Schema.Int.check(Schema.isGreaterThan(0))
 
@@ -906,10 +883,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -975,10 +949,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -1090,10 +1061,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -1106,7 +1074,7 @@ const Api = HttpApi.make("MyApi")
             name: Schema.String
           })
             // Specify the encoding as form url encoded
-             |> HttpApiSchema.asFormUrlEncoded(),
+            .pipe(HttpApiSchema.asFormUrlEncoded()),
           success: User
         })
       )
@@ -1218,7 +1186,7 @@ const Api = HttpApi.make("api").add(
   HttpApiGroup.make("group")
     .add(
       HttpApiEndpoint.get("me", "/me", {
-        success: Schema.Struct({ id: Schema.Finite })
+        success: schema { id: Finite }
       })
     )
     .middleware(Auth)
@@ -1377,10 +1345,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -1493,10 +1458,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi").add(
   HttpApiGroup.make("Users").add(
@@ -1581,10 +1543,7 @@ const UserNotFoundWithHeaders = UserNotFound
     })
   })
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi").add(
   HttpApiGroup.make("Users").add(
@@ -1833,9 +1792,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const Message = Schema.Struct({
-  text: Schema.String
-})
+const Message = schema { text: string }
 
 const Api = HttpApi.make("myApi").add(
   HttpApiGroup.make("group").add(
@@ -1929,10 +1886,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const UserNotFound = Schema.Struct({
   _tag: Schema.tag("UserNotFound"),
@@ -2016,10 +1970,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -2090,10 +2041,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi")
   .add(
@@ -2176,10 +2124,7 @@ const SchemaErrorHandlerLayer = HttpApiMiddleware.layerSchemaErrorTransform(
     )
 )
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const Api = HttpApi.make("MyApi").add(
   HttpApiGroup.make("Users").add(
@@ -2240,10 +2185,7 @@ class Logger extends HttpApiMiddleware.Service<Logger>()("Http/Logger", {
 
 }) {}
 
-const User = Schema.Struct({
-  id: Schema.Finite,
-  name: Schema.String
-})
+const User = schema { id: Finite; name: string }
 
 const Api = HttpApi.make("api").add(
   HttpApiGroup.make("group").add(
@@ -2551,10 +2493,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 // Define the UsersRepository service
 service UsersRepository {
@@ -2614,10 +2553,7 @@ import { NodeHttpServer, NodeRuntime } from "@effect/platform-node"
 import { HttpRouter } from "effect/http"
 import { createServer } from "node:http"
 
-const User = Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-})
+const User = schema { id: Int; name: string }
 
 const IdParam = Schema.Int
 
@@ -3022,13 +2958,7 @@ The default response description is "Success". You can override this by annotati
 **Example** (Defining a custom response description)
 
 ```efx
-import { Schema } from "effect"
-import { HttpApi, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api"
-
-const User = Schema.Struct({
-  id: Schema.Finite,
-  name: Schema.String
-}).annotate({ identifier: "User" })
+const User = schema { id: Finite; name: string }.annotate({ identifier: "User" })
 
 const api = HttpApi.make("api").add(
   HttpApiGroup.make("group").add(

@@ -138,13 +138,7 @@ config.kind // => "argument"
 **Validating file content with a schema**
 
 ```efx
-import { Schema } from "effect"
-import { Argument } from "effect/cli"
-
-const ConfigSchema = Schema.Struct({
-  port: Schema.Number,
-  host: Schema.String
-})
+const ConfigSchema = schema { port: number; host: string }
 
 const config = Argument.FileSchema("config", ConfigSchema)
 config.kind // => "argument"

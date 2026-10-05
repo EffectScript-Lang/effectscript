@@ -217,13 +217,7 @@ const kinds = [config.kind, jsonConfig.kind] // => ["flag", "flag"]
 **Validating file contents**
 
 ```efx
-import { Schema } from "effect"
-import { Flag } from "effect/cli"
-
-const ConfigSchema = Schema.Struct({
-  port: Schema.Number,
-  host: Schema.String
-})
+const ConfigSchema = schema { port: number; host: string }
 
 const config = Flag.FileSchema("config", ConfigSchema, { format: "json" })
 config.kind // => "flag"
@@ -648,7 +642,7 @@ const ConfigSchema = Schema.Struct({
   port: Schema.Number,
   host: Schema.String,
   ssl: Schema.optional(Schema.Boolean)
-}) |> Schema.fromJsonString
+}).pipe(Schema.fromJsonString)
 
 const configFlag = Flag.String("config")
   |> Flag.withSchema(ConfigSchema)

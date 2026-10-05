@@ -50,9 +50,7 @@ const SearchProducts = Tool.make("SearchProducts", {
 
 const GetInventory = Tool.make("GetInventory", {
   description: "Check current stock level for a product",
-  parameters: Schema.Struct({
-    productId: ProductId
-  }),
+  parameters: schema { productId: ProductId },
   success: Schema.Struct({
     productId: ProductId,
     available: Schema.Natural

@@ -168,10 +168,7 @@ runSync(config.parse(provider)) // => { key: "value" }
 
 ```efx
 const DbConfig = Config.schema(
-  Schema.Struct({
-    host: Schema.String,
-    port: Schema.Int
-  }),
+  schema { host: string; port: Int },
   "db"
 )
 

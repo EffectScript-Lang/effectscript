@@ -275,13 +275,8 @@ const kinds = [config.kind, jsonConfig.kind] // => ["flag", "flag"]
 **Validating file contents**
 
 ```efx
-import { Schema } from "effect"
-import { Param } from "effect/cli"
 // Parse JSON config file
-const configSchema = Schema.Struct({
-  port: Schema.Number,
-  host: Schema.String
-})
+const configSchema = schema { port: number; host: string }
 
 const config = Param.FileSchema(Param.flagKind, "config", configSchema, {
   format: "json"

@@ -8,7 +8,7 @@ import { children, type Node } from "../ast.ts"
 import { convertAtom } from "./atom.ts"
 import { blocker, genShape, isGenerator } from "./blockers.ts"
 import { convertGeneratorNode, unqualify, type Visit } from "./body.ts"
-import { convertSchemaRun } from "./classes.ts"
+import { convertSchemaExpression, convertSchemaRun } from "./classes.ts"
 import { convertCommand } from "./command.ts"
 import { convertConfig } from "./config.ts"
 import {
@@ -579,6 +579,7 @@ export const makeVisit = (ctx: ReverseCtx, convertClass: (cls: Node, visit: Visi
       within(ctx, "Effect", () => inFrame(ctx, true, () => visit(shape.fn.body, shape.fn, true)))
       return
     }
+    if (node.type === "CallExpression" && convertSchemaExpression(ctx, node)) return
     if (
       node.type === "CallExpression" &&
       (convertPipe(ctx, node, parent, visit, generator) || convertImpl(ctx, node, visit) ||

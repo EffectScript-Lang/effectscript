@@ -291,3 +291,44 @@ tool Search(query: string where isNonEmpty(), limit: Int): Products
             (type_identifier))))
       (type_annotation
         (type_identifier)))))
+
+================================================================================
+Schema expressions (ADR-0099)
+================================================================================
+
+const Tool = { parameters: schema { path: string; limit?: number } }
+const schema = 1
+const x = schema.parse(y)
+
+--------------------------------------------------------------------------------
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (object
+        (pair
+          (property_identifier)
+          (schema_expression
+            (object_type
+              (property_signature
+                (property_identifier)
+                (type_annotation
+                  (predefined_type)))
+              (property_signature
+                (property_identifier)
+                (type_annotation
+                  (predefined_type)))))))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (number)))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (call_expression
+        (member_expression
+          (identifier)
+          (property_identifier))
+        (arguments
+          (identifier))))))

@@ -72,6 +72,7 @@ export default grammar(TypeScript, {
       [$.primary_expression, $.describe_statement],
       [$.primary_expression, $.defer_statement],
       [$.primary_expression, $.effect_block],
+      [$.primary_expression, $.schema_expression],
       [$.primary_expression, $.match_expression],
       [$.primary_expression, $.impl_expression],
       [$.primary_expression, $._property_name, $.effect_arrow_function],
@@ -373,6 +374,7 @@ export default grammar(TypeScript, {
       choice(
         previous,
         $.effect_block,
+        $.schema_expression,
         $.effect_arrow_function,
         $.match_expression,
         $.impl_expression,
@@ -420,6 +422,9 @@ export default grammar(TypeScript, {
           optional($._pipe_tail)
         )
       ),
+
+    // `schema { … }`: a struct schema written as its type (ADR-0099)
+    schema_expression: ($) => prec.right(seq("schema", field("type", $.object_type))),
 
     effect_block: ($) => prec.right(seq("effect", field("body", $.statement_block))),
 

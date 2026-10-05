@@ -155,11 +155,7 @@ story // => "A small probe reached orbit. It sent back a picture of Earth."
 **Generating structured objects**
 
 ```efx
-const ContactSchema = Schema.Struct({
-  name: Schema.String,
-  email: Schema.String,
-  phone: Schema.optional(Schema.String)
-})
+const ContactSchema = schema { name: string; email: string; phone?: string | undefined }
 
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,

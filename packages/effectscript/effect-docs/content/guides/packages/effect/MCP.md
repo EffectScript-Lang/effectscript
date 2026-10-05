@@ -24,9 +24,7 @@ import { McpProtocol } from "effect/ai"
 // Define a simple tool
 const DemoTool = Tool.make("DemoTool", {
   description: "A demo tool that echoes back the input",
-  parameters: Schema.Struct({
-    message: Schema.String
-  }),
+  parameters: schema { message: string },
   success: Schema.String
 })
 
@@ -169,18 +167,13 @@ grouped into toolkits, which can be combined and converted into layers.
 ```efx
 const DemoTool = Tool.make("DemoTool", {
   description: "This is a demo tool for the documentation",
-  parameters: Schema.Struct({
-    demoId: Schema.Number,
-    demoName: Schema.String
-  }),
+  parameters: schema { demoId: number; demoName: string },
   success: Schema.String
 })
 
 const OtherDemoTool = Tool.make("OtherDemoTool", {
   description: "Another demo tool",
-  parameters: Schema.Struct({
-    value: Schema.Number
-  }),
+  parameters: schema { value: number },
   success: Schema.String
 })
 

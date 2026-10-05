@@ -493,6 +493,22 @@ preservation of a mutable type. Unsupported type syntax
 (conditional, mapped, `keyof`, generics of unknown names) is an error (**EFX3001**) that suggests
 an `=` field.
 
+**Schema expressions** (ADR-0099). Where a schema is a value rather than a declaration (a tool's
+`parameters`, an RPC's `success`, an argument to `Schema.decodeUnknownSync`), `schema` followed by
+a type literal on the same line is that struct schema, lowered by the table above:
+
+```ts
+const Search = Tool.make("Search", {
+  parameters: schema { query: string; limit?: number }
+})
+```
+
+→ `parameters: Schema.Struct({ query: Schema.String, limit: Schema.optionalKey(Schema.Number) })`.
+An identifier followed by `{` on the same line is a syntax error in TypeScript, so `schema` as an
+identifier (`const schema = …`, `schema.parse(x)`) keeps its meaning. The reverse compiler writes
+every inline `Schema.Struct({ … })` whose fields have a type spelling this way, unless comments sit
+inside it.
+
 ### 4.7 `error`
 
 ```ts

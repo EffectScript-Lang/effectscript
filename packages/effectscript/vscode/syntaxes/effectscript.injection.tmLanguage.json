@@ -10,6 +10,9 @@
       "include": "#declaration"
     },
     {
+      "include": "#schema-expression"
+    },
+    {
       "include": "#return-type"
     },
     {
@@ -39,6 +42,14 @@
     },
     "declaration": {
       "match": "(?:^|(?<=\\bexport\\s))\\s*\\b(schema|brand|error|service|layer|config|atom|command|api|group)\\b(?=\\s+[A-Za-z_$])",
+      "captures": {
+        "1": {
+          "name": "storage.type.efx"
+        }
+      }
+    },
+    "schema-expression": {
+      "match": "\\b(schema)\\b(?=\\s*\\{)",
       "captures": {
         "1": {
           "name": "storage.type.efx"

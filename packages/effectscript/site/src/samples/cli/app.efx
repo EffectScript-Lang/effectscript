@@ -1,5 +1,3 @@
-// @efx no-ambient
-
 /** Create a task */
 export command create(
   /** Task title */ title: string,

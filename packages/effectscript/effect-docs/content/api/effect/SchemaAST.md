@@ -42,9 +42,7 @@ if (SchemaAST.isArrays(ast)) {
 **Inspecting a struct AST**
 
 ```efx
-import { Schema, SchemaAST } from "effect"
-
-const schema = Schema.Struct({ name: Schema.String })
+const schema = schema { name: string }
 const ast = schema.ast
 
 if (SchemaAST.isObjects(ast)) {

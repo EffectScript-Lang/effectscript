@@ -18,13 +18,13 @@ The examples in the JSDoc of `packages/effect/src/ai/Toolkit.ts`, in EffectScrip
 ```efx
 const SearchDocs = Tool.make("SearchDocs", {
   description: "Search project documentation",
-  parameters: Schema.Struct({ query: Schema.String }),
+  parameters: schema { query: string },
   success: Schema.Array(Schema.String)
 })
 
 const SummarizeText = Tool.make("SummarizeText", {
   description: "Summarize text",
-  parameters: Schema.Struct({ text: Schema.String }),
+  parameters: schema { text: string },
   success: Schema.String
 })
 
@@ -72,11 +72,8 @@ const GetCurrentTime = Tool.make("GetCurrentTime", {
 
 const GetWeather = Tool.make("get_weather", {
   description: "Get weather information",
-  parameters: Schema.Struct({ location: Schema.String }),
-  success: Schema.Struct({
-    temperature: Schema.Number,
-    condition: Schema.String
-  })
+  parameters: schema { location: string },
+  success: schema { temperature: number; condition: string }
 })
 
 toolkit toolkit { GetCurrentTime, GetWeather }

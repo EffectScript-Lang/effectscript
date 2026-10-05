@@ -61,6 +61,8 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
     `layer test = { find: effect (id) => … }`;
   - an error with no fields has no body: `error Forbidden`, `error Unauthorized status 401`;
   - an array in a schema is `T[]`;
+  - a struct schema used as a value is written as its type: `parameters: schema { query: string }`,
+    not `Schema.Struct({ query: Schema.String })`;
   - a tag is named by its tag: `catch (e: TimeoutError)`.
 - **Run effects concurrently:** `const [a, b] = await [loadA, loadB]` (an array _literal_). For
   a computed list use `await all(effects)` or `await forEach(items, (x) => load(x))`; `await

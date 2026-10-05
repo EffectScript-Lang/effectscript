@@ -239,7 +239,7 @@ const result = [error.description, error.responseText, error.isRetryable] // => 
 
 ```efx
 const schemaError = await runPromise(
-  Schema.decodeUnknownEffect(Schema.Struct({ name: Schema.String }))({}).pipe(flip)
+  Schema.decodeUnknownEffect(schema { name: string })({}).pipe(flip)
 )
 const parseError = AiError.StructuredOutputError.fromSchemaError(schemaError, "{}")
 parseError.responseText // => "{}"

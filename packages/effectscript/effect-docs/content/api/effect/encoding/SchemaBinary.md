@@ -16,10 +16,7 @@ The examples in the JSDoc of `packages/effect/src/encoding/SchemaBinary.ts`, in 
 **Deriving a binary codec**
 
 ```efx
-import { Schema } from "effect"
-import { SchemaBinary } from "effect/encoding"
-
-const Person = Schema.Struct({ name: Schema.String, age: Schema.Number })
+const Person = schema { name: string; age: number }
 const codec = SchemaBinary.toCodec(Person)
 
 const bytes = Schema.encodeUnknownSync(codec)({ name: "Ada", age: 36 })

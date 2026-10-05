@@ -61,11 +61,7 @@ For larger configs, use `Config.schema` with a `Schema.Struct`:
 
 ```efx
 const AppConfig = Config.schema(
-  Schema.Struct({
-    host: Schema.String,
-    port: Schema.Int,
-    debug: Schema.Boolean
-  })
+  schema { host: string; port: Int; debug: boolean }
 )
 
 const provider = ConfigProvider.fromUnknown({
@@ -696,19 +692,12 @@ const program = Config.Int("PORT").parse(
 
 // Define your config shape
 const ServerConfig = Config.schema(
-  Schema.Struct({
-    host: Schema.String,
-    port: Schema.Int,
-    logLevel: Schema.Literals(["debug", "info", "warn", "error"])
-  }),
+  schema { host: string; port: Int; logLevel: "debug" | "info" | "warn" | "error" },
   "server"
 )
 
 const DbConfig = Config.schema(
-  Schema.Struct({
-    url: Schema.String,
-    poolSize: Schema.Int
-  }),
+  schema { url: string; poolSize: Int },
   "db"
 )
 

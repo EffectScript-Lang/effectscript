@@ -342,6 +342,18 @@ export const efxPlugin = (Base: any): any =>
         return this.finishNode(node, "IsExpression")
       }
       if (this.efxIsMatchAhead()) return this.efxParseMatch()
+      // `schema { … }`: a struct schema written as its type. An identifier followed by `{` on the
+      // same line is a syntax error in JavaScript, so no TypeScript reads differently.
+      if (this.efxIsWord("schema")) {
+        const next = this.lookahead()
+        if (this.efxSameLine(next) && next.type === tt.braceL) {
+          const node = this.startNode()
+          node.keyword = { start: this.start, end: this.end }
+          this.next()
+          node.typeAnnotation = this.efxInSchemaType(() => this.tsInType(() => this.tsParseType()))
+          return this.finishNode(node, "SchemaExpression")
+        }
+      }
       if (this.efxIsImplAhead()) return this.efxParseImpl()
       if (this.efxIsActivityAhead()) return this.efxParseActivity()
       if (this.efxIsWord("effect")) {

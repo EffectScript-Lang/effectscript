@@ -345,6 +345,8 @@ export const analyze = (program: Node): ScopeAnalysis => {
         bindings.add(node.id)
         return visitChecks(node, scope)
       }
+      case "SchemaExpression":
+        return visitChecks(node, scope)
       case "SchemaAdtDeclaration": {
         if (scope === module) { for (const variant of node.variants) localTags.set(variant.id.name, variant.id.name) }
         for (const named of [node, ...node.variants]) {

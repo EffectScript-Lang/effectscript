@@ -194,9 +194,7 @@ Good temporary fixtures are small, focused entrypoints that import public
 package APIs:
 
 ```efx
-const schema = Schema.Struct({
-  name: Schema.String
-})
+const schema = schema { name: string }
 
 Schema.decodeUnknownEffect(schema)({ name: "effect" }) |> runFork
 ```

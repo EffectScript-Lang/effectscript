@@ -73,6 +73,12 @@ const aliasSchema = (ctx: Ctx, type: Node): string => {
   return `${schemaRef(ctx, "Struct")}({\n${lines.join("\n")}\n})`
 }
 
+/** `schema { … }` → `Schema.Struct({ … })`, as an alias's type literal lowers. */
+const schemaExpression: Handler = (node, _parent, ctx) => {
+  ctx.s.update(node.start, node.end, aliasSchema(ctx, node.typeAnnotation))
+  return true
+}
+
 const typeLine = (prefix: string, name: string): string => `\n${prefix}type ${name} = typeof ${name}.Type`
 
 /**
@@ -185,6 +191,7 @@ const schemaAdt: Handler = (node, parent, ctx) => {
 export const schemaHandlers: HandlerGroup = {
   ClassDeclaration: schemaClass,
   SchemaAliasDeclaration: schemaAlias,
+  SchemaExpression: schemaExpression,
   BrandDeclaration: brandDeclaration,
   SchemaAdtDeclaration: schemaAdt
 }

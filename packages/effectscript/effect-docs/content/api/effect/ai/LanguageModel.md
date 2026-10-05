@@ -113,11 +113,7 @@ await runPromise(program) // => ["Code flows through types / Errors become value
 **Generating an object**
 
 ```efx
-const EventSchema = Schema.Struct({
-  title: Schema.String,
-  date: Schema.String,
-  location: Schema.String
-})
+const EventSchema = schema { title: string; date: string; location: string }
 
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,

@@ -125,9 +125,7 @@ schema.fields.username.ast.context?.annotations?.messageMissingKey // => "Userna
 **Extracting the decoded type**
 
 ```efx
-import { Schema } from "effect"
-
-const Person = Schema.Struct({ name: Schema.String, age: Schema.Number })
+const Person = schema { name: string; age: number }
 type Person = Schema.Schema.Type<typeof Person>
 // { readonly name: string; readonly age: number }
 ```
@@ -359,12 +357,7 @@ await runPromise(Schema.encodeUnknownEffect(NumberFromString)(42)) // => "42"
 **Creating a struct with optional key**
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({
-  name: Schema.String,
-  age: Schema.optionalKey(Schema.Number)
-})
+const schema = schema { name: string; age?: number }
 
 // Type: { readonly name: string; readonly age?: number }
 type Person = typeof schema["Type"]
@@ -375,12 +368,7 @@ type Person = typeof schema["Type"]
 **Defining an optional field accepting undefined**
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({
-  name: Schema.String,
-  age: Schema.optional(Schema.Number)
-})
+const schema = schema { name: string; age?: number | undefined }
 
 // { readonly name: string; readonly age?: number | undefined }
 type Person = typeof schema.Type
@@ -482,12 +470,7 @@ Schema.decodeSync(schema)(mySymbol) === mySymbol // => true
 **Reusing fields across structs**
 
 ```efx
-import { Schema } from "effect"
-
-const Timestamped = Schema.Struct({
-  createdAt: Schema.Date,
-  updatedAt: Schema.Date
-})
+const Timestamped = schema { createdAt: Date; updatedAt: Date }
 
 const User = Schema.Struct({
   ...Timestamped.fields,
@@ -502,13 +485,7 @@ Object.keys(User.fields) // => ["createdAt", "updatedAt", "name", "email"]
 **Defining a basic struct**
 
 ```efx
-import { Schema } from "effect"
-
-const Person = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Number,
-  email: Schema.optionalKey(Schema.String)
-})
+const Person = schema { name: string; age: number; email?: string }
 
 // { readonly name: string; readonly age: number; readonly email?: string }
 type Person = typeof Person.Type
@@ -521,12 +498,10 @@ Schema.decodeUnknownSync(Person)({ name: "Alice", age: 30 }) // => { name: "Alic
 **Adding fields to a union of structs**
 
 ```efx
-import { Schema, Tuple } from "effect"
-
 // Add a new field to all members of a union of structs
 const schema = Schema.Union([
-  Schema.Struct({ a: Schema.String }),
-  Schema.Struct({ b: Schema.Number })
+  schema { a: string },
+  schema { b: number }
 ]).mapMembers(Tuple.map(Schema.fieldsAssign({ c: Schema.Number })))
 Schema.decodeSync(schema)({ a: "a", c: 1 }) // => { a: "a", c: 1 }
 ```
@@ -536,8 +511,8 @@ Schema.decodeSync(schema)({ a: "a", c: 1 }) // => { a: "a", c: 1 }
 **Renaming `name` to `full_name` in the encoded form**
 
 ```efx
-const Person = Schema.Struct({ name: Schema.String, age: Schema.Number })
-const Encoded = Person |> Schema.encodeKeys({ name: "full_name" })
+const Person = schema { name: string; age: number }
+const Encoded = Person.pipe(Schema.encodeKeys({ name: "full_name" }))
 
 // Decodes { full_name: "Alice", age: 30 } → { name: "Alice", age: 30 }
 Schema.decodeUnknownSync(Encoded)({ full_name: "Alice", age: 30 }) // => { name: "Alice", age: 30 }
@@ -548,7 +523,7 @@ Schema.decodeUnknownSync(Encoded)({ full_name: "Alice", age: 30 }) // => { name:
 **Adding a computed `fullName` field**
 
 ```efx
-const Person = Schema.Struct({ first: Schema.String, last: Schema.String })
+const Person = schema { first: string; last: string }
 const Extended = Person
   |> Schema.extendTo(
     { fullName: Schema.String },
@@ -579,9 +554,7 @@ Schema.decodeUnknownSync(schema)({ a: 1, b: 2 }) // => { a: 1, b: 2 }
 **Checking record compatibility**
 
 ```efx
-import { Schema } from "effect"
-
-const user = Schema.Struct({ id: Schema.String })
+const user = schema { id: string }
 const stringExtras = [Schema.Record(Schema.String, Schema.String)] as const
 
 type UserCheck = Schema.StructWithRest.ValidateRecords<typeof user, typeof stringExtras>
@@ -603,10 +576,8 @@ void counterCheck
 **Defining structs with string-indexed extra keys**
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.StructWithRest(
-  Schema.Struct({ id: Schema.Number }),
+  schema { id: number },
   [Schema.Record(Schema.String, Schema.Number)]
 )
 
@@ -975,12 +946,8 @@ Math.round(area * 100) / 100 // => 78.54
 **Defining opaque structs**
 
 ```efx
-import { Schema } from "effect"
-
 class Person extends Schema.Opaque<Person>()(
-  Schema.Struct({
-    name: Schema.String
-  })
+  schema { name: string }
 ) {}
 
 // Decoded value is Person, not { name: string }
@@ -1006,7 +973,7 @@ decoded.toISOString() // => "2024-01-01T00:00:00.000Z"
 **Reporting failure at a nested path**
 
 ```efx
-const schema = Schema.Struct({ password: Schema.String, confirmPassword: Schema.String }).check(
+const schema = schema { password: string; confirmPassword: string }.check(
   Schema.makeFilter((o) =>
     o.password === o.confirmPassword
       ? undefined
@@ -1023,7 +990,7 @@ if (Result.isFailure(result) && result.failure.issue is Filter && result.failure
 **Reporting multiple failures at once**
 
 ```efx
-const schema = Schema.Struct({ a: Schema.Finite, b: Schema.Finite, c: Schema.Finite }).check(
+const schema = schema { a: Finite; b: Finite; c: Finite }.check(
   Schema.makeFilter((o) => {
     const issues: Array<Schema.FilterIssue> = []
     if (o.a > 0) {
@@ -1069,9 +1036,7 @@ date.toISOString() // => "2024-01-01T00:00:00.000Z"
 **Formatting encoded JSON**
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({ a: Schema.Number })
+const schema = schema { a: number }
 const schemaFromJsonString = Schema.fromJsonString(schema, { space: 2 })
 
 Schema.encodeSync(schemaFromJsonString)({ a: 1 }) // => "{\n  \"a\": 1\n}"
@@ -1082,12 +1047,8 @@ Schema.encodeSync(schemaFromJsonString)({ a: 1 }) // => "{\n  \"a\": 1\n}"
 **Decoding a flat structure**
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromFormData(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 )
 
 const formData = new FormData()
@@ -1100,16 +1061,8 @@ Schema.decodeUnknownSync(schema)(formData) // => { a: "1" }
 **Decoding nested fields**
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromFormData(
-  Schema.Struct({
-    a: Schema.String,
-    b: Schema.Struct({
-      c: Schema.String,
-      d: Schema.String
-    })
-  })
+  schema { a: string; b: { c: string; d: string } }
 )
 
 const formData = new FormData()
@@ -1123,13 +1076,9 @@ Schema.decodeUnknownSync(schema)(formData) // => { a: "1", b: { c: "2", d: "3" }
 **Parsing non-string values**
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromFormData(
   Schema.toCodecStringTree(
-    Schema.Struct({
-      a: Schema.Int
-    })
+    schema { a: Int }
   )
 )
 
@@ -1144,12 +1093,8 @@ Schema.decodeUnknownSync(schema)(formData) // => { a: 1 }
 **Decoding a flat structure**
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromURLSearchParams(
-  Schema.Struct({
-    a: Schema.String
-  })
+  schema { a: string }
 )
 
 const urlSearchParams = new URLSearchParams("a=1&b=2")
@@ -1160,16 +1105,8 @@ Schema.decodeUnknownSync(schema)(urlSearchParams) // => { a: "1" }
 **Decoding nested fields**
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromURLSearchParams(
-  Schema.Struct({
-    a: Schema.String,
-    b: Schema.Struct({
-      c: Schema.String,
-      d: Schema.String
-    })
-  })
+  schema { a: string; b: { c: string; d: string } }
 )
 
 const urlSearchParams = new URLSearchParams("a=1&b[c]=2&b[d]=3")
@@ -1180,13 +1117,9 @@ Schema.decodeUnknownSync(schema)(urlSearchParams) // => { a: "1", b: { c: "2", d
 **Parsing non-string values**
 
 ```efx
-import { Schema } from "effect"
-
 const schema = Schema.fromURLSearchParams(
   Schema.toCodecStringTree(
-    Schema.Struct({
-      a: Schema.Int
-    })
+    schema { a: Int }
   )
 )
 
@@ -1200,10 +1133,7 @@ Schema.decodeUnknownSync(schema)(urlSearchParams) // => { a: 1 }
 **Decoding URI component strings**
 
 ```efx
-const PaginationSchema = Schema.Struct({
-  maxItemPerPage: Schema.Number,
-  page: Schema.Number
-})
+const PaginationSchema = schema { maxItemPerPage: number; page: number }
 
 const UrlSchema = Schema.StringFromUriComponent
   |> Schema.decodeTo(Schema.fromJsonString(PaginationSchema))
@@ -1261,10 +1191,7 @@ encoded.edges // => [{ index: 0, source: 0, target: 1, data: 1 }]
 
 ```efx
 const extractFoo = Schema.JsonFromUrlParamsField("foo")
-  |> Schema.decodeTo(Schema.Struct({
-    some: Schema.String,
-    number: Schema.Number
-  }))
+  |> Schema.decodeTo(schema { some: string; number: number })
 
 const decoded = Schema.decodeSync(extractFoo)(UrlParams.fromInput({
   foo: `{"some":"bar","number":42}`,
@@ -1375,9 +1302,7 @@ error.id // => 42
 **Comparing structs**
 
 ```efx
-import { Schema } from "effect"
-
-const eq = Schema.toEquivalence(Schema.Struct({ id: Schema.Number, name: Schema.String }))
+const eq = Schema.toEquivalence(schema { id: number; name: string })
 
 eq({ id: 1, name: "Alice" }, { id: 1, name: "Alice" }) // => true
 eq({ id: 1, name: "Alice" }, { id: 2, name: "Alice" }) // => false
@@ -1408,11 +1333,7 @@ doc.schema // => { type: "string", description: "A name", markdownDescription: "
 **Decoding JSON with the matching codec**
 
 ```efx
-import { Schema } from "effect"
-
-const schema = Schema.Struct({
-  name: Schema.optional(Schema.String)
-})
+const schema = schema { name?: string | undefined }
 
 const document = Schema.toJsonSchemaDocument(schema)
 const jsonCodec = Schema.toCodecJson(schema)

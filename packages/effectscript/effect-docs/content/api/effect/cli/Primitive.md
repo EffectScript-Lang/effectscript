@@ -416,9 +416,7 @@ const services = Layer.mergeAll(
   )
 )
 
-const ConfigSchema = Schema.Struct({
-  private: Schema.Boolean
-})
+const ConfigSchema = schema { private: boolean }
 
 const jsonConfigPrimitive = Primitive.FileSchema(ConfigSchema, {
   format: "json"

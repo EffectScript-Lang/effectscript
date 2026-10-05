@@ -16,13 +16,12 @@ The examples in the JSDoc of `packages/effect/src/ai/Response.ts`, in EffectScri
 **Building a response parts schema**
 
 ```efx
-import { Schema } from "effect"
-import { Response, Tool, Toolkit } from "effect/ai"
+import { Response } from "effect/ai"
 
 const myToolkit = Toolkit.make(
   Tool.make("GetWeather", {
-    parameters: Schema.Struct({ city: Schema.String }),
-    success: Schema.Struct({ temperature: Schema.Number })
+    parameters: schema { city: string },
+    success: schema { temperature: number }
   })
 )
 
@@ -83,13 +82,9 @@ reasoningPart.type // => "reasoning"
 **Creating a tool call part**
 
 ```efx
-import { Schema } from "effect"
 import { Response } from "effect/ai"
 
-const weatherParams = Schema.Struct({
-  city: Schema.String,
-  units: Schema.optional(Schema.Literals(["celsius", "fahrenheit"]))
-})
+const weatherParams = schema { city: string; units?: "celsius" | "fahrenheit" | undefined }
 
 const toolCallPart: Response.ToolCallPart<
   "get_weather",

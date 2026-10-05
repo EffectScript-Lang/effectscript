@@ -44,9 +44,31 @@ describe("reverse: schema forms (Plan 6 Task 7)", () => {
     expect(result.notes.map((n) => n.message).join("\n")).toMatch(/instance property/)
   })
 
-  it("keeps an alias whose type alias doesn't match", () => {
+  it("keeps an alias whose type alias doesn't match apart: the schema converts on its own", () => {
     const ts =
       "import * as Schema from \"effect/Schema\"\nexport const P = Schema.Struct({ x: Schema.Number })\nexport type P = { x: number }\n"
+    const back = toEffectScript(ts).code
+    expect(back).toBe("export const P = schema { x: number }\nexport type P = { x: number }\n")
+    expect(toTypeScript(back).code).toBe(ts)
+  })
+
+  it.each([
+    [
+      "a struct as a value",
+      "export const Tool = { parameters: schema { path: string; limit?: number | undefined; tags: string[] } }\n"
+    ],
+    ["a nested struct", "export const Page = schema { lines: Array<{ n: number; text: string }>; next?: string }\n"],
+    [
+      "a struct passed to a function",
+      "export const parse = (u: unknown) => Schema.decodeUnknownSync(schema { name: string })(u)\n"
+    ]
+  ])("an inline schema: %s", (_name, efx) => {
+    expect(roundTrip(efx)).toBe(efx)
+  })
+
+  it("keeps a struct with comments inside as TypeScript", () => {
+    const ts =
+      "import * as Schema from \"effect/Schema\"\nexport const P = Schema.Struct({\n  // x\n  x: Schema.Number\n})\n"
     expect(toEffectScript(ts).code).toBe(ts)
   })
 })

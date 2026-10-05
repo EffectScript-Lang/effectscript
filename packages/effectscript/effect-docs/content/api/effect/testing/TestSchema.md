@@ -16,10 +16,7 @@ The examples in the JSDoc of `packages/effect/src/testing/TestSchema.ts`, in Eff
 **Decoding and encoding a struct**
 
 ```efx
-import { Schema } from "effect"
-import { TestSchema } from "effect/testing"
-
-const schema = Schema.Struct({ name: Schema.String })
+const schema = schema { name: string }
 const asserts = new TestSchema.Asserts(schema)
 
 // decoding

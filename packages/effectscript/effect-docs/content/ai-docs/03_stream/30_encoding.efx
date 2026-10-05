@@ -7,10 +7,7 @@
 import { Ndjson } from "effect/encoding"
 
 // SchemaBinary derives a framed binary decoder directly from a schema.
-export const schemaBinaryDecoder = SchemaBinary.decode(Schema.Struct({
-  id: Schema.Int,
-  name: Schema.String
-}))()
+export const schemaBinaryDecoder = SchemaBinary.decode(schema { id: Int; name: string })()
 
 // ---------------------------------------------------------------------------
 // Domain
