@@ -726,7 +726,7 @@ service Config {
   readonly apiUrl: string
 }
 
-const configLayer = Layer.effect(Config, fail(new ConfigError()))
+layer configLayer for Config = Effect.fail(new ConfigError())
 
 const fallbackLayer = Layer.succeed(Config, { apiUrl: "http://localhost" })
 

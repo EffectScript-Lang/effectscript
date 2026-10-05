@@ -103,6 +103,35 @@ const status = 200
       (number))))
 
 ================
+A layer for a service declared elsewhere (ADR-0095)
+================
+
+export layer UsersLive for Users = { find: effect (id) => id }
+layer DbLive for Db.Db = make
+
+---
+
+(program
+  (export_statement
+    (layer_declaration
+      (identifier)
+      (identifier)
+      (object
+        (pair
+          (property_identifier)
+          (effect_arrow_function
+            (formal_parameters
+              (required_parameter
+                (identifier)))
+            (identifier))))))
+  (layer_declaration
+    (identifier)
+    (nested_identifier
+      (identifier)
+      (property_identifier))
+    (identifier)))
+
+================
 Errors without a body (ADR-0092)
 ================
 

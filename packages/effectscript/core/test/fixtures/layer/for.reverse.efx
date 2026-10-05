@@ -1,0 +1,28 @@
+export error UserNotFound { id: string }
+
+export service Users {
+  effect find(id: string): string throws UserNotFound
+  effect all(): ReadonlyArray<string>
+}
+
+declare const rows: Map<string, string>
+
+// a layer for a service declared anywhere: the live one, with a helper and a scope
+export layer UsersLive for Users = effect {
+  defer log("users released")
+  effect lookup(id: string) {
+    return rows.get(id) ?? throw new UserNotFound({ id })
+  }
+  return {
+    effect find(id) {
+      return await lookup(id)
+    },
+    all: effect () => [...rows.values()]
+  }
+}
+
+// and a test one, from a plain object
+export layer UsersTest for Users = {
+  find: effect (id) => `user-${id}`,
+  all: effect () => []
+}

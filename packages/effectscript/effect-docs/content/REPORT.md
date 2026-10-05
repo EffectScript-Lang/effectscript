@@ -10,8 +10,8 @@ and after.
 | ---- | -------: | ---------: | --------: | ---------: | --------: | ------------------: | ----: |
 | ai-docs | 40 | 38 | 2 | 0 | 27618 | 24797 | 10.2% |
 | guides | 565 | 201 | 291 | 73 | 35652 | 30986 | 13.1% |
-| api | 3415 | 1715 | 1697 | 3 | 212547 | 178791 | 15.9% |
-| **total** | **4020** | **1954** | **1990** | **76** | **275817** | **234574** | **15.0%** |
+| api | 3415 | 1715 | 1697 | 3 | 212547 | 178788 | 15.9% |
+| **total** | **4020** | **1954** | **1990** | **76** | **275817** | **234571** | **15.0%** |
 
 ## The same examples in other vocabularies
 
@@ -19,17 +19,17 @@ The re-sugared examples, counted with each vocabulary of the panel (ADR-0093).
 
 | vocabulary | lab | TS tokens | EffectScript tokens | saved |
 | ---------- | --- | --------: | ------------------: | ----: |
-| o200k | OpenAI | 275817 | 234574 | 15.0% |
-| qwen3 | Qwen | 278152 | 237061 | 14.8% |
-| deepseek-v3 | DeepSeek | 291212 | 247199 | 15.1% |
-| glm-4.6 | Z.ai | 274812 | 233721 | 15.0% |
+| o200k | OpenAI | 275817 | 234571 | 15.0% |
+| qwen3 | Qwen | 278152 | 237058 | 14.8% |
+| deepseek-v3 | DeepSeek | 291212 | 247192 | 15.1% |
+| glm-4.6 | Z.ai | 274812 | 233718 | 15.0% |
 
 ## API examples by package
 
 | package | examples | re-sugared | unchanged | left as TS | TS tokens | EffectScript tokens | saved |
 | ------- | -------: | ---------: | --------: | ---------: | --------: | ------------------: | ----: |
 | packages/atom/react | 2 | 0 | 2 | 0 | 0 | 0 | 0.0% |
-| packages/effect | 3407 | 1711 | 1694 | 2 | 211893 | 178233 | 15.9% |
+| packages/effect | 3407 | 1711 | 1694 | 2 | 211893 | 178230 | 15.9% |
 | packages/opentelemetry | 1 | 1 | 0 | 0 | 286 | 267 | 6.6% |
 | packages/platform/deno | 1 | 1 | 0 | 0 | 71 | 51 | 28.2% |
 | packages/sql/pg | 2 | 0 | 1 | 1 | 0 | 0 | 0.0% |

@@ -235,3 +235,44 @@ know.
   output reads as hand-written Effect: `fetchUser(id).pipe(Effect.retry(…))`, not
   `pipe(fetchUser(id), Effect.retry(…))`.
 
+## Amendment 3: what "50% fewer tokens" can honestly mean
+
+- **Status:** Accepted
+- **Date:** 2026-10-05
+- **Deciders:** the user (aim for 50% in total, "but don't do it for the sake of it"); agent rulings
+  on the measures
+
+**Three measures, three different ceilings.**
+
+| measure                                                                 | today  | ceiling                                  |
+| ----------------------------------------------------------------------- | -----: | ---------------------------------------- |
+| the site's gallery: EffectScript vs the Effect TypeScript it compiles to | 47.6%  | the language                              |
+| the docs corpus, re-sugared examples (ADR-0050)                          | 15.0%  | the examples are Effect API calls         |
+| real projects (ADR-0094), whole Effect files                             | 3.0%   | about **6%**                              |
+
+The real-projects ceiling comes from removing *every* piece of Effect ceremony at once, more than
+any construct could: every `effect` import, every module qualifier, `yield*`, `function*`,
+`Effect.gen(` and `Effect.fn(…)(` wrappers, and `.pipe(`. Real Effect files shrink by 5.9% overall,
+12.6% at most. The rest of a real file is types, logic, strings, JSX and comments, which
+EffectScript keeps as written. So:
+
+- "Over 50% fewer tokens" is true only of Effect code itself, as in the gallery, and is
+  presented that way. It is never claimed for whole codebases.
+- For real projects, the work is coverage: making the reverse compiler convert more real Effect code
+  is worth more than new sugar. Merging ADR-0089, A7 and `layer … for` (ADR-0095) took them from
+  0.7% to 3.0% (12,699 of 20,926 Effect files converted), halfway to the ceiling.
+- Written natively, real code saves more than the ceiling, because it is restructured rather than
+  stripped: an AI rewrite of a t3code service in EffectScript saved 17.6%, against 5.7% converted.
+
+**Rejected while aiming at 50%** (each measured on the gallery and the corpora):
+
+- **`effect (x: X) => A throws E` as a type** (for `(x: X) => Effect<A, E>`, 4,866 such members in
+  real code): 47.6% → 47.7%. Once `Effect` is bare, `throws E` costs what `Effect<…, E>` costs, so
+  it is a second spelling with no gain (rule 3, rule 6).
+- **`declare effect f(x: X): A`:** two uses in all the real code. It would only shorten our own
+  samples.
+- **`catch Tag {`** (an optional binding for typed clauses): no typed `catch` clause in the
+  converted docs corpus; again only our samples would use it.
+- **Tuning the samples:** the gallery's `declare` stubs and types are what a reader needs to follow
+  each scenario, so they stay as written.
+

@@ -1,4 +1,11 @@
-import { convertRepo, elide, report, summarize, writeSideBySide } from "@effectscript/corpus/convert"
+import {
+  convertRepo,
+  convertRepoParallel,
+  elide,
+  report,
+  summarize,
+  writeSideBySide
+} from "@effectscript/corpus/convert"
 import { primary } from "@effectscript/tokens"
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
@@ -44,6 +51,12 @@ describe("the corpus converter (ADR-0094)", () => {
     const users = repo.files.find((f) => f.path === "src/users.ts")!
     expect(users.efx).toContain("export effect greet(name: string) {\n  console.log(name)\n  return name\n}\n")
   })
+
+  it("converts the same in parallel, in the same order", async () => {
+    const dir = project()
+    const parallel = await convertRepoParallel(dir, "demo", { jobs: 3 })
+    expect(parallel).toEqual(convertRepo(dir, "demo"))
+  }, 60_000)
 
   it("leaves out what a project's exclusions name", () => {
     const repo = convertRepo(project(), "demo", { exclude: ["src/gen.*"] })

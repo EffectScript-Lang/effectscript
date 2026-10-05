@@ -582,6 +582,11 @@ Rules:
   and `src/a.efx` → `"myapp/a/Users"`. A relative filename keeps its directories; an absolute one outside the package root keeps only
   its file name, so keys never contain absolute paths (ADR-0018). Without package information, the key is `"<Name>"`. To override:
   `service Users as "acme/Users" { … }`.
+- **Layers for a service declared anywhere** (ADR-0095): `[export] layer Name for Service = …`
+  lowers like a body's `layer`: `effect { … }` to `Layer.effect(Service, Effect.gen(…))` with
+  returned objects in `Service.of(…)`, `{ … }` to `Layer.succeed(Service, Service.of({ … }))`, and
+  any other value to `Layer.effect(Service, value)`. `Service` may be dotted; spans are named after
+  its last segment.
 - **Defaults** (ADR-0066). A `default = <value>` member makes the service a `Context.Reference`:
   code that uses it without a layer gets the default, so the service is never a requirement and
   `needs` doesn't name it. The output is an `interface` for the shape, a reference whose

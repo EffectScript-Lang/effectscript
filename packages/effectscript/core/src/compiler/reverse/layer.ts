@@ -12,7 +12,53 @@ import { commentsIn, endsAt, removeKeepingComments, type ReverseCtx, separatorCo
 import { isMember } from "./origin.ts"
 import { isPlainStep } from "./pipes.ts"
 import { inFrame } from "./resources.ts"
-import { layerPipes } from "./service.ts"
+import { layerPipes, layerPlan } from "./service.ts"
+
+/** `Name` or `Module.Name`: a service tag a `layer … for` names (ADR-0095). */
+const isTagReference = (node: Node): boolean =>
+  node.type === "Identifier" ||
+  (node.type === "MemberExpression" && !node.computed && node.optional !== true && isTagReference(node.object))
+
+/**
+ * `const X = Layer.effect(S, Effect.gen(…))`, `Layer.succeed(S, S.of({ … }))` or `Layer.effect(S, value)`
+ * → `layer X for S = …` (ADR-0095), exactly where the forward compiler gives the same code back.
+ */
+const convertServiceLayer = (ctx: ReverseCtx, statement: Node, declarator: Node, head: Node, visit: Visit): boolean => {
+  const args: Array<Node> = head.arguments
+  const effect = isMember(head.callee, ctx.layer, "effect")
+  if ((!effect && !isMember(head.callee, ctx.layer, "succeed")) || args.length !== 2 || !isTagReference(args[0]!)) {
+    return false
+  }
+  const target: Node = args[0]!
+  const name = ctx.source.slice(target.start, target.end)
+  const span: string = target.type === "MemberExpression" ? target.property.name : target.name
+  if (
+    ctx.source.slice(head.callee.end, target.start) !== "(" || ctx.source.slice(target.end, args[1]!.start) !== ", "
+  ) {
+    return false
+  }
+  const inner: Node = args[1]!
+  const genOrOf = genShape(ctx, inner, head) !== undefined || (inner.type === "CallExpression" &&
+    inner.callee.type === "MemberExpression" && inner.callee.property?.name === "of")
+  // `Layer.effect(S, value)`: the value is any other expression
+  if (!genOrOf) {
+    if (!effect || declarator.init !== head || inner.type === "ObjectExpression") return false
+    ctx.s.update(statement.start, statement.start + "const".length, "layer")
+    ctx.s.appendLeft(declarator.id.end, ` for ${name}`)
+    ctx.s.remove(head.start, inner.start)
+    ctx.s.remove(inner.end, head.end)
+    within(ctx, "Layer", () => visit(inner, head, false))
+    return true
+  }
+  // `Layer.succeed(S, …)` converts only as `S.of({ … })`; `layerPlan` checks the rest
+  if (!effect && !(inner.type === "CallExpression" && inner.arguments[0]?.type === "ObjectExpression")) return false
+  const plan = layerPlan(ctx, name, declarator.init, span)
+  if (plan === undefined) return false
+  ctx.s.update(statement.start, statement.start + "const".length, "layer")
+  ctx.s.appendLeft(declarator.id.end, ` for ${name}`)
+  plan(visit)
+  return true
+}
 
 /** Operands that read the same around `&` (it binds tighter than `|`, `&&`, `?:`…). */
 const operandTypes = new Set(["Identifier", "MemberExpression", "CallExpression", "NewExpression"])
@@ -40,6 +86,7 @@ export const convertLayer = (ctx: ReverseCtx, statement: Node, visit: Visit): bo
   }
   if (head.type !== "CallExpression" || !endsAt(ctx, statement, declarator.init.end)) return false
   if (commentsIn(ctx, statement.start, head.start).length > 0) return false
+  if (convertServiceLayer(ctx, statement, declarator, head, visit)) return true
   const args: Array<Node> = head.arguments
   // `Layer.mergeAll(a, b)` → `a & b`
   if (isMember(head.callee, ctx.layer, "mergeAll")) {

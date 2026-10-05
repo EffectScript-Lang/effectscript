@@ -302,11 +302,22 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
  * How a layer value converts: `Layer.effect(S, Effect.gen(…))[.pipe(…)]` → `effect {…} [|> …]`,
  * `Layer.succeed(S, S.of({…}))` → `{…}`. Any other value is left as written.
  */
-const layerPlan = (ctx: ReverseCtx, name: string, value: Node): ((visit: Visit) => void) | undefined => {
+/**
+ * How a service layer's value converts, for the service written `name` (a name, or a dotted name
+ * for one declared in another module, ADR-0095) whose spans are named `span.method`.
+ *
+ * @since 4.0.0
+ * @category reverse
+ */
+export const layerPlan = (
+  ctx: ReverseCtx,
+  name: string,
+  value: Node,
+  span: string = name
+): ((visit: Visit) => void) | undefined => {
   const isOf = (node: Node | undefined): node is Node =>
     node?.type === "CallExpression" && node.callee.type === "MemberExpression" && !node.callee.computed &&
-    node.callee.object.type === "Identifier" && node.callee.object.name === name &&
-    node.callee.property.name === "of" && node.arguments.length === 1
+    slice(ctx, node.callee.object) === name && node.callee.property.name === "of" && node.arguments.length === 1
   let head = value
   const pipe = value.type === "CallExpression" && value.callee.type === "MemberExpression" &&
       !value.callee.computed && value.callee.property.name === "pipe"
@@ -315,7 +326,7 @@ const layerPlan = (ctx: ReverseCtx, name: string, value: Node): ((visit: Visit) 
   if (pipe !== undefined) head = pipe.callee.object
   if (head.type !== "CallExpression" || head.arguments.length !== 2) return () => {}
   const [service, inner]: Array<Node> = head.arguments
-  if (service.type !== "Identifier" || service.name !== name) return () => {}
+  if (slice(ctx, service) !== name) return () => {}
   // `Layer.effect(S, Effect.gen(…))`
   if (isMember(head.callee, ctx.layer, "effect")) {
     const shape = genShape(ctx, inner, head)
@@ -335,7 +346,7 @@ const layerPlan = (ctx: ReverseCtx, name: string, value: Node): ((visit: Visit) 
           ctx.s.remove(r.argument.arguments[0].end, r.argument.end)
         }
       }
-      within(ctx, "Effect", () => inFrame(ctx, true, () => visit(shape.fn.body, shape.fn, true)), name)
+      within(ctx, "Effect", () => inFrame(ctx, true, () => visit(shape.fn.body, shape.fn, true)), span)
       if (pipe !== undefined) layerPipes(ctx, pipe, head, visit)
     }
   }
@@ -348,7 +359,7 @@ const layerPlan = (ctx: ReverseCtx, name: string, value: Node): ((visit: Visit) 
     return (visit) => {
       ctx.s.remove(head.start, object.start)
       ctx.s.remove(object.end, head.end)
-      within(ctx, "Layer", () => visit(object, inner, false), name)
+      within(ctx, "Layer", () => visit(object, inner, false), span)
     }
   }
   return () => {}

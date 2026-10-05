@@ -5,8 +5,9 @@
  * one project.
  */
 import * as fs from "node:fs"
+import * as os from "node:os"
 import * as path from "node:path"
-import { convertRepo, report, type RepoSummary, summarize, writeSideBySide } from "../src/convert.ts"
+import { convertRepoParallel, report, type RepoSummary, summarize, writeSideBySide } from "../src/convert.ts"
 import { checkout, type Manifest } from "../src/projects.ts"
 
 const root = path.join(import.meta.dirname, "..")
@@ -19,13 +20,19 @@ const previous: Array<RepoSummary> = only !== undefined && fs.existsSync(reportF
   ? JSON.parse(fs.readFileSync(reportFile, "utf8"))
   : []
 
+// `--report`: render REPORT.md from report.json again, without converting
+if (process.argv.includes("--report")) {
+  fs.writeFileSync(path.join(root, "REPORT.md"), report(JSON.parse(fs.readFileSync(reportFile, "utf8"))))
+  process.exit(0)
+}
 const summaries = new Map(previous.map((s) => [s.name, s]))
 for (const project of config.projects) {
   const name = project.name
   if (only !== undefined && name !== only) continue
   const started = performance.now()
-  const repo = convertRepo(checkout(project), name, {
+  const repo = await convertRepoParallel(checkout(project), name, {
     exclude: config.exclude[name]?.globs ?? [],
+    jobs: Math.max(1, os.availableParallelism() - 2),
     onFile: (done, total) => {
       if (done % 200 === 0 || done === total) process.stdout.write(`\r${name}: ${done}/${total} files`)
     }

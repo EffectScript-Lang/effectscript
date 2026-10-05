@@ -47,6 +47,9 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
   checker holds you to both. Leave the return type out to let TypeScript infer all three.
 - **Declare data, failures and dependencies.** Use `schema` for data, `error` for failures,
   `service` for dependencies, `config` for configuration, and `layer` for wiring.
+- **Implement a service where it suits the project.** Inside its body (`layer = effect { … }`), or
+  in another module: `export layer UsersLive for Users = effect { … return { … } }`. Spans are
+  named `Users.find` either way.
 - **Run once, at the edge:** `main { … } |> provide(AppLive)`. Never call `Effect.runPromise`
   inside `effect` code.
 - **Compose with `|>`.** Effect's combinators are builtins when the name is free:

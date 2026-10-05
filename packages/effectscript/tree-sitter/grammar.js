@@ -611,6 +611,8 @@ export default grammar(TypeScript, {
           "layer",
           field("name", $.identifier),
           optional(field("type", $.type_annotation)),
+          // the service it implements, declared anywhere (ADR-0095)
+          optional(seq("for", field("service", choice($.identifier, $.nested_identifier)))),
           "=",
           field("value", $.expression),
           optional($._semicolon)

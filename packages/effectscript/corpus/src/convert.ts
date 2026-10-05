@@ -10,6 +10,7 @@ import { toEffectScript } from "effectscript/compiler"
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as path from "node:path"
+import { Worker } from "node:worker_threads"
 
 /**
  * One source file, converted.
@@ -85,25 +86,74 @@ export const convertRepo = (
   const commit = git(dir, "rev-parse", "HEAD").trim()
   const excluded = (file: string) => (options.exclude ?? []).some((glob) => path.matchesGlob(file, glob))
   const sources = git(dir, "ls-files", "-z").split("\0").filter((f) => isSource(f) && !excluded(f)).sort()
-  const onFile = options.onFile
   const files = sources.map((file, i): FileResult => {
-    onFile?.(i + 1, sources.length)
-    const ts = fs.readFileSync(path.join(dir, file), "utf8")
-    const base = { path: file, effect: importsEffect(ts), generated: isGenerated(ts), ts }
-    if (base.generated || !base.effect) return { ...base, changed: false, error: undefined, notes: [], efx: ts }
-    try {
-      const result = toEffectScript(ts, { filename: file.replace(/\.[mc]?tsx?$/, ".ts") })
-      return {
-        ...base,
-        changed: result.code !== ts,
-        error: undefined,
-        notes: result.notes.map((n) => elide(n.message)),
-        efx: result.code
-      }
-    } catch (error) {
-      return { ...base, changed: false, error: String(error).split("\n")[0]!, notes: [], efx: ts }
-    }
+    options.onFile?.(i + 1, sources.length)
+    return convertFile(dir, file)
   })
+  return { name, commit, files }
+}
+
+/**
+ * One file, converted.
+ *
+ * @since 4.0.0
+ * @category convert
+ */
+export const convertFile = (dir: string, file: string): FileResult => {
+  const ts = fs.readFileSync(path.join(dir, file), "utf8")
+  const base = { path: file, effect: importsEffect(ts), generated: isGenerated(ts), ts }
+  if (base.generated || !base.effect) return { ...base, changed: false, error: undefined, notes: [], efx: ts }
+  try {
+    const result = toEffectScript(ts, { filename: file.replace(/\.[mc]?tsx?$/, ".ts") })
+    return {
+      ...base,
+      changed: result.code !== ts,
+      error: undefined,
+      notes: result.notes.map((n) => elide(n.message)),
+      efx: result.code
+    }
+  } catch (error) {
+    return { ...base, changed: false, error: String(error).split("\n")[0]!, notes: [], efx: ts }
+  }
+}
+
+/**
+ * `convertRepo` over `jobs` worker threads: verification compiles each converted file a few times
+ * (ADR-0030), so a large project is CPU-bound. Results are the same, in the same order.
+ *
+ * @since 4.0.0
+ * @category convert
+ */
+export const convertRepoParallel = async (
+  dir: string,
+  name: string,
+  options: {
+    readonly exclude?: ReadonlyArray<string>
+    readonly jobs: number
+    readonly onFile?: (done: number, total: number) => void
+  }
+): Promise<RepoResult> => {
+  const commit = git(dir, "rev-parse", "HEAD").trim()
+  const excluded = (file: string) => (options.exclude ?? []).some((glob) => path.matchesGlob(file, glob))
+  const sources = git(dir, "ls-files", "-z").split("\0").filter((f) => isSource(f) && !excluded(f)).sort()
+  const chunks = Array.from(
+    { length: Math.max(1, Math.min(options.jobs, sources.length)) },
+    (_, i) => sources.filter((_, j) => j % options.jobs === i)
+  )
+  let done = 0
+  const results = await Promise.all(chunks.map((files) =>
+    new Promise<Array<FileResult>>((resolve, reject) => {
+      const worker = new Worker(new URL("./worker.ts", import.meta.url), { workerData: { dir, files } })
+      const out: Array<FileResult> = []
+      worker.on("message", (result: FileResult) => {
+        out.push(result)
+        options.onFile?.(++done, sources.length)
+      })
+      worker.on("error", reject)
+      worker.on("exit", (code) => (code === 0 ? resolve(out) : reject(new Error(`worker exited with ${code}`))))
+    })
+  ))
+  const files = results.flat().sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
   return { name, commit, files }
 }
 
@@ -209,6 +259,8 @@ export const report = (
   const notes = new Map<string, { files: number; repos: number }>()
   for (const s of summaries) {
     for (const [note, files] of Object.entries(s.notes)) {
+      // a canonicalized conversion did convert (ADR-0089): it isn't a reason code stays TypeScript
+      if (note.startsWith("canonicalized:")) continue
       const entry = notes.get(note) ?? { files: 0, repos: 0 }
       notes.set(note, { files: entry.files + files, repos: entry.repos + 1 })
     }

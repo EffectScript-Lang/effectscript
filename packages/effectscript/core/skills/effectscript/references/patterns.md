@@ -46,6 +46,34 @@ export effect userName(id: string): string throws UserNotFound needs Users {
 }
 ```
 
+A service declared in one module is often implemented in another, several times. `layer … for`
+names the service it implements; the block returns the implementation, and helpers and methods get
+spans named after the service (`Users.load`, `Users.find`):
+
+```efx
+// in users.efx, the service; in another module, its implementations
+error UserNotFound { id: string }
+
+service Users {
+  effect find(id: string): string throws UserNotFound
+  effect list(): ReadonlyArray<string>
+}
+
+declare const rows: Map<string, string>
+
+export layer UsersInMemory for Users = effect {
+  effect load(id: string) {
+    return rows.get(id) ?? throw new UserNotFound({ id })
+  }
+  return {
+    effect find(id) {
+      return await load(id)
+    },
+    list: effect () => [...rows.values()]
+  }
+}
+```
+
 Combine layers with `&`, and provide what a layer needs with `|> provide(…)`:
 
 ```efx

@@ -1112,7 +1112,12 @@ export const efxPlugin = (Base: any): any =>
     efxIsBindingDeclarationStart(keyword: string): boolean {
       if (!this.efxIsWord(keyword) || !this.efxNextIsNameSameLine()) return false
       const name = this.lookahead()
-      const after = skipSpace(this.input, name.end)
+      let after = skipSpace(this.input, name.end)
+      // `layer Name for Service = …` implements a service declared anywhere (ADR-0095)
+      const target = keyword === "layer"
+        ? /^for[ \t]+[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*/.exec(this.input.slice(after))
+        : null
+      if (target !== null) after = skipSpace(this.input, after + target[0].length)
       return this.input[after] === "=" && this.input[after + 1] !== "=" && this.input[after + 1] !== ">"
     }
 
@@ -1121,6 +1126,20 @@ export const efxPlugin = (Base: any): any =>
       node.keyword = { start: this.start, end: this.end }
       this.next()
       node.id = this.parseIdent()
+      if (type === "LayerDeclaration" && this.type === tt._for) {
+        node.efxForKeyword = { start: this.start, end: this.end }
+        this.next()
+        let target = this.parseIdent()
+        while (this.eat(tt.dot)) {
+          const member = this.startNodeAt(target.start, target.loc.start)
+          member.object = target
+          member.property = this.parseIdent(true)
+          member.computed = false
+          member.optional = false
+          target = this.finishNode(member, "MemberExpression")
+        }
+        node.efxFor = target
+      }
       this.expect(tt.eq)
       node.init = this.parseMaybeAssign()
       this.semicolon()

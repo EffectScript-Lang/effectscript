@@ -45,7 +45,13 @@ const isSignature = (member: Node): boolean =>
 const isLayerMember = (member: Node): boolean =>
   member.type === "PropertyDefinition" && (member.efxLayer !== undefined || member.key?.name === "layer")
 
-const wrapReturnedObjects = (ctx: Ctx, block: Node, name: string): void => {
+/**
+ * Wraps every top-level `return { … }` of a layer's `effect` block in `Name.of(…)`.
+ *
+ * @since 4.0.0
+ * @category utils
+ */
+export const wrapReturnedObjects = (ctx: Ctx, block: Node, name: string): void => {
   for (const statement of block.body.body as Array<Node>) {
     if (statement.type === "ReturnStatement" && statement.argument?.type === "ObjectExpression") {
       ctx.s.appendRight(statement.argument.start, `${name}.of(`)

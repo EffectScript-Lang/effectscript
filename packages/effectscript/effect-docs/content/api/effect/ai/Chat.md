@@ -28,7 +28,7 @@ const FakeLanguageModel = Layer.effect(
   })
 )
 
-const ChatLayer = Layer.effect(Chat.Chat, Chat.empty)
+layer ChatLayer for Chat.Chat = Chat.empty
 
 const program = effect {
   const chat = await Chat

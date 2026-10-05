@@ -11,5 +11,5 @@ export command create(
 }
 
 main {
-  await Command.runWith(create, { version: "1.0.0" })(process.argv.slice(2))
+  await Command.run(create, { version: "1.0.0" })
 }

@@ -102,6 +102,8 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0092](0092-intent-compression-audit.md) | Audit the whole language for ceremony, with one form per intent | Accepted, A5 withdrawn by its amendment 1 |
 | [0093](0093-tokens-counted-with-hugging-face-tokenizers.md) | Tokens are counted with Hugging Face tokenizers, against a panel of frontier vocabularies | Accepted |
 | [0094](0094-a-corpus-of-real-effect-projects.md) | Real Effect v4 projects as a corpus, converted and measured | Accepted |
+| [0095](0095-a-layer-for-a-service-declared-anywhere.md) | `layer Name for Service` implements a service declared anywhere | Accepted |
+| [0096](0096-performance-stays-in-typescript-first.md) | Make the compiler faster in TypeScript before porting it | Accepted |
 
 ## Template
 

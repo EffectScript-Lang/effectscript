@@ -5,10 +5,11 @@
  * @since 4.0.0
  */
 import type { Node } from "../ast.ts"
-import { type Handler, withNamespace } from "../context.ts"
+import { type Ctx, type Handler, withNamespace } from "../context.ts"
 import { ref } from "../names.ts"
 import { walk } from "../walk.ts"
 import type { HandlerGroup } from "./registry.ts"
+import { wrapReturnedObjects } from "./service.ts"
 
 const pipelineHead = (node: Node): Node => (node.type === "PipelineExpression" ? pipelineHead(node.left) : node)
 
@@ -32,7 +33,45 @@ const tokenOutsideComments = (source: string, from: number, to: number, token: s
 const mergeOperands = (node: Node): Array<Node> =>
   node.type === "BinaryExpression" && node.operator === "&" ? [...mergeOperands(node.left), node.right] : [node]
 
+/**
+ * `layer Name for Service = …` (ADR-0095): the implementation of a service declared anywhere, as a
+ * `service` body's `layer = …` is for its own. An `effect` block becomes `Layer.effect(Service,
+ * Effect.gen(…))` with its returned objects wrapped in `Service.of(…)`, an object becomes
+ * `Layer.succeed(Service, Service.of({ … }))`, and any other value `Layer.effect(Service, value)`.
+ * Spans are named after the service, `Service.method`, as in a `service` body.
+ */
+const serviceLayer = (node: Node, ctx: Ctx): void => {
+  const target: Node = node.efxFor
+  const service = ctx.source.slice(target.start, target.end)
+  const span = target.type === "MemberExpression" ? target.property.name : target.name
+  ctx.s.update(node.keyword.start, node.keyword.end, "const")
+  ctx.s.remove(node.id.end, target.end)
+  const head = pipelineHead(node.init)
+  const Layer = ref(ctx, "effect", "Layer")
+  if (head.type === "EffectBlock") {
+    head.efxLayerConstructor = true
+    ctx.s.appendRight(head.start, `${Layer}.effect(${service}, `)
+    ctx.s.prependLeft(head.end, ")")
+    wrapReturnedObjects(ctx, head, service)
+  } else if (head.type === "ObjectExpression") {
+    ctx.s.appendRight(head.start, `${Layer}.succeed(${service}, ${service}.of(`)
+    ctx.s.prependLeft(head.end, "))")
+  } else {
+    ctx.s.appendRight(head.start, `${Layer}.effect(${service}, `)
+    ctx.s.prependLeft(head.end, ")")
+  }
+  head.efxPipeable = true
+  const previous = ctx.service
+  ctx.service = span
+  withNamespace(ctx, "Layer", () => walk(node.init, node, ctx))
+  ctx.service = previous
+}
+
 const layerDeclaration: Handler = (node, _parent, ctx) => {
+  if (node.efxFor !== undefined) {
+    serviceLayer(node, ctx)
+    return true
+  }
   ctx.s.update(node.keyword.start, node.keyword.end, "const")
   const head = pipelineHead(node.init)
   const Layer = ref(ctx, "effect", "Layer")
