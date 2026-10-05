@@ -256,7 +256,7 @@ await runPromise(program) // => []
 **Taking a value**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await TxQueue.bounded<number, string>(10)
@@ -279,7 +279,7 @@ await runPromise(program) // => [42, Exit.fail("queue error")]
 **Polling without blocking**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const queue = await TxQueue.bounded<number>(10)
@@ -300,7 +300,7 @@ await runPromise(program) // => [Option.none(), Option.some(42)]
 **Taking all queued values**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await TxQueue.bounded<number, string>(10)
@@ -372,7 +372,7 @@ await runPromise(program) // => [[1, 2, 3, 4, 5], [6, 7, 8]]
 **Peeking without removing values**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await TxQueue.bounded<number, string>(10)
@@ -521,7 +521,7 @@ await runPromise(program) // => [Cause.interrupt(), true]
 **Ending queues**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await TxQueue.bounded<number, Cause.Done>(10)

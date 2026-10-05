@@ -20,7 +20,10 @@ describe("convertBlock (Plan 13 Task 1, ADR-0050)", () => {
     expect(block.changed).toBe(true)
     expect(block.parsed).toBe(true)
     expect(block.efx).toContain("export effect f(n: number)")
-    expect(scan(toTypeScript(block.efx).code)).toEqual(scan(effectCode))
+    // the import comes back naming the module's file (ADR-0089)
+    expect(scan(toTypeScript(block.efx).code)).toEqual(
+      scan(effectCode.replace("import { Effect } from \"effect\"", "import * as Effect from \"effect/Effect\""))
+    )
   })
 
   it("keeps plain TypeScript, and marks code that doesn't parse", () => {

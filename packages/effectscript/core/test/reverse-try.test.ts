@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 
 // The forward compiler is the oracle: each case compiles an EffectScript `try`, converts the
 // output back, and expects the same EffectScript and byte-identical TypeScript (ADR-0030).
-const head = `import { Data } from "effect"
+const head = `import * as Data from "effect/Data"
 
 class NotFound extends Data.TaggedError("NotFound")<{}> {}
 class Timeout extends Data.TaggedError("RequestTimeout")<{}> {}

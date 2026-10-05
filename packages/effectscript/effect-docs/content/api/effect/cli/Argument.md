@@ -194,8 +194,6 @@ port.kind // => "argument"
 **Loading a fallback config**
 
 ```efx
-import { Argument } from "effect/cli"
-
 const repository = Argument.String("repository")
   |> Argument.withFallbackConfig(Config.String("REPOSITORY"))
 repository.kind // => "argument"
@@ -206,7 +204,7 @@ repository.kind // => "argument"
 **Showing a fallback prompt**
 
 ```efx
-import { Argument, Prompt } from "effect/cli"
+import { Prompt } from "effect/cli"
 
 const filename = Argument.String("filename")
   |> Argument.withFallbackPrompt(Prompt.String({ message: "Filename" }))
@@ -247,9 +245,6 @@ port.kind // => "argument"
 **Validating values effectfully**
 
 ```efx
-import { Argument } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -290,9 +285,6 @@ value // => "notes.txt"
 **Mapping values that may throw**
 
 ```efx
-import { Argument } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -355,8 +347,6 @@ files.kind // => "argument"
 **Validating parsed values with a schema**
 
 ```efx
-import { Argument } from "effect/cli"
-
 const input = Argument.String("input")
   |> Argument.withSchema(Schema.NonEmptyString)
 input.kind // => "argument"
@@ -406,8 +396,6 @@ positiveInt.kind // => "argument"
 **Filtering and mapping parsed values**
 
 ```efx
-import { Argument } from "effect/cli"
-
 const positiveInt = Argument.Int("count")
   |> Argument.filterMap(
     (n) => n > 0 ? Option.some(n) : Option.none(),

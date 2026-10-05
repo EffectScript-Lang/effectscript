@@ -38,7 +38,7 @@ await runPromise(program) // => [true, false, 42]
 **Creating a transactional deferred**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const deferred = await TxDeferred.make<string, Error>()
@@ -67,7 +67,7 @@ await runPromise(program) // => 42
 **Polling a deferred**
 
 ```efx
-import { Effect, Option, Result } from "effect"
+import { Option, Result } from "effect"
 
 const program = effect {
   const deferred = await TxDeferred.make<number>()
@@ -116,7 +116,7 @@ await runPromise(program) // => [true, false]
 **Completing with a failure**
 
 ```efx
-import { Cause, Effect, Exit, Option } from "effect"
+import { Cause, Option } from "effect"
 
 const program = effect {
   const deferred = await TxDeferred.make<number, string>()

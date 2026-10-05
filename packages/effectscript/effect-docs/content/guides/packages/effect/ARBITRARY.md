@@ -122,8 +122,6 @@ Use:
 - `filterMap` to transform a value when the transformation may reject it.
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const integers = Arbitrary.schema(Schema.Int)
 
 const integerOrZero = Arbitrary.schema(Schema.Boolean)
@@ -187,8 +185,6 @@ Use `flatMap` when one generated value decides what can be generated next. Creat
 callback when you can, because creating a Schema inside the callback repeats that work each time it runs:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const Length = Arbitrary.schema(
   Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 4 }))
 )
@@ -223,8 +219,6 @@ Keep a general property over all command types, then add a focused property whos
 important transition:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const Key = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 20 }))
 
 const Insert = Schema.Struct({
@@ -285,8 +279,6 @@ the result instead of immediately failing a Vitest test. It accepts a function t
 `Effect`, and it simplifies the first failing input:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const values = Arbitrary.schema(Schema.Array(Schema.Int))
 
 const program = Arbitrary.checkEffect(
@@ -302,8 +294,6 @@ await runPromise(program)
 A property may also return an `Effect`, so it can use Effect services or fail through the Effect error channel:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const program = Arbitrary.checkEffect(
   Arbitrary.schema(Schema.String),
   (value) => succeed(value.length >= 0)
@@ -479,7 +469,6 @@ and update operations below are correct, but `front` deliberately reads the last
 ```efx
 import { assert, describe, it } from "@effect/vitest"
 import { Schema } from "effect"
-import * as Arbitrary from "effect/Arbitrary"
 
 interface Queue {
   readonly front: ReadonlyArray<number>
@@ -680,8 +669,6 @@ token records enough information to generate the same initial input and repeat t
 reported counterexample:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const arbitrary = Arbitrary.schema(Schema.Int)
 
 const program = effect {
@@ -944,7 +931,6 @@ works needs no Arbitrary-specific annotation.
 ```efx
 import { assert, it } from "@effect/vitest"
 import { Effect } from "effect"
-import * as Arbitrary from "effect/Arbitrary"
 
 const Name = Arbitrary.schema(Schema.Literals(["Ada", "Grace"]))
 

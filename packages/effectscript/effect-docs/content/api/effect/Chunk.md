@@ -182,7 +182,7 @@ Chunk.toArray(Chunk.reverse(chunk)) // => [3, 2, 1]
 **Accessing elements safely**
 
 ```efx
-import { Chunk, Option } from "effect"
+import { Option } from "effect"
 
 const chunk = Chunk.make("a", "b", "c", "d")
 
@@ -1135,7 +1135,7 @@ Chunk.toArray(Chunk.remove(chunk, 10)) // => ["a", "b", "c", "d"]
 **Modifying an element**
 
 ```efx
-import { Chunk, Option } from "effect"
+import { Option } from "effect"
 
 const chunk = Chunk.make(1, 2, 3, 4)
 Chunk.modify(chunk, 1, (n) => n * 10) // => Option.some(Chunk.make(1, 20, 3, 4))
@@ -1152,7 +1152,7 @@ chunk |> Chunk.modify(-1, (n) => n * 10) // => Option.none()
 **Replacing an element**
 
 ```efx
-import { Chunk, Option } from "effect"
+import { Option } from "effect"
 
 const chunk = Chunk.make("a", "b", "c", "d")
 Chunk.replace(chunk, 1, "X") // => Option.some(Chunk.make("a", "X", "c", "d"))

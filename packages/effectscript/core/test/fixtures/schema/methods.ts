@@ -1,4 +1,5 @@
-import { Effect, Schema } from "effect"
+import * as Effect from "effect/Effect"
+import * as Schema from "effect/Schema"
 class Banned extends Schema.TaggedError<Banned>()("Banned", { name: Schema.String }) {}
 
 export class User extends Schema.Class<User>("User")({

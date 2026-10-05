@@ -3,7 +3,6 @@
  *
  * Define a service that uses the HttpClient module to fetch data from an external API
  */
-import { Context, Effect, flow } from "effect"
 import { FetchHttpClient } from "effect/http"
 
 schema Todo {
@@ -14,9 +13,9 @@ schema Todo {
 }
 
 export service JsonPlaceholder as "app/JsonPlaceholder" {
-  readonly allTodos: Effect.Effect<ReadonlyArray<Todo>, JsonPlaceholderError>
-  getTodo(id: number): Effect.Effect<Todo, JsonPlaceholderError>
-  createTodo(todo: Omit<Todo, "id">): Effect.Effect<Todo, JsonPlaceholderError>
+  readonly allTodos: Effect<ReadonlyArray<Todo>, JsonPlaceholderError>
+  getTodo(id: number): Effect<Todo, JsonPlaceholderError>
+  createTodo(todo: Omit<Todo, "id">): Effect<Todo, JsonPlaceholderError>
   layer = effect {
       // Access the HttpClient service, and apply some common middleware to all
       // requests:

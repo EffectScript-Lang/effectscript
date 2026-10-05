@@ -5,9 +5,7 @@
  * AI agents or chat assistants.
  */
 import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai"
-import { Config } from "effect"
 import { AiError } from "effect/ai"
-import { FetchHttpClient } from "effect/http"
 
 // ---------------------------------------------------------------------------
 // Provider setup

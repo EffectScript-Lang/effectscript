@@ -153,7 +153,9 @@ law withdrawFailsExactlyWhenShort(balance: Money, amount: Money) {
     proposal: {
       adr: "ADR-0075",
       status: "proposed, not built yet",
-      lowering: `import { Effect, Exit, Schema } from "effect"
+      lowering: `import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Schema from "effect/Schema"
 // A \`law\` is a rule the program must keep. It runs as a property test today,
 // and it is what a Bend2 proof proves (ADR-0074). Proposed in ADR-0075, not built:
 // the TypeScript is the lowering it specifies. Tests run them: \`laws "./bank.efx"\`.
@@ -311,9 +313,17 @@ export default worker Site serves Api with FilesLive
       adr: "ADR-0086",
       status: "a proposed sketch, not built",
       lowering: `import * as Cloudflare from "alchemy/Cloudflare"
-import { Effect, Layer, Path, Schema } from "effect"
-import { Etag, HttpPlatform, HttpRouter } from "effect/http"
-import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "effect/http-api"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Path from "effect/Path"
+import * as Schema from "effect/Schema"
+import * as HttpApi from "effect/http-api/HttpApi"
+import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder"
+import * as HttpApiEndpoint from "effect/http-api/HttpApiEndpoint"
+import * as HttpApiGroup from "effect/http-api/HttpApiGroup"
+import * as Etag from "effect/http/Etag"
+import * as HttpPlatform from "effect/http/HttpPlatform"
+import * as HttpRouter from "effect/http/HttpRouter"
 // @efx infra cloudflare
 // The infra extension on Alchemy v2, sketched in ADR-0086 (proposed, not built):
 // the TypeScript is the lowering it specifies, in the shape of Alchemy's guide.
@@ -386,7 +396,7 @@ stack App { Site }
       status: "a proposed sketch, not built",
       lowering: `import * as Alchemy from "alchemy"
 import * as Cloudflare from "alchemy/Cloudflare"
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 // @efx infra cloudflare
 // The stack Alchemy deploys: its workers, with the header's providers (ADR-0086, proposed).
 // \`alchemy deploy\` reads this file; each worker's URL is an output.

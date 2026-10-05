@@ -73,8 +73,6 @@ Layer.isLayer(Routes) // => true
 **Applying route and global middleware**
 
 ```efx
-import { HttpRouter } from "effect/http"
-
 const RouteMiddleware = HttpRouter.middleware((httpEffect) =>
   map(httpEffect, HttpServerResponse.setHeader("x-route", "route"))
 ).layer
@@ -106,8 +104,6 @@ await runPromise(program) // => ["route", "global"]
 **Disabling route logging**
 
 ```efx
-import { HttpRouter } from "effect/http"
-
 const Route = HttpRouter.add(
   "GET",
   "/hello",

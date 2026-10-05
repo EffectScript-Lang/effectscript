@@ -263,7 +263,7 @@ actual // => [0, 2]
 **Joining failing fibers**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = Effect.gen(function*() {
   const set = yield* FiberSet.make()

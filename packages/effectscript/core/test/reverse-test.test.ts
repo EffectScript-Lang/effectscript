@@ -39,13 +39,13 @@ describe "with a shared layer" with Users.layerTest {
 
   it("keeps it.effect with a non-generator body as TypeScript", () => {
     const ts =
-      "import { it } from \"@effect/vitest\"\nimport { Effect } from \"effect\"\nit.effect(\"plain\", () => Effect.succeed(1))\n"
+      "import { it } from \"@effect/vitest\"\nimport * as Effect from \"effect/Effect\"\nit.effect(\"plain\", () => Effect.succeed(1))\n"
     expect(expectSafe(ts).code).toContain("it.effect(")
   })
 
   it("keeps tests that call a user-defined it", () => {
     const ts =
-      "import { Effect } from \"effect\"\nconst it = { effect: (_: string, f: () => unknown) => f() }\nit.effect(\"mine\", () => Effect.gen(function*() {\n  return 1\n}))\n"
+      "import * as Effect from \"effect/Effect\"\nconst it = { effect: (_: string, f: () => unknown) => f() }\nit.effect(\"mine\", () => Effect.gen(function*() {\n  return 1\n}))\n"
     expect(expectSafe(ts).code).toContain("it.effect(")
   })
 })

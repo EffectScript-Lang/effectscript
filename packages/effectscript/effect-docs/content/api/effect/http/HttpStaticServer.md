@@ -16,13 +16,6 @@ The examples in the JSDoc of `packages/effect/src/http/HttpStaticServer.ts`, in 
 **Serving files from a directory**
 
 ```efx
-import {
-  HttpEffect,
-  HttpPlatform,
-  HttpServerResponse,
-  HttpStaticServer
-} from "effect/http"
-
 const TestFileSystem = FileSystem.layerNoop({
   stat: () =>
     succeed({

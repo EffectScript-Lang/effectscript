@@ -13,7 +13,6 @@
  */
 import { NodeStream } from "@effect/platform-node"
 import { Array } from "effect"
-import * as Option from "effect/Option"
 import { Readable } from "node:stream"
 
 // `Stream.fromIterable` turns any iterable into a stream.

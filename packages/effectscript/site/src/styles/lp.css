@@ -1,5 +1,6 @@
-/* The landing page's exhibition (ADR-0082): dark rooms on the brand's ink and zinc, each with one
-   live scene or photograph, one artifact and a placard. Light is the only colour. */
+/* The landing page's exhibition (ADR-0082), drawn by one line (ADR-0091): dark rooms on the brand's
+   ink and zinc, each with one live scene or photograph, and a white line that runs the whole page,
+   becoming each room's diagram. Light is the only colour; signals mark state. */
 
 :root {
   --ink: #09090b;
@@ -179,10 +180,10 @@ a {
   color: var(--dim);
 }
 .lede {
-  font-size: clamp(1.05rem, 1.25vw, 1.65rem);
-  line-height: 1.55;
-  color: #c9cacf;
-  max-width: 62ch;
+  font-size: clamp(1.15rem, 1.4vw, 1.8rem);
+  line-height: 1.45;
+  color: #e4e4e7;
+  max-width: 34ch;
   text-wrap: pretty;
 }
 .body {
@@ -309,21 +310,6 @@ a {
 .hero-note {
   margin: 16px 0 0;
 }
-.hero-peek {
-  position: relative;
-  margin-inline: calc(var(--gutter) * 0.55);
-}
-.hero-peek .placard {
-  margin: 0;
-  border-bottom: 0;
-  background: rgb(9 9 11 / 0.92);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.hero-peek a {
-  color: inherit;
-  text-decoration: none;
-}
 
 /* placards */
 /* the threshold band: each room opens with a full-width framed strip, as the comp's does */
@@ -397,9 +383,6 @@ a {
 .room-head .lede,
 .room-head .body {
   margin: 26px 0 0;
-}
-.room-head.right {
-  margin-left: auto;
 }
 
 /* chapters: pinned scenes with the film's titles */
@@ -753,57 +736,6 @@ a {
   }
 }
 
-/* the rosetta table */
-.rosetta {
-  margin-top: 56px;
-  width: 100%;
-  border-collapse: collapse;
-  font: 400 15px/1.45 var(--font-mono);
-}
-.rosetta th {
-  text-align: left;
-  font: 500 12px/1.3 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  padding: 0 18px 16px 0;
-  border-bottom: 1px solid var(--line-strong);
-}
-.rosetta td {
-  padding: 16px 18px 16px 0;
-  border-bottom: 1px solid var(--line);
-  vertical-align: top;
-}
-.rosetta td:nth-child(1) {
-  color: var(--muted);
-}
-.rosetta td:nth-child(2) {
-  color: #fff;
-}
-.rosetta td:nth-child(3) {
-  color: var(--subtle);
-  font-family: var(--font-sans);
-}
-.rosetta tr {
-  transition: background-color 0.2s;
-}
-.rosetta tbody tr:hover {
-  background: rgb(255 255 255 / 0.025);
-}
-.rosetta-wrap {
-  overflow-x: auto;
-  max-width: 64rem;
-}
-@media (max-width: 760px) {
-  .rosetta {
-    font-size: 13px;
-  }
-  .rosetta th:nth-child(3),
-  .rosetta td:nth-child(3) {
-    display: none;
-  }
-}
-
 /* code */
 .code-block {
   margin: 0;
@@ -846,34 +778,15 @@ a {
 .tile:hover {
   border-color: var(--line-strong);
 }
-.tile .scene {
-  height: 190px;
-  border-bottom: 1px solid var(--line);
-  background: var(--tile);
-}
-.tile-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 24px;
-  flex: 1;
-}
-.tile-body p {
+.tile h3 {
   margin: 0;
-  color: var(--subtle);
-  font-size: 15px;
-  line-height: 1.55;
+  padding: 22px 24px 0;
 }
-.tile-body .code-block {
-  margin-top: auto;
+.tile .code-block {
   border: 0;
-  border-top: 1px solid var(--line);
   border-radius: 0;
   background: none;
-  padding: 16px 0 0;
-}
-.tile-body h3 {
-  margin: 0;
+  padding: 16px 24px 24px;
 }
 @media (min-width: 760px) {
   .tile.s3,
@@ -903,42 +816,6 @@ a {
     grid-column: span 7;
   }
 }
-/* the rest of Effect's libraries: a shelf of declarations, not another grid of cards */
-.libs {
-  margin-top: 56px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
-}
-.lib {
-  min-width: 0;
-  padding: 22px 22px 22px 0;
-  border-bottom: 1px solid var(--line);
-}
-.lib h3 {
-  font: 500 13px/1 var(--font-mono);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 0 0 14px;
-}
-.lib .code-block {
-  font-size: 12.5px;
-  padding: 0;
-  border: 0;
-  background: none;
-}
-@media (max-width: 1100px) {
-  .libs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 600px) {
-  .libs {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* intent: the annotated file */
 .annotated {
   margin-top: 64px;
@@ -1000,12 +877,7 @@ a {
   font: 500 11.5px/1.2 var(--font-mono);
   color: var(--subtle);
 }
-.keys .pass {
-  color: var(--efx-pass);
-}
-.keys .fail {
-  color: var(--efx-fail);
-}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -1094,87 +966,6 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
-.fact {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: rgb(15 15 17 / 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-width: 0;
-}
-.fact.wide {
-  grid-column: span 2;
-}
-.fact p {
-  margin: 0;
-  color: var(--subtle);
-  line-height: 1.6;
-}
-.fact .big-number {
-  color: #fff;
-  font: 700 clamp(3rem, 5vw, 4.8rem)/0.95 var(--font-display);
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
-}
-.bars {
-  display: grid;
-  gap: 12px;
-  margin-top: auto;
-}
-.bar {
-  display: grid;
-  gap: 7px;
-  font: 400 12.5px/1 var(--font-mono);
-  color: var(--subtle);
-}
-.bar span {
-  display: flex;
-  justify-content: space-between;
-}
-.bar i {
-  display: block;
-  height: 6px;
-  border-radius: 3px;
-  background: #fff;
-}
-.bar.ghost i {
-  background: #3f3f46;
-}
-.agent-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.agent-list li {
-  font: 500 12.5px/1 var(--font-mono);
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  padding: 8px 12px;
-  color: #e4e4e7;
-}
-@media (max-width: 1000px) {
-  .facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .fact.wide {
-    grid-column: span 2;
-  }
-}
-@media (max-width: 640px) {
-  .facts {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .fact.wide {
-    grid-column: auto;
-  }
-}
 
 /* output: the pipeline */
 .pipeline {
@@ -1184,38 +975,7 @@ a {
   align-items: stretch;
   gap: 14px;
 }
-.stage {
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: rgb(15 15 17 / 0.9);
-  padding: 20px 22px;
-  min-width: 0;
-}
-.stage b {
-  display: block;
-  font: 500 15px/1.2 var(--font-mono);
-  color: #fff;
-}
-.stage span {
-  display: block;
-  margin-top: 8px;
-  color: var(--subtle);
-  font-size: 14.5px;
-  line-height: 1.5;
-}
-.arrow {
-  align-self: center;
-  color: #52525b;
-}
-@media (max-width: 900px) {
-  .pipeline {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .arrow {
-    justify-self: center;
-    transform: rotate(90deg);
-  }
-}
+
 .compare {
   margin-top: 16px;
   display: grid;
@@ -1418,39 +1178,7 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-.keywords {
-  margin-top: 28px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgb(9 9 11 / 0.75);
-}
-.keywords li {
-  font: 500 13px/1 var(--font-mono);
-  padding: 8px 11px;
-  border-radius: 6px;
-  border: 1px solid var(--line-strong);
-  color: #e4e4e7;
-  transition: opacity 0.3s, border-color 0.3s, color 0.3s, background-color 0.3s;
-}
-.keywords li[data-ext] {
-  border-style: dashed;
-  color: #52525b;
-  border-color: #3f3f46;
-}
-.keywords li[data-ext].lit {
-  border-style: solid;
-  color: var(--ink);
-  background: #fff;
-  border-color: #fff;
-}
-.keywords-note {
-  margin: 14px 0 0;
-}
+
 @media (max-width: 900px) {
   .ext {
     grid-template-columns: minmax(0, 1fr);
@@ -1463,28 +1191,6 @@ a {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   border-top: 1px solid var(--line);
-}
-.zero div {
-  padding: 26px 26px 0 0;
-}
-.zero h3 {
-  margin: 0;
-}
-.zero p {
-  margin: 10px 0 0;
-  color: var(--subtle);
-  line-height: 1.6;
-}
-@media (max-width: 1000px) {
-  .zero {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: 24px;
-  }
-}
-@media (max-width: 600px) {
-  .zero {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* lockstep */
@@ -1699,10 +1405,9 @@ code,
 pre,
 .code-block,
 .notes code,
-.rosetta td,
+.pair code,
 .ledger dt,
-.keywords li,
-.stage b,
+.constructs a,
 .lock-rows code {
   font-variant-ligatures: contextual common-ligatures;
 }
@@ -1724,9 +1429,7 @@ pre,
   .hero > .scene::after {
     display: none;
   }
-  .hero-peek {
-    order: 3;
-  }
+
   .room-bg::after,
   .room-bg.from-right::after,
   .room-bg.soft::after {
@@ -1738,4 +1441,370 @@ pre,
   .h-hero br {
     display: none;
   }
+}
+
+/* the line (ADR-0091): one stroke down the page, under the copy and over the photographs */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+[data-line] {
+  position: relative;
+}
+[data-line] > .wrap,
+[data-line] > .hero-copy,
+[data-line] .chapter-copy,
+[data-line] > .channels {
+  position: relative;
+  z-index: 2;
+}
+.line-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+.line-core,
+.line-glow,
+.line-branch {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.line-core {
+  stroke: #fff;
+  stroke-width: 1.6;
+}
+.line-glow {
+  stroke: #fff;
+  stroke-opacity: 0.1;
+  stroke-width: 9;
+}
+.line-branch {
+  stroke: #fff;
+  stroke-width: 1.4;
+}
+.line-branch.pass {
+  stroke: var(--efx-pass);
+}
+.line-branch.fail {
+  stroke: var(--efx-fail);
+}
+.line-branch.warn {
+  stroke: var(--efx-warn);
+}
+.line-branch.need {
+  stroke: var(--efx-need);
+  stroke-width: 2.5;
+}
+.line-branch.ghost {
+  stroke: #71717a;
+}
+.line-branch.dashed {
+  stroke-dasharray: 5 7;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-out);
+}
+.line-branch.dashed.on {
+  opacity: 1;
+}
+/* an extension's arc: dark until it is switched on */
+.line-branch[data-ext] {
+  stroke: #3f3f46;
+  stroke-width: 3;
+  transition: stroke 0.4s var(--ease-out), stroke-width 0.4s var(--ease-out);
+}
+.line-branch[data-ext].lit {
+  stroke: #fff;
+  stroke-width: 5;
+}
+.line-mark {
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-out);
+}
+.line-mark.on {
+  opacity: 1;
+}
+.line-mark circle {
+  fill: #fff;
+}
+.line-mark text {
+  font: 500 13px/1 var(--font-mono);
+  letter-spacing: 0.02em;
+  fill: #d4d4d8;
+}
+.line-mark.pass circle,
+.line-mark.pass text {
+  fill: var(--efx-pass);
+}
+.line-mark.fail circle,
+.line-mark.fail text {
+  fill: var(--efx-fail);
+}
+.line-mark.need circle,
+.line-mark.need text {
+  fill: var(--efx-need);
+}
+.line-mark.ghost circle,
+.line-mark.ghost text {
+  fill: #8e8e96;
+}
+/* the gallery's stations: hollow, and filled where you are */
+.line-mark[data-station] circle {
+  fill: var(--ink);
+  stroke: #fff;
+  stroke-width: 1.5;
+  transition: fill 0.3s;
+}
+.line-mark[data-station].here circle {
+  fill: #fff;
+}
+.line-pen {
+  opacity: 0;
+  transition: opacity 0.3s;
+  filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 16px rgb(255 255 255 / 0.55));
+}
+.line-pen circle {
+  fill: #fff;
+}
+.line-pen .line-pen-halo {
+  fill: rgb(255 255 255 / 0.12);
+}
+/* the rows the line swings into; on a phone it runs straight, so they fold away */
+.line-stage {
+  position: relative;
+}
+.stage-tangle {
+  height: clamp(180px, 16vw, 300px);
+  margin-block: 32px 64px;
+}
+.stage-band {
+  height: clamp(220px, 18vw, 320px);
+  margin-block: 72px 88px;
+}
+.stage-tapes {
+  height: clamp(130px, 10vw, 180px);
+  margin-bottom: 56px;
+}
+.stage-pipeline {
+  height: clamp(150px, 12vw, 210px);
+  margin-block: 48px 72px;
+}
+.stage-ring {
+  aspect-ratio: 1;
+}
+@media (max-width: 899px) {
+  .stage-tangle,
+  .stage-band,
+  .stage-tapes,
+  .stage-pipeline,
+  .stage-ring {
+    display: none;
+  }
+}
+
+/* translation: each async form joined to its EffectScript by a rung of the line */
+.pairs {
+  margin-top: 56px;
+  display: grid;
+  gap: 0;
+}
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.9fr);
+  column-gap: clamp(64px, 7vw, 150px);
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid rgb(39 39 42 / 0.7);
+}
+.pair-head {
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-top: 0;
+}
+.pair code {
+  justify-self: start;
+  font: 500 clamp(14px, 1vw, 17px)/1.3 var(--font-mono);
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: rgb(9 9 11 / 0.82);
+  white-space: nowrap;
+}
+.pair-from {
+  color: var(--subtle);
+}
+.pair-to {
+  color: #fff;
+  border-color: #fff;
+}
+.pair-what {
+  color: var(--muted);
+  font-size: 15px;
+}
+.aside {
+  margin: 28px 0 0;
+  color: var(--subtle);
+  max-width: 66ch;
+}
+.aside code {
+  color: #fff;
+}
+@media (max-width: 899px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+  .pair-head {
+    display: none;
+  }
+}
+
+/* the library's constructs: one word each, linked to its page */
+.constructs {
+  list-style: none;
+  margin: 48px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.constructs a {
+  display: block;
+  padding: 12px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: #fff;
+  text-decoration: none;
+  font: 500 clamp(16px, 1.3vw, 22px)/1 var(--font-mono);
+  transition: background 0.2s, color 0.2s;
+}
+.constructs a:hover {
+  background: #fff;
+  color: var(--ink);
+}
+
+/* the gallery's tabs sit under the line's stations */
+.gallery-bar {
+  margin-top: 72px;
+}
+
+/* agents: the number, and the two tapes the line draws */
+.tapes {
+  margin-top: 56px;
+}
+.big-number {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font: 700 clamp(4.5rem, 11vw, 11rem)/0.9 var(--font-display);
+  letter-spacing: -0.05em;
+}
+.big-number span {
+  font: 500 clamp(1rem, 1.3vw, 1.5rem)/1.2 var(--font-display);
+  letter-spacing: -0.01em;
+  color: var(--dim);
+}
+.tapes .mono-note {
+  margin: 8px 0 0;
+  max-width: 70ch;
+}
+.facts-list {
+  list-style: none;
+  margin: 64px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 clamp(32px, 4vw, 80px);
+}
+.facts-list li {
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+  color: var(--subtle);
+  font-size: clamp(1rem, 1.05vw, 1.25rem);
+  line-height: 1.5;
+}
+.facts-list b {
+  color: #fff;
+  font-weight: 600;
+}
+.facts-list code {
+  color: #fff;
+  font-size: 0.9em;
+}
+@media (max-width: 760px) {
+  .facts-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* extensions and the superset: a stage beside the facts */
+.ext-row {
+  margin-top: 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(32px, 5vw, 96px);
+  align-items: center;
+}
+/* the facts stay on the dark side of the photograph, where they read */
+.superset-row {
+  margin-top: 48px;
+  max-width: 40rem;
+}
+.ext-row .ext {
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+.superset-row .facts-list {
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 899px) {
+  .ext-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.roadmap {
+  margin: 0 0 18px;
+  font: 500 13px/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--efx-warn);
+}
+.moving {
+  margin-top: clamp(72px, 7vw, 120px);
+}
+.moving h3 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+}
+.moving .hero-actions {
+  margin-top: 24px;
+}
+
+/* rooms whose line marks the code itself: strict draws over its cards, under-text squiggles only */
+[data-line="strict"] > .line-svg {
+  z-index: 3;
+}
+/* intent's file sits on the bare room, so the leaders and rings show under its text */
+.annotated .code-block {
+  background: transparent;
+}
+/* the gallery's frame passes under the sample, before the playground line */
+[data-gallery] > .aside {
+  margin-top: 64px;
+}
+/* agents: the facts stay on the dark side of the reading room */
+#agents .facts-list {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 44rem;
 }

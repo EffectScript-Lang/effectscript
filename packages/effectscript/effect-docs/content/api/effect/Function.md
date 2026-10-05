@@ -75,7 +75,7 @@ sum(2, 3) // => 5
 **Applying an argument to a function**
 
 ```efx
-import { Function, pipe, String } from "effect"
+import { Function, String } from "effect"
 
 String.length |> Function.apply("hello") // => 5
 ```

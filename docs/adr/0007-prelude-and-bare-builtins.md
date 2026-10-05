@@ -1,6 +1,6 @@
 # ADR-0007: Automatic prelude and bare Effect builtins
 
-- **Status:** Accepted
+- **Status:** Accepted, import shape amended by ADR-0089
 - **Date:** 2026-10-02
 - **Deciders:** the user ("reserve as many keywords as we can", "`retry()` over `Effect.retry()`",
   "only import what is needed")

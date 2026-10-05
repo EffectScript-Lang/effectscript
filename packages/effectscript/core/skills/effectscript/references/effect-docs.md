@@ -136,7 +136,6 @@ passing in the service interface as a type parameter.
 
 ```efx
 // file: src/db/Database.ts
-import { Context } from "effect"
 
 // Pass in the service class name as the first type parameter, and the service
 // interface as the second type parameter.

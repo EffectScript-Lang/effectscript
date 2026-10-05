@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { expectSafe } from "./utils/reverse.ts"
 
 const head =
-  "import { Clock, Config, Effect, Layer } from \"effect\"\nimport { Atom } from \"effect/reactivity\"\nimport { Command, Flag } from \"effect/cli\"\nimport { HttpApiEndpoint, HttpApiGroup } from \"effect/http-api\"\nimport { describe, it } from \"@effect/vitest\"\ndeclare const n: Effect.Effect<number>\ndeclare const A: Layer.Layer<never>\ndeclare const B: Layer.Layer<never>\n"
+  "import * as Clock from \"effect/Clock\"\nimport * as Config from \"effect/Config\"\nimport * as Effect from \"effect/Effect\"\nimport * as Layer from \"effect/Layer\"\nimport * as Atom from \"effect/reactivity/Atom\"\nimport * as Command from \"effect/cli/Command\"\nimport * as Flag from \"effect/cli/Flag\"\nimport * as HttpApiEndpoint from \"effect/http-api/HttpApiEndpoint\"\nimport * as HttpApiGroup from \"effect/http-api/HttpApiGroup\"\nimport { describe, it } from \"@effect/vitest\"\ndeclare const n: Effect.Effect<number>\ndeclare const A: Layer.Layer<never>\ndeclare const B: Layer.Layer<never>\n"
 
 describe("Plan 7 final review", () => {
   it.each([
@@ -55,7 +55,7 @@ describe("Plan 7 final review", () => {
       "export const L = Layer.mergeAll(A, Layer.succeedContext(Context.empty()))\n"
     ]
   ])("%s", (name, body) => {
-    const ts = `${head}import { Context, Schema } from "effect"\n${body}`
+    const ts = `${head}import * as Context from "effect/Context"\nimport * as Schema from "effect/Schema"\n${body}`
     const back = expectSafe(ts)
     // these shapes must re-sugar, not just stay TypeScript
     const converted: Record<string, RegExp> = {

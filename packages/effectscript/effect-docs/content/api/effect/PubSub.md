@@ -653,7 +653,7 @@ actual // => { count: 3, message: "msg1", remaining: 2 }
 **Checking remaining messages synchronously**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = scoped(effect {
   const pubsub = await PubSub.bounded<string>(2)

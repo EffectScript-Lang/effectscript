@@ -1,7 +1,7 @@
 import { toEffectScript, toTypeScript } from "effectscript/compiler"
 import { describe, expect, it } from "vitest"
 
-const head = "import { Effect } from \"effect\"\ndeclare const close: Effect.Effect<void>\n"
+const head = "import * as Effect from \"effect/Effect\"\ndeclare const close: Effect.Effect<void>\n"
 
 const convert = (body: string) => {
   const ts = `${head}${body}`

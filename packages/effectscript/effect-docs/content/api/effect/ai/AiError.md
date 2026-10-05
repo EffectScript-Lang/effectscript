@@ -382,8 +382,6 @@ const result = [error._tag, error.isRetryable] // => ["InvalidUserInputError", f
 **Handling an AI error by tag**
 
 ```efx
-import { AiError } from "effect/ai"
-
 const aiOperation = fail(new AiError.AiError({
   module: "OpenAI",
   method: "generateText",

@@ -85,7 +85,7 @@ describe("brand: parsing (ADR-0077)", () => {
 describe("brand: compiling (ADR-0077)", () => {
   it("brands with the declared name, checks first", () => {
     expect(code("brand Port = Int where isGreaterThan(0), isLessThan(65536)\n")).toBe(
-      "import { Schema } from \"effect\"\n" +
+      "import * as Schema from \"effect/Schema\"\n" +
         "const Port = Schema.Int.check(Schema.isGreaterThan(0), Schema.isLessThan(65536)).pipe(Schema.brand(\"Port\"))\n" +
         "type Port = typeof Port.Type\n"
     )

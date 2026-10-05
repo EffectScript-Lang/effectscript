@@ -74,7 +74,7 @@ const witness: Result = "helloworld"
 **Concatenating strings**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 String.concat("hello", "world") // => "helloworld"
 "hello" |> String.concat("world") // => "helloworld"
@@ -85,7 +85,7 @@ String.concat("hello", "world") // => "helloworld"
 **Converting strings to uppercase**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "a" |> String.toUpperCase // => "A"
 String.toUpperCase("hello") // => "HELLO"
@@ -96,7 +96,7 @@ String.toUpperCase("hello") // => "HELLO"
 **Converting strings to lowercase**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "A" |> String.toLowerCase // => "a"
 String.toLowerCase("HELLO") // => "hello"
@@ -107,7 +107,7 @@ String.toLowerCase("HELLO") // => "hello"
 **Capitalizing a string**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "abc" |> String.capitalize // => "Abc"
 String.capitalize("hello") // => "Hello"
@@ -118,7 +118,7 @@ String.capitalize("hello") // => "Hello"
 **Uncapitalizing a string**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "ABC" |> String.uncapitalize // => "aBC"
 String.uncapitalize("Hello") // => "hello"
@@ -129,7 +129,7 @@ String.uncapitalize("Hello") // => "hello"
 **Replacing a substring**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "abc" |> String.replace("b", "d") // => "adc"
 "hello world" |> String.replace("world", "Effect") // => "hello Effect"
@@ -209,7 +209,7 @@ String.trimEnd("hello world  ") // => "hello world"
 **Slicing strings**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "abcd" |> String.slice(1, 3) // => "bc"
 "hello world" |> String.slice(0, 5) // => "hello"
@@ -252,7 +252,7 @@ String.length("abc") // => 3
 **Splitting strings**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "abc" |> String.split("") // => ["a", "b", "c"]
 "" |> String.split("") // => [""]
@@ -264,7 +264,7 @@ String.split("hello,world", ",") // => ["hello", "world"]
 **Checking for substrings**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "hello world" |> String.includes("world") // => true
 "hello world" |> String.includes("foo") // => false
@@ -275,7 +275,7 @@ import { pipe, String } from "effect"
 **Checking string prefixes**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "hello world" |> String.startsWith("hello") // => true
 "hello world" |> String.startsWith("world") // => false
@@ -286,7 +286,7 @@ import { pipe, String } from "effect"
 **Checking string suffixes**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "hello world" |> String.endsWith("world") // => true
 "hello world" |> String.endsWith("hello") // => false
@@ -308,7 +308,7 @@ String.charCodeAt("abc", 4) // => Option.none()
 **Extracting substrings**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "abcd" |> String.substring(1) // => "bcd"
 "abcd" |> String.substring(1, 3) // => "bc"
@@ -319,7 +319,7 @@ import { pipe, String } from "effect"
 **Accessing characters safely**
 
 ```efx
-import { Option, pipe, String } from "effect"
+import { Option, String } from "effect"
 
 "abc" |> String.at(1) // => Option.some("b")
 "abc" |> String.at(4) // => Option.none()
@@ -330,7 +330,7 @@ import { Option, pipe, String } from "effect"
 **Reading characters safely**
 
 ```efx
-import { Option, pipe, String } from "effect"
+import { Option, String } from "effect"
 
 "abc" |> String.charAt(1) // => Option.some("b")
 "abc" |> String.charAt(4) // => Option.none()
@@ -341,7 +341,7 @@ import { Option, pipe, String } from "effect"
 **Reading code points**
 
 ```efx
-import { Option, pipe, String } from "effect"
+import { Option, String } from "effect"
 
 "abc" |> String.codePointAt(1) // => Option.some(98)
 "abc" |> String.codePointAt(10) // => Option.none()
@@ -352,7 +352,7 @@ import { Option, pipe, String } from "effect"
 **Finding the first substring index**
 
 ```efx
-import { Option, pipe, String } from "effect"
+import { Option, String } from "effect"
 
 "abbbc" |> String.indexOf("b") // => Option.some(1)
 "abbbc" |> String.indexOf("z") // => Option.none()
@@ -363,7 +363,7 @@ import { Option, pipe, String } from "effect"
 **Finding the last substring index**
 
 ```efx
-import { Option, pipe, String } from "effect"
+import { Option, String } from "effect"
 
 "abbbc" |> String.lastIndexOf("b") // => Option.some(3)
 "abbbc" |> String.lastIndexOf("d") // => Option.none()
@@ -374,7 +374,7 @@ import { Option, pipe, String } from "effect"
 **Comparing strings by locale**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "a" |> String.localeCompare("b") // => -1
 "b" |> String.localeCompare("a") // => 1
@@ -386,7 +386,7 @@ import { pipe, String } from "effect"
 **Matching regular expressions**
 
 ```efx
-import { Option, pipe, String } from "effect"
+import { String } from "effect"
 
 "hello"
   |> String.match(/l+/)
@@ -399,7 +399,7 @@ import { Option, pipe, String } from "effect"
 **Iterating regular expression matches**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 const matches = "hello world" |> String.matchAll(/l/g)
 
@@ -432,7 +432,7 @@ Array.from(
 **Padding strings at the end**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "a" |> String.padEnd(5) // => "a    "
 "a" |> String.padEnd(5, "_") // => "a____"
@@ -443,7 +443,7 @@ import { pipe, String } from "effect"
 **Padding strings at the start**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "a" |> String.padStart(5) // => "    a"
 "a" |> String.padStart(5, "_") // => "____a"
@@ -454,7 +454,7 @@ import { pipe, String } from "effect"
 **Repeating strings**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "a" |> String.repeat(5) // => "aaaaa"
 "hello" |> String.repeat(3) // => "hellohellohello"
@@ -465,7 +465,7 @@ import { pipe, String } from "effect"
 **Replacing all matches**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 "ababb" |> String.replaceAll("b", "c") // => "acacc"
 "ababb" |> String.replaceAll(/ba/g, "cc") // => "accbb"
@@ -488,7 +488,7 @@ String.search("ababb", "d") // => Option.none()
 **Lowercasing strings by locale**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 const str = "\u0130"
 str |> String.toLocaleLowerCase("tr") // => "i"
@@ -499,7 +499,7 @@ str |> String.toLocaleLowerCase("tr") // => "i"
 **Uppercasing strings by locale**
 
 ```efx
-import { pipe, String } from "effect"
+import { String } from "effect"
 
 const str = "i\u0307"
 str |> String.toLocaleUpperCase("lt-LT") // => "I"

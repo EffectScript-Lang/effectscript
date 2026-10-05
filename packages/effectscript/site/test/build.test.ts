@@ -290,7 +290,8 @@ describe("Plan 16 final review fixes", () => {
 describe("the landing page's exhibition (ADR-0082)", () => {
   it("ships its WebGPU scenes over posters, and every image they name", () => {
     const page = read("index.html")
-    for (const scene of ["ceremony", "theater", "tokens", "errors", "retry", "fibers", "channels", "lockstep"]) {
+    // the line draws the library's ideas; these are the scenes that stay WebGPU (ADR-0091)
+    for (const scene of ["ceremony", "theater", "tokens", "channels", "lockstep"]) {
       expect(page, scene).toContain(`data-scene="${scene}"`)
     }
     const images = [...new Set([...page.matchAll(/\/img\/lp\/([\w-]+\.webp)/g)].map((m) => m[1]!))]

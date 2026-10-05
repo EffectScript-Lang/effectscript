@@ -16,8 +16,6 @@ The examples in the JSDoc of `packages/effect/src/ai/IdGenerator.ts`, in EffectS
 **Accessing the ID generator service**
 
 ```efx
-import { IdGenerator } from "effect/ai"
-
 const useIdGenerator = effect {
   const idGenerator = await IdGenerator.IdGenerator
   const newId = await idGenerator.generateId()
@@ -73,8 +71,6 @@ const result = [toolCallOptions.prefix, toolCallOptions.size] // => ["tool", 8]
 **Generating default IDs**
 
 ```efx
-import { IdGenerator } from "effect/ai"
-
 const program = effect {
   const id = await IdGenerator.defaultIdGenerator.generateId()
   return id

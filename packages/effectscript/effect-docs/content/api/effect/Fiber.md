@@ -16,7 +16,7 @@ The examples in the JSDoc of `packages/effect/src/Fiber.ts`, in EffectScript (AD
 **Awaiting a forked fiber**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   // Fork an effect to run in a new fiber
@@ -66,7 +66,7 @@ actual // => 1
 **Awaiting a fiber exit**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const fiber = await forkChild(succeed(42))
@@ -82,7 +82,7 @@ actual // => Exit.succeed(42)
 **Awaiting multiple fiber exits**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const fiber1 = await forkChild(succeed(1))

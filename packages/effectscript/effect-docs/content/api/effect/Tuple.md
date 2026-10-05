@@ -26,8 +26,6 @@ Tuple.make(10, 20, "red") // => [10, 20, "red"]
 **Extracting an element by index**
 
 ```efx
-import { pipe } from "effect"
-
 Tuple.make(1, true, "hello") |> Tuple.get(2) // => "hello"
 ```
 
@@ -56,8 +54,6 @@ Tuple.omit(["a", "b", "c", "d"], [1, 3]) // => ["a", "c"]
 **Appending an element**
 
 ```efx
-import { pipe } from "effect"
-
 Tuple.make(1, 2) |> Tuple.appendElement("end") // => [1, 2, "end"]
 ```
 
@@ -66,8 +62,6 @@ Tuple.make(1, 2) |> Tuple.appendElement("end") // => [1, 2, "end"]
 **Concatenating tuples**
 
 ```efx
-import { pipe } from "effect"
-
 Tuple.make(1, 2) |> Tuple.appendElements(["a", "b"] as const) // => [1, 2, "a", "b"]
 ```
 
@@ -76,8 +70,6 @@ Tuple.make(1, 2) |> Tuple.appendElements(["a", "b"] as const) // => [1, 2, "a", 
 **Transforming selected elements**
 
 ```efx
-import { pipe } from "effect"
-
 Tuple.make("hello", 42, true)
   |> Tuple.evolve([
     (s) => s.toUpperCase(),
@@ -90,8 +82,6 @@ Tuple.make("hello", 42, true)
 **Swapping elements**
 
 ```efx
-import { pipe } from "effect"
-
 Tuple.make("a", "b", "c")
   |> Tuple.renameIndices(["2", "1", "0"]) // => ["c", "b", "a"]
 ```
@@ -101,8 +91,6 @@ Tuple.make("a", "b", "c")
 **Wrapping every element in an array**
 
 ```efx
-import { pipe } from "effect"
-
 interface AsArray extends Struct.Lambda {
   <A>(self: A): Array<A>
   readonly "~lambda.out": Array<this["~lambda.in"]>
@@ -117,8 +105,6 @@ Tuple.make(1, "hello", true) |> Tuple.map(asArray) // => [[1], ["hello"], [true]
 **Wrapping only selected elements in arrays**
 
 ```efx
-import { pipe } from "effect"
-
 interface AsArray extends Struct.Lambda {
   <A>(self: A): Array<A>
   readonly "~lambda.out": Array<this["~lambda.in"]>
@@ -134,8 +120,6 @@ Tuple.make(1, "hello", true)
 **Wrapping all elements except one in arrays**
 
 ```efx
-import { pipe } from "effect"
-
 interface AsArray extends Struct.Lambda {
   <A>(self: A): Array<A>
   readonly "~lambda.out": Array<this["~lambda.in"]>

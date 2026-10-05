@@ -810,7 +810,7 @@ const ValidUsername = Schema.String.pipe(
 v4
 
 ```efx
-import { Effect, Result } from "effect"
+import { Result } from "effect"
 
 async function validateUsername(username: string) {
   return Promise.resolve(username === "gcanti")
@@ -883,7 +883,7 @@ const NumberFromString = Schema.transformOrFail(Schema.String, Schema.Number, {
 v4
 
 ```efx
-import { Effect, Number } from "effect"
+import { Number } from "effect"
 
 const NumberFromString = Schema.String
   |> Schema.decodeTo(Schema.Number, {
@@ -1119,8 +1119,6 @@ const samples = FastCheck.sample(personArbitrary, { numRuns: 20, seed: 42 })
 Now derive and sample through the Effect-native module:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const Person = Schema.Struct({
   name: Schema.String,
   age: Schema.Int
@@ -1157,8 +1155,6 @@ FastCheck.assert(
 Now `Arbitrary.checkEffect` runs a pure or Effectful property and returns a structured result:
 
 ```efx
-import * as Arbitrary from "effect/Arbitrary"
-
 const result = await runPromise(
   Arbitrary.checkEffect(
     Arbitrary.schema(Schema.Int),

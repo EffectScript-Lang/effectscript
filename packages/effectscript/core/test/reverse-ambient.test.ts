@@ -10,19 +10,19 @@ describe("reverse: ambient forms (Plan 7 Task 1)", () => {
   })
 
   it("keeps Effect.log outside effect code", () => {
-    const ts = "import { Effect } from \"effect\"\nexport const program = Effect.log(\"hi\")\n"
+    const ts = "import * as Effect from \"effect/Effect\"\nexport const program = Effect.log(\"hi\")\n"
     expect(expectSafe(ts).code).not.toContain("console")
   })
 
   it("keeps Effect.log when console is bound locally", () => {
     const ts =
-      "import { Effect } from \"effect\"\nconst console = { log: (_: string) => {} }\nexport const f = Effect.gen(function*() {\n  yield* Effect.log(\"hi\")\n  console.log(\"local\")\n})\n"
+      "import * as Effect from \"effect/Effect\"\nconst console = { log: (_: string) => {} }\nexport const f = Effect.gen(function*() {\n  yield* Effect.log(\"hi\")\n  console.log(\"local\")\n})\n"
     expect(expectSafe(ts).code).toContain("await log(\"hi\")")
   })
 
   it("keeps the effect forms with ambient capture off", () => {
     const ts =
-      "import { Effect } from \"effect\"\nexport const f = Effect.gen(function*() {\n  yield* Effect.log(\"hi\")\n})\n"
+      "import * as Effect from \"effect/Effect\"\nexport const f = Effect.gen(function*() {\n  yield* Effect.log(\"hi\")\n})\n"
     expect(toEffectScript(ts, { ambient: false }).code).toContain("await log(\"hi\")")
   })
 })

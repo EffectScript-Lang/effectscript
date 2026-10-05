@@ -316,9 +316,7 @@ experimental.kind // => "flag"
 **Making flags optional**
 
 ```efx
-import { Effect, FileSystem, Layer, Option } from "effect"
-import { Flag } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
+import { Option } from "effect"
 
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
@@ -370,8 +368,6 @@ const kinds = [portFlag.kind, hostFlag.kind] // => ["flag", "flag"]
 **Falling back to config**
 
 ```efx
-import { Flag } from "effect/cli"
-
 const verbose = Flag.Boolean("verbose")
   |> Flag.withFallbackConfig(Config.Boolean("VERBOSE"))
 verbose.kind // => "flag"
@@ -382,7 +378,7 @@ verbose.kind // => "flag"
 **Falling back to prompts**
 
 ```efx
-import { Flag, Prompt } from "effect/cli"
+import { Prompt } from "effect/cli"
 
 const name = Flag.String("name")
   |> Flag.withFallbackPrompt(Prompt.String({ message: "Name" }))
@@ -409,9 +405,6 @@ const kinds = [nameFlag.kind, urlFlag.kind] // => ["flag", "flag"]
 **Mapping parsed values effectfully**
 
 ```efx
-import { Flag } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -446,9 +439,6 @@ value // => "ALICE"
 **Mapping thrown errors**
 
 ```efx
-import { Flag } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -539,8 +529,6 @@ const kinds = [hostFlag.kind, excludeFlag.kind] // => ["flag", "flag"]
 **Filtering and transforming values**
 
 ```efx
-import { Flag } from "effect/cli"
-
 // Parse positive integers only
 const positiveInt = Flag.Int("count")
   |> Flag.filterMap(
@@ -604,9 +592,7 @@ const kinds = [valueFlag.kind, configFlag.kind] // => ["flag", "flag"]
 **Returning fallback results**
 
 ```efx
-import { Effect, FileSystem, Layer, Path, Result } from "effect"
-import { Flag } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
+import { Result } from "effect"
 
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
@@ -646,8 +632,6 @@ await runPromise(program.pipe(provide(CliTestLayer))) // => Result.fail("https:/
 **Validating with schemas**
 
 ```efx
-import { Flag } from "effect/cli"
-
 const isEmail = Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
   message: "Must be a valid email address"
 })

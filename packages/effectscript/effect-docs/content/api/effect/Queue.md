@@ -277,7 +277,7 @@ await runPromise(program) // => { remaining: [4, 5], size: 3 }
 **Failing queues with an error**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await Queue.bounded<number, string>(10)
@@ -298,7 +298,7 @@ await runPromise(program) // => [true, Exit.fail("Something went wrong")]
 **Failing queues with a cause**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await Queue.bounded<number, string>(10)
@@ -320,7 +320,7 @@ await runPromise(program) // => [true, Exit.failCause(Cause.fail("Queue processi
 **Failing queues with a cause synchronously**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await Queue.bounded<number, string>(10)
@@ -569,7 +569,7 @@ await runPromise(program) // => [[1, 2, 3, 4, 5], [6, 7, 8]]
 **Taking one value**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await Queue.bounded<string, Cause.Done>(3)
@@ -598,7 +598,7 @@ await runPromise(program) // => [["first", "second"], Exit.fail(Cause.Done())]
 **Polling without blocking**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const queue = await Queue.bounded<number>(10)
@@ -641,7 +641,7 @@ await runPromise(program) // => 42
 **Taking one value synchronously**
 
 ```efx
-import { Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 // Create a queue and use unsafe operations
 const program = effect {
@@ -805,7 +805,7 @@ await runPromise(program) // => [false, true]
 **Running effects into queues**
 
 ```efx
-import { Cause, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 const program = effect {
   const queue = await Queue.bounded<number, Cause.Done>(10)

@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const task: Effect.Effect<number>
 
 export const program = Effect.gen(function*() {

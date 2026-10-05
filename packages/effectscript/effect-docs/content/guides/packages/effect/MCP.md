@@ -19,7 +19,6 @@ Here is an example of a MCP server implementation:
 
 ```efx
 import { NodeRuntime, NodeStdio } from "@effect/platform-node"
-import { Effect } from "effect"
 import { McpProtocol } from "effect/ai"
 
 // Define a simple tool
@@ -168,8 +167,6 @@ contract while the actual logic is provided separately through an implementation
 grouped into toolkits, which can be combined and converted into layers.
 
 ```efx
-import { McpServer } from "effect/ai"
-
 const DemoTool = Tool.make("DemoTool", {
   description: "This is a demo tool for the documentation",
   parameters: Schema.Struct({
@@ -213,8 +210,6 @@ defines both the message shown to the user and the expected response schema, ens
 validated user input.
 
 ```efx
-import { McpServer } from "effect/ai"
-
 const DemoElicitation = McpServer.elicit({
   message: `Please answer the question ("yes" | "no") (default "no"):`,
   schema: Schema.Struct({
@@ -237,7 +232,6 @@ Here's a complete, copy/pastable MCP server example that combines all the concep
 
 ```efx
 import { NodeRuntime, NodeStdio } from "@effect/platform-node"
-import { Effect } from "effect"
 import { McpProtocol } from "effect/ai"
 
 // Define tools

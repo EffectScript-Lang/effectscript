@@ -124,8 +124,6 @@ await runPromise(chatWithAI.pipe(provide(FakeLanguageModel))) // => ["The capita
 **Streaming chat responses**
 
 ```efx
-import { Chat } from "effect/ai"
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({

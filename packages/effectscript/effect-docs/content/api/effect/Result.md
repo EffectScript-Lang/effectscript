@@ -294,8 +294,6 @@ format(Result.fail("timeout")) // => "Err: timeout"
 **Validating a number**
 
 ```efx
-import { pipe } from "effect"
-
 5
   |> Result.liftPredicate(
     (n: number) => n > 0,

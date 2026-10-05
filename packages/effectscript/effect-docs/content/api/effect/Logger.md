@@ -208,8 +208,6 @@ Logger.isLogger(Logger.defaultLogger) // => true
 **Formatting logs as simple strings**
 
 ```efx
-import { TestConsole } from "effect/testing"
-
 // Use the simple format logger
 const stableSimple = Logger.map(Logger.formatSimple, (output) =>
   output
@@ -230,8 +228,6 @@ await runPromise(program) // => ["level=INFO message=\"Application started\""]
 **Formatting logs as logfmt**
 
 ```efx
-import { TestConsole } from "effect/testing"
-
 const stableLogFmt = Logger.map(Logger.formatLogFmt, (output) =>
   output
     .replace(/timestamp=\S+ /, "")
@@ -251,8 +247,6 @@ await runPromise(program) // => ["level=INFO message=\"User login\""]
 **Formatting logs as structured objects**
 
 ```efx
-import { TestConsole } from "effect/testing"
-
 const stableStructured = Logger.map(Logger.formatStructured, (output) => ({
   message: output.message,
   level: output.level
@@ -271,8 +265,6 @@ await runPromise(program) // => [{ message: "User action", level: "INFO" }]
 **Formatting logs as JSON**
 
 ```efx
-import { TestConsole } from "effect/testing"
-
 const stableJson = Logger.map(Logger.formatJson, (json) => {
   const output = JSON.parse(json)
   return Formatter.formatJson({ message: output.message, level: output.level })

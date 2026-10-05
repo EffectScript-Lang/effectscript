@@ -16,9 +16,6 @@ The examples in the JSDoc of `packages/effect/src/workflow/WorkflowProxy.ts`, in
 **Deriving RPC endpoints from workflows**
 
 ```efx
-import { RpcServer } from "effect/rpc"
-import { Workflow } from "effect/workflow"
-
 const EmailWorkflow = Workflow.make("EmailWorkflow", {
   payload: {
     id: Schema.String,
@@ -45,8 +42,7 @@ const result = [MyRpcs.requests.size, Layer.isLayer(ApiLayer)] // => [3, true]
 **Deriving HTTP API endpoints from workflows**
 
 ```efx
-import { HttpApi } from "effect/http-api"
-import { Workflow, WorkflowProxy } from "effect/workflow"
+import { WorkflowProxy } from "effect/workflow"
 
 const EmailWorkflow = Workflow.make("EmailWorkflow", {
   payload: {

@@ -1,5 +1,5 @@
 import { drift, generate } from "@effectscript/effect-docs/generate"
-import { verdict } from "effectscript/compiler/reverse/verify"
+import { compilesBackModuloImports, verdict } from "effectscript/compiler/reverse/verify"
 import { spawnSync } from "node:child_process"
 import * as fs from "node:fs"
 import * as os from "node:os"
@@ -68,7 +68,12 @@ describe("the generated docs (Plan 13 Task 2, ADR-0050)", () => {
     const corpus = files.get("corpus.jsonl")!.trim().split("\n").map((line) => JSON.parse(line))
     const valid = corpus.filter((e: { valid: boolean }) => e.valid)
     expect(valid.length).toBeGreaterThan(3500)
-    for (const e of valid) expect(verdict(e.ts, e.efx, { filename: "example.ts" }), e.source).toBeGreaterThan(0)
+    for (const e of valid) {
+      // or canonicalized: imports from the effect index come back naming module files (ADR-0089)
+      const back = verdict(e.ts, e.efx, { filename: "example.ts" }) > 0 ||
+        compilesBackModuloImports(e.ts, e.efx, { filename: "example.ts" })
+      expect(back, e.source).toBe(true)
+    }
   }, 120_000)
 })
 

@@ -135,7 +135,7 @@ await runPromise(program) // => 16
 **Reading subscriber queue size**
 
 ```efx
-import { Effect, TxPubSub, TxQueue } from "effect"
+import { TxQueue } from "effect"
 
 const program = effect {
   const hub = await TxPubSub.unbounded<number>()

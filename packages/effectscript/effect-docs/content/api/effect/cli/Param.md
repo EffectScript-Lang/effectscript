@@ -380,9 +380,6 @@ port.kind // => "flag"
 **Mapping parsed values effectfully**
 
 ```efx
-import { CliError } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -428,9 +425,6 @@ value // => "alice@example.com"
 **Mapping thrown errors**
 
 ```efx
-import { Param } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -575,7 +569,6 @@ inputs.kind // => "flag"
 **Filtering and transforming values**
 
 ```efx
-import { Param } from "effect/cli"
 const positiveInt = Param.Int(Param.flagKind, "count")
   |> Param.filterMap(
     (n) => n > 0 ? Option.some(n) : Option.none(),
@@ -616,7 +609,6 @@ port.kind // => "flag"
 **Validating with schemas**
 
 ```efx
-import { Param } from "effect/cli"
 const isEmail = Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
 
 const Email = Schema.String

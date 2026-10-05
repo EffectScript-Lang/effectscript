@@ -16,11 +16,7 @@ The examples in the JSDoc of `packages/effect/src/http-api/HttpApiMiddleware.ts`
 **Mapping schema errors to custom errors**
 
 ```efx
-import { Effect, Schema, type Types } from "effect"
-import { HttpRouter } from "effect/http"
-import {
-  HttpApiEndpoint
-} from "effect/http-api"
+import { type Types } from "effect"
 
 error CustomError
 

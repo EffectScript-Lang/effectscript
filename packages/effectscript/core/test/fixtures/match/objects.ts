@@ -1,4 +1,5 @@
-import { Match, Predicate } from "effect"
+import * as Match from "effect/Match"
+import * as Predicate from "effect/Predicate"
 declare const res: { status: number; body: string }
 type Event = { type: "click"; x: number; y: number } | { type: "key"; key: string }
 declare const event: Event

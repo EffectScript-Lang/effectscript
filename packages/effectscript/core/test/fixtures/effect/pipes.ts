@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import * as Effect from "effect/Effect"
 declare const task: Effect.Effect<number, string>
 
 export const resilient = Effect.fn("resilient")(function*() {

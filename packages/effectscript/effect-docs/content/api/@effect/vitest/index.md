@@ -14,8 +14,6 @@ The examples in the JSDoc of `packages/vitest/src/index.ts`, in EffectScript (AD
 ## layer
 
 ```efx
-import { Effect, Layer } from "effect"
-
 class Foo extends Context.Service<Foo, "foo">()("Foo") {
   static layer = Layer.succeed(Foo, "foo")
 }

@@ -53,8 +53,6 @@ HttpApiSchema.isWithHeaders(Schema.String) // => false
 **Encoding an error with headers**
 
 ```efx
-import { HttpApiSchema } from "effect/http-api"
-
 error UserNotFound {
   userId: Int
 }

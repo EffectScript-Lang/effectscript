@@ -20,7 +20,7 @@ describe("reverse: impl (Plan 7 Task 7)", () => {
 
   it("keeps a handler whose span name doesn't match", () => {
     const ts =
-      "import { Effect } from \"effect\"\nimport { HttpApiBuilder } from \"effect/http-api\"\ndeclare const Api: any\nexport const H = HttpApiBuilder.group(Api, \"users\", Effect.fn(\"other\")(function*(handlers) {\n  return handlers.handleAll({})\n}))\n"
+      "import * as Effect from \"effect/Effect\"\nimport * as HttpApiBuilder from \"effect/http-api/HttpApiBuilder\"\ndeclare const Api: any\nexport const H = HttpApiBuilder.group(Api, \"users\", Effect.fn(\"other\")(function*(handlers) {\n  return handlers.handleAll({})\n}))\n"
     expect(expectSafe(ts).code).toContain("HttpApiBuilder.group(")
   })
 })

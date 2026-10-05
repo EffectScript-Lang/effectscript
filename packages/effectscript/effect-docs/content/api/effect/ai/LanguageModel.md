@@ -74,8 +74,6 @@ response.text // => '{"name":"John Doe","email":"john@example.com"}'
 **Generating text with options**
 
 ```efx
-import { LanguageModel } from "effect/ai"
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({
@@ -115,8 +113,6 @@ await runPromise(program) // => ["Code flows through types / Errors become value
 **Generating an object**
 
 ```efx
-import { LanguageModel } from "effect/ai"
-
 const EventSchema = Schema.Struct({
   title: Schema.String,
   date: Schema.String,
@@ -151,8 +147,6 @@ await runPromise(program) // => { title: "Tech Conference", date: "March 15th", 
 **Streaming text deltas**
 
 ```efx
-import { LanguageModel } from "effect/ai"
-
 const FakeLanguageModel = Layer.effect(
   LanguageModel.LanguageModel,
   LanguageModel.make({

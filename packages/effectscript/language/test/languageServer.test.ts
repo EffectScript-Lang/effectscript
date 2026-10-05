@@ -40,6 +40,9 @@ const tsconfig = {
     types: [],
     paths: {
       "effect": [path.join(packages, "effect/src/index.ts")],
+      // exact entries: `schema/` and `Schema.ts` collide on case-insensitive disks
+      "effect/Schema": [path.join(packages, "effect/src/Schema.ts")],
+      "effect/schema": [path.join(packages, "effect/src/schema/index.ts")],
       "effect/*": [path.join(packages, "effect/src/*/index.ts"), path.join(packages, "effect/src/*.ts")]
     }
   },

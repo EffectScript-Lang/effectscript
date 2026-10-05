@@ -82,7 +82,7 @@ t._tag // => "Transformation"
 **Parsing a date string that can fail**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const DateFromString = Schema.String
   |> Schema.decodeTo(

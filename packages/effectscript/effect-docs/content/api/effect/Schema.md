@@ -1260,8 +1260,6 @@ encoded.edges // => [{ index: 0, source: 0, target: 1, data: 1 }]
 **Decoding a JSON parameter field**
 
 ```efx
-import { UrlParams } from "effect/http"
-
 const extractFoo = Schema.JsonFromUrlParamsField("foo")
   |> Schema.decodeTo(Schema.Struct({
     some: Schema.String,
@@ -1280,8 +1278,6 @@ const result = [decoded.some, decoded.number] // => ["bar", 42]
 **Decoding URL parameters to a record**
 
 ```efx
-import { UrlParams } from "effect/http"
-
 const toStruct = Schema.RecordFromUrlParams
   |> Schema.decodeTo(Schema.Struct({
     some: Schema.String,

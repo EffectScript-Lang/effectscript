@@ -227,7 +227,7 @@ Result.isFailure(_pos.getResult(-1)) // => true
 **Narrowing a union**
 
 ```efx
-import { Optic, Result } from "effect"
+import { Result } from "effect"
 
 type B = { readonly _tag: "b"; readonly b: number }
 type S = { readonly _tag: "a"; readonly a: string } | B

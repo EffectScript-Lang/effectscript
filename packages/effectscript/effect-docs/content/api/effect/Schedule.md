@@ -16,8 +16,6 @@ The examples in the JSDoc of `packages/effect/src/Schedule.ts`, in EffectScript 
 **Defining retry and repeat schedules**
 
 ```efx
-import { TestClock } from "effect/testing"
-
 const executions: Array<number> = []
 const program = sync(() => executions.push(executions.length + 1))
   |> repeat(Schedule.recurs(2))
@@ -333,8 +331,6 @@ await runPromise(program) // => "input"
 **Limiting recurrences**
 
 ```efx
-import { TestClock } from "effect/testing"
-
 const executions: Array<number> = []
 const program = sync(() => executions.push(executions.length + 1))
   |> repeat(Schedule.recurs(3))
@@ -380,8 +376,6 @@ await runPromise(program) // => { attempts: [1], output: 0 }
 **Limiting by duration and recurrence count**
 
 ```efx
-import { TestClock } from "effect/testing"
-
 const executions: Array<number> = []
 const schedule = Schedule.forever |> Schedule.upTo({ times: 2 })
 const program = sync(() => executions.push(executions.length + 1))
@@ -411,8 +405,6 @@ await runPromise(program) // => [0, Duration.seconds(5)]
 **Repeating forever**
 
 ```efx
-import { TestClock } from "effect/testing"
-
 const executions: Array<number> = []
 const schedule = Schedule.forever |> Schedule.upTo({ times: 2 })
 const program = sync(() => executions.push(executions.length + 1))

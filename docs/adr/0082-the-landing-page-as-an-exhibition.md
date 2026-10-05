@@ -1,6 +1,6 @@
 # ADR-0082: The landing page is an exhibition: computed rooms, vgpu WebGPU scenes and generated photography
 
-- **Status:** Accepted
+- **Status:** Accepted, partly superseded by ADR-0091 (placards, text bentos, the library's tile scenes)
 - **Date:** 2026-10-05
 - **Deciders:** the user, in conversation (the old page was "meh and boring"; make it as strong as
   the brand book, very long, with bentos, big background images and WebGPU shaders from

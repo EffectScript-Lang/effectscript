@@ -43,8 +43,6 @@ Object.keys((await runPromise(ready)).tools) // => ["SearchDocs", "SummarizeText
 **Reading a handler failure's origin**
 
 ```efx
-import { Tool } from "effect/ai"
-
 const toolkit = Toolkit.make(Tool.make("Lookup", {
   failure: Schema.String,
   failureMode: "error"

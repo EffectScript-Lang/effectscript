@@ -16,9 +16,6 @@ The examples in the JSDoc of `packages/effect/src/cluster/EntityProxy.ts`, in Ef
 **Deriving RPC endpoints from an entity**
 
 ```efx
-import { ClusterSchema } from "effect/cluster"
-import { Rpc } from "effect/rpc"
-
 export const Counter = Entity.make("Counter", [
   Rpc.make("Increment", {
     payload: { id: Schema.String, amount: Schema.Number },
@@ -42,9 +39,7 @@ const result = [MyRpcs.requests.size, Layer.isLayer(RpcServerLayer)] // => [2, t
 **Deriving HTTP API endpoints from an entity**
 
 ```efx
-import { ClusterSchema, Entity, EntityProxy } from "effect/cluster"
-import { HttpApi } from "effect/http-api"
-import { Rpc } from "effect/rpc"
+import { EntityProxy } from "effect/cluster"
 
 export const Counter = Entity.make("Counter", [
   Rpc.make("Increment", {

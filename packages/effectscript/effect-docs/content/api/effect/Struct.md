@@ -86,8 +86,6 @@ k // => ["name", "age"]
 **Selecting specific properties**
 
 ```efx
-import { pipe } from "effect"
-
 const user = { name: "Alice", age: 30, admin: true }
 user |> Struct.pick(["name", "age"]) // => { name: "Alice", age: 30 }
 ```
@@ -97,8 +95,6 @@ user |> Struct.pick(["name", "age"]) // => { name: "Alice", age: 30 }
 **Removing a property**
 
 ```efx
-import { pipe } from "effect"
-
 const user = { name: "Alice", age: 30, password: "secret" }
 user |> Struct.omit(["password"]) // => { name: "Alice", age: 30 }
 ```
@@ -108,8 +104,6 @@ user |> Struct.omit(["password"]) // => { name: "Alice", age: 30 }
 **Merging structs with overlapping keys**
 
 ```efx
-import { pipe } from "effect"
-
 const defaults = { theme: "light", lang: "en" }
 const overrides = { theme: "dark", fontSize: 14 }
 defaults |> Struct.assign(overrides) // => { theme: "dark", lang: "en", fontSize: 14 }

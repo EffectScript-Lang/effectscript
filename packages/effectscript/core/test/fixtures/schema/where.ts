@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 export class Signup extends Schema.Class<Signup>("Signup")({
   email: Schema.String.check(Schema.isPattern(/^[^@\s]+@[^@\s]+$/)),
   name: Schema.String.check(Schema.isTrimmed(), Schema.isNonEmpty()),

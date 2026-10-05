@@ -93,7 +93,7 @@ await runPromise(scoped(program)) // => ["Resource: database", ["released databa
 **Retaining only cached resources**
 
 ```efx
-import { Effect, Option } from "effect"
+import { Option } from "effect"
 
 const program = effect {
   const map = await RcMap.make({

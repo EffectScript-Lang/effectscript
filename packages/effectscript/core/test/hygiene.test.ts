@@ -52,18 +52,27 @@ describe("ADR-0009: generated references are hygienic", () => {
         "export const m = (v: \"a\" | \"b\") => match (v) { when \"a\": 1; default: 2 }\n" +
         "export const p = 1 |> String\n"
     )
-    for (const name of ["Context", "Match", "Schema", "pipe"]) expect(code).toContain(`${name} as ${name}$`)
+    for (const name of ["Context", "Match", "Schema"]) {
+      expect(code).toContain(`import * as ${name}$ from "effect/${name}"`)
+    }
+    expect(code).toContain("import { pipe as pipe$ } from \"effect/Function\"")
     expect(code).toContain("extends Schema$.Class<P>")
     expect(code).toContain("extends Context$.Service<S,")
     expect(code).toContain("Match$.value(v)")
     expect(code).toContain("pipe$(1, String)")
   })
 
+  it("reuses a namespace import of the module's file (ADR-0089)", () => {
+    const code = compile("import * as S from \"effect/Schema\"\nexport schema P { x: number }\n")
+    expect(code).toContain("extends S.Class<P>(\"P\")({ x: S.Number })")
+    expect(code).not.toContain("import * as Schema")
+  })
+
   it("a free user reference and a shadowed compiler reference coexist", () => {
     const code = compile(
       "export const a = Effect.succeed(1)\nexport const g = (Effect: number) => effect { return Effect }\n"
     )
-    expect(code).toContain("import { Effect, Effect as Effect$ } from \"effect\"")
+    expect(code).toContain("import * as Effect from \"effect/Effect\"\nimport * as Effect$ from \"effect/Effect\"")
     expect(code).toContain("export const a = Effect.succeed(1)")
     expect(code).toContain("Effect$.gen(function*() { return Effect })")
   })

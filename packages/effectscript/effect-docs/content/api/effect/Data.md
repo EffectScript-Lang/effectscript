@@ -207,7 +207,7 @@ ok // => { value: 42, _tag: "Success" }
 **Defining a yieldable error**
 
 ```efx
-import { Data, Effect, Exit } from "effect"
+import { Exit } from "effect"
 
 class NetworkError extends Data.Error<{
   readonly code: number

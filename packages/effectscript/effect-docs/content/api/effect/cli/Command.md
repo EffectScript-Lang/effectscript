@@ -134,9 +134,6 @@ inferred // => { name: "Alice", server: { host: "localhost", port: 8080 } }
 **Accessing parent command context**
 
 ```efx
-import { Command } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -192,9 +189,6 @@ output // => ["Verbose: true", "Config: prod.json", "Target: staging"]
 **Creating commands**
 
 ```efx
-import { Argument } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -266,9 +260,6 @@ output // => ["Starting deployment to staging", "Deployment completed successful
 **Adding command handlers**
 
 ```efx
-import { Command } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -311,9 +302,6 @@ output // => ["Hello, Alice!"]
 **Adding subcommands**
 
 ```efx
-import { Command } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -368,9 +356,6 @@ output // => ["Verbose mode enabled", "Cloning github.com/foo/bar"]
 **Setting descriptions**
 
 ```efx
-import { Command } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -438,9 +423,6 @@ login.examples.map((example) => example.command) // => ["myapp login", "myapp lo
 **Providing command services**
 
 ```efx
-import { Command } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -492,9 +474,6 @@ output // => ["Using file system for local"]
 **Constructing command arguments**
 
 ```efx
-import { Command } from "effect/cli"
-import { ChildProcessSpawner } from "effect/process"
-
 const CliTestLayer = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,

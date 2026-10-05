@@ -57,7 +57,7 @@ keep-alive timer.
 This means the following program works in v4 **without** `runMain`:
 
 ```efx
-import { Deferred, Effect, Fiber } from "effect"
+import { Fiber } from "effect"
 
 const program = effect {
   const deferred = await Deferred.make<string>()

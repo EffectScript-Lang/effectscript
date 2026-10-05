@@ -1,4 +1,7 @@
-import { Effect, FileSystem, Option, Schedule } from "effect"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Option from "effect/Option"
+import * as Schedule from "effect/Schedule"
 declare const fetchUser: (id: string) => Effect.Effect<string, Error>
 
 export const profile = Effect.fn("profile")(function*(id: string): Effect.fn.Return<string, Error> {
