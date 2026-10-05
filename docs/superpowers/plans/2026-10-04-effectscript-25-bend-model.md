@@ -10,7 +10,7 @@
 > proofs CI job (Task 13) installs it. Tasks 2 and 13 need it, because proofs are checked by Bend:
 > the executing agent writes the proofs and `bend` is the test.
 
-> **Amended by ADR-0091 (one form per intent).** Before a task writes an `.efx` example, fixture or
+> **Amended by ADR-0092 (one form per intent).** Before a task writes an `.efx` example, fixture or
 > doc, apply these to its EffectScript, and update the expected TypeScript to match:
 >
 > - `await exit(e)`, not `await Effect.exit(e)`. Name the result `result`, not `exit`:

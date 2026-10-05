@@ -193,7 +193,7 @@ const checkName = (ctx: Ctx, node: Node): "builtin" | "global" | undefined => {
 /**
  * A `where` clause's checks as text, `a, b` (ADR-0077). The first call walks them in place, which
  * qualifies their bare Schema builtins (`isNonEmpty(…)` → `Schema.isNonEmpty(…)`) and calls a check
- * written without its `()` (`isTrimmed` → `Schema.isTrimmed()`, ADR-0091); later calls read the same
+ * written without its `()` (`isTrimmed` → `Schema.isTrimmed()`, ADR-0092); later calls read the same
  * text back.
  *
  * @since 4.0.0

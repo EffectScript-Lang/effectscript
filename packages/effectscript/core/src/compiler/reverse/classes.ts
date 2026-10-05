@@ -187,7 +187,7 @@ export const convertClass = (ctx: ReverseCtx, cls: Node, visit: Visit): boolean 
   const { entries, fields, keyword, name } = shape
   // the text between the fields and the class body is removed, so it can't hold a comment
   if (commentsIn(ctx, fields.end, cls.body.start + 1).length > 0) return false
-  // `error Forbidden`: an empty error writes no body (ADR-0091 A4)
+  // `error Forbidden`: an empty error writes no body (ADR-0092 A4)
   if (
     keyword === "error" && entries.length === 0 && !shape.tagField && cls.body.body.length === 0 &&
     commentsIn(ctx, fields.start, fields.end).length === 0

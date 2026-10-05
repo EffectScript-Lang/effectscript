@@ -112,7 +112,7 @@ const implementationFunction = (ctx: ReverseCtx, value: Node): Node | undefined 
 const paramsOf = (signature: Node): Array<Node> => signature.params ?? signature.parameters ?? []
 
 /**
- * Drops the parameter types an implementation repeats from its signature (ADR-0091 A2): exactly the
+ * Drops the parameter types an implementation repeats from its signature (ADR-0092 A2): exactly the
  * text the forward compiler writes back, the declared annotation (with `?` for an optional name).
  */
 const untypeImplementations = (

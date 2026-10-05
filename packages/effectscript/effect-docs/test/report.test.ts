@@ -23,7 +23,7 @@ describe("REPORT.md (Plan 13 Task 3, ADR-0050)", () => {
     expect(Number(total.replaceAll("*", ""))).toBe(corpus.length)
   })
 
-  it("reports the o200k tokens of the changed examples before and after (ADR-0092)", async () => {
+  it("reports the o200k tokens of the changed examples before and after (ADR-0093)", async () => {
     const changed = corpus.filter((e) => e.changed)
     const sum = (xs: ReadonlyArray<number>) => xs.reduce((n, x) => n + x, 0)
     const before = sum(await count(changed.map((e) => e.ts)))

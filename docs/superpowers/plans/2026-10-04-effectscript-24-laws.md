@@ -5,7 +5,7 @@
 > recorded in `docs/adr/`. Commit with explicit, gated paths (another session shares the branch):
 > `pnpm check && pnpm lint && git commit <paths>`.
 
-> **Amended by ADR-0091 (one form per intent).** Before a task writes an `.efx` example, fixture or
+> **Amended by ADR-0092 (one form per intent).** Before a task writes an `.efx` example, fixture or
 > doc, apply these to its EffectScript, and update the expected TypeScript to match:
 >
 > - `await exit(e)`, not `await Effect.exit(e)`. Name the result `result`, not `exit`:

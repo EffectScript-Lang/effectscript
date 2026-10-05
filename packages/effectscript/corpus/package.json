@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Real Effect v4 projects, converted to EffectScript and measured (ADR-0093)",
+  "description": "Real Effect v4 projects, converted to EffectScript and measured (ADR-0094)",
   "exports": {
     "./package.json": "./package.json",
     "./*": "./src/*.ts"

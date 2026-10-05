@@ -103,7 +103,7 @@ const status = 200
       (number))))
 
 ================
-Errors without a body (ADR-0091)
+Errors without a body (ADR-0092)
 ================
 
 export error Forbidden

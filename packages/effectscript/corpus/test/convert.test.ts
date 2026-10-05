@@ -32,7 +32,7 @@ const project = () => {
   return dir
 }
 
-describe("the corpus converter (ADR-0093)", () => {
+describe("the corpus converter (ADR-0094)", () => {
   it("converts the Effect files and sets generated and plain files apart", () => {
     const repo = convertRepo(project(), "demo")
     expect(repo.commit).toMatch(/^[0-9a-f]{40}$/)

@@ -48,7 +48,7 @@ describe("brand: parsing (ADR-0077)", () => {
     expect(program(many).body[1].type).toBe("VariableDeclaration")
   })
 
-  it("reads checks without arguments written bare (ADR-0091)", () => {
+  it("reads checks without arguments written bare (ADR-0092)", () => {
     const source = "brand Name = string where isTrimmed, isNonEmpty\n"
     expect(checks(source, program(source).body[0].efxWhere)).toEqual(["isTrimmed", "isNonEmpty"])
   })
@@ -134,7 +134,7 @@ describe("brand: compiling (ADR-0077)", () => {
   })
 })
 
-describe("where: a check without arguments drops its `()` (ADR-0091)", () => {
+describe("where: a check without arguments drops its `()` (ADR-0092)", () => {
   it("compiles a bare Schema check to its call, exactly as the called form", () => {
     const bare = code("brand Name = string where isTrimmed, isNonEmpty\n")
     expect(bare).toContain("const Name = Schema.String.check(Schema.isTrimmed(), Schema.isNonEmpty()).pipe(")
@@ -269,7 +269,7 @@ describe("where: compiling class fields and aliases (ADR-0077)", () => {
     expect(out).toContain("ratio: Schema.Number.check(Schema.makeFilter((isFinite: number) => isFinite > 0))")
   })
 
-  it("compiles both spellings of a check without arguments to the same TypeScript (ADR-0091)", () => {
+  it("compiles both spellings of a check without arguments to the same TypeScript (ADR-0092)", () => {
     expect(code("schema S {\n  name: string where isTrimmed, isNonEmpty\n  n: number where isFinite\n}\n")).toBe(
       code("schema S {\n  name: string where isTrimmed(), isNonEmpty()\n  n: number where isFinite()\n}\n")
     )
@@ -394,7 +394,7 @@ describe("brand and where: the reverse compiler (ADR-0077)", () => {
     expect(efx).toContain("e = Schema.String.check(isTrimmed()).check(isNonEmpty())\n")
   })
 
-  it("writes a check without arguments bare, and a call with arguments as a call (ADR-0091)", () => {
+  it("writes a check without arguments bare, and a call with arguments as a call (ADR-0092)", () => {
     const efx = back([
       "import { Schema } from \"effect\"",
       "export const Ratio = Schema.Number.check(Schema.isFinite(), Schema.isGreaterThan(0))",

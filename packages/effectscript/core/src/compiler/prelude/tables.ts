@@ -1340,7 +1340,7 @@ export const serviceTags: ReadonlySet<string> = new Set([
 ])
 
 /**
- * Exports that produce a `Pipeable` (ADR-0091 A1): `name:spec`, where `v` is the value and digits are argument counts.
+ * Exports that produce a `Pipeable` (ADR-0092 A1): `name:spec`, where `v` is the value and digits are argument counts.
  *
  * @since 0.1.0
  */
@@ -1951,7 +1951,7 @@ export const pipeableExports: ReadonlyMap<string, string> = new Map([
 ])
 
 /**
- * Steps over a `Pipeable` (ADR-0091 A7): `name:spec`, where `v` is the value itself and digits are argument counts whose call returns a function taking one.
+ * Steps over a `Pipeable` (ADR-0092 A7): `name:spec`, where `v` is the value itself and digits are argument counts whose call returns a function taking one.
  *
  * @since 0.1.0
  */

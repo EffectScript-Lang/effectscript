@@ -94,7 +94,7 @@ const effectExport = (ctx: Ctx, node: Node): readonly [string, string] | undefin
 }
 
 /**
- * A call Effect's types say returns a `Pipeable` (ADR-0091 A1): `Stream.make(1)`, `Option.some(x)`,
+ * A call Effect's types say returns a `Pipeable` (ADR-0092 A1): `Stream.make(1)`, `Option.some(x)`,
  * or a builtin such as `succeed(1)`, by its number of arguments.
  */
 const pipeableEffectCall = (ctx: Ctx, call: Node): boolean => {
@@ -105,7 +105,7 @@ const pipeableEffectCall = (ctx: Ctx, call: Node): boolean => {
 }
 
 /**
- * A step Effect's types say takes a `Pipeable` (ADR-0091 A7): `Effect.map(f)`, `provide(layer)`,
+ * A step Effect's types say takes a `Pipeable` (ADR-0092 A7): `Effect.map(f)`, `provide(layer)`,
  * `Effect.orDie`. A pipeline that starts with one pipes its head with `.pipe(…)`.
  */
 const pipeableEffectStep = (ctx: Ctx, step: Node): boolean => {

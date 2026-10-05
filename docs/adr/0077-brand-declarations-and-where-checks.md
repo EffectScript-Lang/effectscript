@@ -1,6 +1,6 @@
 # ADR-0077: `brand` takes its key from its name, and `where` adds checks
 
-- **Status:** Accepted, amended by ADR-0091 (checks without arguments drop `()`; Plans 24–27 use `brand Money = Int` once this ships)
+- **Status:** Accepted, amended by ADR-0092 (checks without arguments drop `()`; Plans 24–27 use `brand Money = Int` once this ships)
 - **Date:** 2026-10-05
 - **Deciders:** the user, in conversation: they asked for brands without the repeated name, then
   chose the `brand` declaration and `where` on every field from the proposed options

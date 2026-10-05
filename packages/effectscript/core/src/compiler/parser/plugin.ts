@@ -588,7 +588,7 @@ export const efxPlugin = (Base: any): any =>
       return this.parseClass(node, true)
     }
 
-    /** `error Forbidden` / `error Unauthorized status 401`: no `{` follows the header (ADR-0091 A4). */
+    /** `error Forbidden` / `error Unauthorized status 401`: no `{` follows the header (ADR-0092 A4). */
     efxIsBodilessError(): boolean {
       let i = skipSpace(this.input, this.lookahead().end)
       const status = /^status\s+\d+/.exec(this.input.slice(i))
@@ -711,7 +711,7 @@ export const efxPlugin = (Base: any): any =>
     /**
      * `where check, …` after a field's or a declaration's type, on the type's line (ADR-0077), or
      * `null`. A comma that starts the next member or parameter ends the list. A check without
-     * arguments may be written bare, `where isTrimmed` (ADR-0091).
+     * arguments may be written bare, `where isTrimmed` (ADR-0092).
      */
     efxParseWhere(): any {
       if (!this.efxIsWord("where") || this.hasPrecedingLineBreak()) return null

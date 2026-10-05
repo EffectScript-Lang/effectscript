@@ -1295,7 +1295,7 @@ git commit -m "docs(effectscript): the errors sample and the skill retry with is
 
 ## Execution record
 
-Executed on 2026-10-05 in the `effectscript-intent-compression` worktree, together with ADR-0091.
+Executed on 2026-10-05 in the `effectscript-intent-compression` worktree, together with ADR-0092.
 No commits were made: the user hadn't asked for them, so each task's commit step was skipped and
 the work stays in the worktree.
 

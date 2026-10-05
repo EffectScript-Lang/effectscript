@@ -255,7 +255,7 @@ const serviceTags = modules.map(([name]) => name).filter((name) => {
   return index !== -1 && /Context\.|Service</.test(text.slice(index, index + 400))
 })
 
-// --- pipeable exports (ADR-0091 A1) ---------------------------------------------------------------
+// --- pipeable exports (ADR-0092 A1) ---------------------------------------------------------------
 
 /**
  * Which exports produce a `Pipeable`, from `effect`'s types: `v` when the value is one, and each
@@ -391,7 +391,7 @@ out.push(
   ""
 )
 doc(
-  "Exports that produce a `Pipeable` (ADR-0091 A1): `name:spec`, where `v` is the value and digits are argument counts."
+  "Exports that produce a `Pipeable` (ADR-0092 A1): `name:spec`, where `v` is the value and digits are argument counts."
 )
 out.push(
   `export const pipeableExports: ReadonlyMap<string, string> = new Map([\n${
@@ -400,7 +400,7 @@ out.push(
   ""
 )
 doc(
-  "Steps over a `Pipeable` (ADR-0091 A7): `name:spec`, where `v` is the value itself and digits are argument counts whose call returns a function taking one."
+  "Steps over a `Pipeable` (ADR-0092 A7): `name:spec`, where `v` is the value itself and digits are argument counts whose call returns a function taking one."
 )
 out.push(
   `export const pipeableSteps: ReadonlyMap<string, string> = new Map([\n${

@@ -1,5 +1,5 @@
 /**
- * The corpus's projects (ADR-0093): pinned in `corpus.json`, cloned without history outside the
+ * The corpus's projects (ADR-0094): pinned in `corpus.json`, cloned without history outside the
  * repository, in `$EFFECTSCRIPT_CORPUS` (by default `~/.cache/effectscript/corpus`).
  *
  * @since 4.0.0

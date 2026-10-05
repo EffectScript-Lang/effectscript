@@ -41,7 +41,7 @@ const schemaClass: Handler = (node, _parent, ctx) => {
   // annotation, read by HttpApi (ADR-0064)
   const status: Node | undefined = node.efxStatus
   const close = status === undefined ? "})" : `}, { httpApiStatus: ${status.raw} })`
-  // `error Forbidden`: the empty body the declaration doesn't write (ADR-0091 A4)
+  // `error Forbidden`: the empty body the declaration doesn't write (ADR-0092 A4)
   if (node.efxBodyless === true) ctx.s.appendLeft(node.body.end, `{${close} {}`)
   else moveMembersAfter(ctx, node.body, members, close)
   for (const member of members) walk(member, node.body, ctx)

@@ -1,5 +1,5 @@
 /**
- * `pnpm corpus:update` (ADR-0093): moves every project to the tip of its branch, without history,
+ * `pnpm corpus:update` (ADR-0094): moves every project to the tip of its branch, without history,
  * and rewrites the pins in `corpus.json`. Commit the new pins with the new `REPORT.md`.
  */
 import * as fs from "node:fs"

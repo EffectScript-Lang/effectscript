@@ -61,7 +61,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0051](0051-the-effectscript-agent-skill.md) | The EffectScript agent skill: generated where it can be, type-checked where it's written | Accepted |
 | [0052](0052-efx-setup-targets-links-and-consent.md) | `efx setup`: what it touches, how it links the skill, and when it asks | Accepted, amended by 0059 |
 | [0053](0053-efx8112-await-on-a-runtime-array.md) | EFX8112 warns when `await` gets an array built at runtime | Accepted |
-| [0054](0054-site-stack-and-content-sources.md) | The site's stack deviations and where its content comes from | Accepted, token counting amended by 0092 |
+| [0054](0054-site-stack-and-content-sources.md) | The site's stack deviations and where its content comes from | Accepted, token counting amended by 0093 |
 | [0055](0055-versioning-notes-and-packing-in-the-fork.md) | How EffectScript is versioned, noted and packed in a fork whose changesets are upstream's | Accepted, amended |
 | [0056](0056-efx-fix.md) | `efx fix` rewrites through the round trip, and only EFX8101 | Accepted |
 | [0057](0057-first-run-defaults.md) | The CLI's defaults for a first run | Accepted |
@@ -84,7 +84,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0074](0074-proofs-through-bend2-from-one-source.md) | Proofs go through Bend2, from one `.efx` source; Lean 4 is dropped | Accepted |
 | [0075](0075-law-declarations.md) | `law` declares a rule the program must keep; it runs as a property test and is what a proof proves | Proposed |
 | [0076](0076-the-bend-model.md) | The Bend model: what translates, how it's encoded, and what stays opaque | Proposed |
-| [0077](0077-brand-declarations-and-where-checks.md) | `brand` takes its key from its name, and `where` adds checks | Accepted, amended by 0091 |
+| [0077](0077-brand-declarations-and-where-checks.md) | `brand` takes its key from its name, and `where` adds checks | Accepted, amended by 0092 |
 | [0078](0078-signal-colours-for-state.md) | Signal colours for state in a monochrome brand | Accepted, amended by 0085 (the playground) |
 | [0079](0079-effectscript-dev-on-blume-with-a-public-theme.md) | effectscript.dev moves to Blume, with a public EffectScript theme | Accepted |
 | [0080](0080-code-ligatures-on.md) | Code is set with JetBrains Mono's ligatures on | Accepted |
@@ -97,8 +97,8 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0087](0087-is-tests-a-tag.md) | `is` tests a value's tag, and `is T` on its own is a predicate | Accepted |
 | [0088](0088-the-playground-is-a-workspace-both-ways-with-docs.md) | The playground is a workspace of example files, converts both ways with either side on the left, and shows docs on hover | Accepted |
 | [0090](0090-a-convex-extension-sketched-on-confect.md) | A Convex extension, sketched on Confect: tables, function specs and their impls | Proposed |
-| [0091](0091-intent-compression-audit.md) | Audit the whole language for ceremony, with one form per intent | Accepted, A5 withdrawn by its amendment 1 |
-| [0092](0092-tokens-counted-with-hugging-face-tokenizers.md) | Tokens are counted with Hugging Face tokenizers, against a panel of frontier vocabularies | Accepted |
+| [0092](0092-intent-compression-audit.md) | Audit the whole language for ceremony, with one form per intent | Accepted, A5 withdrawn by its amendment 1 |
+| [0093](0093-tokens-counted-with-hugging-face-tokenizers.md) | Tokens are counted with Hugging Face tokenizers, against a panel of frontier vocabularies | Accepted |
 
 ## Template
 
