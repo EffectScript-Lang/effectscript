@@ -73,12 +73,9 @@ const result = [cmd1.command, cmd2.options.cwd, cmd3.args[0]] // => ["echo", "/t
 **Piping command output**
 
 ```efx
-import { ChildProcess } from "effect/process"
-
 // Pipe stdout (default)
-const pipeline1 = ChildProcess.make`cat file.txt`.pipe(
-  ChildProcess.pipeTo(ChildProcess.make`grep pattern`)
-)
+const pipeline1 = ChildProcess.make`cat file.txt`
+  |> ChildProcess.pipeTo(ChildProcess.make`grep pattern`)
 
 // Pipe stderr instead of stdout
 const pipeline2 = ChildProcess.make`my-program`.pipe(
@@ -115,9 +112,8 @@ result // => "time echo"
 **Setting command working directories**
 
 ```efx
-const cmd = ChildProcess.make`ls -la`.pipe(
-  ChildProcess.setCwd("/tmp")
-)
+const cmd = ChildProcess.make`ls -la`
+  |> ChildProcess.setCwd("/tmp")
 const result = cmd is StandardCommand && cmd.options.cwd // => "/tmp"
 ```
 
@@ -126,9 +122,8 @@ const result = cmd is StandardCommand && cmd.options.cwd // => "/tmp"
 **Setting command environment variables**
 
 ```efx
-const cmd = ChildProcess.make`node script.js`.pipe(
-  ChildProcess.setEnv({ NODE_ENV: "test" })
-)
+const cmd = ChildProcess.make`node script.js`
+  |> ChildProcess.setEnv({ NODE_ENV: "test" })
 const result = cmd is StandardCommand && cmd.options.env?.NODE_ENV // => "test"
 ```
 

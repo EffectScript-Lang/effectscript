@@ -1403,9 +1403,9 @@ Unsupported shapes stay TypeScript, with an explanation.
   schema). The reverse direction produces one canonical spelling; that loss is listed explicitly
   per shape.
 - A rewrite applies only where compiling its result reproduces the input TypeScript (ADR-0030).
-  For compiler output that means byte for byte. For any other TypeScript it means the same code
-  tokens (trailing commas aside), the same line breaks where automatic semicolon insertion depends
-  on them, and the same comments in order. `toEffectScript` checks this at
+  For compiler output that means byte for byte. For any other TypeScript it means the same syntax
+  tree (semicolons, trailing commas and layout aside, ADR-0098) and the same comments in order.
+  `toEffectScript` checks this at
   conversion time (ADR-0030 amendment 2). When the check fails, it keeps only the top-level
   statements that verify and notes the others.
 - One listed exception to that: an `import { … } from "effect"` of prelude names may come back as

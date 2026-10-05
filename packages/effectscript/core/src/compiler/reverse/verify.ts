@@ -1,6 +1,7 @@
 /**
  * The conversion-time ADR-0030 check: EffectScript produced by `toEffectScript` must compile back
- * to the input's code tokens (trailing commas aside) and comments, in order.
+ * to the input's syntax tree (ADR-0098: semicolons, trailing commas and layout aside) and its
+ * comments, in order.
  *
  * @since 4.0.0
  */
@@ -10,29 +11,26 @@ import { parse } from "../parser/parse.ts"
 import { importTarget } from "../prelude/files.ts"
 import type { ConvertOptions } from "./context.ts"
 
-/** Tokens after which a line break ends the statement (the restricted productions). */
-const restricted = new Set(["return", "throw", "yield", "break", "continue", "async"])
+/** The syntax tree without positions, as text: literals keep their spelling (`raw`). */
+const tree = (node: unknown): string => {
+  if (Array.isArray(node)) return `[${node.map(tree).join(",")}]`
+  if (node === null || typeof node !== "object") {
+    return typeof node === "bigint" ? `${node}n` : JSON.stringify(node) ?? "undefined"
+  }
+  if (node instanceof RegExp) return String(node)
+  const fields: Array<string> = []
+  for (const [key, value] of Object.entries(node)) {
+    if (key !== "start" && key !== "end" && key !== "loc") fields.push(`${key}:${tree(value)}`)
+  }
+  return `{${fields.join(",")}}`
+}
 
-/** Code tokens without trailing commas, and comments, as text; `undefined` when it doesn't parse. */
-const shape = (source: string): { readonly tokens: string; readonly comments: string } | undefined => {
-  const parsed = parse(source, { tokens: true })
+/** The program's syntax tree and its comments, as text; `undefined` when it doesn't parse. */
+const shape = (source: string): { readonly tree: string; readonly comments: string } | undefined => {
+  const parsed = parse(source)
   if (parsed._tag === "Failure") return undefined
-  const texts: Array<string> = []
-  parsed.tokens.forEach(([start, end], i) => {
-    const text = source.slice(start, end)
-    // a line break after `return`/`throw`/… or before `++`/`--` changes the program (ASI)
-    const previous = parsed.tokens[i - 1]
-    if (
-      previous !== undefined && source.slice(previous[1], start).includes("\n") &&
-      (restricted.has(source.slice(previous[0], previous[1])) || text === "++" || text === "--")
-    ) {
-      texts.push("\u2424")
-    }
-    texts.push(text)
-  })
-  const tokens = texts.filter((t, i) => !(t === "," && [")", "]", "}"].includes(texts[i + 1]!)))
   return {
-    tokens: tokens.join("\u0000"),
+    tree: tree(parsed.program),
     comments: parsed.comments.map((c) => source.slice(c.start, c.end)).join("\u0000")
   }
 }
@@ -47,8 +45,8 @@ export const compilesBack = (typescript: string, efx: string, options: ConvertOp
   verdict(typescript, efx, options) > 0
 
 /**
- * How well `efx` compiles back to `typescript`: 2 = byte for byte, 1 = token- and
- * comment-equivalent, 0 = not at all (or with errors).
+ * How well `efx` compiles back to `typescript`: 2 = byte for byte, 1 = the same syntax tree and
+ * comments (ADR-0098), 0 = not at all (or with errors).
  *
  * @since 4.0.0
  * @category reverse
@@ -59,7 +57,7 @@ export const verdict = (typescript: string, efx: string, options: ConvertOptions
   if (result.code === typescript) return 2
   const before = shape(typescript)
   const after = shape(result.code)
-  return before !== undefined && after !== undefined && before.tokens === after.tokens &&
+  return before !== undefined && after !== undefined && before.tree === after.tree &&
       before.comments === after.comments
     ? 1
     : 0
@@ -122,5 +120,5 @@ export const compilesBackModuloImports = (typescript: string, efx: string, optio
   if (before === undefined || after === undefined || before.bindings !== after.bindings) return false
   const a = shape(before.rest)
   const b = shape(after.rest)
-  return a !== undefined && b !== undefined && a.tokens === b.tokens && a.comments === b.comments
+  return a !== undefined && b !== undefined && a.tree === b.tree && a.comments === b.comments
 }
