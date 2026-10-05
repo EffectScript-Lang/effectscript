@@ -10,33 +10,33 @@ project's saving, so the largest projects don't stand for the rest.
 
 | project | commit | Effect files | converted | errors | TS tokens | EffectScript tokens | saved |
 | ------- | ------ | -----------: | --------: | -----: | --------: | ------------------: | ----: |
-| alchemy-run__alchemy | `6c7e69114` | 14497 | 8067 | 0 | 16836964 | 16306440 | 3.2% |
-| alchemy-run__distilled | `2ae180ba0` | 634 | 455 | 0 | 645541 | 630454 | 2.3% |
+| alchemy-run__alchemy | `6c7e69114` | 14497 | 8094 | 0 | 16836964 | 16300137 | 3.2% |
+| alchemy-run__distilled | `2ae180ba0` | 634 | 456 | 0 | 645541 | 630406 | 2.3% |
 | anomalyco__effect-http-recorder | `89e1b85f7` | 21 | 13 | 0 | 28728 | 27601 | 3.9% |
-| anomalyco__opencode | `907b3bc51` | 1063 | 831 | 0 | 2002870 | 1942565 | 3.0% |
-| cevr__effect-machine | `176697cf2` | 73 | 65 | 0 | 176823 | 168235 | 4.9% |
-| crosshatch__crosshatch | `bf65390a9` | 141 | 112 | 0 | 49112 | 46898 | 4.5% |
-| Effectful-Tech__clanka | `2b589dbc2` | 55 | 52 | 0 | 140856 | 132885 | 5.7% |
-| kitlangton__ghui | `76c91b862` | 80 | 46 | 0 | 141840 | 140134 | 1.2% |
-| kitlangton__motel | `311862123` | 47 | 34 | 0 | 126751 | 125710 | 0.8% |
-| kitlangton__stack | `cc918c499` | 22 | 22 | 0 | 98027 | 92580 | 5.6% |
-| leonitousconforti__the-moby-effect | `440f5ec0a` | 315 | 83 | 0 | 170993 | 166474 | 2.6% |
-| MapleTechLabs__maple | `b6c6092a1` | 1631 | 1137 | 0 | 4544956 | 4449816 | 2.1% |
-| pingdotgg__t3code | `efecd3cf8` | 2198 | 1667 | 0 | 7892783 | 7635940 | 3.3% |
-| tim-smart__dfx | `f0b0b6e7b` | 39 | 35 | 0 | 126828 | 123219 | 2.8% |
-| tim-smart__lalph | `ea5f0044a` | 65 | 60 | 0 | 64771 | 61610 | 4.9% |
+| anomalyco__opencode | `907b3bc51` | 1063 | 832 | 0 | 2002870 | 1941595 | 3.1% |
+| cevr__effect-machine | `176697cf2` | 73 | 65 | 0 | 176823 | 168177 | 4.9% |
+| crosshatch__crosshatch | `bf65390a9` | 141 | 113 | 0 | 49112 | 46804 | 4.7% |
+| Effectful-Tech__clanka | `2b589dbc2` | 55 | 53 | 0 | 140856 | 132692 | 5.8% |
+| kitlangton__ghui | `76c91b862` | 80 | 46 | 0 | 141840 | 139980 | 1.3% |
+| kitlangton__motel | `311862123` | 47 | 34 | 0 | 126751 | 125647 | 0.9% |
+| kitlangton__stack | `cc918c499` | 22 | 22 | 0 | 98027 | 92476 | 5.7% |
+| leonitousconforti__the-moby-effect | `440f5ec0a` | 315 | 83 | 0 | 170993 | 166405 | 2.7% |
+| MapleTechLabs__maple | `b6c6092a1` | 1631 | 1139 | 0 | 4544956 | 4449130 | 2.1% |
+| pingdotgg__t3code | `efecd3cf8` | 2198 | 1682 | 0 | 7892783 | 7627624 | 3.4% |
+| tim-smart__dfx | `f0b0b6e7b` | 39 | 35 | 0 | 126828 | 123159 | 2.9% |
+| tim-smart__lalph | `ea5f0044a` | 65 | 60 | 0 | 64771 | 61536 | 5.0% |
 | tim-smart__receipts | `3455ce200` | 45 | 30 | 0 | 43783 | 43059 | 1.7% |
 | **median project** | | | | | | | **3.1%** |
-| **total** | | **20926** | **12709** | **0** | **33091626** | **32093620** | **3.0%** |
+| **total** | | **20926** | **12757** | **0** | **33091626** | **32076428** | **3.1%** |
 
 ## Every vocabulary of the panel
 
 | vocabulary | lab | TS tokens | EffectScript tokens | saved |
 | ---------- | --- | --------: | ------------------: | ----: |
-| o200k | OpenAI | 33091626 | 32093620 | 3.0% |
-| qwen3 | Qwen | 33094033 | 32107309 | 3.0% |
-| deepseek-v3 | DeepSeek | 35137493 | 34022498 | 3.2% |
-| glm-4.6 | Z.ai | 32829047 | 31842359 | 3.0% |
+| o200k | OpenAI | 33091626 | 32076428 | 3.1% |
+| qwen3 | Qwen | 33094033 | 32090301 | 3.0% |
+| deepseek-v3 | DeepSeek | 35137493 | 34003503 | 3.2% |
+| glm-4.6 | Z.ai | 32829047 | 31825353 | 3.1% |
 
 ## Why code stays TypeScript
 
@@ -45,16 +45,16 @@ the audit's work list (ADR-0092).
 
 | files | projects | note |
 | ----: | -------: | ---- |
-| 880 | 14 | This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030) |
-| 358 | 12 | `…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15) |
-| 315 | 12 | `…` stays TypeScript: its declaration isn't laid out as generated |
-| 285 | 8 | `…` stays TypeScript: its span name "…" differs from the binding |
+| 770 | 13 | This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030) |
+| 288 | 8 | `…` stays TypeScript: its span name "…" differs from the binding |
 | 111 | 6 | `…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030) |
 | 65 | 5 | `…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010) |
-| 32 | 5 | `…` stays TypeScript: it uses `…` |
+| 33 | 5 | `…` stays TypeScript: it uses `…` |
 | 22 | 3 | `…` stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111) |
-| 16 | 4 | `…` stays TypeScript: a field can't be written as a schema field |
+| 17 | 4 | `…` stays TypeScript: a field can't be written as a schema field |
+| 17 | 4 | `…` stays TypeScript: its declaration isn't laid out as generated |
 | 10 | 3 | `…` stays TypeScript: a pipe step wouldn't read the same after `…` |
+| 9 | 1 | `…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15) |
 | 9 | 4 | `…` stays TypeScript: it isn't the `…` the node runtime option produces |
 | 7 | 5 | `…` stays TypeScript: its `…` static isn't a layer or an accessor |
 | 7 | 2 | Unexpected token |
@@ -64,7 +64,6 @@ the audit's work list (ADR-0092).
 | 3 | 1 | Export '…' is not defined |
 | 2 | 1 | `…` stays TypeScript: it passes span options |
 | 1 | 1 | `…` stays TypeScript: its return type isn't `…` |
-| 1 | 1 | this method stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15) |
 | 1 | 1 | this method stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111) |
 | 1 | 1 | This syntax is reserved in files with the .mts or .cts extension. Add a trailing comma, as in `…`. |
 | 1 | 1 | Type parameter list cannot be empty. |
