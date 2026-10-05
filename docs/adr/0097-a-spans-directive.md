@@ -66,3 +66,25 @@ reverse compiler left those generators as TypeScript: 358 files in the corpus.
 - When capture is what keeps code TypeScript, the reverse compiler converts the file again with
   capture off, and keeps that version, with `// @efx no-ambient` at the top, if it converts more.
 - A file that already says `no-ambient` compiles as before, minus the comment line.
+
+## Amendment 2: the reverse compiler writes the prefix most spans share
+
+- **Status:** Accepted
+- **Date:** 2026-10-06
+- **Deciders:** agent ruling, from the real-projects corpus
+
+The rule above wrote no directive for a file that mixes prefixes or plain names. In the corpus that
+kept whole files TypeScript over one or two odd names: opencode's `acp/service.ts` names 17
+functions `ACP.name` and 2 `ACP.promptUsage.name`, so none of the 19 converted.
+
+- The reverse compiler counts the spans named `Prefix.binding` per prefix, and the spans named
+  after the binding. It writes the directive for the most common prefix when that prefix names more
+  functions than any other prefix and more than the plain names.
+- The functions it doesn't cover stay TypeScript, as they did before. A tie writes no directive.
+- The forward meaning is unchanged.
+
+**Alternatives considered:**
+
+- **Keep one prefix or none:** simple, but a single nested name blocks a whole file.
+- **A directive per prefix, or per function:** a second way to name a span, against "one form per
+  intent" (ADR-0092). The odd functions read fine as TypeScript.

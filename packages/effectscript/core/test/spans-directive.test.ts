@@ -39,7 +39,22 @@ export const api = {
     expect(back(compile(efx))).toBe(efx)
   })
 
-  it("isn't written when a span is the plain binding, or prefixes differ", () => {
+  it("is written for the prefix most spans share; the others stay TypeScript (Amendment 2)", () => {
+    const fn = (name: string, span: string) =>
+      `export const ${name} = Effect.fn("${span}")(function*() {\n  return 1\n})\n`
+    const mixed = `import * as Effect from "effect/Effect"\n${fn("a", "Auth.a")}${fn("b", "Auth.b")}${
+      fn("c", "Auth.usage.c")
+    }${fn("d", "d")}`
+    const code = back(mixed)
+    expect(code.startsWith("// @efx spans Auth\n")).toBe(true)
+    expect(code).toContain("export effect a() {")
+    expect(code).toContain("export effect b() {")
+    expect(code).toContain("export const c = Effect.fn(\"Auth.usage.c\")")
+    expect(code).toContain("export const d = Effect.fn(\"d\")")
+    expect(compile(code)).toBe(mixed)
+  })
+
+  it("isn't written when the plain binding is as common, or two prefixes tie", () => {
     const mixed = `import * as Effect from "effect/Effect"
 export const a = Effect.fn("Auth.a")(function*() {
   return 1

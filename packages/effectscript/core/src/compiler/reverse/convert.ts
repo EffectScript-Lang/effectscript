@@ -113,13 +113,14 @@ const guarded = (source: string, options: ConvertOptions): ConvertResult => {
 }
 
 /**
- * The prefix of a `// @efx spans` directive (ADR-0097): when every span the file names through
- * `Effect.fn("…")` on a binding is `Prefix.binding`, with one prefix.
+ * The prefix of a `// @efx spans` directive (ADR-0097 Amendment 2): the one most spans the file
+ * names through `Effect.fn("…")` on a binding share as `Prefix.binding`, when it names more of them
+ * than any other prefix and than the plain `binding`. The others stay TypeScript.
  */
 const spansPrefix = (program: Node, effect: string | undefined): string | undefined => {
   if (effect === undefined) return undefined
-  const prefixes = new Set<string>()
-  let plain = false
+  const prefixes = new Map<string, number>()
+  let plain = 0
   const visit = (node: Node, parent: Node | undefined): void => {
     if (
       node.type === "CallExpression" && node.callee.type === "MemberExpression" && !node.callee.computed &&
@@ -132,9 +133,11 @@ const spansPrefix = (program: Node, effect: string | undefined): string | undefi
       const holder = call === undefined ? undefined : bindings.get(call)
       if (holder !== undefined) {
         const span: string = node.arguments[0].value
-        if (span === holder) plain = true
-        else if (span.endsWith(`.${holder}`)) prefixes.add(span.slice(0, -holder.length - 1))
-        else plain = true
+        if (span === holder) plain++
+        else if (span.endsWith(`.${holder}`)) {
+          const prefix = span.slice(0, -holder.length - 1)
+          prefixes.set(prefix, (prefixes.get(prefix) ?? 0) + 1)
+        }
       }
     }
     if (node.type === "VariableDeclarator" && node.id.type === "Identifier" && node.init?.type === "CallExpression") {
@@ -150,7 +153,8 @@ const spansPrefix = (program: Node, effect: string | undefined): string | undefi
   }
   const bindings = new Map<Node, string>()
   visit(program, undefined)
-  return !plain && prefixes.size === 1 ? [...prefixes][0] : undefined
+  const [first, second] = [...prefixes].sort((a, b) => b[1] - a[1])
+  return first !== undefined && first[1] > plain && first[1] !== second?.[1] ? first[0] : undefined
 }
 
 const binderNames = new Set(["defect", "error"])
