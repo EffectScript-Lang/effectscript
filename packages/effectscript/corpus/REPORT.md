@@ -10,33 +10,33 @@ project's saving, so the largest projects don't stand for the rest.
 
 | project | commit | Effect files | converted | errors | TS tokens | EffectScript tokens | saved |
 | ------- | ------ | -----------: | --------: | -----: | --------: | ------------------: | ----: |
-| alchemy-run__alchemy | `6c7e69114` | 14497 | 8094 | 0 | 16836964 | 16300137 | 3.2% |
-| alchemy-run__distilled | `2ae180ba0` | 634 | 456 | 0 | 645541 | 630406 | 2.3% |
+| alchemy-run__alchemy | `6c7e69114` | 14497 | 8134 | 0 | 16836964 | 16272615 | 3.4% |
+| alchemy-run__distilled | `2ae180ba0` | 634 | 458 | 0 | 645541 | 630275 | 2.4% |
 | anomalyco__effect-http-recorder | `89e1b85f7` | 21 | 13 | 0 | 28728 | 27601 | 3.9% |
-| anomalyco__opencode | `907b3bc51` | 1063 | 832 | 0 | 2002870 | 1941595 | 3.1% |
-| cevr__effect-machine | `176697cf2` | 73 | 65 | 0 | 176823 | 168177 | 4.9% |
-| crosshatch__crosshatch | `bf65390a9` | 141 | 113 | 0 | 49112 | 46804 | 4.7% |
-| Effectful-Tech__clanka | `2b589dbc2` | 55 | 53 | 0 | 140856 | 132692 | 5.8% |
-| kitlangton__ghui | `76c91b862` | 80 | 46 | 0 | 141840 | 139980 | 1.3% |
+| anomalyco__opencode | `907b3bc51` | 1063 | 832 | 0 | 2002870 | 1940763 | 3.1% |
+| cevr__effect-machine | `176697cf2` | 73 | 64 | 0 | 176823 | 169102 | 4.4% |
+| crosshatch__crosshatch | `bf65390a9` | 141 | 112 | 0 | 49112 | 46862 | 4.6% |
+| Effectful-Tech__clanka | `2b589dbc2` | 55 | 53 | 0 | 140856 | 132529 | 5.9% |
+| kitlangton__ghui | `76c91b862` | 80 | 46 | 0 | 141840 | 139806 | 1.4% |
 | kitlangton__motel | `311862123` | 47 | 34 | 0 | 126751 | 125647 | 0.9% |
-| kitlangton__stack | `cc918c499` | 22 | 22 | 0 | 98027 | 92476 | 5.7% |
-| leonitousconforti__the-moby-effect | `440f5ec0a` | 315 | 83 | 0 | 170993 | 166405 | 2.7% |
-| MapleTechLabs__maple | `b6c6092a1` | 1631 | 1139 | 0 | 4544956 | 4449130 | 2.1% |
-| pingdotgg__t3code | `efecd3cf8` | 2198 | 1682 | 0 | 7892783 | 7627624 | 3.4% |
+| kitlangton__stack | `cc918c499` | 22 | 22 | 0 | 98027 | 92237 | 5.9% |
+| leonitousconforti__the-moby-effect | `440f5ec0a` | 315 | 83 | 0 | 170993 | 166450 | 2.7% |
+| MapleTechLabs__maple | `b6c6092a1` | 1631 | 1137 | 0 | 4544956 | 4447010 | 2.2% |
+| pingdotgg__t3code | `efecd3cf8` | 2198 | 1711 | 0 | 7892783 | 7599021 | 3.7% |
 | tim-smart__dfx | `f0b0b6e7b` | 39 | 35 | 0 | 126828 | 123159 | 2.9% |
-| tim-smart__lalph | `ea5f0044a` | 65 | 60 | 0 | 64771 | 61536 | 5.0% |
+| tim-smart__lalph | `ea5f0044a` | 65 | 59 | 0 | 64771 | 61580 | 4.9% |
 | tim-smart__receipts | `3455ce200` | 45 | 30 | 0 | 43783 | 43059 | 1.7% |
-| **median project** | | | | | | | **3.1%** |
-| **total** | | **20926** | **12757** | **0** | **33091626** | **32076428** | **3.1%** |
+| **median project** | | | | | | | **3.2%** |
+| **total** | | **20926** | **12823** | **0** | **33091626** | **32017716** | **3.2%** |
 
 ## Every vocabulary of the panel
 
 | vocabulary | lab | TS tokens | EffectScript tokens | saved |
 | ---------- | --- | --------: | ------------------: | ----: |
-| o200k | OpenAI | 33091626 | 32076428 | 3.1% |
-| qwen3 | Qwen | 33094033 | 32090301 | 3.0% |
-| deepseek-v3 | DeepSeek | 35137493 | 34003503 | 3.2% |
-| glm-4.6 | Z.ai | 32829047 | 31825353 | 3.1% |
+| o200k | OpenAI | 33091626 | 32017716 | 3.2% |
+| qwen3 | Qwen | 33094033 | 32031397 | 3.2% |
+| deepseek-v3 | DeepSeek | 35137493 | 33937291 | 3.4% |
+| glm-4.6 | Z.ai | 32829047 | 31766447 | 3.2% |
 
 ## Why code stays TypeScript
 
@@ -45,25 +45,27 @@ the audit's work list (ADR-0092).
 
 | files | projects | note |
 | ----: | -------: | ---- |
-| 770 | 13 | This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030) |
-| 288 | 8 | `…` stays TypeScript: its span name "…" differs from the binding |
-| 111 | 6 | `…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030) |
+| 273 | 8 | `…` stays TypeScript: its span name "…" differs from the binding |
+| 252 | 12 | This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030) |
+| 115 | 6 | `…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030) |
 | 65 | 5 | `…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010) |
 | 33 | 5 | `…` stays TypeScript: it uses `…` |
+| 29 | 4 | `…` stays TypeScript: a field can't be written as a schema field |
 | 22 | 3 | `…` stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111) |
-| 17 | 4 | `…` stays TypeScript: a field can't be written as a schema field |
 | 17 | 4 | `…` stays TypeScript: its declaration isn't laid out as generated |
-| 10 | 3 | `…` stays TypeScript: a pipe step wouldn't read the same after `…` |
-| 9 | 1 | `…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15) |
+| 13 | 3 | `…` stays TypeScript: a pipe step wouldn't read the same after `…` |
 | 9 | 4 | `…` stays TypeScript: it isn't the `…` the node runtime option produces |
 | 7 | 5 | `…` stays TypeScript: its `…` static isn't a layer or an accessor |
 | 7 | 2 | Unexpected token |
+| 5 | 3 | `…` stays TypeScript: an instance property would become a schema field |
 | 5 | 3 | `…` stays TypeScript: it has a member a `…` can't hold |
-| 4 | 2 | `…` stays TypeScript: an instance property would become a schema field |
-| 3 | 1 | `…` stays TypeScript: its span name is not a string literal differs from the binding |
+| 4 | 1 | `…` stays TypeScript: its span name is not a string literal differs from the binding |
 | 3 | 1 | Export '…' is not defined |
 | 2 | 1 | `…` stays TypeScript: it passes span options |
+| 1 | 1 | `…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15) |
 | 1 | 1 | `…` stays TypeScript: its return type isn't `…` |
+| 1 | 1 | this method stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15) |
 | 1 | 1 | this method stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111) |
+| 1 | 1 | this method stays TypeScript: it uses `…` |
 | 1 | 1 | This syntax is reserved in files with the .mts or .cts extension. Add a trailing comma, as in `…`. |
 | 1 | 1 | Type parameter list cannot be empty. |

@@ -5,41 +5,41 @@
     "sources": 16948,
     "generated": 6,
     "effectFiles": 14497,
-    "converted": 8094,
+    "converted": 8134,
     "errors": 0,
     "tokens": {
       "o200k": {
         "ts": 16836964,
-        "efx": 16300137
+        "efx": 16272615
       },
       "qwen3": {
         "ts": 16843938,
-        "efx": 16315197
+        "efx": 16287869
       },
       "deepseek-v3": {
         "ts": 17785803,
-        "efx": 17183191
+        "efx": 17152619
       },
       "glm-4.6": {
         "ts": 16724453,
-        "efx": 16195720
+        "efx": 16168392
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 7109,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 1800,
       "`…` stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111)": 20,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 508,
-      "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 21,
+      "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 22,
       "`…` stays TypeScript: its declaration isn't laid out as generated": 12,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 141,
+      "`…` stays TypeScript: its span name is not a string literal differs from the binding": 4,
       "`…` stays TypeScript: its `…` static isn't a layer or an accessor": 1,
-      "`…` stays TypeScript: its span name \"…\" differs from the binding": 17,
-      "`…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 9,
-      "`…` stays TypeScript: its span name is not a string literal differs from the binding": 3,
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 19,
       "`…` stays TypeScript: a pipe step wouldn't read the same after `…`": 3,
       "Unexpected token": 1,
       "`…` stays TypeScript: it uses `…`": 9,
       "Export '…' is not defined": 3,
       "`…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010)": 25,
+      "`…` stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 1,
       "`…` stays TypeScript: it isn't the `…` the node runtime option produces": 2,
       "This syntax is reserved in files with the .mts or .cts extension. Add a trailing comma, as in `…`.": 1,
       "this method stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111)": 1,
@@ -52,31 +52,31 @@
     "sources": 1168,
     "generated": 3,
     "effectFiles": 634,
-    "converted": 456,
+    "converted": 458,
     "errors": 0,
     "tokens": {
       "o200k": {
         "ts": 645541,
-        "efx": 630406
+        "efx": 630275
       },
       "qwen3": {
         "ts": 642464,
-        "efx": 627535
+        "efx": 627401
       },
       "deepseek-v3": {
         "ts": 680584,
-        "efx": 664630
+        "efx": 664489
       },
       "glm-4.6": {
         "ts": 638904,
-        "efx": 623975
+        "efx": 623841
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 355,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 5,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 236,
       "`…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010)": 15,
       "`…` stays TypeScript: it isn't the `…` the node runtime option produces": 4,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 1,
       "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 6,
       "`…` stays TypeScript: a field can't be written as a schema field": 1
     }
@@ -123,28 +123,30 @@
     "tokens": {
       "o200k": {
         "ts": 2002870,
-        "efx": 1941595
+        "efx": 1940763
       },
       "qwen3": {
         "ts": 1993916,
-        "efx": 1932880
+        "efx": 1932055
       },
       "deepseek-v3": {
         "ts": 2121989,
-        "efx": 2051776
+        "efx": 2050746
       },
       "glm-4.6": {
         "ts": 1984075,
-        "efx": 1923039
+        "efx": 1922214
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 356,
-      "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 49,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 12,
-      "`…` stays TypeScript: its span name \"…\" differs from the binding": 33,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 355,
+      "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 52,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 17,
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 30,
+      "this method stays TypeScript: `…` would be captured as an Effect inside `…` code (spec §4.15)": 1,
       "`…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010)": 13,
       "`…` stays TypeScript: it uses `…`": 14,
+      "this method stays TypeScript: it uses `…`": 1,
       "`…` stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111)": 1
     }
   },
@@ -154,30 +156,30 @@
     "sources": 83,
     "generated": 0,
     "effectFiles": 73,
-    "converted": 65,
+    "converted": 64,
     "errors": 0,
     "tokens": {
       "o200k": {
         "ts": 176823,
-        "efx": 168177
+        "efx": 169102
       },
       "qwen3": {
         "ts": 176084,
-        "efx": 167473
+        "efx": 168389
       },
       "deepseek-v3": {
         "ts": 186974,
-        "efx": 177433
+        "efx": 178500
       },
       "glm-4.6": {
         "ts": 175713,
-        "efx": 167102
+        "efx": 168018
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 62,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 4,
-      "`…` stays TypeScript: its span name \"…\" differs from the binding": 5,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 61,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 7,
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 4,
       "`…` stays TypeScript: its declaration isn't laid out as generated": 1
     }
   },
@@ -187,29 +189,29 @@
     "sources": 179,
     "generated": 0,
     "effectFiles": 141,
-    "converted": 113,
+    "converted": 112,
     "errors": 0,
     "tokens": {
       "o200k": {
         "ts": 49112,
-        "efx": 46804
+        "efx": 46862
       },
       "qwen3": {
         "ts": 50185,
-        "efx": 47932
+        "efx": 47992
       },
       "deepseek-v3": {
         "ts": 52403,
-        "efx": 49759
+        "efx": 49823
       },
       "glm-4.6": {
         "ts": 48676,
-        "efx": 46425
+        "efx": 46483
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 87,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 1
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 86,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 4
     }
   },
   {
@@ -223,26 +225,27 @@
     "tokens": {
       "o200k": {
         "ts": 140856,
-        "efx": 132692
+        "efx": 132529
       },
       "qwen3": {
         "ts": 140450,
-        "efx": 132410
+        "efx": 132249
       },
       "deepseek-v3": {
         "ts": 148139,
-        "efx": 139408
+        "efx": 139219
       },
       "glm-4.6": {
         "ts": 139188,
-        "efx": 131166
+        "efx": 131005
       }
     },
     "notes": {
       "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 37,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 5,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 4,
       "`…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010)": 3,
       "`…` stays TypeScript: its span name \"…\" differs from the binding": 1,
+      "`…` stays TypeScript: an instance property would become a schema field": 1,
       "`…` stays TypeScript: its `…` static isn't a layer or an accessor": 2,
       "`…` stays TypeScript: it uses `…`": 1
     }
@@ -258,25 +261,25 @@
     "tokens": {
       "o200k": {
         "ts": 141840,
-        "efx": 139980
+        "efx": 139806
       },
       "qwen3": {
         "ts": 141296,
-        "efx": 139358
+        "efx": 139171
       },
       "deepseek-v3": {
         "ts": 151996,
-        "efx": 149817
+        "efx": 149618
       },
       "glm-4.6": {
         "ts": 140639,
-        "efx": 138701
+        "efx": 138514
       }
     },
     "notes": {
       "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 29,
       "`…` stays TypeScript: its `…` static isn't a layer or an accessor": 2,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 2
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 1
     }
   },
   {
@@ -321,25 +324,24 @@
     "tokens": {
       "o200k": {
         "ts": 98027,
-        "efx": 92476
+        "efx": 92237
       },
       "qwen3": {
         "ts": 97205,
-        "efx": 91676
+        "efx": 91438
       },
       "deepseek-v3": {
         "ts": 103195,
-        "efx": 97055
+        "efx": 96766
       },
       "glm-4.6": {
         "ts": 96991,
-        "efx": 91462
+        "efx": 91224
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 21,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 1,
-      "`…` stays TypeScript: its span name \"…\" differs from the binding": 2,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 11,
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 1,
       "`…` stays TypeScript: a field can't be written as a schema field": 1
     }
   },
@@ -354,24 +356,24 @@
     "tokens": {
       "o200k": {
         "ts": 170993,
-        "efx": 166405
+        "efx": 166450
       },
       "qwen3": {
         "ts": 171259,
-        "efx": 166731
+        "efx": 166775
       },
       "deepseek-v3": {
         "ts": 183273,
-        "efx": 178102
+        "efx": 178156
       },
       "glm-4.6": {
         "ts": 169643,
-        "efx": 165115
+        "efx": 165159
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 82,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 2,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 50,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 4,
       "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 1
     }
   },
@@ -381,32 +383,32 @@
     "sources": 4345,
     "generated": 10,
     "effectFiles": 1631,
-    "converted": 1139,
+    "converted": 1137,
     "errors": 0,
     "tokens": {
       "o200k": {
         "ts": 4544956,
-        "efx": 4449130
+        "efx": 4447010
       },
       "qwen3": {
         "ts": 4564286,
-        "efx": 4467953
+        "efx": 4465703
       },
       "deepseek-v3": {
         "ts": 4909234,
-        "efx": 4797950
+        "efx": 4795375
       },
       "glm-4.6": {
         "ts": 4507003,
-        "efx": 4410680
+        "efx": 4408430
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 583,
-      "`…` stays TypeScript: its span name \"…\" differs from the binding": 67,
-      "`…` stays TypeScript: a pipe step wouldn't read the same after `…`": 3,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 581,
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 62,
+      "`…` stays TypeScript: a pipe step wouldn't read the same after `…`": 4,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 17,
       "`…` stays TypeScript: it uses `…`": 2,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 15,
       "`…` stays TypeScript: a field can't be written as a schema field": 5,
       "`…` stays TypeScript: an instance property would become a schema field": 2,
       "`…` stays TypeScript: it isn't the `…` the node runtime option produces": 1,
@@ -425,34 +427,34 @@
     "sources": 4571,
     "generated": 7,
     "effectFiles": 2198,
-    "converted": 1682,
+    "converted": 1711,
     "errors": 0,
     "tokens": {
       "o200k": {
         "ts": 7892783,
-        "efx": 7627624
+        "efx": 7599021
       },
       "qwen3": {
         "ts": 7883513,
-        "efx": 7621320
+        "efx": 7592474
       },
       "deepseek-v3": {
         "ts": 8400086,
-        "efx": 8111665
+        "efx": 8079206
       },
       "glm-4.6": {
         "ts": 7817686,
-        "efx": 7555493
+        "efx": 7526647
       }
     },
     "notes": {
-      "`…` stays TypeScript: its span name \"…\" differs from the binding": 162,
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 1416,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 212,
+      "`…` stays TypeScript: its span name \"…\" differs from the binding": 155,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 376,
       "`…` stays TypeScript: a `…` inside it would become an Effect `…` (ADR-0010)": 9,
       "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 30,
-      "`…` stays TypeScript: a pipe step wouldn't read the same after `…`": 4,
-      "`…` stays TypeScript: a field can't be written as a schema field": 10,
+      "`…` stays TypeScript: a field can't be written as a schema field": 22,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 53,
+      "`…` stays TypeScript: a pipe step wouldn't read the same after `…`": 6,
       "`…` stays TypeScript: its declaration isn't laid out as generated": 2,
       "`…` stays TypeScript: it isn't the `…` the node runtime option produces": 2,
       "`…` stays TypeScript: it uses `…`": 7,
@@ -496,28 +498,28 @@
     "sources": 69,
     "generated": 0,
     "effectFiles": 65,
-    "converted": 60,
+    "converted": 59,
     "errors": 0,
     "tokens": {
       "o200k": {
         "ts": 64771,
-        "efx": 61536
+        "efx": 61580
       },
       "qwen3": {
         "ts": 64211,
-        "efx": 61050
+        "efx": 61095
       },
       "deepseek-v3": {
         "ts": 67987,
-        "efx": 64325
+        "efx": 64382
       },
       "glm-4.6": {
         "ts": 64114,
-        "efx": 60953
+        "efx": 60998
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 46,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 45,
       "`…` stays TypeScript: its `…` static isn't a layer or an accessor": 1,
       "`…` stays TypeScript: it has a member a `…` can't hold": 1,
       "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 1,

@@ -248,7 +248,7 @@ know.
 | ----------------------------------------------------------------------- | -----: | ---------------------------------------- |
 | the site's gallery: EffectScript vs the Effect TypeScript it compiles to | 47.6%  | the language                              |
 | the docs corpus, re-sugared examples (ADR-0050)                          | 15.0%  | the examples are Effect API calls         |
-| real projects (ADR-0094), whole Effect files                             | 3.0%   | about **6%**                              |
+| real projects (ADR-0094), whole Effect files                             | 3.2%   | about **6%**                              |
 
 The real-projects ceiling comes from removing *every* piece of Effect ceremony at once, more than
 any construct could: every `effect` import, every module qualifier, `yield*`, `function*`,
@@ -259,8 +259,9 @@ EffectScript keeps as written. So:
 - "Over 50% fewer tokens" is true only of Effect code itself, as in the gallery, and is
   presented that way. It is never claimed for whole codebases.
 - For real projects, the work is coverage: making the reverse compiler convert more real Effect code
-  is worth more than new sugar. Merging ADR-0089, A7 and `layer … for` (ADR-0095) took them from
-  0.7% to 3.0% (12,699 of 20,926 Effect files converted), halfway to the ceiling.
+  is worth more than new sugar. Merging ADR-0089, A7, `layer … for` (ADR-0095), the spans
+  directive (ADR-0097) and tree-based round trips (ADR-0098) took them from 0.7% to 3.2% (12,823 of
+  20,926 Effect files converted), over half the ceiling.
 - Written natively, real code saves more than the ceiling, because it is restructured rather than
   stripped: an AI rewrite of a t3code service in EffectScript saved 17.6%, against 5.7% converted.
 
