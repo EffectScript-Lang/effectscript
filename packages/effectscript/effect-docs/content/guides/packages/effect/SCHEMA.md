@@ -4338,7 +4338,7 @@ const program = effect {
 }
 
 const recovered = program
-  |> catchTag("HttpError", (err) => succeed(`Caught: ${err.status} ${err.message}`))
+  |> catch (err: HttpError) => `Caught: ${err.status} ${err.message}`
 ```
 
 **Example** (Multiple tagged errors in a union)

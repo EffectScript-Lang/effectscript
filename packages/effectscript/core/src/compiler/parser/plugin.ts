@@ -342,6 +342,9 @@ export const efxPlugin = (Base: any): any =>
         return this.finishNode(node, "IsExpression")
       }
       if (this.efxIsMatchAhead()) return this.efxParseMatch()
+      // `|> catch NotFound => value` (ADR-0100): `catch` is reserved, so a pipe step can't start
+      // with it in TypeScript
+      if (this.type === tt._catch && this.efxState().pipeDepth > 0) return this.efxParseCatchStep()
       // `schema { … }`: a struct schema written as its type. An identifier followed by `{` on the
       // same line is a syntax error in JavaScript, so no TypeScript reads differently.
       if (this.efxIsWord("schema")) {
@@ -1288,6 +1291,38 @@ export const efxPlugin = (Base: any): any =>
         node.tags = this.efxParseIsTags()
       }
       return this.finishNode(node, "IsPattern")
+    }
+
+    /**
+     * A pipe step `catch A or B => body`, or `catch (e: A | B) => body` when the body reads the
+     * error. The body runs up to the next `|>`.
+     */
+    efxParseCatchStep(): any {
+      const node = this.startNode()
+      node.keyword = { start: this.start, end: this.end }
+      this.next()
+      node.param = null
+      node.typeAnnotation = null
+      node.tags = null
+      if (this.eat(tt.parenL)) {
+        node.param = this.parseIdent()
+        this.expect(tt.colon)
+        node.typeAnnotation = this.tsInType(() => this.tsParseType())
+        this.expect(tt.parenR)
+      } else {
+        node.tags = this.efxParseIsTags()
+      }
+      this.expect(tt.arrow)
+      const start = this.start
+      const startLoc = this.startLoc
+      node.body = this.parseExprOp(
+        this.parseMaybeUnary(null, false, false, false),
+        start,
+        startLoc,
+        pipelineToken.binop,
+        false
+      )
+      return this.finishNode(node, "CatchStep")
     }
 
     /** Tags joined by `or`. `or` stays on the line of the tag before it; the next tag may wrap. */

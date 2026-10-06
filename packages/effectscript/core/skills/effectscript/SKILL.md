@@ -68,7 +68,8 @@ EffectScript is TypeScript plus Effect v4 as syntax. Every `.ts` file is valid `
   a computed list use `await all(effects)` or `await forEach(items, (x) => load(x))`; `await
   xs.map(f)` doesn't do what it looks like (EFX8112).
 - **Handle errors with `try`:** `catch (e: NotFound)` catches by tag, and a final untyped `catch`
-  catches the rest, defects included.
+  catches the rest, defects included. For one fallback in a pipeline, use a `catch` step:
+  `await findUser(id) |> catch NotFound => undefined`, not `|> catchTag("NotFound", () => Effect.void)`.
 - **Test a tag with `is`:** `e is TimeoutError`, `e is A or B`, `e is not A`, and `is A` alone is a
   predicate: `retry({ times: 2, while: is TimeoutError })`, `errors.filter(is RateLimited)`.
 - **Branch on a union with `match`:** a `when` clause per case, checked for exhaustiveness. Match

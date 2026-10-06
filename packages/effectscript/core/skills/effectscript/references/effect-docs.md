@@ -203,11 +203,11 @@ declare const loadPort: (input: string) => Effect<number, ParseError | ReservedP
 
 export const recovered = loadPort("80")
   // Catch multiple errors with Effect.catchTag, and return a default port number.
-  |> catchTag(["ParseError", "ReservedPortError"], (_) => succeed(3000))
+  |> catch (_: ParseError | ReservedPortError) => 3000
 
 export const withFinalFallback = loadPort("invalid")
   // Catch a specific error with Effect.catchTag
-  |> catchTag("ReservedPortError", (_) => succeed(3000))
+  |> catch (_: ReservedPortError) => 3000
   // Catch all errors with Effect.catch
   |> Effect.catch((_) => succeed(3000))
 ```

@@ -239,8 +239,7 @@ const program = effect {
 }
 
 const recovered = program
-  |> catchTag("NotFound", (e) =>
-    succeed(`missing: ${e.resource}`))
+  |> catch (e: NotFound) => `missing: ${e.resource}`
 
 await runPromise(recovered) // => "missing: /users/42"
 ```

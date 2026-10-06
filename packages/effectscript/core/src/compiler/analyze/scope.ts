@@ -256,6 +256,7 @@ export const analyze = (program: Node): ScopeAnalysis => {
         for (const name of typeParameterNames(node)) inner.types.add(name)
         return visitChildren(node, inner)
       }
+      case "CatchStep":
       case "CatchClause": {
         const inner = makeScope(scope, "block")
         scopeOf.set(node, inner)

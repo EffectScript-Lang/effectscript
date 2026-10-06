@@ -107,6 +107,7 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0097](0097-a-spans-directive.md) | `// @efx spans Prefix` names a file's spans after its module | Accepted |
 | [0098](0098-round-trips-compare-syntax-trees.md) | Round trips are compared as syntax trees | Accepted |
 | [0099](0099-schema-expressions.md) | `schema { … }` is a struct schema written as its type | Accepted |
+| [0100](0100-a-catch-pipe-step.md) | `\|> catch Tag => value` recovers from a tagged failure in a pipeline | Accepted |
 
 ## Template
 

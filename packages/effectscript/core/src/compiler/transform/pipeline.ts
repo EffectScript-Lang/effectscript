@@ -109,6 +109,7 @@ const pipeableEffectCall = (ctx: Ctx, call: Node): boolean => {
  * `Effect.orDie`. A pipeline that starts with one pipes its head with `.pipe(…)`.
  */
 const pipeableEffectStep = (ctx: Ctx, step: Node): boolean => {
+  if (step.type === "CatchStep") return true
   if (step.type === "CallExpression") {
     const args: Array<Node> = step.arguments
     if (args.some((a) => a.type === "SpreadElement")) return false

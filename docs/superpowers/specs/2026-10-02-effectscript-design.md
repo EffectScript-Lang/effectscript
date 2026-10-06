@@ -337,6 +337,29 @@ Rules:
   with a refactoring hint). `break`/`continue` that cross the `try` boundary, and `return` in
   `finally`, are errors (**EFX2021**).
 
+**A `catch` step** (ADR-0100). For one fallback in a pipeline, a pipe step names the tags and the
+value to use instead:
+
+```ts
+const user = await findUser(id) |> catch NotFound => undefined
+const port = await loadPort(input)
+  |> catch ParseError or ReservedPortError => 3000
+  |> catch (e: RateLimited) => e.retryAfter
+```
+
+→ `Effect.catchTag("NotFound", () => Effect.void)`, `Effect.catchTag(["ParseError",
+"ReservedPortError"], () => Effect.succeed(3000))`, `Effect.catchTag("RateLimited", (e) =>
+Effect.succeed(e.retryAfter))`.
+
+- The value is a value: `=> undefined` is `Effect.void`, `=> throw e` is `Effect.fail(e)`, and
+  `=> await x` runs `x` instead. Any other effect inside the value is an error (**EFX5003**: use
+  `try`).
+- Tags are named as in typed clauses: `A or B` without a binding, `(e: A | B)` when the value reads
+  the error.
+- The value runs up to the next `|>`. An object literal is parenthesized, as after an arrow.
+- `catch` is reserved in TypeScript, so a step can't start with it there. A `catch` step anywhere
+  but directly after `|>`, or in a `Stream` or `Layer` pipeline, is **EFX5003**.
+
 ### 4.5 Bare Effect types
 
 In any type position, a bare reference to a prelude data-type name that is not declared locally

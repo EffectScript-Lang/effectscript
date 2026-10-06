@@ -10,7 +10,7 @@ import { genShape } from "./blockers.ts"
 import type { Visit } from "./body.ts"
 import { commaToPipe, commentsIn, removeKeepingComments, type ReverseCtx, separatorComma, within } from "./context.ts"
 import { implShape } from "./httpApi.ts"
-import { importedLocal, importedModule } from "./origin.ts"
+import { importedLocal, importedModule, isMember } from "./origin.ts"
 
 /**
  * Mirrors the forward `knownPipeable` on the EffectScript this conversion produces.
@@ -257,6 +257,105 @@ export const topicsRoundTrip = (ctx: ReverseCtx): boolean => {
 /**
  * Joins `steps` after `previous` with `|>`, turning topic steps into `%` steps.
  */
+const identifier = /^[A-Za-z_$][\w$]*$/
+
+/** Tag names a type annotation would read as TypeScript's own types (`(e: string)`). */
+const typeKeywords = new Set([
+  "any",
+  "bigint",
+  "boolean",
+  "never",
+  "null",
+  "number",
+  "object",
+  "string",
+  "symbol",
+  "undefined",
+  "unknown",
+  "void"
+])
+
+/** Value forms that read the same after `=>` in a `catch` step without parentheses. */
+const bareValues = new Set([
+  "Identifier",
+  "Literal",
+  "TemplateLiteral",
+  "ArrayExpression",
+  "MemberExpression",
+  "NewExpression",
+  "UnaryExpression",
+  "BinaryExpression",
+  "LogicalExpression"
+])
+
+/**
+ * `Effect.catchTag("T", () => Effect.succeed(v))` as a pipe step → `catch T => v` (ADR-0100):
+ * `Effect.void` → `undefined`, `Effect.fail(x)` → `throw x`, and as the last step any other effect
+ * `e` → `await e` (inside `effect` code, where `await` is allowed). The binding stays when the
+ * handler declares one.
+ */
+const convertCatchStep = (ctx: ReverseCtx, step: Node, awaitable: boolean, visit: Visit): boolean => {
+  if (ctx.effect === undefined || ctx.namespace !== "Effect" || step.type !== "CallExpression") return false
+  if (!isMember(step.callee, ctx.effect, "catchTag") || step.arguments.length !== 2) return false
+  const [tagArg, handler]: Array<Node> = step.arguments
+  const literals: Array<Node> = tagArg!.type === "ArrayExpression" ? tagArg!.elements : [tagArg]
+  if (
+    literals.length === 0 ||
+    !literals.every((l) =>
+      l?.type === "Literal" && identifier.test(String(l.value)) && !typeKeywords.has(String(l.value))
+    )
+  ) {
+    return false
+  }
+  const tags = literals.map((l) => String(l.value))
+  if (
+    handler!.type !== "ArrowFunctionExpression" || handler!.async || handler!.body.type === "BlockStatement" ||
+    handler!.params.length > 1 || handler!.typeParameters || handler!.returnType ||
+    (handler!.params.length === 1 && (handler!.params[0].type !== "Identifier" || handler!.params[0].typeAnnotation))
+  ) {
+    return false
+  }
+  if (commentsIn(ctx, step.start, step.end).length > 0) return false
+  const body: Node = handler!.body
+  const param: string | undefined = handler!.params[0]?.name
+  const head = param === undefined ? `catch ${tags.join(" or ")} => ` : `catch (${param}: ${tags.join(" | ")}) => `
+  if (isMember(body, ctx.effect, "void")) {
+    ctx.s.update(step.start, step.end, `${head}undefined`)
+    return true
+  }
+  // `succeed<A>(…)` keeps its type arguments only as a call
+  const call = (name: string) =>
+    body.type === "CallExpression" && isMember(body.callee, ctx.effect!, name) && body.arguments.length === 1 &&
+    body.arguments[0].type !== "SpreadElement" && body.typeArguments === undefined
+  let value: Node
+  let prefix: string
+  if (call("succeed")) {
+    value = body.arguments[0]
+    // `=> undefined` means `Effect.void`
+    if (value.type === "Identifier" && value.name === "undefined") return false
+    prefix = ""
+  } else if (call("fail")) {
+    value = body.arguments[0]
+    prefix = "throw "
+  } else if (awaitable && ["CallExpression", "Identifier", "MemberExpression"].includes(body.type)) {
+    value = body
+    prefix = "await "
+  } else {
+    return false
+  }
+  const pipe = value.type === "CallExpression" && value.callee.type === "MemberExpression" &&
+    value.callee.property?.name === "pipe"
+  // `throw` and `await` take a unary operand; a value runs up to the next `|>`
+  const bare = prefix !== ""
+    ? ["NewExpression", "Identifier", "MemberExpression"].includes(value.type) ||
+      (value.type === "CallExpression" && !pipe)
+    : bareValues.has(value.type) || (value.type === "CallExpression" && !pipe)
+  ctx.s.update(step.start, value.start, `${head}${prefix}${bare ? "" : "("}`)
+  ctx.s.update(value.end, step.end, bare ? "" : ")")
+  visit(value, handler!, false)
+  return true
+}
+
 const joinSteps = (
   ctx: ReverseCtx,
   call: Node,
@@ -273,7 +372,7 @@ const joinSteps = (
       ctx.s.remove(step.start, step.body.start)
       for (const topic of topicReferences(step)!) ctx.s.update(topic.start, topic.end, "%")
       visit(step.body, step, false)
-    } else {
+    } else if (!convertCatchStep(ctx, step, generator && offset === steps.length - 1, visit)) {
       visit(step, call, generator)
     }
     previous = step

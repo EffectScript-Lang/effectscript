@@ -809,7 +809,19 @@ export default grammar(TypeScript, {
       ),
 
     pipeline_expression: ($) =>
-      prec.left("pipeline", seq(field("left", $.expression), "|>", field("right", $.expression))),
+      prec.left("pipeline", seq(field("left", $.expression), "|>", field("right", choice($.expression, $.catch_step)))),
+
+    // `|> catch A or B => value`, `|> catch (e: A) => value` (ADR-0100): the value ends at the next `|>`
+    catch_step: ($) =>
+      prec.left(
+        "pipeline",
+        seq(
+          "catch",
+          choice($._is_tags, seq("(", field("parameter", $.identifier), field("type", $.type_annotation), ")")),
+          "=>",
+          field("value", $.expression)
+        )
+      ),
 
     topic_reference: (_) => "%",
 

@@ -225,3 +225,50 @@ retry({ times: 2, while: is TimeoutError })
             (is_predicate
               (is_pattern
                 (identifier)))))))))
+
+================================================================================
+Catch steps (ADR-0100)
+================================================================================
+
+const a = find(id) |> catch NotFound or Gone => undefined |> orDie
+const b = find(id)
+  |> catch (e: RateLimited) => e.retryAfter
+  |> timeout(1)
+
+--------------------------------------------------------------------------------
+
+(program
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (pipeline_expression
+        (pipeline_expression
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))
+          (catch_step
+            (identifier)
+            (identifier)
+            (undefined)))
+        (identifier))))
+  (lexical_declaration
+    (variable_declarator
+      (identifier)
+      (pipeline_expression
+        (pipeline_expression
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))
+          (catch_step
+            (identifier)
+            (type_annotation
+              (type_identifier))
+            (member_expression
+              (identifier)
+              (property_identifier))))
+        (call_expression
+          (identifier)
+          (arguments
+            (number)))))))

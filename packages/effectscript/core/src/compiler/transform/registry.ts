@@ -5,6 +5,7 @@ import type { Handler } from "../context.ts"
 import { ambientHandlers } from "./ambient.ts"
 import { atomHandlers } from "./atom.ts"
 import { awaitHandlers } from "./await.ts"
+import { catchStepHandlers } from "./catchStep.ts"
 import { commandHandlers } from "./command.ts"
 import { configHandlers } from "./config.ts"
 import { effectHandlers } from "./effect.ts"
@@ -69,6 +70,7 @@ export const handlers = registry(
   mainHandlers,
   testHandlers,
   tryHandlers,
+  catchStepHandlers,
   resourceHandlers,
   proposalHandlers,
   pipelineHandlers,

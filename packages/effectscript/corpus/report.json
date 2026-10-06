@@ -10,27 +10,27 @@
     "tokens": {
       "o200k": {
         "ts": 16836964,
-        "efx": 16269909
+        "efx": 16234747
       },
       "qwen3": {
         "ts": 16843938,
-        "efx": 16285152
+        "efx": 16249994
       },
       "deepseek-v3": {
         "ts": 17785803,
-        "efx": 17149300
+        "efx": 17114870
       },
       "glm-4.6": {
         "ts": 16724453,
-        "efx": 16165675
+        "efx": 16130517
       }
     },
     "notes": {
-      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 1811,
+      "canonicalized: imports from the effect index come back as imports of each module's own file (ADR-0089)": 1812,
       "`…` stays TypeScript: it awaits what looks like a Promise, an error inside `…` code (EFX8111)": 20,
       "`…` stays TypeScript: a native `…` is a defect, but in `…` code `…` is a typed failure (ADR-0030)": 22,
       "`…` stays TypeScript: its declaration isn't laid out as generated": 12,
-      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 144,
+      "This statement stays TypeScript: its conversion doesn't compile back to the same code (ADR-0030)": 148,
       "`…` stays TypeScript: its span name is not a string literal differs from the binding": 4,
       "`…` stays TypeScript: its `…` static isn't a layer or an accessor": 1,
       "`…` stays TypeScript: its span name \"…\" differs from the binding": 19,
@@ -57,19 +57,19 @@
     "tokens": {
       "o200k": {
         "ts": 645541,
-        "efx": 629783
+        "efx": 629779
       },
       "qwen3": {
         "ts": 642464,
-        "efx": 626906
+        "efx": 626902
       },
       "deepseek-v3": {
         "ts": 680584,
-        "efx": 663764
+        "efx": 663760
       },
       "glm-4.6": {
         "ts": 638904,
-        "efx": 623346
+        "efx": 623342
       }
     },
     "notes": {
@@ -92,19 +92,19 @@
     "tokens": {
       "o200k": {
         "ts": 28728,
-        "efx": 27486
+        "efx": 27478
       },
       "qwen3": {
         "ts": 28604,
-        "efx": 27368
+        "efx": 27359
       },
       "deepseek-v3": {
         "ts": 30165,
-        "efx": 28779
+        "efx": 28773
       },
       "glm-4.6": {
         "ts": 28421,
-        "efx": 27185
+        "efx": 27176
       }
     },
     "notes": {
@@ -123,19 +123,19 @@
     "tokens": {
       "o200k": {
         "ts": 2002870,
-        "efx": 1936841
+        "efx": 1936799
       },
       "qwen3": {
         "ts": 1993916,
-        "efx": 1928048
+        "efx": 1928006
       },
       "deepseek-v3": {
         "ts": 2121989,
-        "efx": 2045569
+        "efx": 2045526
       },
       "glm-4.6": {
         "ts": 1984075,
-        "efx": 1918207
+        "efx": 1918165
       }
     },
     "notes": {
@@ -225,19 +225,19 @@
     "tokens": {
       "o200k": {
         "ts": 140856,
-        "efx": 132176
+        "efx": 132138
       },
       "qwen3": {
         "ts": 140450,
-        "efx": 131896
+        "efx": 131858
       },
       "deepseek-v3": {
         "ts": 148139,
-        "efx": 138778
+        "efx": 138741
       },
       "glm-4.6": {
         "ts": 139188,
-        "efx": 130652
+        "efx": 130614
       }
     },
     "notes": {
@@ -324,19 +324,19 @@
     "tokens": {
       "o200k": {
         "ts": 98027,
-        "efx": 92221
+        "efx": 92199
       },
       "qwen3": {
         "ts": 97205,
-        "efx": 91422
+        "efx": 91400
       },
       "deepseek-v3": {
         "ts": 103195,
-        "efx": 96745
+        "efx": 96723
       },
       "glm-4.6": {
         "ts": 96991,
-        "efx": 91208
+        "efx": 91186
       }
     },
     "notes": {
@@ -388,19 +388,19 @@
     "tokens": {
       "o200k": {
         "ts": 4544956,
-        "efx": 4438159
+        "efx": 4438130
       },
       "qwen3": {
         "ts": 4564286,
-        "efx": 4456749
+        "efx": 4456720
       },
       "deepseek-v3": {
         "ts": 4909234,
-        "efx": 4782520
+        "efx": 4782487
       },
       "glm-4.6": {
         "ts": 4507003,
-        "efx": 4399476
+        "efx": 4399447
       }
     },
     "notes": {
@@ -432,19 +432,19 @@
     "tokens": {
       "o200k": {
         "ts": 7892783,
-        "efx": 7589339
+        "efx": 7589277
       },
       "qwen3": {
         "ts": 7883513,
-        "efx": 7582745
+        "efx": 7582683
       },
       "deepseek-v3": {
         "ts": 8400086,
-        "efx": 8066624
+        "efx": 8066562
       },
       "glm-4.6": {
         "ts": 7817686,
-        "efx": 7516918
+        "efx": 7516856
       }
     },
     "notes": {
