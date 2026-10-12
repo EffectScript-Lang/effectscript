@@ -51,7 +51,7 @@ export interface ResolvedOptions {
   readonly strict: boolean
   readonly effectVersion: string | undefined
   readonly observability: "otlp" | undefined
-  /** `// @efx spans Prefix` names spans `Prefix.name` outside services (ADR-0097). Directive only. */
+  /** `// @efx spans Prefix` names spans `Prefix.name` outside services (ADR-0305). Directive only. */
   readonly spans: string | undefined
 }
 

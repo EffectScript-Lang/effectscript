@@ -1,7 +1,7 @@
 /**
- * Token counts for EffectScript's samples and docs (ADR-0093): Hugging Face `tokenizers` running the
+ * Token counts for EffectScript's samples and docs (ADR-0301): Hugging Face `tokenizers` running the
  * vocabularies of current frontier models. `o200k` is the one the site shows; the others are a
- * panel that checks a compression isn't an artifact of one vocabulary (ADR-0092).
+ * panel that checks a compression isn't an artifact of one vocabulary (ADR-0300).
  *
  * Each vocabulary's `tokenizer.json` is downloaded once from the Hugging Face Hub, pinned by
  * revision and checked against its SHA-256, and kept in `$EFFECTSCRIPT_TOKENIZERS` (by default

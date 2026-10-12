@@ -342,7 +342,7 @@ export const efxPlugin = (Base: any): any =>
         return this.finishNode(node, "IsExpression")
       }
       if (this.efxIsMatchAhead()) return this.efxParseMatch()
-      // `|> catch NotFound => value` (ADR-0100): `catch` is reserved, so a pipe step can't start
+      // `|> catch NotFound => value` (ADR-0308): `catch` is reserved, so a pipe step can't start
       // with it in TypeScript
       if (this.type === tt._catch && this.efxState().pipeDepth > 0) return this.efxParseCatchStep()
       // `schema { … }`: a struct schema written as its type. An identifier followed by `{` on the
@@ -603,7 +603,7 @@ export const efxPlugin = (Base: any): any =>
       return this.parseClass(node, true)
     }
 
-    /** `error Forbidden` / `error Unauthorized status 401`: no `{` follows the header (ADR-0092 A4). */
+    /** `error Forbidden` / `error Unauthorized status 401`: no `{` follows the header (ADR-0300 A4). */
     efxIsBodilessError(): boolean {
       let i = skipSpace(this.input, this.lookahead().end)
       const status = /^status\s+\d+/.exec(this.input.slice(i))
@@ -726,7 +726,7 @@ export const efxPlugin = (Base: any): any =>
     /**
      * `where check, …` after a field's or a declaration's type, on the type's line (ADR-0077), or
      * `null`. A comma that starts the next member or parameter ends the list. A check without
-     * arguments may be written bare, `where isTrimmed` (ADR-0092).
+     * arguments may be written bare, `where isTrimmed` (ADR-0300).
      */
     efxParseWhere(): any {
       if (!this.efxIsWord("where") || this.hasPrecedingLineBreak()) return null
@@ -1128,7 +1128,7 @@ export const efxPlugin = (Base: any): any =>
       if (!this.efxIsWord(keyword) || !this.efxNextIsNameSameLine()) return false
       const name = this.lookahead()
       let after = skipSpace(this.input, name.end)
-      // `layer Name for Service = …` implements a service declared anywhere (ADR-0095)
+      // `layer Name for Service = …` implements a service declared anywhere (ADR-0303)
       const target = keyword === "layer"
         ? /^for[ \t]+[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*/.exec(this.input.slice(after))
         : null

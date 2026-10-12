@@ -1,5 +1,5 @@
 {
-  "$comment": "The projects (ADR-0094): each cloned without history into $EFFECTSCRIPT_CORPUS (default ~/.cache/effectscript/corpus) at its pinned commit. `pnpm corpus:update` moves every project to the tip of its branch and rewrites the pins. `exclude` leaves vendored or generated code out, with the reason; hidden folders, node_modules and build output are always left out.",
+  "$comment": "The projects (ADR-0302): each cloned without history into $EFFECTSCRIPT_CORPUS (default ~/.cache/effectscript/corpus) at its pinned commit. `pnpm corpus:update` moves every project to the tip of its branch and rewrites the pins. `exclude` leaves vendored or generated code out, with the reason; hidden folders, node_modules and build output are always left out.",
   "projects": [
     {
       "name": "alchemy-run__alchemy",

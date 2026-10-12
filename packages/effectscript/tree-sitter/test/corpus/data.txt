@@ -103,7 +103,7 @@ const status = 200
       (number))))
 
 ================
-A layer for a service declared elsewhere (ADR-0095)
+A layer for a service declared elsewhere (ADR-0303)
 ================
 
 export layer UsersLive for Users = { find: effect (id) => id }
@@ -132,7 +132,7 @@ layer DbLive for Db.Db = make
     (identifier)))
 
 ================
-Errors without a body (ADR-0092)
+Errors without a body (ADR-0300)
 ================
 
 export error Forbidden
@@ -293,7 +293,7 @@ tool Search(query: string where isNonEmpty(), limit: Int): Products
         (type_identifier)))))
 
 ================================================================================
-Schema expressions (ADR-0099)
+Schema expressions (ADR-0307)
 ================================================================================
 
 const Tool = { parameters: schema { path: string; limit?: number } }

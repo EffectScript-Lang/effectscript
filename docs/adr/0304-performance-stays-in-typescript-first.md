@@ -1,10 +1,10 @@
-# ADR-0096: Make the compiler faster in TypeScript before porting it
+# ADR-0304: Make the compiler faster in TypeScript before porting it
 
 - **Status:** Accepted
 - **Date:** 2026-10-05
 - **Deciders:** the user (a Zig compiler beside the TypeScript one is acceptable if both pass the
   tests); agent ruling to measure and parallelize first
-- **Related:** ADR-0004 (acorn, no fork, no wasm), ADR-0030 (round trips), ADR-0089, ADR-0094
+- **Related:** ADR-0004 (acorn, no fork, no wasm), ADR-0030 (round trips), ADR-0089, ADR-0302
 
 ## Context
 

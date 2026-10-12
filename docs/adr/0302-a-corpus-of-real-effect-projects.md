@@ -1,16 +1,16 @@
-# ADR-0094: Real Effect v4 projects as a corpus, converted and measured
+# ADR-0302: Real Effect v4 projects as a corpus, converted and measured
 
 - **Status:** Accepted
 - **Date:** 2026-10-05
 - **Deciders:** the user (bring in the Effect 4 reference projects, at least as an experiment with
   submodules; convert them; compare tokens and how they read); agent rulings on layout, licensing,
   what is committed, and replacing the submodules once they broke the repository's lint
-- **Related:** ADR-0050 (the docs corpus), ADR-0092 (the audit), ADR-0093 (token counts);
+- **Related:** ADR-0050 (the docs corpus), ADR-0300 (the audit), ADR-0301 (token counts);
   `packages/effectscript/corpus`
 
 ## Context
 
-The audit (ADR-0092) measures the language on the Effect docs corpus. Those examples are short and
+The audit (ADR-0300) measures the language on the Effect docs corpus. Those examples are short and
 written to teach one API, so most of what survives conversion is Effect's own vocabulary
 (`runPromise`, `Stream.…`). They say little about how a whole application reads in EffectScript:
 its services, layers, errors, HTTP APIs and tests, written by people shipping software.
@@ -40,11 +40,11 @@ developed, but their licenses differ:
   theirs.
 - **Committed: the numbers, never the code.** `corpus/REPORT.md` and `report.json` are committed:
   per project the files, how many convert, the tokens before and after in each vocabulary of the
-  panel (ADR-0093), and the reasons conversions stop, counted. Reasons are the reverse compiler's
+  panel (ADR-0301), and the reasons conversions stop, counted. Reasons are the reverse compiler's
   notes with names elided, so no code is quoted.
 - **Feeding the audit:** the blocker table is the audit's work list. A construct that keeps
   real code in TypeScript is a candidate for the reverse compiler, or for the language, under
-  ADR-0092's rubric.
+  ADR-0300's rubric.
 - **Showing it later:** publishing converted code (on the site, say) is limited to the MIT and
   Apache-2.0 projects, with their license and attribution, and is its own decision.
 - **Kept out of the build:** the clones live outside the tree, and `out/` is excluded from lint,

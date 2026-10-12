@@ -1,10 +1,10 @@
-# ADR-0100: `|> catch Tag => value` recovers from a tagged failure in a pipeline
+# ADR-0308: `|> catch Tag => value` recovers from a tagged failure in a pipeline
 
 - **Status:** Accepted
 - **Date:** 2026-10-06
 - **Deciders:** the user (asked to explore a pipe-level `catch`); agent ruling on the form, from the
-  real-projects corpus (ADR-0094)
-- **Related:** ADR-0010 (`try` / `catch`), ADR-0087 (`is`), ADR-0092 (rubric), ADR-0098
+  real-projects corpus (ADR-0302)
+- **Related:** ADR-0010 (`try` / `catch`), ADR-0087 (`is`), ADR-0300 (rubric), ADR-0306
 
 ## Context
 

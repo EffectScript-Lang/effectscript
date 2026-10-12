@@ -1,10 +1,10 @@
 import { count, panel, pieces, primary, vocabularies } from "@effectscript/tokens"
 import { describe, expect, it } from "vitest"
 
-// the first run downloads each vocabulary (pinned and checked, ADR-0093)
+// the first run downloads each vocabulary (pinned and checked, ADR-0301)
 const timeout = 120_000
 
-describe("token counts (ADR-0093)", () => {
+describe("token counts (ADR-0301)", () => {
   it("count o200k tokens as GPT-4o's tokenizer does", async () => {
     expect(primary.id).toBe("o200k")
     expect(await count(["const a = 1\n", "x |> f\n", ""])).toEqual([6, 4, 0])

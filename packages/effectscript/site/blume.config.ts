@@ -42,7 +42,7 @@ export default defineConfig({
       name: "effectscript-site-wgsl",
       hooks: { "astro:config:setup": ({ updateConfig }) => updateConfig({ vite: { plugins: [wgslVitePlugin()] } }) }
     },
-    // the token counts' tokenizer is a native addon that runs at build time, so it isn't bundled (ADR-0093)
+    // the token counts' tokenizer is a native addon that runs at build time, so it isn't bundled (ADR-0301)
     {
       name: "effectscript-site-tokens",
       hooks: {

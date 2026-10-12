@@ -14,14 +14,14 @@ import { isPlainStep } from "./pipes.ts"
 import { inFrame } from "./resources.ts"
 import { layerPipes, layerPlan } from "./service.ts"
 
-/** `Name` or `Module.Name`: a service tag a `layer … for` names (ADR-0095). */
+/** `Name` or `Module.Name`: a service tag a `layer … for` names (ADR-0303). */
 const isTagReference = (node: Node): boolean =>
   node.type === "Identifier" ||
   (node.type === "MemberExpression" && !node.computed && node.optional !== true && isTagReference(node.object))
 
 /**
  * `const X = Layer.effect(S, Effect.gen(…))`, `Layer.succeed(S, S.of({ … }))` or `Layer.effect(S, value)`
- * → `layer X for S = …` (ADR-0095), exactly where the forward compiler gives the same code back.
+ * → `layer X for S = …` (ADR-0303), exactly where the forward compiler gives the same code back.
  */
 const convertServiceLayer = (ctx: ReverseCtx, statement: Node, declarator: Node, head: Node, visit: Visit): boolean => {
   const args: Array<Node> = head.arguments

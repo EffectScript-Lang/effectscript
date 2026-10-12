@@ -2,7 +2,7 @@
  * The before/after gallery (spec §9.2, ADR-0054): each scenario in plain TypeScript, in Effect
  * TypeScript, and in EffectScript. The Effect pane is compiled from the EffectScript at build time,
  * so it can't drift. Token counts are o200k (the GPT-4o and GPT-5 vocabulary) through Hugging Face
- * tokenizers, counted on the code shown (ADR-0093).
+ * tokenizers, counted on the code shown (ADR-0301).
  */
 import { count, pieces } from "@effectscript/tokens"
 import { toTypeScript } from "effectscript/compiler"

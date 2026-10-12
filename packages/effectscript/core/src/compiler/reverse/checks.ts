@@ -63,7 +63,7 @@ const textFrom = (ctx: ReverseCtx, node: Node, from: number): string => {
 export const bareText = (ctx: ReverseCtx, node: Node): string => textFrom(ctx, node, node.start)
 
 /**
- * One check as a `where` list writes it: `isTrimmed` for `Schema.isTrimmed()` (ADR-0092), and
+ * One check as a `where` list writes it: `isTrimmed` for `Schema.isTrimmed()` (ADR-0300), and
  * the call with `Schema.` dropped otherwise.
  */
 const checkText = (ctx: ReverseCtx, check: Node): string => {

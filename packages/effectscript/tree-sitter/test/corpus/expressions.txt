@@ -227,7 +227,7 @@ retry({ times: 2, while: is TimeoutError })
                 (identifier)))))))))
 
 ================================================================================
-Catch steps (ADR-0100)
+Catch steps (ADR-0308)
 ================================================================================
 
 const a = find(id) |> catch NotFound or Gone => undefined |> orDie

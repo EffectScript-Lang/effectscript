@@ -1,9 +1,9 @@
-# ADR-0098: Round trips are compared as syntax trees
+# ADR-0306: Round trips are compared as syntax trees
 
 - **Status:** Accepted
 - **Date:** 2026-10-06
-- **Deciders:** agent ruling, from the real-projects corpus (ADR-0094)
-- **Related:** ADR-0030 (amended), ADR-0092
+- **Deciders:** agent ruling, from the real-projects corpus (ADR-0302)
+- **Related:** ADR-0030 (amended), ADR-0300
 
 ## Context
 

@@ -112,7 +112,7 @@ const implementationFunction = (ctx: ReverseCtx, value: Node): Node | undefined 
 const paramsOf = (signature: Node): Array<Node> => signature.params ?? signature.parameters ?? []
 
 /**
- * Drops the parameter types an implementation repeats from its signature (ADR-0092 A2): exactly the
+ * Drops the parameter types an implementation repeats from its signature (ADR-0300 A2): exactly the
  * text the forward compiler writes back, the declared annotation (with `?` for an optional name).
  */
 const untypeImplementations = (
@@ -309,7 +309,7 @@ export const convertService = (ctx: ReverseCtx, cls: Node, visit: Visit): boolea
  */
 /**
  * How a service layer's value converts, for the service written `name` (a name, or a dotted name
- * for one declared in another module, ADR-0095) whose spans are named `span.method`.
+ * for one declared in another module, ADR-0303) whose spans are named `span.method`.
  *
  * @since 4.0.0
  * @category reverse

@@ -1,9 +1,9 @@
-# ADR-0097: `// @efx spans Prefix` names a file's spans after its module
+# ADR-0305: `// @efx spans Prefix` names a file's spans after its module
 
 - **Status:** Accepted
 - **Date:** 2026-10-05
-- **Deciders:** agent ruling, from the real-projects corpus (ADR-0094)
-- **Related:** ADR-0017 (directives), ADR-0029, ADR-0030, ADR-0092, ADR-0095
+- **Deciders:** agent ruling, from the real-projects corpus (ADR-0302)
+- **Related:** ADR-0017 (directives), ADR-0029, ADR-0030, ADR-0300, ADR-0303
 
 ## Context
 
@@ -87,4 +87,4 @@ functions `ACP.name` and 2 `ACP.promptUsage.name`, so none of the 19 converted.
 
 - **Keep one prefix or none:** simple, but a single nested name blocks a whole file.
 - **A directive per prefix, or per function:** a second way to name a span, against "one form per
-  intent" (ADR-0092). The odd functions read fine as TypeScript.
+  intent" (ADR-0300). The odd functions read fine as TypeScript.

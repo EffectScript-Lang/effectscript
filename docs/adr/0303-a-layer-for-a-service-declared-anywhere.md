@@ -1,10 +1,10 @@
-# ADR-0095: `layer Name for Service` implements a service declared anywhere
+# ADR-0303: `layer Name for Service` implements a service declared anywhere
 
 - **Status:** Accepted
 - **Date:** 2026-10-05
-- **Deciders:** agent ruling, from the real-projects corpus (ADR-0094) and an AI rewrite of a
+- **Deciders:** agent ruling, from the real-projects corpus (ADR-0302) and an AI rewrite of a
   t3code service in native EffectScript
-- **Related:** ADR-0066 (services with defaults), ADR-0092 (the audit), ADR-0094; spec §4.8, §4.14
+- **Related:** ADR-0066 (services with defaults), ADR-0300 (the audit), ADR-0302; spec §4.8, §4.14
 
 ## Context
 
@@ -13,7 +13,7 @@ their spans are named `Service.method`. Real Effect applications don't keep a se
 implementations in one module. They declare tags in one place (`Services/`) and implement them in
 another (`Layers/`), often several times (live, test, in-memory).
 
-In the 16 real projects of ADR-0094:
+In the 16 real projects of ADR-0302:
 
 - 1,470 implementations are written `Tag.of({ … })`;
 - 745 layers are `Layer.effect(Tag, Effect.gen(…))`, and 188 are `Layer.effect(Tag, make…)`;
@@ -53,13 +53,13 @@ an imported name doesn't say whether it is a service, an rpc group or a toolkit.
   `Layer.effect(Tag, …)` and `Tag.of(…)`, and spans keep their conventional names.
 - Implementing a local `service` has two forms: inside its body (`layer = …`) and after it
   (`layer UsersLive for Users = …`). They mean the same thing except for where the layer lives, a
-  static of the service versus its own binding, so they are two intents (ADR-0092 rule 3).
+  static of the service versus its own binding, so they are two intents (ADR-0300 rule 3).
 - `layer X for S` doesn't check that `S` is a service; TypeScript does, on `Layer.effect` and `S.of`.
 
 ## Alternatives considered
 
 - **`layer X: Service = …`:** reads as a type annotation, and `X` is a `Layer`, not a `Service`
-  (ADR-0092 rule 1, rule 5).
+  (ADR-0300 rule 1, rule 5).
 - **`impl Service { … }`:** `impl` builds a layer through the target's `toLayer`. Without types the
   compiler can't tell a service from an rpc group by an imported name.
 - **Reopening a service (`service Users { layer live = … }` in another module):** a second

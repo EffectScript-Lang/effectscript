@@ -114,11 +114,11 @@ const blocked = (ctx: ReverseCtx, node: Node, what: string, fn: Node, kind: Para
 /** `const f = Effect.fn(…)` statements converted to `effect` declarations. */
 const declarations = new WeakSet<Node>()
 
-/** The span name the forward compiler gives `name` here (ADR-0097). */
+/** The span name the forward compiler gives `name` here (ADR-0305). */
 const expectedSpan = (ctx: ReverseCtx, name: string): string =>
   ctx.service !== undefined ? `${ctx.service}.${name}` : ctx.spans !== undefined ? `${ctx.spans}.${name}` : name
 
-/** A conversion relied on the spans directive, so it is written (ADR-0097). */
+/** A conversion relied on the spans directive, so it is written (ADR-0305). */
 const usedSpans = (ctx: ReverseCtx): void => {
   if (ctx.service === undefined && ctx.spans !== undefined) ctx.spansUsed = true
 }

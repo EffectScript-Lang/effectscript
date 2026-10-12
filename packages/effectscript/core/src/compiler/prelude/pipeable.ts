@@ -1,5 +1,5 @@
 /**
- * Which of Effect's exports produce a `Pipeable` (ADR-0092 A1), read from the generated
+ * Which of Effect's exports produce a `Pipeable` (ADR-0300 A1), read from the generated
  * `pipeableExports` table. The forward and reverse compilers ask the same question, so a pipeline
  * whose head is one of these compiles to `.pipe(…)` and converts back to `|>`.
  *
@@ -48,7 +48,7 @@ export const pipeableCall = (module: string, name: string, args: number): boolea
   specOf(module, name)?.includes(String(Math.min(args, 9))) === true
 
 /**
- * Whether `Module.name` is a step over a `Pipeable` (ADR-0092 A7): written as a value (`Effect.orDie`,
+ * Whether `Module.name` is a step over a `Pipeable` (ADR-0300 A7): written as a value (`Effect.orDie`,
  * `args` undefined), or called with `args` arguments (`Effect.map(f)`). A pipeline whose first step is
  * one only type-checks on a `Pipeable`, so its head takes `.pipe(…)` whatever it is.
  *

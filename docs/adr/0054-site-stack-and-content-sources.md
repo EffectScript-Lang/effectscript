@@ -1,6 +1,6 @@
 # ADR-0054: The site's stack deviations and where its content comes from
 
-- **Status:** Accepted, token counting amended by ADR-0093
+- **Status:** Accepted, token counting amended by ADR-0301
 - **Date:** 2026-10-03
 - **Deciders:** agent ruling for Plan 16 (phase 10)
 - **Related:** spec §9; ADR-0036, ADR-0041, ADR-0050, ADR-0051

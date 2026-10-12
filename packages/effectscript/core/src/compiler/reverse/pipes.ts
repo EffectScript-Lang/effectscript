@@ -28,7 +28,7 @@ export const pipeableInEfx = (ctx: ReverseCtx, node: Node, seen: ReadonlySet<str
       if (node.callee.type === "Identifier") {
         return ctx.effects.has(node.callee.name) && !ctx.analysis.innerBound.has(node.callee.name)
       }
-      // Effect's own constructors, as its types declare them (the forward `pipeableEffectCall`, ADR-0092 A1)
+      // Effect's own constructors, as its types declare them (the forward `pipeableEffectCall`, ADR-0300 A1)
       const callee: Node = node.callee
       if (
         callee.type !== "MemberExpression" || callee.computed || callee.object.type !== "Identifier" ||
@@ -59,7 +59,7 @@ export const pipeableInEfx = (ctx: ReverseCtx, node: Node, seen: ReadonlySet<str
 }
 
 /**
- * Mirrors the forward `pipeableEffectStep` (ADR-0092 A7): `Effect.map(f)`, `Effect.orDie`, an Effect
+ * Mirrors the forward `pipeableEffectStep` (ADR-0300 A7): `Effect.map(f)`, `Effect.orDie`, an Effect
  * step that only takes a `Pipeable`, recognized through its import.
  *
  * @since 4.0.0
@@ -289,7 +289,7 @@ const bareValues = new Set([
 ])
 
 /**
- * `Effect.catchTag("T", () => Effect.succeed(v))` as a pipe step → `catch T => v` (ADR-0100):
+ * `Effect.catchTag("T", () => Effect.succeed(v))` as a pipe step → `catch T => v` (ADR-0308):
  * `Effect.void` → `undefined`, `Effect.fail(x)` → `throw x`, and as the last step any other effect
  * `e` → `await e` (inside `effect` code, where `await` is allowed). The binding stays when the
  * handler declares one.

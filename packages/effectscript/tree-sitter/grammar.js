@@ -423,7 +423,7 @@ export default grammar(TypeScript, {
         )
       ),
 
-    // `schema { … }`: a struct schema written as its type (ADR-0099)
+    // `schema { … }`: a struct schema written as its type (ADR-0307)
     schema_expression: ($) => prec.right(seq("schema", field("type", $.object_type))),
 
     effect_block: ($) => prec.right(seq("effect", field("body", $.statement_block))),
@@ -616,7 +616,7 @@ export default grammar(TypeScript, {
           "layer",
           field("name", $.identifier),
           optional(field("type", $.type_annotation)),
-          // the service it implements, declared anywhere (ADR-0095)
+          // the service it implements, declared anywhere (ADR-0303)
           optional(seq("for", field("service", choice($.identifier, $.nested_identifier)))),
           "=",
           field("value", $.expression),
@@ -811,7 +811,7 @@ export default grammar(TypeScript, {
     pipeline_expression: ($) =>
       prec.left("pipeline", seq(field("left", $.expression), "|>", field("right", choice($.expression, $.catch_step)))),
 
-    // `|> catch A or B => value`, `|> catch (e: A) => value` (ADR-0100): the value ends at the next `|>`
+    // `|> catch A or B => value`, `|> catch (e: A) => value` (ADR-0308): the value ends at the next `|>`
     catch_step: ($) =>
       prec.left(
         "pipeline",

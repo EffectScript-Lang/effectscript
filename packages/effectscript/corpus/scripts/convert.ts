@@ -1,5 +1,5 @@
 /**
- * `pnpm corpus:convert` (ADR-0094): checks every project of `corpus.json` out at its pinned commit
+ * `pnpm corpus:convert` (ADR-0302): checks every project of `corpus.json` out at its pinned commit
  * (cloning it the first time), converts it, writes each converted file next to its TypeScript in
  * `out/` (gitignored), and `REPORT.md` and `report.json` (numbers only). `--only <name>` converts
  * one project.

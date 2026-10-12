@@ -1,5 +1,5 @@
 /**
- * A conversion worker for `convertRepoParallel` (ADR-0094): converts its share of a project's
+ * A conversion worker for `convertRepoParallel` (ADR-0302): converts its share of a project's
  * files and posts each result back.
  *
  * @since 4.0.0

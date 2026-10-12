@@ -10,7 +10,7 @@ const back = (ts: string) => toEffectScript(ts, { filename: "live.ts" }).code
 
 const head = `import { Users } from "./Users.ts"\nimport * as Db from "./Db.ts"\n\n`
 
-describe("layer … for: a service declared anywhere (ADR-0095)", () => {
+describe("layer … for: a service declared anywhere (ADR-0303)", () => {
   it("builds an effect block's layer, naming spans after the service", () => {
     const code = compile(`${head}export layer UsersLive for Users = effect {
   const db = await Db.Db

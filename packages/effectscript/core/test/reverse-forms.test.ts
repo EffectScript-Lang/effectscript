@@ -126,7 +126,7 @@ describe("reverse: blockers (§6.3)", () => {
   it.each([
     ["console", "export const f = Effect.gen(function*() {\n  console.log(\"hi\")\n  return yield* task\n})\n"],
     ["Date.now", "export const f = Effect.gen(function*() {\n  return Date.now() + (yield* task)\n})\n"]
-  ])("converts ambient %s that capture would change under `// @efx no-ambient` (ADR-0097)", (_name, body) => {
+  ])("converts ambient %s that capture would change under `// @efx no-ambient` (ADR-0305)", (_name, body) => {
     const ts = `${head}${body}`
     const back = toEffectScript(ts)
     expect(back.code.startsWith("// @efx no-ambient\n")).toBe(true)

@@ -57,7 +57,7 @@ const withDirectives = (options: ResolvedOptions, source: string): ResolvedOptio
 /** `// @efx no-ambient`, as a whole line. */
 const noAmbientDirective = /^[ \t]*\/\/\s*@efx\s+no-ambient[ \t]*(?:\n|$)/m
 
-/** `// @efx spans Prefix` (ADR-0097): its line, and the prefix. */
+/** `// @efx spans Prefix` (ADR-0305): its line, and the prefix. */
 const spansDirective = /^[ \t]*\/\/\s*@efx\s+spans\s+([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)[ \t]*(?:\n|$)/m
 
 /** EFX1003: a `// @effect X.Y` header that disagrees with the installed `effect` (§7.6). */
@@ -153,7 +153,7 @@ const compileOnce = (source: string, resolved: ResolvedOptions, mode?: Mode): Co
     testIt: undefined
   }
   // the directives the reverse compiler may introduce are spent: they leave no comment behind,
-  // since their effect is in the output (ADR-0097)
+  // since their effect is in the output (ADR-0305)
   for (const spent of [resolved.spans === undefined ? null : spansDirective, noAmbientDirective]) {
     const found = spent?.exec(leadingComments(source))
     if (found) s.remove(found.index, found.index + found[0].length)

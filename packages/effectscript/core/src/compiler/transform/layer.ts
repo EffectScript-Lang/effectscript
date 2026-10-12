@@ -34,7 +34,7 @@ const mergeOperands = (node: Node): Array<Node> =>
   node.type === "BinaryExpression" && node.operator === "&" ? [...mergeOperands(node.left), node.right] : [node]
 
 /**
- * `layer Name for Service = …` (ADR-0095): the implementation of a service declared anywhere, as a
+ * `layer Name for Service = …` (ADR-0303): the implementation of a service declared anywhere, as a
  * `service` body's `layer = …` is for its own. An `effect` block becomes `Layer.effect(Service,
  * Effect.gen(…))` with its returned objects wrapped in `Service.of(…)`, an object becomes
  * `Layer.succeed(Service, Service.of({ … }))`, and any other value `Layer.effect(Service, value)`.

@@ -2,9 +2,9 @@ import { toEffectScript } from "effectscript/compiler"
 import { verdict } from "effectscript/compiler/reverse/verify"
 import { describe, expect, it } from "vitest"
 
-// ADR-0098: outside compiler output, a round trip holds when the code compiles back to the same
+// ADR-0306: outside compiler output, a round trip holds when the code compiles back to the same
 // syntax tree and comments; semicolons, trailing commas and layout aside.
-describe("reverse: round trips compare syntax trees (ADR-0098)", () => {
+describe("reverse: round trips compare syntax trees (ADR-0306)", () => {
   it("converts a file formatted with semicolons", () => {
     const ts = `import * as Schema from "effect/Schema";
 

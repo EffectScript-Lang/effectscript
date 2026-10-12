@@ -136,7 +136,7 @@ const annotationOf = (ctx: Ctx, param: Node): string | undefined => {
 
 /**
  * An implementation's `effect` members take the parameter types their signature declares, so they're
- * written once (ADR-0092 A2): `find: effect (id) => …` compiles as `effect (id: string) => …` did.
+ * written once (ADR-0300 A2): `find: effect (id) => …` compiles as `effect (id: string) => …` did.
  * Runs after the signatures are transformed, so the copied types are already TypeScript.
  */
 const typeImplementations = (ctx: Ctx, value: Node, signatures: ReadonlyMap<string, Node>): void => {

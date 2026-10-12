@@ -10,6 +10,10 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 
 ## Index
 
+Numbers are unique, not contiguous. ADRs 0300–0308 (the intent-compression audit) were numbered
+past a parallel line of work that held 0092–0197 while both were in progress, so neither had to
+renumber the other's references.
+
 | ADR                                                   | Title                                                         | Status   |
 | ----------------------------------------------------- | ------------------------------------------------------------- | -------- |
 | [0001](0001-record-architecture-decisions.md)         | Record architecture decisions                                 | Accepted |
@@ -99,15 +103,15 @@ to `Superseded by ADR-NNNN`. Never rewrite an accepted decision in place.
 | [0089](0089-prelude-imports-name-the-module-file.md) | Prelude imports name the module's own file, not the package index | Accepted |
 | [0090](0090-a-convex-extension-sketched-on-confect.md) | A Convex extension, sketched on Confect: tables, function specs and their impls | Proposed |
 | [0091](0091-the-landing-page-is-drawn-by-one-line.md) | The landing page is drawn by one line, with a headline and one sentence per room | Accepted |
-| [0092](0092-intent-compression-audit.md) | Audit the whole language for ceremony, with one form per intent | Accepted, A5 withdrawn by its amendment 1 |
-| [0093](0093-tokens-counted-with-hugging-face-tokenizers.md) | Tokens are counted with Hugging Face tokenizers, against a panel of frontier vocabularies | Accepted |
-| [0094](0094-a-corpus-of-real-effect-projects.md) | Real Effect v4 projects as a corpus, converted and measured | Accepted |
-| [0095](0095-a-layer-for-a-service-declared-anywhere.md) | `layer Name for Service` implements a service declared anywhere | Accepted |
-| [0096](0096-performance-stays-in-typescript-first.md) | Make the compiler faster in TypeScript before porting it | Accepted |
-| [0097](0097-a-spans-directive.md) | `// @efx spans Prefix` names a file's spans after its module | Accepted |
-| [0098](0098-round-trips-compare-syntax-trees.md) | Round trips are compared as syntax trees | Accepted |
-| [0099](0099-schema-expressions.md) | `schema { … }` is a struct schema written as its type | Accepted |
-| [0100](0100-a-catch-pipe-step.md) | `\|> catch Tag => value` recovers from a tagged failure in a pipeline | Accepted |
+| [0300](0300-intent-compression-audit.md) | Audit the whole language for ceremony, with one form per intent | Accepted, A5 withdrawn by its amendment 1 |
+| [0301](0301-tokens-counted-with-hugging-face-tokenizers.md) | Tokens are counted with Hugging Face tokenizers, against a panel of frontier vocabularies | Accepted |
+| [0302](0302-a-corpus-of-real-effect-projects.md) | Real Effect v4 projects as a corpus, converted and measured | Accepted |
+| [0303](0303-a-layer-for-a-service-declared-anywhere.md) | `layer Name for Service` implements a service declared anywhere | Accepted |
+| [0304](0304-performance-stays-in-typescript-first.md) | Make the compiler faster in TypeScript before porting it | Accepted |
+| [0305](0305-a-spans-directive.md) | `// @efx spans Prefix` names a file's spans after its module | Accepted |
+| [0306](0306-round-trips-compare-syntax-trees.md) | Round trips are compared as syntax trees | Accepted |
+| [0307](0307-schema-expressions.md) | `schema { … }` is a struct schema written as its type | Accepted |
+| [0308](0308-a-catch-pipe-step.md) | `\|> catch Tag => value` recovers from a tagged failure in a pipeline | Accepted |
 
 ## Template
 

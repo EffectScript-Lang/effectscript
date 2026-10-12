@@ -8,7 +8,7 @@ const compile = (efx: string) => {
 }
 const back = (ts: string) => toEffectScript(ts, { filename: "a.ts" }).code
 
-describe("one form per intent (ADR-0092)", () => {
+describe("one form per intent (ADR-0300)", () => {
   describe("A1: one pipeline form", () => {
     it("pipes Effect's own constructors with `.pipe(…)`, as their types declare", () => {
       expect(compile("export const a = Stream.make(1, 2) |> Stream.map((n) => n * 2)\n"))

@@ -5,7 +5,7 @@
 > recorded in `docs/adr/`. Commit with explicit, gated paths (other sessions share the branch):
 > `pnpm check && pnpm lint && git commit <paths>`.
 
-> **Amended by ADR-0092 (one form per intent).** A check with no arguments drops its `()` in a
+> **Amended by ADR-0300 (one form per intent).** A check with no arguments drops its `()` in a
 > `where` list: `name: string where isTrimmed, isNonEmpty`. Add it to the task that parses `where`
 > lists and the task that compiles them:
 >
@@ -2119,8 +2119,8 @@ pnpm check && pnpm lint && git commit packages/effectscript/core/test/fixtures/s
 ## Execution record
 
 Executed on 2026-10-05 in the `effectscript-intent-compression` worktree, on top of the
-uncommitted Plan 29 (`is`) and ADR-0092 A1–A6 work. No commits were made: each task's commit step
-was skipped and the work stays in the worktree. The plan's examples above now use the ADR-0092
+uncommitted Plan 29 (`is`) and ADR-0300 A1–A6 work. No commits were made: each task's commit step
+was skipped and the work stays in the worktree. The plan's examples above now use the ADR-0300
 short form (`where isTrimmed, isNonEmpty`), and its expectations match the shipped tests.
 
 - **Task 1:** as planned, plus three changes:
@@ -2132,18 +2132,18 @@ short form (`where isTrimmed, isNonEmpty`), and its expectations match the shipp
     to TypeScript ("Export 'X' is not defined"). `schema X = T` has the same gap; it's left as it
     was.
   - `raise` returns `super.raise(…) as never`, which `pnpm check` needs.
-- **ADR-0092 amendment (in `checksText`):** a check that is a bare identifier, or a call whose
+- **ADR-0300 amendment (in `checksText`):** a check that is a bare identifier, or a call whose
   callee is one, is looked up before the walk.
   - A free name that the `Schema` namespace resolves (the prelude's `resolveValue`) is qualified by
     the prelude as before. When the check is the bare identifier itself, `()` follows it.
   - **Ruling:** `isFinite` is a JavaScript global, so the prelude excludes it and `Schema`'s
-    builtins table doesn't list it. ADR-0092 writes `where isFinite`, so a `where` list reads a
+    builtins table doesn't list it. ADR-0300 writes `where isFinite`, so a `where` list reads a
     free `Schema` check named like a global as `Schema`'s, but only as the check itself or its
     callee: inside a check, `(isFinite: number) => isFinite > 0` keeps JavaScript's meaning. The
     names come from a new generated table, `schemaGlobalChecks` (`generate-prelude.ts`: `Schema`
     value exports that are globals and named `is…`; today only `isFinite`). The reverse compiler
     writes `where isFinite` under the same rule. Recorded in the spec (§4.6); no separate ADR,
-    since ADR-0092 already decided the spelling.
+    since ADR-0300 already decided the spelling.
   - A local binding stays as written, uncalled (`where isShort`). A bare check that needs
     arguments compiles to the empty call, and TypeScript reports it ("Expected 1-2 arguments, but
     got 0"), which a type-checking test asserts.
@@ -2151,7 +2151,7 @@ short form (`where isTrimmed, isNonEmpty`), and its expectations match the shipp
   (the temporary test passed on the first run and was removed). The live preset now writes
   `where isUUID` and `where isTrimmed, isNonEmpty, isMaxLength(64)`.
 - **Task 3:** as planned. The four goldens matched the plan's text. Their success types are
-  `string[]`, not `Array<string>`: ADR-0092 A3 makes the reverse compiler write `string[]`, and a
+  `string[]`, not `Array<string>`: ADR-0300 A3 makes the reverse compiler write `string[]`, and a
   fixture's source should equal its reverse golden.
 - **Task 4:** as planned, with these differences:
   - `checks.ts` renders each check with `checkText`: `Schema.isTrimmed()` (no arguments, written
@@ -2198,6 +2198,6 @@ short form (`where isTrimmed, isNonEmpty`), and its expectations match the shipp
   `transform/registry.ts`, `transform/is.ts`, and Plan 29's `is_*` rules in `grammar.js`).
 - **Deferred:**
   - The playground's `law` preset (Plan 24, proposed) still writes `schema Money = Int & Brand<"Money">`.
-    ADR-0092 moves Plans 24–27 to `brand Money = Int`; that belongs to those plans.
+    ADR-0300 moves Plans 24–27 to `brand Money = Int`; that belongs to those plans.
   - `export { X }` after `schema X = T`.
   - The `_tag` double space.

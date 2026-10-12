@@ -1,5 +1,5 @@
 /**
- * The pipe step `catch Tag => value` (ADR-0100): `|> catch NotFound => []` is
+ * The pipe step `catch Tag => value` (ADR-0308): `|> catch NotFound => []` is
  * `.pipe(Effect.catchTag("NotFound", () => Effect.succeed([])))`.
  *
  * @since 4.0.0

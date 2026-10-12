@@ -1,16 +1,16 @@
-# ADR-0099: `schema { … }` is a struct schema written as its type
+# ADR-0307: `schema { … }` is a struct schema written as its type
 
 - **Status:** Accepted
 - **Date:** 2026-10-06
 - **Deciders:** the user (asked for inline struct literals: "`Struct` or `struct`, if it makes
   sense"); agent ruling on the form
-- **Related:** ADR-0013 (optional fields), ADR-0077, ADR-0092 (rubric), ADR-0094 (corpus)
+- **Related:** ADR-0013 (optional fields), ADR-0077, ADR-0300 (rubric), ADR-0302 (corpus)
 
 ## Context
 
 EffectScript's `schema` declarations turn TypeScript types into schemas, but only where a schema
 is declared: `schema User { … }`, `schema Point = { … }`. Real Effect code also uses schemas as
-values, inline, where nothing is declared. In the converted real-projects corpus (ADR-0094),
+values, inline, where nothing is declared. In the converted real-projects corpus (ADR-0302),
 3,439 `Schema.Struct(` calls and 3,913 `Schema.optional(` calls are still written out, mostly as a
 tool's `parameters`, an RPC's `success` or `payload`, an `input`/`output`, an argument to a decoder,
 and constants without a type alias. Each field pays for `Schema.` twice over:

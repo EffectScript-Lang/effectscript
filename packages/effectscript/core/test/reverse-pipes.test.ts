@@ -24,7 +24,7 @@ describe("reverse: pipelines (Plan 6 Task 4)", () => {
       "effect load(id: string) {\n  return await name(id)\n}\nexport const p = load(\"2\")\n  |> timeout(\"1 second\")\n  |> orDie\n"
     ],
     [
-      // `.pipe(…)` on an unknown head whose first step proves it pipeable (ADR-0092 A7)
+      // `.pipe(…)` on an unknown head whose first step proves it pipeable (ADR-0300 A7)
       "pipe on an unknown head whose first step is an Effect step",
       "export const p = name(\"3\").pipe(Effect.map((n) => n.length))\n",
       "export const p = name(\"3\") |> map((n) => n.length)\n"

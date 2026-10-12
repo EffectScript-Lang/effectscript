@@ -134,7 +134,7 @@ export const schemaToType = (source: string, schema: string, node: Node, where?:
     if (one !== undefined && args.length === 1) {
       const inner = go(args[0]!)
       if (inner === undefined) return undefined
-      // `T[]` when `T` needs no parentheses, `Array<T>` otherwise: one spelling (ADR-0092 A3)
+      // `T[]` when `T` needs no parentheses, `Array<T>` otherwise: one spelling (ADR-0300 A3)
       return one === "Array" && /^[A-Za-z_$][\w$]*(?:\.[\w$]+)*(?:\[\])*$/.test(inner)
         ? `${inner}[]`
         : `${one}<${inner}>`

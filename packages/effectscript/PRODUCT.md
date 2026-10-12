@@ -35,7 +35,7 @@ fewer tokens.
   Effect's libraries as declarations (`test`, `api`, `command`, `config`, `rpc`, `tool`, ...).
 - **No mental translation.** Newcomers write `await`; the compiler writes `yield*`.
 - **Fewer tokens, same intent.** Measured in `o200k` on the site's samples at build time, and
-  checked against Qwen3, DeepSeek-V3 and GLM vocabularies on the docs corpus (ADR-0093).
+  checked against Qwen3, DeepSeek-V3 and GLM vocabularies on the docs corpus (ADR-0301).
   The hypothesis that models write better Effect through `.efx` is not yet proven (the AI
   evaluation harness is roadmap); models have not seen `.efx` in training.
 - **Built for agents.** Output is the idiomatic Effect v4 agents already know, one canonical

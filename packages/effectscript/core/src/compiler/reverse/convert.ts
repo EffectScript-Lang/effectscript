@@ -44,7 +44,7 @@ export const toEffectScript = (source: string, options: ConvertOptions = {}): Co
   try {
     const result = guarded(source, options)
     // code that ambient capture would change stays TypeScript; without capture, more may convert,
-    // and the file says so (ADR-0097)
+    // and the file says so (ADR-0305)
     if (
       options.ambient === false || /^\s*\/\/\s*@efx\s+no-ambient\b/m.test(leadingComments(source)) ||
       !result.notes.some((n) => n.message.includes("would be captured as an Effect"))
@@ -113,7 +113,7 @@ const guarded = (source: string, options: ConvertOptions): ConvertResult => {
 }
 
 /**
- * The prefix of a `// @efx spans` directive (ADR-0097 Amendment 2): the one most spans the file
+ * The prefix of a `// @efx spans` directive (ADR-0305 Amendment 2): the one most spans the file
  * names through `Effect.fn("…")` on a binding share as `Prefix.binding`, when it names more of them
  * than any other prefix and than the plain `binding`. The others stay TypeScript.
  */

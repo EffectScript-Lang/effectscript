@@ -337,7 +337,7 @@ Rules:
   with a refactoring hint). `break`/`continue` that cross the `try` boundary, and `return` in
   `finally`, are errors (**EFX2021**).
 
-**A `catch` step** (ADR-0100). For one fallback in a pipeline, a pipe step names the tags and the
+**A `catch` step** (ADR-0308). For one fallback in a pipeline, a pipe step names the tags and the
 value to use instead:
 
 ```ts
@@ -475,7 +475,7 @@ class Server extends Schema.Class<Server>("Server")({
   followed by the next member or parameter: a name (an identifier or a string, optionally after
   `readonly`) and `:` or `?:`. A list written over several lines compiles to one `.check(…)` on one
   line.
-- **A check without arguments drops its `()`** (ADR-0092): `where isTrimmed, isNonEmpty` compiles
+- **A check without arguments drops its `()`** (ADR-0300): `where isTrimmed, isNonEmpty` compiles
   to `.check(Schema.isTrimmed(), Schema.isNonEmpty())`. That applies to a free name that `Schema`
   exports (including `isFinite`, which a `where` list reads as Schema's, not JavaScript's); a local
   binding is used as written. A check that needs arguments, written bare, is TypeScript's error on
@@ -516,7 +516,7 @@ preservation of a mutable type. Unsupported type syntax
 (conditional, mapped, `keyof`, generics of unknown names) is an error (**EFX3001**) that suggests
 an `=` field.
 
-**Schema expressions** (ADR-0099). Where a schema is a value rather than a declaration (a tool's
+**Schema expressions** (ADR-0307). Where a schema is a value rather than a declaration (a tool's
 `parameters`, an RPC's `success`, an argument to `Schema.decodeUnknownSync`), `schema` followed by
 a type literal on the same line is that struct schema, lowered by the table above:
 
@@ -548,7 +548,7 @@ class DbError extends Schema.TaggedError<DbError>()("DbError", { cause: Schema.D
 
 The body uses the same rules as the `schema` class form: fields (with `where` checks), `=` fields,
 and methods. A `_tag: "X"` field overrides the tag. An error with no fields needs no body:
-`error Forbidden` is `error Forbidden {}` (ADR-0092 A4).
+`error Forbidden` is `error Forbidden {}` (ADR-0300 A4).
 
 **HTTP status** (ADR-0064): `error TodoNotFound status 404 { id: string }` (or `error Unauthorized
 status 401`, without a body) adds Effect's own
@@ -611,7 +611,7 @@ Rules:
   - An object literal → `Layer.succeed(Self, Self.of({…}))`.
   - In those objects (and in a `default`), an `effect` member's untyped parameters take the types
     its signature declares, by position: `layer test = { find: effect (id) => … }` compiles as
-    `effect (id: string) => …` would (ADR-0092 A2). TypeScript would infer them from `Self.of`; the
+    `effect (id: string) => …` would (ADR-0300 A2). TypeScript would infer them from `Self.of`; the
     compiler writes them so the output reads as hand-written Effect.
   - Any other expression is used as-is.
   - `|>` pipes apply to the resulting `Layer`.
@@ -621,10 +621,10 @@ Rules:
   and `src/a.efx` → `"myapp/a/Users"`. A relative filename keeps its directories; an absolute one outside the package root keeps only
   its file name, so keys never contain absolute paths (ADR-0018). Without package information, the key is `"<Name>"`. To override:
   `service Users as "acme/Users" { … }`.
-- **Span prefix** (ADR-0097): `// @efx spans Prefix` in the leading comments names every span the
+- **Span prefix** (ADR-0305): `// @efx spans Prefix` in the leading comments names every span the
   file names after a binding `Prefix.name` (services and `layer … for` keep their own). The
   directive's line is removed from the output.
-- **Layers for a service declared anywhere** (ADR-0095): `[export] layer Name for Service = …`
+- **Layers for a service declared anywhere** (ADR-0303): `[export] layer Name for Service = …`
   lowers like a body's `layer`: `effect { … }` to `Layer.effect(Service, Effect.gen(…))` with
   returned objects in `Service.of(…)`, `{ … }` to `Layer.succeed(Service, Service.of({ … }))`, and
   any other value to `Layer.effect(Service, value)`. `Service` may be dotted; spans are named after
@@ -646,7 +646,7 @@ Evaluation order is decided in ADR-0012.
   - If `a` is known to be pipeable → `a.pipe(f, g)`. Known pipeable means an `effect` block, a call
     to a module-level `effect` declaration that has no declaration pipes, a module-level `const`
     initialized with one of those, or one of Effect's own exports that its types declare pipeable
-    (ADR-0092 A1).
+    (ADR-0300 A1).
     - Effect's exports are read from `effect`'s types at `pnpm codegen` (`pipeableExports`): a
       value whose type is a `Pipeable` (`Schema.String`, `Effect.void`), or a call whose every
       signature taking that many arguments returns one (`Stream.make(1)`, `Option.map(o, f)`,
@@ -1443,7 +1443,7 @@ Unsupported shapes stay TypeScript, with an explanation.
   per shape.
 - A rewrite applies only where compiling its result reproduces the input TypeScript (ADR-0030).
   For compiler output that means byte for byte. For any other TypeScript it means the same syntax
-  tree (semicolons, trailing commas and layout aside, ADR-0098) and the same comments in order.
+  tree (semicolons, trailing commas and layout aside, ADR-0306) and the same comments in order.
   `toEffectScript` checks this at
   conversion time (ADR-0030 amendment 2). When the check fails, it keeps only the top-level
   statements that verify and notes the others.
@@ -1459,14 +1459,14 @@ Unsupported shapes stay TypeScript, with an explanation.
   - `main` moves to the end of the module.
   - Parentheses the forward compiler restores, such as `(await t) + n`, are dropped.
   - `ReadonlyArray<T>` and `Array<T>` in a schema → `T[]`, or `Array<T>` where `T` would need
-    parentheses (ADR-0092 A3).
-  - `error X {}` → `error X` (ADR-0092 A4).
+    parentheses (ADR-0300 A3).
+  - `error X {}` → `error X` (ADR-0300 A4).
   - In a service, an implementation's parameter types that repeat its signature are dropped
-    (ADR-0092 A2).
-  - `.pipe(…)` on a head the forward compiler knows is pipeable → `|>` (ADR-0092 A1).
+    (ADR-0300 A2).
+  - `.pipe(…)` on a head the forward compiler knows is pipeable → `|>` (ADR-0300 A1).
   - `schema X = T & Brand<"X">` → `brand X = T`, and `x = T.check(c)` → `x: T where c` (ADR-0077).
     A check called without arguments is written bare: `.check(Schema.isTrimmed())` →
-    `where isTrimmed` (ADR-0092).
+    `where isTrimmed` (ADR-0300).
   - Class members of a `schema` come after its fields.
   - Explicit `Effect.fn.Return<A, never>` keeps `throws never`.
   - A first Hack step that the forward compiler inlined stays a call.
@@ -1874,7 +1874,7 @@ Details of the parts that carry over from the first page:
    - The Effect TS pane is generated at build time by `toTypeScript`, so it cannot drift. The
      samples are type-checked in CI.
 3. **Real token counts.** Counted at build time with Hugging Face `tokenizers` on the `o200k`
-   vocabulary, checked against a panel of frontier vocabularies (ADR-0093):
+   vocabulary, checked against a panel of frontier vocabularies (ADR-0301):
    - Each pane shows its token count and the change relative to the others.
    - A **"show tokens"** toggle colors each token boundary.
    - The tokenizer is labeled honestly.

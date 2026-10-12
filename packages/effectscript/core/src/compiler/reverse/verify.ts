@@ -1,6 +1,6 @@
 /**
  * The conversion-time ADR-0030 check: EffectScript produced by `toEffectScript` must compile back
- * to the input's syntax tree (ADR-0098: semicolons, trailing commas and layout aside) and its
+ * to the input's syntax tree (ADR-0306: semicolons, trailing commas and layout aside) and its
  * comments, in order.
  *
  * @since 4.0.0
@@ -46,7 +46,7 @@ export const compilesBack = (typescript: string, efx: string, options: ConvertOp
 
 /**
  * How well `efx` compiles back to `typescript`: 2 = byte for byte, 1 = the same syntax tree and
- * comments (ADR-0098), 0 = not at all (or with errors).
+ * comments (ADR-0306), 0 = not at all (or with errors).
  *
  * @since 4.0.0
  * @category reverse

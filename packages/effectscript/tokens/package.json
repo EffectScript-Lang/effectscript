@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Token counts for EffectScript's samples and docs, with Hugging Face tokenizers and the vocabularies of current frontier models (ADR-0093)",
+  "description": "Token counts for EffectScript's samples and docs, with Hugging Face tokenizers and the vocabularies of current frontier models (ADR-0301)",
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts"

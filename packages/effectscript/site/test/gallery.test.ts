@@ -36,7 +36,7 @@ describe("the gallery (Plan 16 Task 3, ADR-0054)", () => {
     expect(typecheck(files)).toEqual([])
   }, 180_000)
 
-  it("counts o200k tokens with Hugging Face tokenizers, exactly as shown (ADR-0093)", async () => {
+  it("counts o200k tokens with Hugging Face tokenizers, exactly as shown (ADR-0301)", async () => {
     for (const s of scenarios) {
       const counts = await count(s.panes.map((pane) => pane.code))
       for (const [i, pane] of s.panes.entries()) expect(pane.tokens, `${s.id} ${pane.kind}`).toBe(counts[i])

@@ -1,9 +1,9 @@
-# ADR-0092: Audit the whole language for ceremony, with one form per intent
+# ADR-0300: Audit the whole language for ceremony, with one form per intent
 
 - **Status:** Accepted
 - **Date:** 2026-10-05
 - **Deciders:** the user (the audit, its goal and its limits); agent rulings on the findings
-- **Related:** ADR-0002, ADR-0003, ADR-0005, ADR-0030, ADR-0077, ADR-0087, ADR-0089, ADR-0093;
+- **Related:** ADR-0002, ADR-0003, ADR-0005, ADR-0030, ADR-0077, ADR-0087, ADR-0089, ADR-0301;
   Plans 24–30; `effect-docs/content/REPORT.md`
 
 ## Context
@@ -15,7 +15,7 @@ Nobody has yet looked at the language as a whole for what's left. In particular,
 looked for places where Effect or EffectScript offers two spellings of one meaning. Two
 spellings cost twice: a model has to learn both, and a reader has to check whether they differ.
 
-The evidence, measured in `o200k` (ADR-0093) on the 1,715 re-sugared examples of the docs corpus:
+The evidence, measured in `o200k` (ADR-0301) on the 1,715 re-sugared examples of the docs corpus:
 
 - EffectScript saves **14.1%** of tokens on the corpus (13.9–14.2% across the panel), and far more
   on the site's samples, which use the declarations.
@@ -63,7 +63,7 @@ Every construct, sample, doc, skill page and plan is held to these rules, in thi
    glossary.
 6. **Beauty decides, tokens are evidence.** A change must read at least as clearly as what it
    replaces. Token counts justify it and must not get worse in any vocabulary of the panel
-   (ADR-0093). A form that saves tokens but reads worse is rejected. So is tuning text to one
+   (ADR-0301). A form that saves tokens but reads worse is rejected. So is tuning text to one
    tokenizer's merges.
 7. **The round trip holds** (ADR-0030). A canonical form must be one the reverse compiler can
    produce, so existing Effect code converts to it.
@@ -213,7 +213,7 @@ intents, not two spellings of one, and both convert both ways.
 
 - **Status:** Accepted
 - **Date:** 2026-10-05
-- **Deciders:** agent ruling, on the real-projects corpus (ADR-0094)
+- **Deciders:** agent ruling, on the real-projects corpus (ADR-0302)
 
 Converting 16 real Effect v4 projects (20,926 files) showed what the docs corpus couldn't: after
 A1, 32,473 `.pipe(…)` calls were still TypeScript, and about 95% of them start with an Effect
@@ -248,7 +248,7 @@ know.
 | ----------------------------------------------------------------------- | -----: | ---------------------------------------- |
 | the site's gallery: EffectScript vs the Effect TypeScript it compiles to | 47.6%  | the language                              |
 | the docs corpus, re-sugared examples (ADR-0050)                          | 15.1%  | the examples are Effect API calls         |
-| real projects (ADR-0094), whole Effect files                             | 3.4%   | about **6%**                              |
+| real projects (ADR-0302), whole Effect files                             | 3.4%   | about **6%**                              |
 
 The real-projects ceiling comes from removing *every* piece of Effect ceremony at once, more than
 any construct could: every `effect` import, every module qualifier, `yield*`, `function*`,
@@ -259,9 +259,9 @@ EffectScript keeps as written. So:
 - "Over 50% fewer tokens" is true only of Effect code itself, as in the gallery, and is
   presented that way. It is never claimed for whole codebases.
 - For real projects, the work is coverage: making the reverse compiler convert more real Effect code
-  is worth more than new sugar. Merging ADR-0089, A7, `layer … for` (ADR-0095), the spans
-  directive (ADR-0097), tree-based round trips (ADR-0098), inline `schema { … }` (ADR-0099) and the
-  `catch` pipe step (ADR-0100) took them from 0.7% to 3.4% (13,032 of 20,926 Effect files
+  is worth more than new sugar. Merging ADR-0089, A7, `layer … for` (ADR-0303), the spans
+  directive (ADR-0305), tree-based round trips (ADR-0306), inline `schema { … }` (ADR-0307) and the
+  `catch` pipe step (ADR-0308) took them from 0.7% to 3.4% (13,032 of 20,926 Effect files
   converted), over half the ceiling.
 - Written natively, real code saves more than the ceiling, because it is restructured rather than
   stripped: an AI rewrite of a t3code service in EffectScript saved 17.6%, against 5.7% converted.

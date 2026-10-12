@@ -13,7 +13,7 @@ const compile = (body: string) => {
   return { code: result.code.slice(result.code.indexOf("declare const fallback")), diagnostics: result.diagnostics }
 }
 
-describe("|> catch Tag => value (ADR-0100)", () => {
+describe("|> catch Tag => value (ADR-0308)", () => {
   it.each([
     [
       "a value",

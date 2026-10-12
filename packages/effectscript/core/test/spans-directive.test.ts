@@ -8,7 +8,7 @@ const compile = (efx: string) => {
 }
 const back = (ts: string) => toEffectScript(ts, { filename: "auth.ts" }).code
 
-describe("// @efx spans (ADR-0097)", () => {
+describe("// @efx spans (ADR-0305)", () => {
   const efx = `// @efx spans CodexAuth
 export effect poll(id: string) {
   return id

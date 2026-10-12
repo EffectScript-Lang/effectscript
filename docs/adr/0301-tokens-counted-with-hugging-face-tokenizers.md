@@ -1,10 +1,10 @@
-# ADR-0093: Tokens are counted with Hugging Face tokenizers, against a panel of frontier vocabularies
+# ADR-0301: Tokens are counted with Hugging Face tokenizers, against a panel of frontier vocabularies
 
 - **Status:** Accepted
 - **Date:** 2026-10-05
 - **Deciders:** the user (move to `huggingface/tokenizers`, use what current labs use); agent ruling
   on the panel, the pinning and the cache
-- **Related:** ADR-0054 (amended), ADR-0082, ADR-0092; spec §9.2; `packages/effectscript/tokens`
+- **Related:** ADR-0054 (amended), ADR-0082, ADR-0300; spec §9.2; `packages/effectscript/tokens`
 
 ## Context
 
@@ -14,7 +14,7 @@ EffectScript's claim is "fewer tokens, same intent", and it is checked by number
 - the effect-docs `REPORT.md` counted TypeScript *scanner* tokens, a different measure that no model
   reads.
 
-ADR-0092 starts an audit that uses token counts to decide syntax, so the measure has to be one
+ADR-0300 starts an audit that uses token counts to decide syntax, so the measure has to be one
 measure, fast enough to run over the 4,000-example docs corpus, and not an artifact of one
 vocabulary. `huggingface/tokenizers` is the Rust library most labs ship their tokenizers for. Its
 Node binding (`tokenizers` on npm) loads any `tokenizer.json`.
@@ -47,7 +47,7 @@ EffectScript's saving to within 0.3 points (13.9–14.2%).
   tables count. It is the most used vocabulary today, and it's continuous with the numbers
   already published.
 - **The panel is the four vocabularies above.** `REPORT.md` reports the corpus saving in each. A
-  syntax decision that the audit (ADR-0092) justifies by tokens must hold across the panel, not
+  syntax decision that the audit (ADR-0300) justifies by tokens must hold across the panel, not
   only in `o200k`.
 - **Vocabularies are pinned and verified.** Each one names its Hub repository, revision and the
   SHA-256 of its `tokenizer.json`. The file is downloaded on first use into
